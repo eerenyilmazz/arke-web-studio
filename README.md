@@ -6,6 +6,17 @@ kalite kontrolünden geçirir ve onaylarından sonra Cloudflare'e yayınlar.
 
 **Agent kod yazmaz.** Sadece MCP tool'ları üzerinden config, içerik ve görsel kaydeder.
 
+## Güncelleme
+
+Yeni sürüm `site-factory-X.Y.Z.zip` olarak gelir. İndirilenler'e kaydet, WSL'de:
+
+```bash
+cd ~/projects/site-factory
+bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.zip
+```
+
+Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
+
 ## Panel (günlük kullanım)
 
 ```bash
