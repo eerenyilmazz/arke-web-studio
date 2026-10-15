@@ -17,7 +17,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "schema": "tsx src/cli/export-schema.ts",
-    "approve": "tsx src/cli/approve.ts"
+    "approve": "tsx src/cli/approve.ts",
+    "panel": "npm run build && node dist/panel/server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Site Factory</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a href="#/" class="brand">Site Factory</a>
+    <div id="running" class="running" hidden></div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <a class="btn btn-primary block" href="#/new">Yeni müşteri</a>
+      <nav aria-label="Müşteriler"><ul id="clients" class="client-list"></ul></nav>
+    </aside>
+    <main id="view" class="view" tabindex="-1"></main>
+    <aside class="logpane" aria-label="İş kaydı">
+      <div class="logpane-head">
+        <h2 id="log-title">İş kaydı</h2>
+        <button id="log-cancel" class="btn btn-small" hidden>İptal et</button>
+      </div>
+      <p id="log-status" class="muted">Henüz iş yok.</p>
+      <ol id="log" class="log"></ol>
+    </aside>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

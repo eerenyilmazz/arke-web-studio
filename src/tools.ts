@@ -90,7 +90,8 @@ export function getClientStatus(factory: FactoryConfig, args: { slug: string }) 
 
 // ---------------------------------------------------------------- questionnaire
 
-export function generateQuestionnaire(factory: FactoryConfig, args: { slug: string; round: 1 | 2; replyBy?: string }) {
+/** Builds the questionnaire for a round without writing it (the panel uses this to show the answer form). */
+export function questionnaireFor(factory: FactoryConfig, args: { slug: string; round: 1 | 2; replyBy?: string }) {
   const paths = openClient(factory, assertSlug(args.slug));
   const draft = readDraftConfig(paths);
   const business = (draft.business ?? {}) as { name?: string; industry?: string };
@@ -108,13 +109,21 @@ export function generateQuestionnaire(factory: FactoryConfig, args: { slug: stri
     }
   }
 
-  const q = buildQuestionnaire({
-    businessName: business.name ?? args.slug,
+  return {
+    paths,
     industry: business.industry ?? "",
-    round: args.round,
-    openIds,
-    replyBy: args.replyBy,
-  });
+    questionnaire: buildQuestionnaire({
+      businessName: business.name ?? args.slug,
+      industry: business.industry ?? "",
+      round: args.round,
+      openIds,
+      replyBy: args.replyBy,
+    }),
+  };
+}
+
+export function generateQuestionnaire(factory: FactoryConfig, args: { slug: string; round: 1 | 2; replyBy?: string }) {
+  const { paths, questionnaire: q } = questionnaireFor(factory, args);
   const base = path.join(paths.questionnaireDir, `round-${args.round}`);
   writeText(`${base}.md`, q.markdown);
   writeText(`${base}.txt`, q.plainText);

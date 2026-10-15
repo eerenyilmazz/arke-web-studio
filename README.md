@@ -6,6 +6,30 @@ kalite kontrolünden geçirir ve onaylarından sonra Cloudflare'e yayınlar.
 
 **Agent kod yazmaz.** Sadece MCP tool'ları üzerinden config, içerik ve görsel kaydeder.
 
+## Panel (günlük kullanım)
+
+```bash
+cd ~/projects/site-factory
+npm run panel
+```
+
+Terminal bir bağlantı yazar (`http://127.0.0.1:4777/login?key=…`); Windows'taki tarayıcıda açın.
+Anahtar her başlatmada yenilenir ve sadece o oturumda geçerlidir. Panel sadece bu bilgisayardan erişilebilir.
+
+| Sekme | Ne yaparsınız |
+| --- | --- |
+| Yeni müşteri | İşletme adı, sektör, barındırma, dil |
+| Sorular | 1./2. tur formunu üretir, metni kopyalayıp müşteriye gönderirsiniz |
+| Cevaplar | Cevapları soru soru ya da serbest metin olarak girer, logo/fotoğraf yüklersiniz → **Cevapları agent'a işlet** |
+| Agent | **Tasarım ve metinleri oluştur**, serbest **Değişiklik iste**, metinleri okuma |
+| Build | Build + kalite raporu, **Önizlemeyi aç** (http://127.0.0.1:4778) |
+| Onay ve yayın | Onay komutlarını kopyalarsınız (terminalde verilir), önizleme / canlı yayın |
+
+Agent işleri arka planda Claude Code ile (`claude -p`) çalışır, sağdaki kayıtta canlı görünür.
+Agent bu işlerde **sadece** site-factory araçlarını kullanabilir: shell, dosya düzenleme, yayın ve müşteri oluşturma kapalı;
+Cloudflare değişkenleri agent'a hiç verilmez. Aynı anda tek iş çalışır.
+Onaylar bilinçli olarak panelde değil, terminalde: `npm run approve -- <slug> <content|visual|production>`.
+
 ## Klasör yapısı
 
 ```

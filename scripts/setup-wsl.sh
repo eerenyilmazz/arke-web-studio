@@ -115,6 +115,7 @@ else
   npm ci --no-fund --no-audit && pass "npm ci"
   npm run build >/dev/null && pass "npm run build (dist/server.js)"
   npm test --silent && pass "npm test"
+  (cd templates/corporate-v1 && npm ci --no-fund --no-audit) && pass "template corporate-v1: npm ci"
 fi
 
 echo

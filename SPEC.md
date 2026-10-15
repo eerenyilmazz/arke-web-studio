@@ -188,6 +188,18 @@ maxLogoBytes 1 MB, maxImageBytes 5 MB, buildTimeoutMs 300000, deployTimeoutMs 30
 - Visual approval pinned to `dist/`: template output change or edited `dist/` invalidates it; output approvals refused without a passing, untouched build; approvals without `distHash` do not count.
 - The compiled server over stdio with the SDK client: lists the 10 tools, resources and prompt; audit log has one line per call; bad slug is an error.
 
+## 5. Operator panel (`npm run panel`)
+
+Local web UI so Eren works without the terminal, except approvals.
+
+- `src/panel/`: `server.ts` (node:http, no framework), `api.ts` (routes call `tools.ts`, never files directly), `jobs.ts`, `prompts.ts`, `preview.ts`, `static.ts`; UI in `panel/` (plain HTML/CSS/JS, all server text inserted with `textContent`).
+- Access: listens on 127.0.0.1 only; random session key printed once (`/login?key=`) → HttpOnly, SameSite=Strict cookie; Host must be the panel's own address; non-GET requests must carry the panel's Origin.
+- Agent jobs: `claude -p --output-format stream-json --strict-mcp-config --mcp-config .mcp.json`, prompt on stdin, `--allowedTools` = site-factory tools except `deploy`/`create_client` (+ Read/Grep/Glob), `--disallowedTools` Bash, Edit, Write, Web*, Task, deploy, create_client. `SF_CF_*` removed from its environment. Client answers fenced in `<client_data>` as data. Kinds: answers, design-content, fix-build, revise (Eren's own instruction).
+- Tasks (no LLM): build, deploy (preview/production, dry run). One job at a time (409 otherwise); log polled by the UI.
+- Uploads go to `<inbox>/<slug>/` (sanitised name, 15 MB); `save_asset` still does the real checks.
+- Preview: second port (`PANEL_PORT + 1`) serving the chosen client's `dist/` at `/`, path-confined.
+- Approvals are not in the panel; it shows the command to copy.
+
 ## Out of scope for now
 
 Lighthouse automation, visual regression, rollback/domain tools, config migrator, monitoring scripts, domain purchase.

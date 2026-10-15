@@ -100,7 +100,7 @@ export function buildQuestionnaire(input: QuestionnaireInput): Questionnaire {
   };
 }
 
-function industryExtras(industry: string): string[] {
+export function industryExtras(industry: string): string[] {
   const key = industry.toLowerCase();
   return Object.entries(INDUSTRY_EXTRAS)
     .filter(([match]) => key.includes(match))
