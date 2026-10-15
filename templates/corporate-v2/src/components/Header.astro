@@ -1,0 +1,45 @@
+---
+import type { PageContext } from "../lib/site";
+import { primaryCta } from "../lib/site";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { config, site, t, page } = ctx;
+const logo = config.brand.logo ? site.images.get(config.brand.logo) : null;
+const cta = primaryCta(ctx);
+const links = config.pages.filter((p) => p !== "home").map((p) => ({ id: p, href: ctx.url(p), label: t.nav[p] }));
+// Bold sites open on a dark hero: the header joins it on the home page.
+const onHero = config.design.personality === "bold" && page === "home";
+const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
+---
+<header class:list={["relative z-20", onHero ? "bg-primary text-on-primary" : "bg-bg rule-b"]}>
+  <div class="wrap flex items-center justify-between gap-6 py-4">
+    <a href={ctx.url("home")} class="flex items-center gap-3 no-underline min-h-11" aria-label={config.business.name}>
+      {logo
+        ? <img src={logo.src} alt="" width={logo.width} height={logo.height} class="h-10 w-auto max-w-44 object-contain" />
+        : <span class="font-heading text-2xl" style="font-weight: var(--h-weight); letter-spacing: var(--h-tracking)">{config.business.name}<span class:list={[onHero ? "text-accent" : "text-accent-ink"]}>.</span></span>}
+    </a>
+
+    <nav aria-label={t.mainNav} class="hidden md:block">
+      <ul class="flex items-center gap-1">
+        {links.map((l) => (
+          <li>
+            <a href={l.href} class:list={["block rounded-full px-4 py-2 no-underline transition-colors hover:bg-[color-mix(in_srgb,currentColor_9%,transparent)]", l.id === page && "underline decoration-2 underline-offset-8"]} aria-current={l.id === page ? "page" : undefined}>{l.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <a href={cta.href} class="btn btn-accent hidden md:inline-flex" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
+
+    <details class="md:hidden relative">
+      <summary class="btn btn-ghost cursor-pointer list-none">{t.menu}</summary>
+      <nav aria-label={t.mainNav} class="absolute end-0 z-30 mt-2 w-64 bg-bg text-ink p-4 shadow-[0_10px_30px_rgb(0_0_0/0.15)]" style="border-radius: var(--radius)">
+        <ul class="flex flex-col gap-1">
+          <li><a href={ctx.url("home")} class="block py-2.5 no-underline">{t.nav.home}</a></li>
+          {links.map((l) => <li><a href={l.href} class="block py-2.5 no-underline" aria-current={l.id === page ? "page" : undefined}>{l.label}</a></li>)}
+        </ul>
+        <a href={cta.href} class="btn btn-accent mt-3 w-full" {...external}>{cta.label}</a>
+      </nav>
+    </details>
+  </div>
+</header>

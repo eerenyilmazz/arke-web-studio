@@ -1,0 +1,27 @@
+---
+import type { Site } from "../../lib/data";
+
+interface Props {
+  readonly site: Site;
+  readonly src: string;
+  readonly alt: string;
+  readonly class?: string;
+  readonly eager?: boolean;
+  readonly sizes?: string;
+}
+const { site, src, alt, class: extra = "", eager = false, sizes } = Astro.props;
+const info = site.images.get(src);
+---
+{info && (
+  <img
+    src={info.src}
+    alt={alt}
+    width={info.width}
+    height={info.height}
+    loading={eager ? "eager" : "lazy"}
+    decoding="async"
+    {...(eager ? { fetchpriority: "high" } : {})}
+    {...(sizes ? { sizes } : {})}
+    class={extra}
+  />
+)}

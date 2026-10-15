@@ -20,7 +20,7 @@ Always call `get_client_status` when unsure; its `nextStep` is authoritative.
    - An answer that fits no field goes into `unmapped` with a note. Never drop an answer silently.
    - Ticked "later" items go into `laterInterests` (ids like `later-qr-code`).
 4. **Round 2**: if `get_client_status` still lists open questions, `generate_questionnaire` round 2. Repeat 3.
-5. **Design**: `generate_design_system`, then choose palette, fonts, style and section variants following `rules/design-rules.md`. Client brand colours win; adjust shades only to pass contrast. Save under `design`.
+5. **Design**: `generate_design_system`, then choose palette, fonts, style, personality and motif following `rules/design-rules.md`. Client brand colours win; adjust shades only to pass contrast. Save under `design`.
 6. **Content**: write all text with `save_content` for every locale (same number of services, gallery items, etc. in each). Use the client's words; tighten, do not invent facts, prices, awards or reviews.
 7. **Content approval**: show Eren a short summary (pages, sections, key texts, anything you chose for the client). He approves himself.
 8. **Build**: `build_site`. If checks fail, fix config/content and build again. After 3 failed attempts, stop and report.
@@ -29,6 +29,8 @@ Always call `get_client_status` when unsure; its `nextStep` is authoritative.
 11. **Production**: after the client's OK, Eren gives the production approval; then `deploy` target `production`.
 
 **From the panel ("Prepare site")** steps 3–8 run as one job: you may build before the content approval; Eren then looks at the built site and approves content and visuals together (`npm run approve -- <slug> site`). If a required fact is missing, stop before building and list it as short questions in Turkish.
+
+**Older sites** (template `corporate-v1`) keep working unchanged. Move one to `corporate-v2` only when Eren asks (the panel's "Yeni şablona geç" button): set `template`, personality, motif, service icons; build.
 
 Changes after launch use the same path: edit config/content, build, approvals, deploy. Any change resets approvals automatically.
 

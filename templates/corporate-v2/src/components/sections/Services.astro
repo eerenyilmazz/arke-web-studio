@@ -1,0 +1,64 @@
+---
+import type { PageContext } from "../../lib/site";
+import Icon from "../ui/Icon.astro";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { services } = ctx.content;
+const { t } = ctx;
+const p = ctx.config.design.personality;
+const TINTS = ["tint-accent", "tint-primary", "tint-secondary"] as const;
+// Bold bento on 3 columns: the first card takes a 2×2 block; the last card widens so no cell stays empty.
+const BENTO_COLS = 3;
+function bentoClass(i: number, n: number): string {
+  if (n === 1) return "md:col-span-3";
+  if (i === 0) return n >= 3 ? "md:col-span-2 md:row-span-2" : "md:col-span-2";
+  const rest = (n - 3) % BENTO_COLS;
+  if (n > 3 && i === n - 1 && rest > 0) return rest === 1 ? "md:col-span-3" : "md:col-span-2";
+  return "";
+}
+---
+<section class="wrap band">
+  <div class="reveal flex flex-wrap items-end justify-between gap-4">
+    <h2 class="h-section">{t.servicesTitle}</h2>
+  </div>
+
+  {p === "bold" && (
+    <ul class="reveal-stagger mt-12 grid gap-4 md:grid-cols-3">
+      {services.map((s, i) => (
+        <li class:list={["card card-lift flex flex-col p-7 md:p-8", bentoClass(i, services.length), i === 0 ? "bg-primary text-on-primary" : "tint-primary"]}>
+          <span class="icon-tile" style="background: var(--c-cta); color: var(--c-on-cta)"><Icon name={s.icon} /></span>
+          <h3 class:list={["mt-6", i === 0 ? "text-3xl md:text-4xl" : "h-card"]}>{s.title}</h3>
+          <p class:list={["mt-3 measure", i === 0 && "lead"]}>{s.description}</p>
+          {s.price && <p class="mt-auto pt-6 font-semibold">{s.price}</p>}
+        </li>
+      ))}
+    </ul>
+  )}
+
+  {p === "premium" && (
+    <ul class="reveal-stagger mt-12">
+      {services.map((s) => (
+        <li class="rule-t grid gap-3 py-7 md:grid-cols-[3rem_1fr_2fr_auto] md:items-baseline md:gap-8">
+          <span class="text-accent-ink"><Icon name={s.icon} size={26} /></span>
+          <h3 class="h-card">{s.title}</h3>
+          <p class="measure muted">{s.description}</p>
+          {s.price && <p class="num whitespace-nowrap text-xl md:text-end">{s.price}</p>}
+        </li>
+      ))}
+    </ul>
+  )}
+
+  {p === "friendly" && (
+    <ul class="reveal-stagger mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {services.map((s, i) => (
+        <li class:list={["card card-lift p-7", TINTS[i % TINTS.length]]}>
+          <span class="icon-tile bg-bg text-ink"><Icon name={s.icon} /></span>
+          <h3 class="h-card mt-5">{s.title}</h3>
+          <p class="mt-2">{s.description}</p>
+          {s.price && <p class="chip mt-5 bg-bg font-semibold">{s.price}</p>}
+        </li>
+      ))}
+    </ul>
+  )}
+</section>

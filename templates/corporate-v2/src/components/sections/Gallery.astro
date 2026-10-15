@@ -1,0 +1,20 @@
+---
+import type { PageContext } from "../../lib/site";
+import Img from "../ui/Img.astro";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { gallery } = ctx.content;
+---
+{gallery.length > 0 && (
+  <section class="wrap band">
+    <h2 class="h-section reveal">{ctx.t.galleryTitle}</h2>
+    <ul class="reveal-stagger mt-12 grid auto-rows-[14rem] grid-cols-2 gap-4 md:auto-rows-[16rem] md:grid-cols-4">
+      {gallery.map((g, i) => (
+        <li class:list={["overflow-hidden", i % 5 === 0 && "col-span-2 row-span-2"]} style="border-radius: var(--radius)">
+          <Img site={ctx.site} src={g.src} alt={g.alt} class="h-full w-full object-cover transition-transform duration-500 hover:scale-105" sizes="(min-width: 768px) 50vw, 100vw" />
+        </li>
+      ))}
+    </ul>
+  </section>
+)}

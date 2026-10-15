@@ -289,6 +289,7 @@ async function renderClient(view, slug, tab) {
     h("ol", { class: "stepper", "aria-label": `Aşama ${idx + 1} / ${STAGES.length}: ${stageInfo(stage).long}` },
       ...STAGES.map((s, i) => h("li", { class: i < idx ? "done" : i === idx ? "now" : "", "aria-current": i === idx ? "step" : null }, h("span", { class: "bar" }), h("span", { class: "label", text: s.label })))),
     nowCard(d),
+    upgradeBanner(d),
     h("nav", { class: "tabs", "aria-label": "Bölümler" }, ...TABS.map(([id, label]) => h("a", { href: `#/c/${slug}/${id}`, "aria-current": id === tab ? "page" : null, text: label }))),
     body,
   );
@@ -350,6 +351,16 @@ function nowCard(d) {
   return h("section", { class: "now-card", "aria-label": "Şimdi yapılacak" },
     h("div", { class: "text" }, h("p", { class: "eyebrow", text: working ? "Agent çalışıyor, bitince devam" : "Şimdi yapılacak" }), h("h2", { text: title }), h("p", { text })),
     h("div", { class: "row" }, ...actions),
+  );
+}
+
+/** Older sites can move to the newest template (animated, sector motif). Shown only when they are behind. */
+function upgradeBanner(d) {
+  if (!d.template || !d.latestTemplate || d.template === d.latestTemplate) return null;
+  const slug = d.status.slug;
+  return h("section", { class: "upgrade-banner", "aria-label": "Yeni şablon" },
+    h("p", {}, h("strong", { text: "Yeni şablon hazır. " }), h("span", { text: `Bu site eski şablonda (${d.template}). Yeni şablon sektöre göre kişilik ve animasyonlu motif kullanır; metinler aynı kalır, onaylar sıfırlanır.` })),
+    h("button", { class: "btn", type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "upgrade-template", {}) }, "Yeni şablona geç"),
   );
 }
 

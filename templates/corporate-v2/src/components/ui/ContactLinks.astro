@@ -1,0 +1,20 @@
+---
+import type { PageContext } from "../../lib/site";
+import { displayPhone, whatsappHref } from "../../lib/site";
+
+interface Props { readonly ctx: PageContext; readonly class?: string }
+const { ctx, class: extra = "" } = Astro.props;
+const { contact, whatsapp } = ctx.config;
+const { t } = ctx;
+---
+<ul class:list={["flex flex-wrap gap-3", extra]}>
+  {contact.phone && contact.showCallButton && (
+    <li><a class="btn btn-outline" href={`tel:${contact.phone}`}>{t.call} {displayPhone(contact.phone)}</a></li>
+  )}
+  {contact.showEmailButton && (
+    <li><a class="btn btn-outline" href={`mailto:${contact.email}`}>{t.email}</a></li>
+  )}
+  {whatsapp.number && (
+    <li><a class="btn btn-outline" href={whatsappHref(whatsapp.number, ctx.content.whatsappMessage)} target="_blank" rel="noopener">{t.whatsapp}<span class="sr-only"> {t.opensInNewTab}</span></a></li>
+  )}
+</ul>

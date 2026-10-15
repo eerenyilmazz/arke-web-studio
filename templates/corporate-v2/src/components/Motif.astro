@@ -1,0 +1,183 @@
+---
+import type { Motif } from "../lib/data";
+
+/*
+ * Animated sector illustration. Decorative only (aria-hidden): the headline next to it says what the
+ * business does. Colours come from the surrounding section through --m-line / --m-main / --m-soft.
+ */
+interface Props { readonly name: Motif; readonly id: string; readonly class?: string }
+const { name, id, class: extra = "" } = Astro.props;
+const cls = `motif ${extra}`;
+---
+{name === "jar" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <defs>
+      <clipPath id={`${id}-j1`}><rect x="30" y="120" width="120" height="250" rx="28" /></clipPath>
+      <clipPath id={`${id}-j2`}><rect x="180" y="80" width="120" height="290" rx="28" /></clipPath>
+      <clipPath id={`${id}-j3`}><rect x="330" y="140" width="120" height="230" rx="28" /></clipPath>
+    </defs>
+    <g clip-path={`url(#${id}-j1)`}>
+      <rect class="f-paper" x="30" y="120" width="120" height="250" />
+      <rect class="f-soft m-liquid" x="30" y="150" width="120" height="220" />
+      <ellipse class="f-main m-bob" cx="68" cy="310" rx="15" ry="40" />
+      <ellipse class="f-main m-bob m-d1" cx="112" cy="295" rx="14" ry="38" />
+      <circle class="f-line m-rise" cx="90" cy="360" r="4" />
+    </g>
+    <rect class="s-line" x="30" y="120" width="120" height="250" rx="28" stroke-width="5" />
+    <rect class="f-main" x="42" y="98" width="96" height="26" rx="8" />
+    <g clip-path={`url(#${id}-j2)`}>
+      <rect class="f-paper" x="180" y="80" width="120" height="290" />
+      <rect class="f-soft m-liquid m-d1" x="180" y="110" width="120" height="260" />
+      <ellipse class="f-main m-bob m-d2" cx="218" cy="300" rx="16" ry="44" />
+      <ellipse class="f-main m-bob" cx="265" cy="315" rx="14" ry="38" />
+      <circle class="f-line m-rise m-d1" cx="240" cy="360" r="4" />
+    </g>
+    <rect class="s-line" x="180" y="80" width="120" height="290" rx="28" stroke-width="5" />
+    <rect class="f-main" x="192" y="58" width="96" height="26" rx="8" />
+    <g clip-path={`url(#${id}-j3)`}>
+      <rect class="f-paper" x="330" y="140" width="120" height="230" />
+      <rect class="f-soft m-liquid m-d2" x="330" y="170" width="120" height="200" />
+      <ellipse class="f-main m-bob m-d1" cx="372" cy="320" rx="14" ry="36" />
+      <ellipse class="f-main m-bob m-d2" cx="414" cy="328" rx="15" ry="34" />
+    </g>
+    <rect class="s-line" x="330" y="140" width="120" height="230" rx="28" stroke-width="5" />
+    <rect class="f-main" x="342" y="118" width="96" height="26" rx="8" />
+    <rect class="f-line" x="10" y="372" width="460" height="9" rx="4.5" />
+  </svg>
+)}
+
+{name === "code" && (
+  <div class={`${cls} m-editor`} aria-hidden="true" style="border-radius: var(--radius); border: 1px solid color-mix(in srgb, currentColor 22%, transparent); background: color-mix(in srgb, currentColor 6%, transparent); overflow: hidden; font-family: ui-monospace, 'JetBrains Mono', Consolas, monospace">
+    <div style="display: flex; gap: 8px; padding: 14px 16px; border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent)">
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: color-mix(in srgb, currentColor 35%, transparent)"></span>
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: color-mix(in srgb, currentColor 35%, transparent)"></span>
+      <span style="width: 11px; height: 11px; border-radius: 50%; background: var(--c-accent)"></span>
+    </div>
+    <div style="padding: 24px 26px; font-size: clamp(0.85rem, 1.4vw, 1.05rem); line-height: 2; min-height: 15rem">
+      <div class="m-code-line"><span style="color: var(--c-accent)">const</span> app = build({'{'}</div>
+      <div class="m-code-line">&#160;&#160;pages: <span style="color: var(--c-accent)">"fast"</span>,</div>
+      <div class="m-code-line">&#160;&#160;payments: <span style="color: var(--c-accent)">"ready"</span>,</div>
+      <div class="m-code-line">&#160;&#160;mobile: <span style="color: var(--c-accent)">true</span>,</div>
+      <div class="m-code-line">{'}'});<span class="m-caret" style="color: var(--c-accent)">▍</span></div>
+      <div class="m-live" style="margin-top: 12px; display: inline-flex; gap: 8px; align-items: center; padding: 4px 12px; border-radius: 999px; background: var(--c-cta); color: var(--c-on-cta); font-size: 0.85em">● live</div>
+    </div>
+  </div>
+)}
+
+{name === "cup" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <path class="s-line m-steam" d="M190 140c-20-30 20-40 0-80" stroke-width="8" stroke-linecap="round" />
+    <path class="s-line m-steam m-s2" d="M235 140c-20-30 20-40 0-80" stroke-width="8" stroke-linecap="round" />
+    <path class="s-line m-steam m-s3" d="M280 140c-20-30 20-40 0-80" stroke-width="8" stroke-linecap="round" />
+    <path class="f-main" d="M120 160h230l-24 150a40 40 0 0 1-40 34H184a40 40 0 0 1-40-34z" />
+    <path class="s-main" d="M350 190h24a36 36 0 0 1 0 72h-30" stroke-width="18" />
+    <ellipse class="f-line" cx="235" cy="162" rx="115" ry="15" />
+    <rect class="f-line" x="80" y="350" width="310" height="12" rx="6" />
+    <g class="m-spin"><ellipse class="f-soft" cx="420" cy="80" rx="22" ry="30" /></g>
+    <g class="m-spin" style="animation-duration: 18s"><ellipse class="f-soft" cx="50" cy="110" rx="18" ry="25" /></g>
+  </svg>
+)}
+
+{name === "scissors" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <g transform="translate(240 170)">
+      <g class="m-blade-a"><path class="f-line" d="M-6-4L150-30l4 12L0 6z" /><circle class="s-line" cx="-60" cy="40" r="34" stroke-width="12" /><path class="f-line" d="M-6-4l-40 30 10 10L4 6z" /></g>
+      <g class="m-blade-b"><path class="f-line" d="M-6 4L150 30l4-12L0-6z" /><circle class="s-main" cx="-60" cy="-40" r="34" stroke-width="12" /><path class="f-line" d="M-6 4l-40-30 10-10L4-6z" /></g>
+      <circle class="f-main" cx="0" cy="0" r="9" />
+    </g>
+    <path class="s-main m-fall" d="M330 210c8 20 18 30 34 38" stroke-width="5" stroke-linecap="round" />
+    <path class="s-soft m-fall m-f2" d="M350 200c4 22 12 34 26 44" stroke-width="5" stroke-linecap="round" />
+    <path class="s-main m-fall m-f3" d="M370 215c10 16 20 24 34 30" stroke-width="5" stroke-linecap="round" />
+    <rect class="f-soft" x="60" y="340" width="360" height="12" rx="6" />
+  </svg>
+)}
+
+{name === "tooth" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <defs><clipPath id={`${id}-t`}><path d="M240 70c-40-30-120-20-120 60 0 50 20 90 30 140 8 40 18 70 40 70 24 0 26-70 50-70s26 70 50 70c22 0 32-30 40-70 10-50 30-90 30-140 0-80-80-90-120-60z" /></clipPath></defs>
+    <circle class="f-soft" cx="240" cy="210" r="170" />
+    <path class="f-paper" d="M240 70c-40-30-120-20-120 60 0 50 20 90 30 140 8 40 18 70 40 70 24 0 26-70 50-70s26 70 50 70c22 0 32-30 40-70 10-50 30-90 30-140 0-80-80-90-120-60z" />
+    <g clip-path={`url(#${id}-t)`}><rect class="f-main m-shine" x="150" y="40" width="40" height="320" transform="rotate(18 170 200)" opacity=".35" /></g>
+    <path class="s-line" d="M240 70c-40-30-120-20-120 60 0 50 20 90 30 140 8 40 18 70 40 70 24 0 26-70 50-70s26 70 50 70c22 0 32-30 40-70 10-50 30-90 30-140 0-80-80-90-120-60z" stroke-width="7" stroke-linejoin="round" />
+    <path class="f-main m-twinkle" d="M380 80l8 22 22 8-22 8-8 22-8-22-22-8 22-8z" />
+    <path class="f-main m-twinkle m-t2" d="M95 110l6 16 16 6-16 6-6 16-6-16-16-6 16-6z" />
+    <path class="f-main m-twinkle m-t3" d="M390 270l5 13 13 5-13 5-5 13-5-13-13-5 13-5z" />
+  </svg>
+)}
+
+{name === "bricks" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <path class="s-line" d="M420 380V40H180" stroke-width="10" stroke-linecap="round" />
+    <path class="s-line" d="M420 70l-60-30" stroke-width="6" />
+    <g class="m-sway"><path class="s-line" d="M240 40v90" stroke-width="4" /><path class="s-main" d="M228 140a12 12 0 1 0 24 0v-10" stroke-width="6" stroke-linecap="round" /></g>
+    <rect class="f-main m-drop" x="60" y="320" width="110" height="50" rx="6" />
+    <rect class="f-soft m-drop m-b2" x="175" y="320" width="110" height="50" rx="6" />
+    <rect class="f-main m-drop m-b3" x="290" y="320" width="100" height="50" rx="6" />
+    <rect class="f-soft m-drop m-b4" x="115" y="265" width="110" height="50" rx="6" />
+    <rect class="f-main m-drop m-b5" x="230" y="265" width="110" height="50" rx="6" />
+    <rect class="f-line" x="30" y="372" width="400" height="9" rx="4.5" />
+  </svg>
+)}
+
+{name === "leaf" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <path class="s-line m-grow" d="M240 380C240 300 250 220 236 120" stroke-width="7" stroke-linecap="round" />
+    <path class="s-line m-grow" d="M180 380c0-60-10-110-40-150" stroke-width="6" stroke-linecap="round" style="animation-delay: .3s" />
+    <path class="s-line m-grow" d="M300 380c0-50 16-100 50-130" stroke-width="6" stroke-linecap="round" style="animation-delay: .6s" />
+    <g class="m-leaf"><path class="f-main" d="M238 130c-60-10-90-60-80-110 50 0 90 40 80 110z" /></g>
+    <g class="m-leaf m-l2"><path class="f-soft" d="M240 210c50-20 100-10 120 30-50 20-100 10-120-30z" /></g>
+    <g class="m-leaf m-l3"><path class="f-main" d="M142 232c-40-10-60-50-50-90 40 10 60 50 50 90z" /></g>
+    <g class="m-leaf m-l2"><path class="f-soft" d="M350 252c30-30 70-30 90-10-30 30-70 30-90 10z" /></g>
+    <path class="f-line" d="M150 380h180l-16 20H166z" />
+  </svg>
+)}
+
+{name === "car" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <g class="m-road"><path class="s-soft" d="M0 330h60M100 330h60M200 330h60M300 330h60M400 330h60M500 330h60" stroke-width="8" stroke-linecap="round" /></g>
+    <g class="m-bounce">
+      <path class="f-main" d="M70 250l40-70c8-14 22-22 38-22h150c14 0 28 8 36 20l40 72h30c14 0 26 12 26 26v24H50v-24c0-14 8-26 20-26z" />
+      <path class="f-paper" d="M140 180h60v60h-92zM220 180h70c8 0 14 4 18 10l30 50H220z" />
+    </g>
+    <g class="m-wheel"><circle class="f-line" cx="140" cy="300" r="34" /><circle class="f-soft" cx="140" cy="300" r="12" /><path class="s-soft" d="M140 270v60M110 300h60" stroke-width="4" /></g>
+    <g class="m-wheel"><circle class="f-line" cx="340" cy="300" r="34" /><circle class="f-soft" cx="340" cy="300" r="12" /><path class="s-soft" d="M340 270v60M310 300h60" stroke-width="4" /></g>
+    <g class="m-spin" style="animation-duration: 8s"><path class="s-line" d="M410 70a30 30 0 1 0 8 30l30 30-12 12-30-30a30 30 0 0 1-26-42" stroke-width="7" stroke-linejoin="round" /></g>
+  </svg>
+)}
+
+{name === "scales" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <path class="s-line" d="M240 80v270M180 360h120" stroke-width="9" stroke-linecap="round" />
+    <circle class="f-main" cx="240" cy="74" r="12" />
+    <g class="m-beam"><path class="s-line" d="M90 110h300" stroke-width="8" stroke-linecap="round" /></g>
+    <g class="m-pan-l"><path class="s-line" d="M90 110l-40 110M90 110l40 110" stroke-width="3" /><path class="f-main" d="M40 220h100a50 30 0 0 1-100 0z" /></g>
+    <g class="m-pan-r"><path class="s-line" d="M390 110l-40 110M390 110l40 110" stroke-width="3" /><path class="f-soft" d="M340 220h100a50 30 0 0 1-100 0z" /></g>
+  </svg>
+)}
+
+{name === "heartbeat" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <g class="m-beat"><path class="f-soft" d="M240 330C120 250 80 190 80 140a70 70 0 0 1 160-30 70 70 0 0 1 160 30c0 50-40 110-160 190z" /></g>
+    <path class="s-main m-pulse-line" d="M20 210h120l24-50 30 110 30-140 26 80h210" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+)}
+
+{name === "bread" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <path class="s-line m-steam" d="M190 120c-18-26 18-36 0-70" stroke-width="7" stroke-linecap="round" />
+    <path class="s-line m-steam m-s2" d="M240 110c-18-26 18-36 0-70" stroke-width="7" stroke-linecap="round" />
+    <path class="s-line m-steam m-s3" d="M290 120c-18-26 18-36 0-70" stroke-width="7" stroke-linecap="round" />
+    <path class="f-main" d="M70 260c0-70 80-120 170-120s170 50 170 120c0 30-20 50-50 50H120c-30 0-50-20-50-50z" />
+    <path class="s-soft" d="M150 190l30 50M220 170l30 60M290 180l30 55" stroke-width="10" stroke-linecap="round" />
+    <rect class="f-line" x="40" y="320" width="400" height="14" rx="7" />
+  </svg>
+)}
+
+{name === "abstract" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <circle class="f-main m-drift" cx="300" cy="170" r="120" />
+    <rect class="f-soft m-drift m-drift-2" x="80" y="160" width="190" height="190" rx="40" />
+    <circle class="s-line m-drift m-drift-3" cx="150" cy="110" r="60" stroke-width="5" />
+    <path class="s-line m-drift m-drift-2" d="M330 330c40-10 70-40 80-80" stroke-width="5" stroke-linecap="round" />
+  </svg>
+)}

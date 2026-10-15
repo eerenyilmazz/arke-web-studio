@@ -61,6 +61,21 @@ export interface SiteConfig {
       testimonials?: "a" | "b" | "c";
       cta?: "a" | "b" | "c";
     };
+    personality?: "bold" | "premium" | "friendly";
+    motif?:
+      | "jar"
+      | "code"
+      | "cup"
+      | "scissors"
+      | "tooth"
+      | "bricks"
+      | "leaf"
+      | "car"
+      | "scales"
+      | "heartbeat"
+      | "bread"
+      | "abstract"
+      | "none";
   };
   /**
    * @minItems 1
@@ -85,6 +100,8 @@ export interface SiteConfig {
         | "contact-cta"
         | "contact-form"
         | "map"
+        | "process"
+        | "highlights"
       ),
       ...(
         | "hero"
@@ -97,6 +114,8 @@ export interface SiteConfig {
         | "contact-cta"
         | "contact-form"
         | "map"
+        | "process"
+        | "highlights"
       )[]
     ];
   };

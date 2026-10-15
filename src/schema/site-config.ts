@@ -29,9 +29,16 @@ export const SECTIONS = [
   "contact-cta",
   "contact-form",
   "map",
+  // corporate-v2 and later; older templates skip sections they do not know.
+  "process",
+  "highlights",
 ] as const;
 export const TONES = ["formal", "friendly", "premium", "energetic", "calm"] as const;
 export const VARIANTS = ["a", "b", "c"] as const;
+/** Overall character of a corporate-v2 site, chosen by sector (see rules/design-rules.md). */
+export const PERSONALITIES = ["bold", "premium", "friendly"] as const;
+/** Animated sector illustrations in corporate-v2. "abstract" fits any sector; "none" turns motion off. */
+export const MOTIFS = ["jar", "code", "cup", "scissors", "tooth", "bricks", "leaf", "car", "scales", "heartbeat", "bread", "abstract", "none"] as const;
 
 const hexColor = z.string().regex(HEX_COLOR, "Use a 6-digit hex colour such as #1A2B3C");
 const assetPath = z.string().regex(CLIENT_ASSET_PATH, "Must be a file saved with save_asset (assets/<name>)");
@@ -91,6 +98,8 @@ export const SiteConfigSchema = z
         testimonials: z.enum(VARIANTS).default("a"),
         cta: z.enum(VARIANTS).default("a"),
       }),
+      personality: z.enum(PERSONALITIES).default("premium"),
+      motif: z.enum(MOTIFS).default("abstract"),
     }),
 
     pages: z.array(z.enum(PAGES)).min(1),

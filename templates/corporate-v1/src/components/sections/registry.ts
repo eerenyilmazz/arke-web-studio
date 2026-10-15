@@ -24,4 +24,6 @@ export const SECTIONS: Readonly<Record<SectionId, typeof Hero | null>> = {
   "contact-cta": ContactCta,
   "contact-form": ContactForm,
   map: MapBlock,
+  process: null,
+  highlights: null,
 };

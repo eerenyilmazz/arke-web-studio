@@ -1,0 +1,101 @@
+/* Animated sector motifs. Colours come from the container:
+   --m-line (outlines, usually the surface's text colour), --m-main (accent), --m-soft (a light tint). */
+.motif { --m-line: currentColor; --m-main: var(--c-accent); --m-soft: color-mix(in srgb, var(--c-accent) 30%, transparent); width: 100%; height: auto; display: block; }
+.motif * { transform-box: fill-box; }
+
+/* jar: brine fills and empties, pickles bob, bubbles rise */
+.m-liquid { transform-origin: 50% 100%; animation: m-fill 7s ease-in-out infinite; }
+.m-d1 { animation-delay: -2.3s; } .m-d2 { animation-delay: -4.6s; }
+@keyframes m-fill { 0%, 8% { transform: scaleY(.2); } 45%, 62% { transform: scaleY(1); } 100% { transform: scaleY(.2); } }
+.m-bob { transform-origin: center; animation: m-bob 3.2s ease-in-out infinite; }
+@keyframes m-bob { 0%, 100% { transform: translateY(0) rotate(-8deg); } 50% { transform: translateY(-9px) rotate(8deg); } }
+.m-rise { animation: m-rise 3.6s linear infinite; opacity: 0; }
+@keyframes m-rise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .85; } 100% { transform: translateY(-140px); opacity: 0; } }
+
+/* code: lines type in, caret blinks, a "live" badge appears */
+.m-code-line { width: 0; overflow: hidden; white-space: nowrap; animation: m-type 9s steps(30, end) infinite; }
+.m-code-line:nth-child(2) { animation-delay: .9s; } .m-code-line:nth-child(3) { animation-delay: 1.8s; }
+.m-code-line:nth-child(4) { animation-delay: 2.7s; } .m-code-line:nth-child(5) { animation-delay: 3.6s; }
+@keyframes m-type { 0% { width: 0; } 18%, 85% { width: 30ch; } 100% { width: 0; } }
+.m-caret { animation: m-blink 1s steps(1) infinite; }
+@keyframes m-blink { 50% { opacity: 0; } }
+.m-live { animation: m-live 9s ease-in-out infinite; }
+@keyframes m-live { 0%, 42% { opacity: 0; transform: translateY(8px); } 50%, 86% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+
+/* cup / bread: steam rises */
+.m-steam { transform-origin: 50% 100%; animation: m-steam 4s ease-in-out infinite; opacity: 0; }
+.m-s2 { animation-delay: -1.3s; } .m-s3 { animation-delay: -2.6s; }
+@keyframes m-steam { 0% { opacity: 0; transform: translateY(10px) scaleX(.9); } 30% { opacity: .8; } 100% { opacity: 0; transform: translateY(-55px) scaleX(1.25); } }
+.m-spin { transform-origin: center; animation: m-spin 14s linear infinite; }
+@keyframes m-spin { to { transform: rotate(360deg); } }
+
+/* scissors: blades snip */
+.m-blade-a { transform-origin: 50% 50%; animation: m-snip-a 1.6s ease-in-out infinite; }
+.m-blade-b { transform-origin: 50% 50%; animation: m-snip-b 1.6s ease-in-out infinite; }
+@keyframes m-snip-a { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(2deg); } }
+@keyframes m-snip-b { 0%, 100% { transform: rotate(14deg); } 50% { transform: rotate(-2deg); } }
+.m-fall { animation: m-fall 3.2s ease-in infinite; opacity: 0; }
+.m-f2 { animation-delay: -1s; } .m-f3 { animation-delay: -2.1s; }
+@keyframes m-fall { 0% { transform: translateY(0) rotate(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(120px) rotate(60deg); opacity: 0; } }
+
+/* tooth / sparkle */
+.m-twinkle { transform-origin: center; animation: m-twinkle 2.4s ease-in-out infinite; }
+.m-t2 { animation-delay: -.8s; } .m-t3 { animation-delay: -1.6s; }
+@keyframes m-twinkle { 0%, 100% { transform: scale(.4); opacity: .2; } 50% { transform: scale(1); opacity: 1; } }
+.m-shine { animation: m-shine 3.5s ease-in-out infinite; }
+@keyframes m-shine { 0%, 30% { transform: translateX(-120px); } 70%, 100% { transform: translateX(160px); } }
+
+/* bricks: blocks drop into place, crane hook sways */
+.m-drop { animation: m-drop 6s cubic-bezier(.3,.7,.3,1) infinite; }
+.m-b2 { animation-delay: .4s; } .m-b3 { animation-delay: .8s; } .m-b4 { animation-delay: 1.2s; } .m-b5 { animation-delay: 1.6s; }
+@keyframes m-drop { 0%, 5% { transform: translateY(-160px); opacity: 0; } 20%, 85% { transform: none; opacity: 1; } 100% { transform: none; opacity: 0; } }
+.m-sway { transform-origin: 50% 0; animation: m-sway 3s ease-in-out infinite; }
+@keyframes m-sway { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+
+/* leaf: stems grow, leaves sway */
+.m-grow { stroke-dasharray: 400; stroke-dashoffset: 400; animation: m-grow 6s ease-out infinite; }
+@keyframes m-grow { 0% { stroke-dashoffset: 400; } 40%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.m-leaf { transform-origin: 0% 100%; animation: m-leaf 3.6s ease-in-out infinite; }
+.m-l2 { animation-delay: -1.2s; } .m-l3 { animation-delay: -2.4s; }
+@keyframes m-leaf { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(8deg); } }
+
+/* car: wheels turn, road moves */
+.m-wheel { transform-origin: center; animation: m-spin 1.2s linear infinite; }
+.m-road { animation: m-road 1.2s linear infinite; }
+@keyframes m-road { to { transform: translateX(-80px); } }
+.m-bounce { animation: m-bounce .6s ease-in-out infinite alternate; }
+@keyframes m-bounce { to { transform: translateY(-3px); } }
+
+/* scales: beam tips gently */
+.m-beam { transform-origin: 50% 50%; animation: m-tip 5s ease-in-out infinite; }
+.m-pan-l { animation: m-pan-l 5s ease-in-out infinite; } .m-pan-r { animation: m-pan-r 5s ease-in-out infinite; }
+@keyframes m-tip { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes m-pan-l { 0%, 100% { transform: translateY(12px); } 50% { transform: translateY(-12px); } }
+@keyframes m-pan-r { 0%, 100% { transform: translateY(-12px); } 50% { transform: translateY(12px); } }
+
+/* heartbeat: line draws, heart pulses */
+.m-pulse-line { stroke-dasharray: 700; stroke-dashoffset: 700; animation: m-draw 3s linear infinite; }
+@keyframes m-draw { to { stroke-dashoffset: 0; } }
+.m-beat { transform-origin: center; animation: m-beat 1.5s ease-in-out infinite; }
+@keyframes m-beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.12); } 30% { transform: scale(.98); } 45% { transform: scale(1.06); } }
+
+/* abstract: soft shapes drift */
+.m-drift { transform-origin: center; animation: m-drift 12s ease-in-out infinite alternate; }
+.m-drift-2 { animation-duration: 16s; animation-direction: alternate-reverse; }
+.m-drift-3 { animation-duration: 20s; }
+@keyframes m-drift { 0% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(18px, -14px) rotate(12deg); } 100% { transform: translate(-12px, 10px) rotate(-8deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .motif *, .m-code-line { animation: none !important; opacity: 1 !important; }
+  .m-code-line { width: 30ch; }
+  .m-liquid { transform: scaleY(.8); }
+}
+
+/* Colour helpers for motif shapes (SVG attributes cannot read CSS variables, classes can). */
+.motif .f-main { fill: var(--m-main); }
+.motif .f-soft { fill: var(--m-soft); }
+.motif .f-line { fill: var(--m-line); }
+.motif .f-paper { fill: color-mix(in srgb, var(--m-line) 8%, transparent); }
+.motif .s-line { stroke: var(--m-line); fill: none; }
+.motif .s-main { stroke: var(--m-main); fill: none; }
+.motif .s-soft { stroke: var(--m-soft); fill: none; }

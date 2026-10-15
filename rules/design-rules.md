@@ -8,8 +8,41 @@ When the two disagree, this file wins.
 
 1. Start from the sector: a solicitor needs calm trust, a restaurant appetite, a salon style. Use `generate_design_system` output as the starting point.
 2. Client brand colours always win. Change only shade/lightness to meet contrast, and tell Eren.
-3. Pick section variants (`a`/`b`/`c`) so that two clients in the same sector do not look identical.
+3. Choose `design.personality` and `design.motif` (corporate-v2, see below). Section `variants` only matter for corporate-v1 sites.
 4. Write down in your summary *why* you chose the style, in one sentence.
+
+## Personality and motif (corporate-v2)
+
+The personality sets the whole layout (hero, services, quotes, call to action); the palette and fonts make it the client's own.
+
+| personality | feel | typical sectors |
+|---|---|---|
+| `bold` | dark hero, big heavy type, bento cards | software, agencies, trades, builders, gyms, garages |
+| `premium` | calm, editorial, arch photo, price list | solicitors, accountants, clinics, dentists, bridal, interiors |
+| `friendly` | rounded, warm tints, playful | cafés, bakeries, food shops, salons, pets, kids, cleaning |
+
+Motif = the animated drawing in the hero (decorative, colours from the palette):
+
+| motif | for |
+|---|---|
+| `jar` | pickles, preserves, deli, honey, food shops |
+| `code` | software, web, IT, digital agencies |
+| `cup` | cafés, tea rooms, coffee |
+| `bread` | bakeries, patisseries, sandwich shops |
+| `scissors` | hair, barbers, tailoring, alterations |
+| `tooth` | dentists, orthodontists |
+| `bricks` | builders, roofers, plumbers, electricians, trades |
+| `leaf` | gardeners, florists, landscaping, wellbeing |
+| `car` | garages, car wash, driving schools, removals |
+| `scales` | solicitors, accountants, consultants |
+| `heartbeat` | clinics, physio, care, fitness |
+| `abstract` | anything else |
+| `none` | when the client has strong photos and wants them in the hero (premium/friendly show the first photo) |
+
+Content for corporate-v2:
+- `services[].icon`: pick the closest icon from the allowed list; leave it out if none fits.
+- `highlights` (up to 4, e.g. "15 years" + "of bridal tailoring"): facts the client gave only. Never invent numbers. None = leave empty, the strip is hidden.
+- `process` (up to 6 steps): how working with them goes, from the client's answers. None = leave empty.
 
 ## Must pass (build_site checks the first three)
 

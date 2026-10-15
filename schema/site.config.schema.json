@@ -278,6 +278,34 @@
               ]
             }
           }
+        },
+        "personality": {
+          "default": "premium",
+          "type": "string",
+          "enum": [
+            "bold",
+            "premium",
+            "friendly"
+          ]
+        },
+        "motif": {
+          "default": "abstract",
+          "type": "string",
+          "enum": [
+            "jar",
+            "code",
+            "cup",
+            "scissors",
+            "tooth",
+            "bricks",
+            "leaf",
+            "car",
+            "scales",
+            "heartbeat",
+            "bread",
+            "abstract",
+            "none"
+          ]
         }
       },
       "required": [
@@ -328,7 +356,9 @@
             "team",
             "contact-cta",
             "contact-form",
-            "map"
+            "map",
+            "process",
+            "highlights"
           ]
         }
       }

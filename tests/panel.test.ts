@@ -275,3 +275,21 @@ describe("prepare site (autopilot)", () => {
     expect(detail.siteApproveCommand).toBe("npm run approve -- reinware site");
   });
 });
+
+describe("move to the new template", () => {
+  it("shows the template in the detail and runs a restricted agent job for the switch", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "old-site", businessName: "Old Site", industry: "bakery", hostingModel: "managed" }) });
+    const detail = (await (await fetch(`${base}/api/clients/old-site`, { headers: auth })).json()) as { template: string; latestTemplate: string };
+    expect(typeof detail.template).toBe("string");
+    expect(typeof detail.latestTemplate).toBe("string");
+    const res = await fetch(`${base}/api/clients/old-site/agent/upgrade-template`, { method: "POST", headers: json, body: "{}" });
+    expect(res.status).toBe(202);
+    const prompt = calls[0]!.stdin;
+    expect(prompt).toContain(`set "template" to "${detail.latestTemplate}"`);
+    expect(prompt).toMatch(/Do not deploy/);
+    expect(calls[0]!.args.join(" ")).toMatch(/--disallowedTools/);
+  });
+});

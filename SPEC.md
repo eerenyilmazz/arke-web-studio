@@ -6,7 +6,7 @@ and stop for Eren's review at the end of each step.
 1. Schema and questions
 2. MCP server and tools
 3. Approve CLI
-4. Template `corporate-v1`
+4. Templates `corporate-v1` (original) and `corporate-v2` (default: personalities, animated sector motifs)
 5. One demo client end to end (build + `deploy` with `dryRun`)
 
 ## Stack
@@ -22,7 +22,7 @@ site-factory/
 ├── AGENTS.md  CLAUDE.md (= "@AGENTS.md")  SPEC.md  README.md
 ├── rules/design-rules.md
 ├── factory.config.json        # clientsRoot "../sf-clients", inboxDir "../sf-inbox", templatesDir "templates",
-│                              # defaultTemplate "corporate-v1", uupmScript, limits (see Limits)
+│                              # defaultTemplate "corporate-v2", uupmScript, limits (see Limits)
 ├── .mcp.json                  # { "mcpServers": { "site-factory": { "command": "node", "args": ["dist/server.js"] } } }
 ├── .claude/settings.json      # deny rules, see Security
 ├── src/
@@ -32,7 +32,7 @@ site-factory/
 │   ├── server.ts              # registers tools, resources, prompt
 │   └── cli/approve.ts  export-schema.ts
 ├── schema/*.schema.json       # generated from Zod by `npm run schema`, never hand-edited
-├── templates/corporate-v1/
+├── templates/corporate-v1/, templates/corporate-v2/
 └── tests/
 ```
 
@@ -162,7 +162,7 @@ client → `SF_CF_CLIENT_<SLUG_UPPER_UNDERSCORE>_API_TOKEN` / `_ACCOUNT_ID`. Pas
 
 maxLogoBytes 1 MB, maxImageBytes 5 MB, buildTimeoutMs 300000, deployTimeoutMs 300000.
 
-## 4. Template contract (`templates/corporate-v1`)
+## 4. Template contract (`templates/corporate-v1`, `templates/corporate-v2`)
 
 - `npm run build` reads `SF_CLIENT_DIR` and writes a static site to `SF_OUT_DIR`. Needs `npm install` once.
 - Reads only `site.config.json`, `content/<locale>.json`, `assets/`; validates them against `schema/*.schema.json`.

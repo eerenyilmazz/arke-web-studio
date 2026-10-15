@@ -1,0 +1,37 @@
+---
+import type { PageContext } from "../../lib/site";
+import { galleryImage } from "../../lib/site";
+import Motif from "../Motif.astro";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { about } = ctx.content;
+const { personality: p, motif } = ctx.config.design;
+const paragraphs = about.body.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
+// Second photo if there is one; otherwise the motif (only away from the home page, where the hero already shows it).
+const image = galleryImage(ctx, 1);
+const showMotif = !image && motif !== "none" && ctx.page !== "home";
+const visual = image || showMotif;
+---
+<section class:list={["wrap band grid gap-12 md:items-center", visual ? "md:grid-cols-2" : "md:grid-cols-3"]}>
+  {visual && (
+    <div class:list={["reveal", p === "premium" ? "arch bg-secondary text-on-secondary" : p === "friendly" ? "blob overflow-hidden tint-accent" : "card overflow-hidden tint-primary"]}>
+      {image
+        ? <img src={image.src} alt={image.alt} width={image.width} height={image.height} loading="lazy" decoding="async" class="aspect-[4/5] w-full object-cover" />
+        : <div class="p-10"><Motif name={motif} id="intro" /></div>}
+    </div>
+  )}
+  {visual
+    ? (
+      <div class="reveal">
+        <h2 class="h-section">{about.title}</h2>
+        <div class="mt-6 flex flex-col gap-4 lead measure">{paragraphs.map((x) => <p>{x}</p>)}</div>
+      </div>
+    )
+    : (
+      <>
+        <h2 class="h-section reveal">{about.title}</h2>
+        <div class="reveal md:col-span-2 flex flex-col gap-4 lead measure">{paragraphs.map((x) => <p>{x}</p>)}</div>
+      </>
+    )}
+</section>

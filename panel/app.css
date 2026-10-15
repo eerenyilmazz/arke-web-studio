@@ -260,3 +260,7 @@ th { font-weight: 600; color: var(--ink-2); }
 
 .toast { position: fixed; bottom: 1.2rem; inset-inline-start: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 0.75rem 1.15rem; border-radius: 11px; max-width: 90vw; z-index: 20; box-shadow: 0 8px 30px rgb(0 0 0 / 0.2); }
 .toast.error { background: var(--bad); color: #fff; }
+
+/* Template upgrade notice (older sites only). */
+.upgrade-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem 1.5rem; margin-top: 1rem; padding: 1rem 1.3rem; border: 1px dashed var(--line); border-radius: 14px; background: var(--surface); }
+.upgrade-banner p { margin: 0; max-width: 62ch; }

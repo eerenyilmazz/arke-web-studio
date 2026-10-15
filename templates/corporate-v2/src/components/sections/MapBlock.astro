@@ -1,0 +1,19 @@
+---
+import type { PageContext } from "../../lib/site";
+
+/* No embedded map: Google Maps embeds set cookies, and the site promises none. A link opens the map instead. */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { address, hours, mapsUrl } = ctx.config.contact;
+const { t } = ctx;
+---
+{(address || mapsUrl) && (
+  <section class="wrap band rule-t grid gap-6 md:grid-cols-3 md:gap-12">
+    <h2 class="h-section reveal">{t.findUs}</h2>
+    <div class="md:col-span-2 flex flex-col gap-3">
+      {address && <p class="text-lg">{address}</p>}
+      {hours && <p>{t.hoursLabel}: {hours}</p>}
+      {mapsUrl && <p class="mt-2"><a class="btn btn-outline" href={mapsUrl} target="_blank" rel="noopener">{t.openInMaps}<span class="sr-only"> {t.opensInNewTab}</span></a></p>}
+    </div>
+  </section>
+)}

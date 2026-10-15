@@ -20,11 +20,61 @@ export interface Content {
       title: string;
       description: string;
       price?: string;
+      icon?:
+        | "code"
+        | "mobile"
+        | "globe"
+        | "qr"
+        | "box"
+        | "chart"
+        | "cart"
+        | "scissors"
+        | "tooth"
+        | "home"
+        | "hammer"
+        | "leaf"
+        | "car"
+        | "scales"
+        | "heart"
+        | "cup"
+        | "bread"
+        | "sparkle"
+        | "shield"
+        | "clock"
+        | "calendar"
+        | "chat"
+        | "camera"
+        | "star";
     },
     ...{
       title: string;
       description: string;
       price?: string;
+      icon?:
+        | "code"
+        | "mobile"
+        | "globe"
+        | "qr"
+        | "box"
+        | "chart"
+        | "cart"
+        | "scissors"
+        | "tooth"
+        | "home"
+        | "hammer"
+        | "leaf"
+        | "car"
+        | "scales"
+        | "heart"
+        | "cup"
+        | "bread"
+        | "sparkle"
+        | "shield"
+        | "clock"
+        | "calendar"
+        | "chat"
+        | "camera"
+        | "star";
     }[]
   ];
   /**
@@ -52,6 +102,20 @@ export interface Content {
     title: string;
     intro: string;
   };
+  /**
+   * @maxItems 6
+   */
+  process?: {
+    title: string;
+    description: string;
+  }[];
+  /**
+   * @maxItems 4
+   */
+  highlights?: {
+    title: string;
+    text: string;
+  }[];
   whatsappMessage?: string;
   seo: {
     home: {

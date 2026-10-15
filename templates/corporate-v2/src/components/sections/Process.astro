@@ -1,0 +1,28 @@
+---
+import type { PageContext } from "../../lib/site";
+
+/* How working with the client goes, in their own steps. Empty = hidden. */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { process: steps } = ctx.content;
+const p = ctx.config.design.personality;
+const pad = (n: number) => String(n).padStart(2, "0");
+---
+{steps.length > 0 && (
+  <section class:list={[p === "bold" ? "tint-primary" : p === "premium" ? "bg-secondary text-on-secondary" : ""]}>
+    <div class="wrap band">
+      <h2 class="h-section reveal">{ctx.t.processTitle}</h2>
+      <ol class:list={["reveal-stagger mt-12 grid gap-6", steps.length > 3 ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"]}>
+        {steps.map((s, i) => (
+          <li class:list={[p === "friendly" ? "card tint-secondary p-7" : p === "bold" ? "card bg-bg p-7" : "border-t pt-6 border-[color-mix(in_srgb,currentColor_25%,transparent)]"]}>
+            {p === "friendly"
+              ? <span class="num grid h-12 w-12 place-items-center rounded-full text-xl" style="background: var(--c-cta); color: var(--c-on-cta)">{i + 1}</span>
+              : <span class:list={["num block leading-none", p === "bold" ? "text-5xl text-accent-ink" : "text-2xl"]}>{pad(i + 1)}</span>}
+            <h3 class="h-card mt-5">{s.title}</h3>
+            <p class="mt-2 measure opacity-90">{s.description}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+)}

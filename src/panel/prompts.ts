@@ -112,6 +112,19 @@ export function fixBuildPrompt(slug: string): string {
 }
 
 /** Eren's own change request: an instruction, not client data. */
+/** Moves an existing client to the newest template: same facts and texts, new personality and motif. */
+export function upgradeTemplatePrompt(slug: string, template: string): string {
+  return [
+    `Site Factory, client "${slug}". Eren wants this site moved to the newest template, "${template}".`,
+    "",
+    `1. update_site_config: set "template" to "${template}", and choose design.personality and design.motif for the sector (rules/design-rules.md, "Personality and motif"). Keep the palette and fonts unless they break the rules.`,
+    "2. save_content: give each service an icon from the allowed list. Add highlights and process steps only from facts already in the client's answers or content; if there are none, leave them empty. Do not change other texts.",
+    "3. build_site. If checks fail, fix config/content only and build again (at most 3 attempts).",
+    "Do not deploy. Approvals reset; Eren approves the new look himself.",
+    SUMMARY_RULE,
+  ].join("\n");
+}
+
 export function revisePrompt(slug: string, request: string): string {
   return [
     `Site Factory, client "${slug}". Eren (the operator) asks for this change:`,

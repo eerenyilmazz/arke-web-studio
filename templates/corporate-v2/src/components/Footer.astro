@@ -1,0 +1,52 @@
+---
+import type { PageContext } from "../lib/site";
+import { displayPhone } from "../lib/site";
+import { strings } from "../i18n";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { config, t, page } = ctx;
+const { contact, legal } = config;
+const SOCIAL_NAMES: Record<string, string> = { instagram: "Instagram", facebook: "Facebook", linkedin: "LinkedIn", x: "X", tiktok: "TikTok", youtube: "YouTube" };
+const social = Object.entries(config.social).filter((e): e is [string, string] => typeof e[1] === "string");
+const others = config.i18n.locales.filter((l) => l !== ctx.locale);
+const year = new Date().getFullYear();
+---
+<footer class="mt-auto" style="background: var(--c-text); color: var(--c-background)">
+  <div class="wrap grid gap-10 py-16 md:grid-cols-[1.4fr_1fr_1fr]">
+    <div>
+      <p class="font-heading text-3xl" style="font-weight: var(--h-weight); letter-spacing: var(--h-tracking)">{config.business.name}<span style="color: var(--c-accent)">.</span></p>
+      <p class="mt-3 measure opacity-85">{ctx.content.tagline}</p>
+    </div>
+    <address class="not-italic flex flex-col gap-1.5">
+      {contact.address && <span>{contact.address}</span>}
+      {contact.phone && <a href={`tel:${contact.phone}`}>{displayPhone(contact.phone)}</a>}
+      <a href={`mailto:${contact.email}`}>{contact.email}</a>
+      {contact.hours && <span class="mt-2">{t.hoursLabel}: {contact.hours}</span>}
+    </address>
+    <div class="flex flex-col gap-5">
+      {social.length > 0 && (
+        <div>
+          <p class="font-semibold">{t.followUs}</p>
+          <ul class="mt-1 flex flex-wrap gap-x-4">
+            {social.map(([k, url]) => <li><a href={url} target="_blank" rel="noopener me" class="inline-block py-1.5">{SOCIAL_NAMES[k] ?? k}<span class="sr-only"> {t.opensInNewTab}</span></a></li>)}
+          </ul>
+        </div>
+      )}
+      {others.length > 0 && (
+        <div>
+          <p class="font-semibold">{t.language}</p>
+          <ul class="mt-1 flex flex-wrap gap-x-4">
+            {others.map((l) => <li><a href={ctx.url(page, l)} hreflang={l} lang={l} class="inline-block py-1.5">{strings(l).languageName}</a></li>)}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+  <div class="wrap py-6 text-sm flex flex-wrap gap-x-6 gap-y-1 opacity-80" style="border-top: 1px solid color-mix(in srgb, var(--c-background) 18%, transparent)">
+    <span>© {year} {legal.companyName ?? config.business.name}</span>
+    {legal.companyNumber && <span>{t.companyNumber}: {legal.companyNumber}</span>}
+    {legal.registeredAddress && <span>{t.registeredOffice}: {legal.registeredAddress}</span>}
+    {legal.vatNumber && <span>{t.vatNumber}: {legal.vatNumber}</span>}
+  </div>
+</footer>

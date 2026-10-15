@@ -1,0 +1,35 @@
+---
+import type { GetStaticPaths } from "astro";
+import { SECTIONS } from "../components/sections/registry";
+import Base from "../layouts/Base.astro";
+import { loadSite, type Locale, type PageId } from "../lib/data";
+import { buildContext, routeParam, sectionsFor, seoFor } from "../lib/site";
+
+export const getStaticPaths = (() => {
+  const site = loadSite();
+  const { config } = site;
+  return config.i18n.locales.flatMap((locale) =>
+    config.pages.map((page) => ({ params: { route: routeParam(config, page, locale) }, props: { locale, page } })),
+  );
+}) satisfies GetStaticPaths;
+
+interface Props { readonly locale: Locale; readonly page: PageId }
+const { locale, page } = Astro.props;
+const ctx = buildContext(loadSite(), page, locale);
+const seo = seoFor(ctx.content, page);
+const sections = sectionsFor(ctx.config, page);
+const heroFirst = sections[0] === "hero";
+---
+<Base ctx={ctx} title={seo.title} description={seo.description}>
+  {page === "home"
+    ? !heroFirst && <h1 class="sr-only">{ctx.config.business.name}</h1>
+    : (
+      <div class="wrap pt-14 md:pt-20">
+        <h1 class="h-display">{ctx.t.nav[page]}</h1>
+      </div>
+    )}
+  {sections.map((id) => {
+    const Section = SECTIONS[id];
+    return Section ? <Section ctx={ctx} /> : null;
+  })}
+</Base>

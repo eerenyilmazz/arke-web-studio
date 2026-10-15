@@ -17,6 +17,11 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Şablonlar
+
+- **corporate-v2** (yeni müşterilerin varsayılanı): sektöre göre üç kişilik (cesur / premium / samimi) ve animasyonlu sektör motifi (turşu kavanozu, kod editörü, fincan, makas…). Agent seçer; kurallar `rules/design-rules.md`.
+- **corporate-v1**: eski siteler aynen çalışır, çıktıları değişmez. Panelde müşteri sayfasında **Yeni şablona geç** butonu çıkar; basınca agent siteyi v2'ye taşır ve build alır, sen bakıp onaylarsın.
+
 ## Panel (günlük kullanım)
 
 ```bash
@@ -58,7 +63,7 @@ site-factory/            ← bu repo (fabrika)
 ├── src/schema/          ← Zod şema (TEK KAYNAK) + soru listesi (questions.ts)
 ├── schema/*.json        ← Zod'dan üretilir (npm run schema), elle düzenlenmez
 ├── src/tools.ts         ← MCP tool'ları
-├── templates/           ← şablonlar (corporate-v1 vb.) — senin agent'la yapacağın kısım
+├── templates/           ← şablonlar (corporate-v1, corporate-v2) — senin agent'la yapacağın kısım
 └── factory.config.json  ← klasör yolları ve limitler
 
 ../sf-clients/<slug>/    ← her müşteri ayrı klasör + ayrı git repo

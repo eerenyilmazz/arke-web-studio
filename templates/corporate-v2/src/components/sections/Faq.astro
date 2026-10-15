@@ -1,0 +1,23 @@
+---
+import type { PageContext } from "../../lib/site";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { faq } = ctx.content;
+---
+{faq.length > 0 && (
+  <section class="wrap band grid gap-6 md:grid-cols-3 md:gap-12">
+    <h2 class="h-section reveal">{ctx.t.faqTitle}</h2>
+    <div class="md:col-span-2">
+      {faq.map((f) => (
+        <details class="rule-b group">
+          <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 py-4 font-semibold">
+            {f.question}
+            <span aria-hidden="true" class="text-xl transition-transform group-open:rotate-45">+</span>
+          </summary>
+          <p class="pb-5 measure">{f.answer}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+)}

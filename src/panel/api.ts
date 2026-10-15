@@ -14,7 +14,7 @@ import * as tools from "../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "./http.js";
 import { readHistory } from "./history.js";
 import { serialiseJob, type JobRunner } from "./jobs.js";
-import { answersPrompt, autopilotPrompt, designContentPrompt, fixBuildPrompt, revisePrompt, type AnswersInput } from "./prompts.js";
+import { answersPrompt, autopilotPrompt, designContentPrompt, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
 import type { PreviewServer } from "./preview.js";
 
 const JSON_LIMIT = 256 * 1024;
@@ -44,7 +44,7 @@ const routes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: writeQuestionnaire },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
-  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise)$`), handler: startAgent },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise|upgrade-template)$`), handler: startAgent },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/build$`), handler: startBuild },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/deploy$`), handler: startDeploy },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/preview$`), handler: showPreview },
@@ -110,6 +110,7 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     site?: { domain?: string | null };
     meta?: { unmapped?: unknown[]; laterInterests?: string[] };
     design?: unknown;
+    template?: string;
   };
   const build = status.lastBuild;
   const { valid } = approvalState(paths.root, paths.approvals, build?.distHash ?? null);
@@ -122,6 +123,8 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     unmapped: draft.meta?.unmapped ?? [],
     laterInterests: draft.meta?.laterInterests ?? [],
     design: draft.design ?? null,
+    template: draft.template ?? null,
+    latestTemplate: deps.factory.defaultTemplate,
     inbox: inboxFiles(deps.factory, s),
     questionnaires: existingQuestionnaires(paths.questionnaireDir),
     qualityReport: existsSync(paths.qualityReport) ? readFileSync(paths.qualityReport, "utf8") : null,
@@ -221,6 +224,11 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       prompt = fixBuildPrompt(s);
       title = "Build ve düzeltme";
       request = "Build al, kontroller geçmezse düzelt.";
+      break;
+    case "upgrade-template":
+      prompt = upgradeTemplatePrompt(s, deps.factory.defaultTemplate);
+      title = "Yeni şablona geç";
+      request = `Siteyi yeni şablona (${deps.factory.defaultTemplate}) taşı.`;
       break;
     default: {
       const change = str(body, "request", { max: 4000 })!;

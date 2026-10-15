@@ -71,6 +71,35 @@
           "price": {
             "type": "string",
             "maxLength": 40
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "code",
+              "mobile",
+              "globe",
+              "qr",
+              "box",
+              "chart",
+              "cart",
+              "scissors",
+              "tooth",
+              "home",
+              "hammer",
+              "leaf",
+              "car",
+              "scales",
+              "heart",
+              "cup",
+              "bread",
+              "sparkle",
+              "shield",
+              "clock",
+              "calendar",
+              "chat",
+              "camera",
+              "star"
+            ]
           }
         },
         "required": [
@@ -168,6 +197,54 @@
         "title",
         "intro"
       ]
+    },
+    "process": {
+      "default": [],
+      "maxItems": 6,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 220
+          }
+        },
+        "required": [
+          "title",
+          "description"
+        ]
+      }
+    },
+    "highlights": {
+      "default": [],
+      "maxItems": 4,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "title",
+          "text"
+        ]
+      }
     },
     "whatsappMessage": {
       "type": "string",
