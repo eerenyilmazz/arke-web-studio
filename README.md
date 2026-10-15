@@ -110,8 +110,32 @@ Tokenlar log'lara ve tool çıktısına `***` olarak düşer. `deploy` `dryRun: 
 - Komutlar shell'siz, argüman listesiyle çalışır; alt sürece sadece izinli ortam değişkenleri geçer.
 - Geçersiz değer içeren patch'in hiçbir parçası kaydedilmez; kayıtlar atomik yazılır.
 - Her tool çağrısı `.factory/audit.log`'a (sırlar maskeli) yazılır.
+- Yanlış yazılmış alan adları (`contakt` gibi) reddedilir; `meta` sadece `unmapped`/`laterInterests` ile değişir.
+- `visual`/`production` onayları `dist/` hash'ine bağlıdır; deploy, onaylanan çıktıdan farklı bir `dist/` yüklemez.
 
-`AGENTS.md`'deki kurallar agent'ı yönlendirir; güvenlik sınırları ise kodda ve testlerde.
+### Agent'a karşı neyin gerçek sınır olduğu
+
+Agent seninle aynı kullanıcı olarak çalışır. Şunlar **tek başına sınır değildir**, sadece yönlendirir:
+`AGENTS.md`, `permissions.deny` kuralları (Bash kalıpları aşılabilir) ve onay CLI'ının TTY kontrolü
+(`script`/`expect` gibi araçlarla sahte terminal açılabilir).
+
+Gerçek sınır **Claude Code sandbox'ı** (`.claude/settings.json` → `sandbox`, macOS'ta işletim sistemi uygular):
+- Agent'ın Bash komutları sadece bu klasöre, geçici klasöre ve `~/.npm`'e yazabilir. `../sf-clients/` dışarıda kaldığı için
+  agent Bash ile `approvals.json`'a, `dist/`'e veya müşteri dosyalarına yazamaz; onay CLI'ı da sandbox içinden onay kaydedemez.
+- Ağ sadece listedeki alan adlarına açık (npm, GitHub, Google Fonts). Cloudflare'e doğrudan erişim yok.
+- `SF_CF_MANAGED_*` değişkenleri agent'ın komutlarından silinir.
+- `allowUnsandboxedCommands: false` + `failIfUnavailable: true`: sandbox dışına kaçış yok; sandbox çalışmazsa Claude Code açılmaz.
+
+MCP server ve senin kendi terminalin sandbox dışında çalışır; build, deploy ve onay normal işler.
+
+Kurulumdan sonra bir kez yapılacaklar:
+1. `.claude/settings.local.json.example` dosyasını `.claude/settings.local.json` olarak kopyala, `sf-clients` klasörünün
+   **mutlak** yolunu yaz (agent'ın Edit/Write araçları sandbox dışında çalışır, bu kural onları durdurur).
+2. `client` hosting modelindeki her müşterinin `SF_CF_CLIENT_<SLUG>_*` değişkenlerini aynı dosyadaki listeye ekle.
+3. Claude Code'da `/sandbox` → Config sekmesinde kuralların göründüğünü kontrol et.
+
+Bir şey bozulursa (ör. agent'ın ihtiyaç duyduğu bir alan adı engelleniyorsa) `network.allowedDomains`'e ekle;
+sandbox'ı tamamen kapatmak için `sandbox` bloğunu silmek yeterli (geri alma).
 
 ## Henüz yok (bilinçli)
 

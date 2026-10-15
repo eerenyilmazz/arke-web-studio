@@ -3,12 +3,37 @@
     "deny": [
       "Bash(npm run approve:*)",
       "Bash(npx tsx src/cli/approve.ts:*)",
+      "Bash(tsx src/cli/approve.ts:*)",
       "Bash(node dist/cli/approve.js:*)",
+      "Bash(script:*)",
+      "Bash(expect:*)",
+      "Bash(unbuffer:*)",
+      "Bash(wrangler:*)",
+      "Bash(npx wrangler:*)",
       "Edit(../sf-clients/**)",
       "Write(../sf-clients/**)",
+      "Edit(**/.factory/**)",
+      "Write(**/.factory/**)",
       "Read(./.env)",
       "Read(./.env.*)"
     ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "failIfUnavailable": true,
+    "filesystem": {
+      "allowWrite": ["~/.npm"]
+    },
+    "network": {
+      "allowedDomains": ["registry.npmjs.org", "github.com", "*.github.com", "*.githubusercontent.com", "fonts.googleapis.com", "fonts.gstatic.com"]
+    },
+    "credentials": {
+      "envVars": [
+        { "name": "SF_CF_MANAGED_API_TOKEN", "mode": "deny" },
+        { "name": "SF_CF_MANAGED_ACCOUNT_ID", "mode": "deny" }
+      ]
+    }
   },
   "enableAllProjectMcpServers": true
 }

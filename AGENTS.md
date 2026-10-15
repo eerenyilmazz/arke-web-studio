@@ -37,6 +37,7 @@ Changes after launch use the same path: edit config/content, build, approvals, d
 - **Never edit client files directly.** Only through the tools, so validation and the audit log always run.
 - **Never contact clients** or send anything outside this machine except through `deploy`.
 - **No secrets in files.** Cloudflare tokens live only in the MCP server's environment.
+- **The sandbox is intentional.** If a shell command is blocked (file outside this folder, network host, missing variable), do not look for a way around it and never ask to disable the sandbox. Use the MCP tools, or tell Eren what was blocked and why you needed it.
 - **Stay in scope.** Multi-location, site migration, payments, newsletters, extra templates are "later". If a client needs them, put it in `unmapped` and tell Eren; it is a separate quote.
 - If something is ambiguous and expensive to undo (domain, hosting model, publishing), ask Eren.
 
