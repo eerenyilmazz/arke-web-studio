@@ -269,7 +269,9 @@ describe("prepare site (autopilot)", () => {
 
     const again = await fetch(`${base}/api/clients/reinware/agent/autopilot`, { method: "POST", headers: json, body: "{}" });
     expect(again.status).toBe(202);
-    expect(calls[1]!.stdin).not.toMatch(/\n<client_data>\n/);
+    // No new input: only the earlier paste comes back, marked as earlier information.
+    expect(calls[1]!.stdin.match(/\n<client_data>\n/g)).toHaveLength(1);
+    expect(calls[1]!.stdin).toContain("Earlier information Eren gave about this client");
 
     const detail = (await (await fetch(`${base}/api/clients/reinware`, { headers: auth })).json()) as { siteApproveCommand: string };
     expect(detail.siteApproveCommand).toBe("npm run approve -- reinware site");
@@ -291,5 +293,23 @@ describe("move to the new template", () => {
     expect(prompt).toContain(`set "template" to "${detail.latestTemplate}"`);
     expect(prompt).toMatch(/Do not deploy/);
     expect(calls[0]!.args.join(" ")).toMatch(/--disallowedTools/);
+  });
+});
+
+describe("earlier inputs are kept between agent jobs", () => {
+  it("gives the next job everything pasted before, as client data", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "mono-barber", businessName: "Mono", industry: "barber shop", hostingModel: "managed" }) });
+    const first = await fetch(`${base}/api/clients/mono-barber/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Saç kesimi 500 TL. Pazartesi–Cumartesi 09:00–22:00." }) });
+    expect(first.status).toBe(202);
+    await waitFor(async () => ((await (await fetch(`${base}/api/clients/mono-barber`, { headers: auth })).json()) as { running: unknown }).running === null);
+    const second = await fetch(`${base}/api/clients/mono-barber/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "E-posta: a@b.co" }) });
+    expect(second.status).toBe(202);
+    const prompt = calls[1]!.stdin;
+    expect(prompt).toContain("Earlier information Eren gave about this client");
+    expect(prompt).toContain("Saç kesimi 500 TL");
+    expect(prompt.lastIndexOf("<client_data>")).toBeLessThan(prompt.lastIndexOf("Saç kesimi 500 TL"));
   });
 });

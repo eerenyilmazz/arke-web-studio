@@ -26,6 +26,19 @@ function escapeData(text: string): string {
   return text.replace(/<\/?client_data>/gi, "");
 }
 
+/** Earlier inputs about this client (from previous jobs), appended to every agent prompt as client data. */
+export function earlierInputsBlock(inputs: readonly { at: string; text: string }[]): string {
+  if (inputs.length === 0) return "";
+  const body = inputs.map((i) => `[${i.at.slice(0, 16).replace("T", " ")}]\n${escapeData(i.text)}`).join("\n\n");
+  return [
+    "",
+    "Earlier information Eren gave about this client in previous jobs, oldest first. Parts may already be saved; anything not yet saved is still valid: use it (newer wins on conflicts) and never ask again for a fact that is here. " + DATA_RULE,
+    "<client_data>",
+    body,
+    "</client_data>",
+  ].join("\n");
+}
+
 /** The client's material as plain lines, ready to go inside <client_data>. */
 function clientDataLines(slug: string, input: AnswersInput): string[] {
   const lines: string[] = [];

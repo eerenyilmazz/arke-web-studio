@@ -12,9 +12,9 @@ import { LOCALES } from "../schema/site-config.js";
 import { QUESTIONS } from "../schema/questions.js";
 import * as tools from "../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "./http.js";
-import { readHistory } from "./history.js";
+import { appendInput, readHistory, readInputs } from "./history.js";
 import { serialiseJob, type JobRunner } from "./jobs.js";
-import { answersPrompt, autopilotPrompt, designContentPrompt, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
+import { answersPrompt, autopilotPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
 import type { PreviewServer } from "./preview.js";
 
 const JSON_LIMIT = 256 * 1024;
@@ -182,9 +182,12 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
   const body = await readJsonBody(req, JSON_LIMIT);
+  const earlier = readInputs(deps.factory, s);
   let prompt: string;
   let title: string;
   let request: string;
+  /** What Eren gave in this job, kept for later jobs (answers as "question: answer" lines). */
+  let input = "";
   switch (kind) {
     case "answers": {
       const answers = stringRecord(body.answers);
@@ -196,23 +199,29 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
         throw new HttpError(400, "İşlenecek cevap ya da dosya yok.");
       }
       prompt = answersPrompt(s, { answers, extras, later, freeText, files: files.map((f) => f.name) });
+      input = [
+        ...Object.entries(answers).filter(([, a]) => a.trim()).map(([id, a]) => `${id}: ${a.trim()}`),
+        ...extras.filter((e) => e.answer.trim()).map((e) => `${e.question}: ${e.answer.trim()}`),
+        freeText,
+      ].filter((x) => x.trim()).join("\n");
       title = "Cevapları işle";
       const answered = Object.values(answers).filter((a) => a.trim()).length + extras.filter((e) => e.answer.trim()).length;
       request = [`Müşterinin cevaplarını işle: ${answered} cevap`, freeText.trim() ? "serbest metin" : "", files.length ? `${files.length} dosya` : ""].filter(Boolean).join(", ");
       break;
     }
     case "autopilot": {
-      const input: AnswersInput = {
+      const pasted: AnswersInput = {
         answers: stringRecord(body.answers),
         extras: Array.isArray(body.extras) ? body.extras.filter(isQa).slice(0, 20) : [],
         later: [],
         freeText: str(body, "freeText", { optional: true, max: MAX_TEXT }) ?? "",
         files: inboxFiles(deps.factory, s).map((f) => f.name),
       };
-      const hasInput = input.freeText.trim() !== "" || Object.values(input.answers).some((a) => a.trim()) || input.files.length > 0;
-      prompt = autopilotPrompt(s, hasInput ? input : null);
+      const hasInput = pasted.freeText.trim() !== "" || Object.values(pasted.answers).some((a) => a.trim()) || pasted.files.length > 0;
+      prompt = autopilotPrompt(s, hasInput ? pasted : null);
+      input = pasted.freeText;
       title = "Siteyi hazırla";
-      request = input.freeText.trim() ? input.freeText.trim() : input.files.length ? `Siteyi hazırla (${input.files.length} dosya)` : "Siteyi hazırla.";
+      request = pasted.freeText.trim() ? pasted.freeText.trim() : pasted.files.length ? `Siteyi hazırla (${pasted.files.length} dosya)` : "Siteyi hazırla.";
       break;
     }
     case "design-content":
@@ -233,11 +242,13 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
     default: {
       const change = str(body, "request", { max: 4000 })!;
       prompt = revisePrompt(s, change);
+      input = change;
       title = "Değişiklik isteği";
       request = change;
     }
   }
-  const job = runOrConflict(() => deps.jobs.startAgent(s, kind!, title, prompt, request));
+  const job = runOrConflict(() => deps.jobs.startAgent(s, kind!, title, prompt + earlierInputsBlock(earlier), request));
+  appendInput(deps.factory, s, kind!, input);
   sendJson(res, 202, serialiseJob(job));
 }
 
