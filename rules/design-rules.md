@@ -29,6 +29,8 @@ Motif = the animated drawing in the hero (decorative, colours from the palette):
 | `code` | software, web, IT, digital agencies |
 | `cup` | cafés, tea rooms, coffee |
 | `bread` | bakeries, patisseries, sandwich shops |
+| `grill` | kebab shops, grills, BBQ, steakhouses, burger, Turkish / Middle Eastern restaurants |
+| `plate` | restaurants, cafés serving meals, takeaways, caterers (any food business without a closer motif) |
 | `scissors` | hair, barbers, tailoring, alterations |
 | `tooth` | dentists, orthodontists |
 | `bricks` | builders, roofers, plumbers, electricians, trades |
@@ -36,7 +38,7 @@ Motif = the animated drawing in the hero (decorative, colours from the palette):
 | `car` | garages, car wash, driving schools, removals |
 | `scales` | solicitors, accountants, consultants |
 | `heartbeat` | clinics, physio, care, fitness |
-| `abstract` | anything else |
+| `abstract` | last resort, only when nothing above is even close. Never for food, trades or health |
 | `none` | when the client has strong photos and wants them in the hero (premium/friendly show the first photo) |
 
 Content for corporate-v2:
@@ -58,8 +60,14 @@ Content for corporate-v2:
 - Tint neutrals: never pure `#000000` text or pure grey; use a dark shade of the primary hue.
 - One accent colour, used sparingly (CTA, highlights).
 
+## Colours the client names
+
+Colours named anywhere in the client's text, in any language ("kırmızı ve siyah", "navy and gold"), are brand colours. Save them in `brand.colors` and build the palette from them. Change only lightness for contrast; never swap in a palette of your own.
+
 ## Typography
 
+- Headings must use a font with normal lowercase letters. No all-caps or small-caps faces (Cinzel, "… SC", Bebas, Anton, Oswald, Abril Fatface): they shout and are hard to read. build_site warns about them.
+- Food: warm, appetising pairs (e.g. Fraunces + Nunito, DM Serif Display + DM Sans, Bricolage Grotesque + Inter). Never a fine-dining serif for a takeaway.
 - At most two families (heading + body), from Google Fonts, with a fallback stack.
 - Avoid defaults that read as generic: Inter/Arial/system for everything. A characterful heading with a quiet body works best.
 - Body 16–18 px, line length 60–75 characters, line height 1.5–1.7.

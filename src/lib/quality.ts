@@ -13,6 +13,8 @@ export interface CheckResult {
 }
 
 const WHITE = "#FFFFFF";
+/** Display fonts that only have capitals or small caps (headline-only faces). */
+const CAPS_ONLY_FONT = /\bSC\b|small ?caps|cinzel|trajan|bebas|anton|oswald|league gothic|alfa slab one|abril fatface/i;
 
 /** Checks that need only config + content (run before the template build). */
 export function checkInputs(clientRoot: string, config: SiteConfig, content: Record<string, Content>): CheckResult[] {
@@ -39,6 +41,15 @@ export function checkInputs(clientRoot: string, config: SiteConfig, content: Rec
     status: accentRatio >= AA_LARGE_TEXT ? "pass" : "warn",
     detail: `${accentRatio.toFixed(2)}:1 (needs ${AA_LARGE_TEXT}:1 if used for text or icons)`,
   });
+
+  const capsFont = [config.design.fonts.heading, config.design.fonts.body].find((f) => CAPS_ONLY_FONT.test(f));
+  if (capsFont) {
+    results.push({
+      name: "Fonts have lowercase letters",
+      status: "warn",
+      detail: `"${capsFont}" sets every word in capitals, which reads as shouting and is hard to scan. Pick a font with normal lowercase (rules/design-rules.md, Typography).`,
+    });
+  }
 
   const referenced = new Set<string>();
   if (config.brand.logo) referenced.add(config.brand.logo);

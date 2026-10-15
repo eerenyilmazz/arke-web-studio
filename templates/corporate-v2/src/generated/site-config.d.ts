@@ -74,6 +74,8 @@ export interface SiteConfig {
       | "scales"
       | "heartbeat"
       | "bread"
+      | "grill"
+      | "plate"
       | "abstract"
       | "none";
   };

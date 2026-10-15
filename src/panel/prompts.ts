@@ -43,6 +43,10 @@ function clientDataLines(slug: string, input: AnswersInput): string[] {
   return lines;
 }
 
+/** Colours named anywhere in the client's text (any language) are their brand colours, not a suggestion. */
+const COLOUR_RULE =
+  "Colours the client names anywhere (any language, e.g. \"kırmızı ve siyah\", \"navy and gold\") are brand colours: save them as hex in brand.colors and build design.palette from them (primary/accent), changing only lightness to pass contrast. Never replace them with colours of your own.";
+
 export function answersPrompt(slug: string, input: AnswersInput): string {
   const lines = clientDataLines(slug, input);
   return [
@@ -50,6 +54,7 @@ export function answersPrompt(slug: string, input: AnswersInput): string {
     "Map every answer with update_client_config, save_content and save_asset. Normalise phone numbers, emails, domains and colours as AGENTS.md says.",
     "Most information may arrive as one block of free text, often in Turkish and in no particular order: find every fact in it yourself and put it in the right field. Record facts as given; any visitor-facing text you save is written in the site's languages (English unless i18n says otherwise), never left in Turkish by mistake.",
     "Never guess facts that are not there (phone, address, prices, company number): leave them missing; get_client_status will list them for the next questionnaire.",
+    COLOUR_RULE,
     "Do not generate questionnaires, build or deploy in this job.",
     DATA_RULE,
     "",
@@ -70,6 +75,7 @@ export function autopilotPrompt(slug: string, input: AnswersInput | null): strin
   const data = input ? clientDataLines(slug, input).join("\n") : "";
   return [
     `Site Factory, client "${slug}". Prepare this client's website end to end, following AGENTS.md and rules/design-rules.md.`,
+    COLOUR_RULE,
     "Start with get_client_status and skip anything already done; this job may be run several times as information arrives.",
     "",
     "1. Information. If <client_data> is below, record every fact in it (AGENTS.md flow step 3 rules). It is often one block of Turkish free text in no order; visitor-facing text is written in the site's languages.",
@@ -94,6 +100,7 @@ export function autopilotPrompt(slug: string, input: AnswersInput | null): strin
 export function designContentPrompt(slug: string): string {
   return [
     `Site Factory, client "${slug}". Follow AGENTS.md, flow steps 5 and 6 (Design, Content).`,
+    COLOUR_RULE,
     "Read rules/design-rules.md first. Run generate_design_system, choose palette, fonts, style and section variants, and save them under design.",
     "Then write all text with save_content for every locale in i18n.locales, with the same number of items in each.",
     "Use only facts already recorded for this client; do not invent prices, awards or reviews.",
@@ -116,6 +123,7 @@ export function fixBuildPrompt(slug: string): string {
 export function upgradeTemplatePrompt(slug: string, template: string): string {
   return [
     `Site Factory, client "${slug}". Eren wants this site moved to the newest template, "${template}".`,
+    COLOUR_RULE,
     "",
     `1. update_site_config: set "template" to "${template}", and choose design.personality and design.motif for the sector (rules/design-rules.md, "Personality and motif"). Keep the palette and fonts unless they break the rules.`,
     "2. save_content: give each service an icon from the allowed list. Add highlights and process steps only from facts already in the client's answers or content; if there are none, leave them empty. Do not change other texts.",

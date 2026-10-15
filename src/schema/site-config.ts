@@ -38,7 +38,7 @@ export const VARIANTS = ["a", "b", "c"] as const;
 /** Overall character of a corporate-v2 site, chosen by sector (see rules/design-rules.md). */
 export const PERSONALITIES = ["bold", "premium", "friendly"] as const;
 /** Animated sector illustrations in corporate-v2. "abstract" fits any sector; "none" turns motion off. */
-export const MOTIFS = ["jar", "code", "cup", "scissors", "tooth", "bricks", "leaf", "car", "scales", "heartbeat", "bread", "abstract", "none"] as const;
+export const MOTIFS = ["jar", "code", "cup", "scissors", "tooth", "bricks", "leaf", "car", "scales", "heartbeat", "bread", "grill", "plate", "abstract", "none"] as const;
 
 const hexColor = z.string().regex(HEX_COLOR, "Use a 6-digit hex colour such as #1A2B3C");
 const assetPath = z.string().regex(CLIENT_ASSET_PATH, "Must be a file saved with save_asset (assets/<name>)");

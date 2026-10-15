@@ -44,6 +44,17 @@ describe("corporate-v2 fields", () => {
     expect(() => tools.saveContent(f, { slug: SLUG, locale: "en", content: { highlights: five } })).toThrow();
   });
 
+  it("accepts the food motifs and warns about all-caps fonts without failing the build", async () => {
+    const { f } = await readyClient();
+    tools.updateClientConfig(f, { slug: SLUG, patch: { design: { motif: "grill", fonts: { heading: "Cinzel", body: "Inter" } } } });
+    const { checkInputs } = await import("../src/lib/quality.js");
+    const { SiteConfigSchema } = await import("../src/schema/site-config.js");
+    const config = SiteConfigSchema.parse(JSON.parse(readFileSync(clientPaths(f.clientsRoot, SLUG).config, "utf8")));
+    const checks = checkInputs(clientPaths(f.clientsRoot, SLUG).root, config, { en: { gallery: [], testimonials: [], faq: [], ...COMPLETE_CONTENT } as never });
+    const font = checks.find((c) => c.name === "Fonts have lowercase letters");
+    expect(font?.status).toBe("warn");
+  });
+
   it("existing configs without the new fields stay valid", async () => {
     const { f } = await readyClient();
     expect(() => tools.getClientStatus(f, { slug: SLUG })).not.toThrow();

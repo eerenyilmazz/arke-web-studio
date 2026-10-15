@@ -50,7 +50,7 @@ const newTab = cta.external ? t.opensInNewTab : "";
         <p class="lead mt-4 measure">{content.contact.intro}</p>
         <a href={cta.href} class="btn mt-8 bg-bg text-ink" {...external}>{cta.label}{newTab && <span class="sr-only"> {newTab}</span>}</a>
       </div>
-      {motif !== "none" && <div class="hidden md:block" style="--m-main: var(--c-background); --m-soft: color-mix(in srgb, var(--c-background) 40%, transparent)"><Motif name={motif} id="cta" class="max-w-xs ms-auto" /></div>}
+      {motif !== "none" && <div class="hidden md:block" style="--m-main: var(--c-secondary); --m-soft: color-mix(in srgb, var(--c-background) 55%, transparent)"><Motif name={motif} id="cta" class="max-w-xs ms-auto" /></div>}
     </div>
   </section>
 )}

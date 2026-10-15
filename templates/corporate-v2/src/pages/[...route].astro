@@ -24,8 +24,9 @@ const heroFirst = sections[0] === "hero";
   {page === "home"
     ? !heroFirst && <h1 class="sr-only">{ctx.config.business.name}</h1>
     : (
-      <div class="wrap pt-14 md:pt-20">
-        <h1 class="h-display">{ctx.t.nav[page]}</h1>
+      <div class="wrap pt-12 md:pt-16">
+        <p class="eyebrow text-accent-ink">{ctx.config.business.name}</p>
+        <h1 class="h-section mt-3">{ctx.t.nav[page]}</h1>
       </div>
     )}
   {sections.map((id) => {

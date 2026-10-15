@@ -123,7 +123,8 @@
   .btn-outline { border: 1.5px solid currentColor; }
   .btn-outline:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
   .surface-ink { background: var(--c-text); color: var(--c-background); }
-  .tint-accent { background: color-mix(in srgb, var(--c-accent) 16%, var(--c-background)); color: var(--c-text); }
+  /* Accent tint warmed with the secondary colour: a pale red becomes peach, not pink. */
+  .tint-accent { background: color-mix(in srgb, var(--c-accent) 10%, color-mix(in srgb, var(--c-secondary) 50%, var(--c-background))); color: var(--c-text); }
   .tint-primary { background: color-mix(in srgb, var(--c-primary) 12%, var(--c-background)); color: var(--c-text); }
   .tint-secondary { background: color-mix(in srgb, var(--c-secondary) 55%, var(--c-background)); color: var(--c-text); }
   .eyebrow { font-size: 0.82rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }

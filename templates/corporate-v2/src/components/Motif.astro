@@ -173,6 +173,58 @@ const cls = `motif ${extra}`;
   </svg>
 )}
 
+{name === "grill" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <path class="s-line m-steam" d="M170 120c-18-26 18-36 0-70" stroke-width="7" stroke-linecap="round" />
+    <path class="s-line m-steam m-s2" d="M240 105c-18-26 18-36 0-70" stroke-width="7" stroke-linecap="round" />
+    <path class="s-line m-steam m-s3" d="M310 120c-18-26 18-36 0-70" stroke-width="7" stroke-linecap="round" />
+    <g class="m-turn">
+      <rect class="f-line" x="40" y="166" width="400" height="7" rx="3.5" />
+      <rect class="f-main" x="96" y="146" width="46" height="46" rx="14" />
+      <rect class="f-soft" x="150" y="150" width="34" height="38" rx="10" />
+      <rect class="f-main" x="192" y="146" width="46" height="46" rx="14" />
+      <rect class="f-soft" x="246" y="150" width="34" height="38" rx="10" />
+      <rect class="f-main" x="288" y="146" width="46" height="46" rx="14" />
+      <rect class="f-soft" x="342" y="150" width="34" height="38" rx="10" />
+      <circle class="f-line" cx="44" cy="169" r="10" />
+    </g>
+    <g class="m-turn m-d1">
+      <rect class="f-line" x="40" y="226" width="400" height="7" rx="3.5" />
+      <rect class="f-soft" x="106" y="210" width="34" height="38" rx="10" />
+      <rect class="f-main" x="148" y="206" width="46" height="46" rx="14" />
+      <rect class="f-soft" x="202" y="210" width="34" height="38" rx="10" />
+      <rect class="f-main" x="244" y="206" width="46" height="46" rx="14" />
+      <rect class="f-soft" x="298" y="210" width="34" height="38" rx="10" />
+      <rect class="f-main" x="340" y="206" width="46" height="46" rx="14" />
+      <circle class="f-line" cx="44" cy="229" r="10" />
+    </g>
+    <path class="f-main m-flame" d="M120 300c-14-20 0-34 8-46 4 14 18 18 14 34-2 8-8 14-22 12z" />
+    <path class="f-soft m-flame m-d1" d="M190 300c-18-24 2-44 12-58 4 18 22 24 16 44-3 10-12 16-28 14z" />
+    <path class="f-main m-flame m-d2" d="M270 300c-16-22 0-40 10-52 4 16 20 20 15 38-3 9-10 15-25 14z" />
+    <path class="f-soft m-flame" d="M345 300c-14-20 0-34 8-46 4 14 18 18 14 34-2 8-8 14-22 12z" />
+    <g class="m-glow">
+      <circle class="f-main" cx="130" cy="312" r="13" /><circle class="f-main" cx="175" cy="316" r="11" /><circle class="f-main" cx="220" cy="312" r="14" />
+      <circle class="f-main" cx="265" cy="316" r="11" /><circle class="f-main" cx="310" cy="312" r="13" /><circle class="f-main" cx="352" cy="316" r="11" />
+    </g>
+    <path class="f-line" d="M70 300h340l-24 56H94z" />
+    <rect class="f-line" x="120" y="356" width="10" height="30" rx="5" /><rect class="f-line" x="350" y="356" width="10" height="30" rx="5" />
+  </svg>
+)}
+
+{name === "plate" && (
+  <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
+    <path class="s-line m-steam" d="M200 140c-18-26 18-36 0-70" stroke-width="7" stroke-linecap="round" />
+    <path class="s-line m-steam m-s2" d="M245 130c-18-26 18-36 0-70" stroke-width="7" stroke-linecap="round" />
+    <path class="s-line m-steam m-s3" d="M290 140c-18-26 18-36 0-70" stroke-width="7" stroke-linecap="round" />
+    <circle class="f-paper" cx="245" cy="250" r="120" />
+    <circle class="s-line" cx="245" cy="250" r="120" stroke-width="6" />
+    <circle class="s-soft" cx="245" cy="250" r="86" stroke-width="5" />
+    <g class="m-bob"><ellipse class="f-main" cx="225" cy="250" rx="46" ry="30" /><ellipse class="f-soft" cx="275" cy="238" rx="30" ry="22" /><circle class="f-main" cx="268" cy="272" r="13" /></g>
+    <path class="s-line" d="M70 150v90M56 150v40a14 14 0 0 0 28 0v-40M70 240v110" stroke-width="7" stroke-linecap="round" />
+    <path class="s-line" d="M420 150c-18 10-24 50-24 80h24v120" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+)}
+
 {name === "abstract" && (
   <svg class={cls} viewBox="0 0 480 400" aria-hidden="true">
     <circle class="f-main m-drift" cx="300" cy="170" r="120" />
