@@ -34,13 +34,15 @@ export function answersPrompt(slug: string, input: AnswersInput): string {
   for (const e of input.extras) {
     if (e.answer.trim()) lines.push(`Q (sector): ${e.question}`, `A: ${escapeData(e.answer.trim())}`, "");
   }
-  if (input.freeText.trim()) lines.push("Free text from the client (e.g. an email):", escapeData(input.freeText.trim()), "");
+  if (input.freeText.trim()) lines.push("Free text (a client's email or message, or Eren's own notes about the client):", escapeData(input.freeText.trim()), "");
   if (input.later.length) lines.push(`Ticked "later" interests: ${input.later.join(", ")}`, "");
   if (input.files.length) lines.push(`Files in the inbox for this client (use save_asset with these inboxFile paths): ${input.files.map((f) => `${slug}/${f}`).join(", ")}`, "");
 
   return [
     `Site Factory, client "${slug}". Follow AGENTS.md, flow step 3 ("Answers arrive").`,
     "Map every answer with update_client_config, save_content and save_asset. Normalise phone numbers, emails, domains and colours as AGENTS.md says.",
+    "Most information may arrive as one block of free text, often in Turkish and in no particular order: find every fact in it yourself and put it in the right field. Record facts as given; any visitor-facing text you save is written in the site's languages (English unless i18n says otherwise), never left in Turkish by mistake.",
+    "Never guess facts that are not there (phone, address, prices, company number): leave them missing; get_client_status will list them for the next questionnaire.",
     "Do not generate questionnaires, build or deploy in this job.",
     DATA_RULE,
     "",

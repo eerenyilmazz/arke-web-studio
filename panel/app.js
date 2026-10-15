@@ -214,13 +214,19 @@ function renderNew() {
   name.addEventListener("input", () => { if (!slugTouched) slug.value = slugify(name.value); });
   slug.addEventListener("input", () => (slugTouched = true));
   const industry = h("input", { type: "text", id: "nc-industry", required: true, maxlength: 60, placeholder: "ör. hair salon, family law solicitor" });
+  const info = h("textarea", { id: "nc-info", rows: 7, class: "field", maxlength: 20000, placeholder: "Ör: Diş kliniği, Harbour Dental. Dr. Sarah Lee. NHS ve özel hasta. Beyazlatma, implant, acil randevu. 0161 496 0000, Manchester." });
   const lang = h("select", { id: "nc-lang" }, h("option", { value: "" }, "Sadece İngilizce"), ...Object.entries(LANG_NAMES).filter(([k]) => k !== "en").map(([k, v]) => h("option", { value: k }, `İngilizce + ${v}`)));
 
   const form = h("form", { class: "card stack", style: "max-width:40rem", onsubmit: async (e) => {
     e.preventDefault();
     const hosting = form.querySelector("input[name=hosting]:checked")?.value;
     const res = await guarded(() => api("POST", "/api/clients", { businessName: name.value.trim(), slug: slug.value.trim(), industry: industry.value.trim(), hostingModel: hosting, extraLocale: lang.value || undefined }));
-    if (res) { toast("Müşteri oluşturuldu."); location.hash = `#/c/${res.slug}/sorular`; }
+    if (!res) return;
+    toast("Müşteri oluşturuldu.");
+    const text = info.value.trim();
+    if (!text) { location.hash = `#/c/${res.slug}/sorular`; return; }
+    location.hash = `#/c/${res.slug}/akis`;
+    await runAgent(res.slug, "answers", { freeText: text });
   } },
     h("h1", { text: "Yeni müşteri" }),
     h("p", { class: "muted", text: "Sadece iç bilgiler. Geri kalanını müşteriye soru formuyla soracağız." }),
@@ -232,6 +238,9 @@ function renderNew() {
       h("label", { class: "choice" }, h("input", { type: "radio", name: "hosting", value: "client" }), "Müşterinin kendi hesabı"),
     ),
     h("label", { for: "nc-lang" }, "Dil", lang),
+    h("label", { for: "nc-info" }, "Elindeki bilgiler (isteğe bağlı)",
+      h("span", { class: "help", text: "Müşteriden ne biliyorsan yapıştır: hizmetler, fiyatlar, iletişim, renkler… Agent oluşturur oluşturmaz işler; eksikler için soru formu hazırlanır." }),
+      info),
     h("div", { class: "row" }, h("button", { class: "btn btn-primary btn-lg", type: "submit" }, "Müşteriyi oluştur")),
   );
   return form;
@@ -310,14 +319,14 @@ function nowCard(d) {
   let actions = [];
   switch (stage) {
     case "collecting-answers":
-      if (!d.questionnaires.length) {
-        title = "Müşteriye 1. tur soru formunu gönder";
-        text = "10 temel soru. Formu oluştur, metni kopyalayıp müşteriye gönder.";
-        actions = [primary("Formu hazırla", go("sorular"))];
+      if (!d.questionnaires.length && !d.history.length) {
+        title = "Müşteri bilgilerini yapıştır ya da soru formu gönder";
+        text = "Elinde bilgi varsa olduğu gibi yapıştır, agent dağıtsın. Yoksa 10 soruluk formu müşteriye gönder.";
+        actions = [primary("Bilgileri yapıştır", go("cevaplar")), secondary("Soru formu hazırla", go("sorular"))];
       } else {
-        title = "Müşterinin cevaplarını agent'a işlet";
-        text = "Cevapları soru soru ya da e-postayı olduğu gibi yapıştır; logo ve fotoğrafları ekle.";
-        actions = [primary("Cevapları gir", go("cevaplar")), secondary("2. tur formu", go("sorular"))];
+        title = "Eksik bilgileri tamamla";
+        text = `${d.status.config.missing.length} alan eksik. Müşteriden gelen yeni bilgileri yapıştır ya da eksikler için 2. tur formunu gönder.`;
+        actions = [primary("Bilgileri yapıştır", go("cevaplar")), secondary("2. tur formu", go("sorular"))];
       }
       break;
     case "design":
@@ -398,7 +407,7 @@ function tabFlow(body, d) {
       feed,
       h("form", { class: "composer", onsubmit: (e) => { e.preventDefault(); send(); } },
         h("div", { class: "chips" },
-          h("button", { class: "chip", type: "button", onclick: () => (location.hash = `#/c/${slug}/cevaplar`) }, "Cevapları gir"),
+          h("button", { class: "chip", type: "button", onclick: () => (location.hash = `#/c/${slug}/cevaplar`) }, "Bilgi yapıştır"),
           h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "design-content", {}) }, "Tasarım ve metinler"),
           h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Build al"),
           h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Build hatalarını düzelt"),
@@ -572,26 +581,32 @@ async function tabAnswers(body, d) {
     cb.addEventListener("change", () => (cb.checked ? draft.later.add(l.id) : draft.later.delete(l.id)));
     return h("label", { class: "choice" }, cb, l.text);
   });
-  const free = area("free", draft.freeText, (v) => (draft.freeText = v), 6);
-  free.placeholder = "Müşteri cevapları e-postayla yazdıysa buraya olduğu gibi yapıştırın.";
+  const free = area("free", draft.freeText, (v) => (draft.freeText = v), 12);
+  free.classList.add("big-paste");
+  free.placeholder = "Müşterinin e-postasını, WhatsApp mesajını ya da kendi notlarını olduğu gibi yapıştır. Sıra, dil ve biçim önemli değil.\n\nÖr: Kuaför, adı Bella Hair. Kadın kesim 35£, boya 60£'dan başlıyor. Tel 07700 900123, Kingston'da. Renkleri pembe-gri olsun. Instagram @bellahair";
 
   body.append(
-    h("section", { class: "card" },
-      h("h2", { text: `${round}. tur cevapları` }),
-      h("p", { class: "muted small", text: "Boş bıraktıklarınız atlanır. Müşteri 'please suggest' dediyse aynen yazın; agent sizin yerinize seçer ve özetinde belirtir." }),
+    h("section", { class: "card stack" },
+      h("h2", { text: "Bilgileri yapıştır, agent dağıtsın" }),
+      h("p", { class: "muted small", text: "Agent her bilgiyi doğru alana kendisi yerleştirir, siteye girecek metinleri İngilizce yazar. Eksik kalanları uydurmaz; 2. tur formuna ekler." }),
+      h("label", { for: "free", class: "sr-only" }, "Müşteri bilgileri"),
+      free,
+    ),
+    uploadCard(slug, d.inbox),
+    h("details", { class: "card" },
+      h("summary", { style: "cursor:pointer;font-weight:600" }, `Soru soru gir (isteğe bağlı) · ${round}. tur, ${q.questions.length} soru`),
+      h("p", { class: "muted small", style: "margin-top:0.6rem", text: "Müşteri formu soru soru cevapladıysa kullan. Boş bıraktıkların atlanır; 'please suggest' dediyse aynen yaz." }),
       ...qs,
       extras.length > 0 ? h("h3", { text: "Sektöre özel", style: "margin-top:1rem" }) : null, ...extras,
       later.length > 0 ? h("fieldset", { style: "margin-top:1rem" }, h("legend", { text: "İleride ilgilenebilecekleri" }), ...later) : null,
     ),
-    h("section", { class: "card" }, h("label", { for: "free" }, "Serbest metin", free)),
-    uploadCard(slug, d.inbox),
     h("section", { class: "card row" },
       h("button", { class: "btn btn-primary btn-lg", type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "answers", {
         answers: draft.answers,
         extras: q.extras.map((question, i) => ({ question, answer: draft.extras[i] || "" })),
         later: [...draft.later],
         freeText: draft.freeText,
-      }) }, "Cevapları agent'a işlet"),
+      }) }, "Agent'a işlet"),
       h("span", { class: "muted small", text: "Agent sadece fabrika araçlarını kullanır; dosya düzenleyemez, komut çalıştıramaz, yayın yapamaz." }),
     ),
   );

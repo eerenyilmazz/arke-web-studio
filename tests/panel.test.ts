@@ -218,3 +218,20 @@ describe("archiving a client", () => {
     expect((await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }) })).status).toBe(201);
   });
 });
+
+describe("single paste box", () => {
+  it("accepts free text alone and tells the agent to sort it into fields", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "bella-hair", businessName: "Bella Hair", industry: "hair salon", hostingModel: "managed" }) });
+    const res = await fetch(`${base}/api/clients/bella-hair/agent/answers`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Kuaför, kadın kesim 35£. Tel 07700 900123." }) });
+    expect(res.status).toBe(202);
+    const prompt = calls[0]!.stdin;
+    expect(prompt).toContain("Kuaför, kadın kesim 35£. Tel 07700 900123.");
+    expect(prompt).toMatch(/one block of free text, often in Turkish/);
+    expect(prompt).toMatch(/Never guess facts/);
+    const empty = await fetch(`${base}/api/clients/bella-hair/agent/answers`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "  " }) });
+    expect([400, 409]).toContain(empty.status);
+  });
+});
