@@ -1,0 +1,44 @@
+---
+import type { PageContext } from "../lib/site";
+import { primaryCta } from "../lib/site";
+import Button from "./ui/Button.astro";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { config, site, t, page } = ctx;
+const logo = config.brand.logo ? site.images.get(config.brand.logo) : null;
+const cta = primaryCta(ctx);
+const links = config.pages.map((p) => ({ id: p, href: ctx.url(p), label: t.nav[p] }));
+---
+<header class="rule-b">
+  <div class="wrap flex items-center justify-between gap-6 py-4">
+    <a href={ctx.url("home")} class="flex items-center gap-3 no-underline min-h-11" aria-label={config.business.name}>
+      {logo
+        ? <img src={logo.src} alt="" width={logo.width} height={logo.height} class="h-10 w-auto max-w-44 object-contain" />
+        : <span class="font-heading text-xl font-semibold tracking-tight">{config.business.name}</span>}
+    </a>
+
+    <nav aria-label={t.mainNav} class="hidden md:block">
+      <ul class="flex items-center gap-7">
+        {links.map((l) => (
+          <li>
+            <a href={l.href} class:list={["no-underline hover:underline", l.id === page && "underline decoration-2"]} aria-current={l.id === page ? "page" : undefined}>{l.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <div class="hidden md:block"><Button cta={cta} newTabNote={t.opensInNewTab} /></div>
+
+    <details class="md:hidden relative">
+      <summary class="btn btn-outline cursor-pointer list-none">{t.menu}</summary>
+      <nav aria-label={t.mainNav} class="absolute end-0 z-30 mt-2 w-60 rounded-md bg-bg p-4 shadow-[0_4px_20px_rgb(0_0_0/0.12)] rule-t">
+        <ul class="flex flex-col gap-1">
+          {links.map((l) => (
+            <li><a href={l.href} class="block py-2.5 no-underline" aria-current={l.id === page ? "page" : undefined}>{l.label}</a></li>
+          ))}
+        </ul>
+        <Button cta={cta} newTabNote={t.opensInNewTab} class="mt-3 w-full" />
+      </nav>
+    </details>
+  </div>
+</header>

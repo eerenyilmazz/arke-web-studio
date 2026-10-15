@@ -1,0 +1,43 @@
+---
+import type { PageContext } from "../../lib/site";
+import { displayPhone } from "../../lib/site";
+import ContactLinks from "../ui/ContactLinks.astro";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { content, config, site, t } = ctx;
+const { phone, email, address, hours } = config.contact;
+const field = "mt-1 w-full rounded-md border border-rule bg-bg px-3 py-2.5 min-h-11";
+---
+<section class="wrap band grid gap-12 md:grid-cols-[1.3fr_1fr]">
+  <div>
+    <h2 class="h-section">{content.contact.title}</h2>
+    <p class="mt-4 text-lg measure">{content.contact.intro}</p>
+    {site.formAction
+      ? (
+        <form method="post" action={site.formAction} class="mt-8 grid gap-5">
+          <label class="block">{t.formName}<input class={field} name="name" autocomplete="name" required /></label>
+          <label class="block">{t.formEmail}<input class={field} type="email" name="email" autocomplete="email" required /></label>
+          <label class="block">{t.formPhone}<input class={field} type="tel" name="phone" autocomplete="tel" /></label>
+          <label class="block">{t.formMessage}<textarea class={field} name="message" rows="5" required></textarea></label>
+          {/* Honeypot: people never see it; bots that fill every field are discarded by the form service. */}
+          <div aria-hidden="true" class="absolute -start-[9999px]">
+            <label>{t.formHoneypot}<input name="website" tabindex="-1" autocomplete="off" /></label>
+          </div>
+          <div><button type="submit" class="btn btn-primary">{t.formSend}</button></div>
+        </form>
+      )
+      : (
+        <>
+          <p class="mt-8">{t.formAlternative}</p>
+          <ContactLinks ctx={ctx} class="mt-4" />
+        </>
+      )}
+  </div>
+  <dl class="grid content-start gap-5">
+    {phone && <div><dt class="font-semibold">{t.phoneLabel}</dt><dd><a href={`tel:${phone}`}>{displayPhone(phone)}</a></dd></div>}
+    <div><dt class="font-semibold">{t.emailLabel}</dt><dd><a href={`mailto:${email}`}>{email}</a></dd></div>
+    {address && <div><dt class="font-semibold">{t.addressLabel}</dt><dd>{address}</dd></div>}
+    {hours && <div><dt class="font-semibold">{t.hoursLabel}</dt><dd>{hours}</dd></div>}
+  </dl>
+</section>

@@ -1,0 +1,79 @@
+---
+import "../styles/global.css";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { readableOn } from "../lib/color";
+import { faviconPath, faviconType } from "../lib/files";
+import { fontStack } from "../lib/fonts";
+import { localBusinessJsonLd } from "../lib/seo";
+import type { PageContext } from "../lib/site";
+import { displayPhone, heroImage, whatsappHref } from "../lib/site";
+
+interface Props {
+  readonly ctx: PageContext;
+  readonly title: string;
+  readonly description: string;
+  /** Page is not one of the site's pages (404): no canonical, no alternates. */
+  readonly standalone?: boolean;
+}
+const { ctx, title, description, standalone = false } = Astro.props;
+const { config, site, locale, page, t } = ctx;
+const p = config.design.palette;
+const vars = [
+  `--c-primary:${p.primary}`, `--c-on-primary:${readableOn(p.primary, p.text)}`,
+  `--c-secondary:${p.secondary}`, `--c-on-secondary:${readableOn(p.secondary, p.text)}`,
+  `--c-accent:${p.accent}`, `--c-background:${p.background}`, `--c-text:${p.text}`,
+  `--f-heading:${fontStack(config.design.fonts.heading)}`, `--f-body:${fontStack(config.design.fonts.body)}`,
+].join(";");
+
+const abs = (path: string) => (site.baseUrl ? `${site.baseUrl}${path}` : path);
+const canonical = standalone ? null : abs(ctx.url(page));
+const alternates = standalone ? [] : config.i18n.locales.map((l) => ({ lang: l, href: abs(ctx.url(page, l)) }));
+const ogImage = site.baseUrl ? (heroImage(ctx)?.src ?? (config.brand.logo ? `/${config.brand.logo}` : null)) : null;
+const favicon = faviconPath(config);
+const jsonLd = page === "home" && !standalone ? localBusinessJsonLd(ctx) : null;
+const wa = config.whatsapp;
+---
+<!doctype html>
+<html lang={locale} dir={ctx.dir} style={vars}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={p.primary} />
+    {site.baseUrl && canonical && <link rel="canonical" href={canonical} />}
+    {alternates.length > 1 && alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={a.href} />)}
+    {alternates.length > 1 && <link rel="alternate" hreflang="x-default" href={abs(ctx.url(page, config.i18n.defaultLocale))} />}
+    <link rel="icon" href={favicon} type={faviconType(favicon)} />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content={config.business.name} />
+    <meta property="og:locale" content={locale} />
+    {site.baseUrl && canonical && <meta property="og:url" content={canonical} />}
+    {ogImage && <meta property="og:image" content={abs(ogImage)} />}
+    <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
+    {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
+  </head>
+  <body class="min-h-dvh flex flex-col antialiased">
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:m-3 focus:p-3 focus:bg-bg">{t.skipToContent}</a>
+    <Header ctx={ctx} />
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+    <Footer ctx={ctx} />
+    {wa.floatingButton && wa.number && (
+      <a
+        href={whatsappHref(wa.number, ctx.content.whatsappMessage)}
+        target="_blank"
+        rel="noopener"
+        class="btn btn-primary fixed bottom-4 end-4 z-40 shadow-[0_2px_10px_rgb(0_0_0/0.18)]"
+        aria-label={`${t.chatOnWhatsapp} ${displayPhone(wa.number)} ${t.opensInNewTab}`}
+      >
+        {t.whatsapp}
+      </a>
+    )}
+  </body>
+</html>

@@ -1,0 +1,20 @@
+---
+import type { PageContext } from "../../lib/site";
+import Img from "../ui/Img.astro";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { gallery } = ctx.content;
+---
+{gallery.length > 0 && (
+  <section class="wrap band">
+    <h2 class="h-section">{ctx.t.galleryTitle}</h2>
+    <div class="mt-10 columns-1 gap-4 sm:columns-2 lg:columns-3">
+      {gallery.map((g) => (
+        <figure class="mb-4 break-inside-avoid">
+          <Img site={ctx.site} src={g.src} alt={g.alt} class="w-full rounded-md" sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
+        </figure>
+      ))}
+    </div>
+  </section>
+)}

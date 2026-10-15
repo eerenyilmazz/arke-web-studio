@@ -1,0 +1,55 @@
+---
+import type { PageContext } from "../../lib/site";
+import { displayPhone, heroImage, primaryCta } from "../../lib/site";
+import Button from "../ui/Button.astro";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { content, config, t } = ctx;
+const cta = primaryCta(ctx);
+const image = heroImage(ctx);
+const phone = config.contact.phone && config.contact.showCallButton ? config.contact.phone : null;
+// Variant c needs a photo; without one it falls back to b.
+const variant = config.design.variants.hero === "c" && !image ? "b" : config.design.variants.hero;
+---
+{variant === "a" && (
+  <section class="wrap grid items-center gap-10 py-14 md:grid-cols-[1.1fr_0.9fr] md:py-20">
+    <div>
+      <h1 class="h-display">{content.hero.title}</h1>
+      <p class="mt-6 text-lg measure">{content.hero.subtitle}</p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <Button cta={cta} newTabNote={t.opensInNewTab} />
+        {phone && <a class="btn btn-outline" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>}
+      </div>
+    </div>
+    {image
+      ? <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="aspect-[4/5] w-full rounded-md object-cover" />
+      : <p class="rounded-md bg-secondary p-10 font-heading text-3xl leading-snug text-on-secondary md:p-14 md:text-4xl">{content.tagline}</p>}
+  </section>
+)}
+
+{variant === "b" && (
+  <section class="bg-primary text-on-primary">
+    <div class="wrap py-20 md:py-28">
+      <h1 class="h-display max-w-[18ch]">{content.hero.title}</h1>
+      <p class="mt-6 text-lg measure">{content.hero.subtitle}</p>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href={cta.href} class="btn bg-bg text-ink" {...(cta.external ? { target: "_blank", rel: "noopener" } : {})}>{cta.label}</a>
+        {phone && <a class="btn btn-outline" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>}
+      </div>
+    </div>
+  </section>
+)}
+
+{variant === "c" && image && (
+  <section>
+    <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="h-[62vh] min-h-80 w-full object-cover" />
+    <div class="wrap relative -mt-28">
+      <div class="bg-bg p-7 md:w-2/3 md:p-11 rounded-md">
+        <h1 class="h-display">{content.hero.title}</h1>
+        <p class="mt-5 text-lg measure">{content.hero.subtitle}</p>
+        <div class="mt-8"><Button cta={cta} newTabNote={t.opensInNewTab} /></div>
+      </div>
+    </div>
+  </section>
+)}

@@ -1,0 +1,14 @@
+---
+import type { PageContext } from "../../lib/site";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { about } = ctx.content;
+const paragraphs = about.body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+---
+<section class="wrap band grid gap-6 md:grid-cols-3 md:gap-12">
+  <h2 class="h-section">{about.title}</h2>
+  <div class="md:col-span-2 flex flex-col gap-4 text-lg measure">
+    {paragraphs.map((p) => <p>{p}</p>)}
+  </div>
+</section>

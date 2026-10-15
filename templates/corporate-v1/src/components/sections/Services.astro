@@ -1,0 +1,58 @@
+---
+import type { PageContext } from "../../lib/site";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { services } = ctx.content;
+const { t } = ctx;
+const variant = ctx.config.design.variants.services;
+const [featured, ...rest] = services;
+---
+<section class="wrap band">
+  <h2 class="h-section">{t.servicesTitle}</h2>
+
+  {variant === "a" && (
+    <ul class="mt-10">
+      {services.map((s) => (
+        <li class="rule-t grid gap-2 py-6 md:grid-cols-[1fr_2fr_auto] md:gap-10">
+          <h3 class="h-item">{s.title}</h3>
+          <p class="measure">{s.description}</p>
+          {s.price && <p class="font-semibold md:text-end whitespace-nowrap">{s.price}</p>}
+        </li>
+      ))}
+    </ul>
+  )}
+
+  {variant === "b" && (
+    <ul class="mt-10 grid gap-x-12 gap-y-10 md:grid-cols-2">
+      {services.map((s) => (
+        <li class="border-t-2 border-primary pt-5">
+          <h3 class="h-item">{s.title}</h3>
+          <p class="mt-2 measure">{s.description}</p>
+          {s.price && <p class="mt-3 font-semibold">{s.price}</p>}
+        </li>
+      ))}
+    </ul>
+  )}
+
+  {variant === "c" && featured && (
+    <div class="mt-10 grid gap-10 md:grid-cols-[1.2fr_1fr]">
+      <div class="rounded-md bg-secondary p-8 text-on-secondary md:p-10">
+        <h3 class="font-heading text-2xl md:text-3xl">{featured.title}</h3>
+        <p class="mt-4 text-lg measure">{featured.description}</p>
+        {featured.price && <p class="mt-5 font-semibold">{featured.price}</p>}
+      </div>
+      <ul>
+        {rest.map((s) => (
+          <li class="rule-b py-4">
+            <div class="flex items-baseline justify-between gap-4">
+              <h3 class="text-lg font-semibold">{s.title}</h3>
+              {s.price && <span class="whitespace-nowrap">{s.price}</span>}
+            </div>
+            <p class="mt-1">{s.description}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</section>

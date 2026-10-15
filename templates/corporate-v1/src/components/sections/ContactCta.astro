@@ -1,0 +1,48 @@
+---
+import type { PageContext } from "../../lib/site";
+import { displayPhone, primaryCta } from "../../lib/site";
+import Button from "../ui/Button.astro";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { content, config, t } = ctx;
+const cta = primaryCta(ctx);
+const { phone, email, hours } = config.contact;
+const variant = config.design.variants.cta;
+---
+{variant === "a" && (
+  <section class="bg-primary text-on-primary">
+    <div class="wrap band flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+      <div>
+        <h2 class="h-section">{content.contact.title}</h2>
+        <p class="mt-4 text-lg measure">{content.contact.intro}</p>
+      </div>
+      <a href={cta.href} class="btn bg-bg text-ink shrink-0" {...(cta.external ? { target: "_blank", rel: "noopener" } : {})}>{cta.label}</a>
+    </div>
+  </section>
+)}
+
+{variant === "b" && (
+  <section class="wrap band grid gap-10 md:grid-cols-2 md:items-center">
+    <div>
+      <h2 class="h-section">{content.contact.title}</h2>
+      <p class="mt-4 text-lg measure">{content.contact.intro}</p>
+      <div class="mt-7"><Button cta={cta} newTabNote={t.opensInNewTab} /></div>
+    </div>
+    <dl class="rounded-md bg-secondary p-8 text-on-secondary grid gap-4">
+      {phone && <div><dt class="font-semibold">{t.phoneLabel}</dt><dd><a href={`tel:${phone}`}>{displayPhone(phone)}</a></dd></div>}
+      <div><dt class="font-semibold">{t.emailLabel}</dt><dd><a href={`mailto:${email}`}>{email}</a></dd></div>
+      {hours && <div><dt class="font-semibold">{t.hoursLabel}</dt><dd>{hours}</dd></div>}
+    </dl>
+  </section>
+)}
+
+{variant === "c" && (
+  <section class="wrap band rule-t">
+    <h2 class="font-heading text-[clamp(2rem,5vw,3.6rem)] leading-tight max-w-[20ch]">{content.contact.title}</h2>
+    <div class="mt-8 flex flex-wrap items-center gap-6">
+      <Button cta={cta} newTabNote={t.opensInNewTab} />
+      <p class="measure">{content.contact.intro}</p>
+    </div>
+  </section>
+)}

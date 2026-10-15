@@ -1,0 +1,16 @@
+---
+import Base from "../layouts/Base.astro";
+import { loadSite } from "../lib/data";
+import { buildContext } from "../lib/site";
+
+const site = loadSite();
+const ctx = buildContext(site, "home", site.config.i18n.defaultLocale);
+const { t } = ctx;
+---
+<Base ctx={ctx} title={`${t.notFoundTitle} | ${site.config.business.name}`} description={t.notFoundBody} standalone>
+  <section class="wrap band">
+    <h1 class="h-display">{t.notFoundTitle}</h1>
+    <p class="mt-5 text-lg measure">{t.notFoundBody}</p>
+    <p class="mt-8"><a class="btn btn-primary" href={ctx.url("home")}>{t.backHome}</a></p>
+  </section>
+</Base>

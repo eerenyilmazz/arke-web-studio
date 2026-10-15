@@ -1,0 +1,18 @@
+---
+import type { Cta } from "../../lib/site";
+
+interface Props {
+  readonly cta: Cta;
+  readonly variant?: "primary" | "outline";
+  readonly newTabNote: string;
+  readonly class?: string;
+}
+const { cta, variant = "primary", newTabNote, class: extra = "" } = Astro.props;
+---
+<a
+  href={cta.href}
+  class:list={["btn", variant === "primary" ? "btn-primary" : "btn-outline", extra]}
+  {...(cta.external ? { target: "_blank", rel: "noopener" } : {})}
+>
+  {cta.label}{cta.external && <span class="sr-only"> {newTabNote}</span>}
+</a>
