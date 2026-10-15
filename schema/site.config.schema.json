@@ -1,0 +1,687 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$"
+    },
+    "template": {
+      "type": "string",
+      "pattern": "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$"
+    },
+    "i18n": {
+      "type": "object",
+      "properties": {
+        "defaultLocale": {
+          "type": "string",
+          "enum": [
+            "en",
+            "tr",
+            "de",
+            "fr",
+            "es",
+            "it",
+            "pl",
+            "ar"
+          ]
+        },
+        "locales": {
+          "minItems": 1,
+          "maxItems": 3,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "en",
+              "tr",
+              "de",
+              "fr",
+              "es",
+              "it",
+              "pl",
+              "ar"
+            ]
+          }
+        }
+      },
+      "required": [
+        "defaultLocale",
+        "locales"
+      ]
+    },
+    "business": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "industry": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "country": {
+          "default": "GB",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 2
+        },
+        "timezone": {
+          "default": "Europe/London",
+          "type": "string",
+          "minLength": 3
+        },
+        "currency": {
+          "default": "GBP",
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 3
+        }
+      },
+      "required": [
+        "name",
+        "industry"
+      ]
+    },
+    "brief": {
+      "type": "object",
+      "properties": {
+        "audience": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 400
+        },
+        "tone": {
+          "type": "string",
+          "enum": [
+            "formal",
+            "friendly",
+            "premium",
+            "energetic",
+            "calm"
+          ]
+        },
+        "references": {
+          "default": [],
+          "maxItems": 5,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "avoid": {
+          "default": [],
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "required": [
+        "audience",
+        "tone"
+      ]
+    },
+    "brand": {
+      "type": "object",
+      "properties": {
+        "logo": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^assets\\/[a-z0-9][a-z0-9._-]{0,80}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "colors": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "primary": {
+                  "type": "string",
+                  "pattern": "^#[0-9a-fA-F]{6}$"
+                },
+                "secondary": {
+                  "type": "string",
+                  "pattern": "^#[0-9a-fA-F]{6}$"
+                },
+                "accent": {
+                  "type": "string",
+                  "pattern": "^#[0-9a-fA-F]{6}$"
+                }
+              },
+              "required": [
+                "primary"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "logo",
+        "colors"
+      ]
+    },
+    "design": {
+      "type": "object",
+      "properties": {
+        "style": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "palette": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "secondary": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "accent": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "background": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "text": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            }
+          },
+          "required": [
+            "primary",
+            "secondary",
+            "accent",
+            "background",
+            "text"
+          ]
+        },
+        "fonts": {
+          "type": "object",
+          "properties": {
+            "heading": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 60
+            },
+            "body": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 60
+            }
+          },
+          "required": [
+            "heading",
+            "body"
+          ]
+        },
+        "variants": {
+          "type": "object",
+          "properties": {
+            "hero": {
+              "default": "a",
+              "type": "string",
+              "enum": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "services": {
+              "default": "a",
+              "type": "string",
+              "enum": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "testimonials": {
+              "default": "a",
+              "type": "string",
+              "enum": [
+                "a",
+                "b",
+                "c"
+              ]
+            },
+            "cta": {
+              "default": "a",
+              "type": "string",
+              "enum": [
+                "a",
+                "b",
+                "c"
+              ]
+            }
+          }
+        }
+      },
+      "required": [
+        "style",
+        "palette",
+        "fonts",
+        "variants"
+      ]
+    },
+    "pages": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "home",
+          "about",
+          "services",
+          "gallery",
+          "contact"
+        ]
+      }
+    },
+    "sections": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "enum": [
+          "home",
+          "about",
+          "services",
+          "gallery",
+          "contact"
+        ]
+      },
+      "additionalProperties": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "hero",
+            "intro",
+            "services",
+            "gallery",
+            "testimonials",
+            "faq",
+            "team",
+            "contact-cta",
+            "contact-form",
+            "map"
+          ]
+        }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+        },
+        "formRecipient": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "email",
+              "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "phone": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\+[1-9]\\d{7,14}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "address": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 300
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hours": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 300
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mapsUrl": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "showCallButton": {
+          "default": true,
+          "type": "boolean"
+        },
+        "showEmailButton": {
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "email"
+      ]
+    },
+    "whatsapp": {
+      "type": "object",
+      "properties": {
+        "number": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\+[1-9]\\d{7,14}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "floatingButton": {
+          "default": false,
+          "type": "boolean"
+        }
+      }
+    },
+    "social": {
+      "default": {},
+      "type": "object",
+      "properties": {
+        "instagram": {
+          "type": "string",
+          "format": "uri"
+        },
+        "facebook": {
+          "type": "string",
+          "format": "uri"
+        },
+        "linkedin": {
+          "type": "string",
+          "format": "uri"
+        },
+        "x": {
+          "type": "string",
+          "format": "uri"
+        },
+        "tiktok": {
+          "type": "string",
+          "format": "uri"
+        },
+        "youtube": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "integrations": {
+      "default": {
+        "bookingUrl": null
+      },
+      "type": "object",
+      "properties": {
+        "bookingUrl": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "uri"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "analytics": {
+      "default": {
+        "enabled": true
+      },
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "bots": {
+      "default": {
+        "aiCrawlers": "allow"
+      },
+      "type": "object",
+      "properties": {
+        "aiCrawlers": {
+          "default": "allow",
+          "type": "string",
+          "enum": [
+            "allow",
+            "block"
+          ]
+        }
+      }
+    },
+    "legal": {
+      "default": {
+        "companyName": null,
+        "companyNumber": null,
+        "registeredAddress": null,
+        "vatNumber": null
+      },
+      "type": "object",
+      "properties": {
+        "companyName": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 160
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "companyNumber": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 40
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "registeredAddress": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 300
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "vatNumber": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 40
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "hosting": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": [
+            "managed",
+            "client"
+          ]
+        },
+        "workerName": {
+          "default": null,
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "model"
+      ]
+    },
+    "site": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(?!-)[a-z0-9-]{1,63}(?<!-)(\\.(?!-)[a-z0-9-]{1,63}(?<!-))+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "domainStatus": {
+          "type": "string",
+          "enum": [
+            "own",
+            "we-buy",
+            "client-buys",
+            "undecided"
+          ]
+        }
+      },
+      "required": [
+        "domain",
+        "domainStatus"
+      ]
+    },
+    "meta": {
+      "default": {
+        "unmapped": [],
+        "laterInterests": []
+      },
+      "type": "object",
+      "properties": {
+        "unmapped": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": {
+                "type": "string"
+              },
+              "answer": {
+                "type": "string"
+              },
+              "note": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "question",
+              "answer"
+            ]
+          }
+        },
+        "laterInterests": {
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "slug",
+    "template",
+    "i18n",
+    "business",
+    "brief",
+    "brand",
+    "design",
+    "pages",
+    "sections",
+    "contact",
+    "whatsapp",
+    "hosting",
+    "site"
+  ]
+}

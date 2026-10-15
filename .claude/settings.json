@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(npm run approve:*)",
+      "Bash(npx tsx src/cli/approve.ts:*)",
+      "Bash(node dist/cli/approve.js:*)",
+      "Edit(../sf-clients/**)",
+      "Write(../sf-clients/**)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true
+}

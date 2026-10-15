@@ -1,0 +1,114 @@
+# Site Factory
+
+Küçük işletmelere (İngiltere) tanıtım sitesi üreten MCP server + kurallar.
+Agent soruları üretir, cevapları doğrulanmış config'e işler, sabit bir şablon siteyi üretir,
+kalite kontrolünden geçirir ve onaylarından sonra Cloudflare'e yayınlar.
+
+**Agent kod yazmaz.** Sadece MCP tool'ları üzerinden config, içerik ve görsel kaydeder.
+
+## Klasör yapısı
+
+```
+site-factory/            ← bu repo (fabrika)
+├── AGENTS.md            ← agent'ın akış ve kuralları (CLAUDE.md buna yönlendirir)
+├── rules/design-rules.md← tasarım kuralları + görsel onay kontrol listesi
+├── src/schema/          ← Zod şema (TEK KAYNAK) + soru listesi (questions.ts)
+├── schema/*.json        ← Zod'dan üretilir (npm run schema), elle düzenlenmez
+├── src/tools.ts         ← MCP tool'ları
+├── templates/           ← şablonlar (corporate-v1 vb.) — senin agent'la yapacağın kısım
+└── factory.config.json  ← klasör yolları ve limitler
+
+../sf-clients/<slug>/    ← her müşteri ayrı klasör + ayrı git repo
+├── site.config.json     ← yapı ve dilden bağımsız bilgiler
+├── content/en.json      ← tüm metinler (dil başına bir dosya)
+├── assets/              ← logo ve görseller (save_asset ile)
+├── questionnaires/      ← müşteriye gönderilen formlar
+├── dist/                ← üretilen site
+├── quality-report.md    ← son build'in kontrol raporu
+└── .factory/            ← onaylar, son build/deploy kaydı, audit log
+
+../sf-inbox/             ← müşteriden gelen dosyaları buraya koyarsın
+```
+
+## Kurulum
+
+```bash
+npm install
+npm run build          # dist/server.js
+npm test               # 20 test: güvenlik, akış, MCP stdio
+```
+
+Claude Code bu klasörde açıldığında `.mcp.json` ile server'ı otomatik bulur (`node dist/server.js`).
+Kod değiştirince `npm run build` yeniden çalıştır.
+
+İsteğe bağlı:
+- **UI UX Pro Max** (tasarım sistemi önerisi): `git clone https://github.com/nextlevelbuilder/ui-ux-pro-max-skill vendor/ui-ux-pro-max` (Python 3 gerekir). Yoksa agent `design-rules.md`'ye göre kendisi seçer.
+- **Impeccable** (tasarım lint): `npm i -D impeccable`. Varsa build_site otomatik çalıştırır, telemetri kapalı.
+
+## Akış (kısaca)
+
+| Adım | Kim | Ne |
+| --- | --- | --- |
+| 1 | Sen → agent | "Yeni site: Willow & Thread, bridal salon" (veya `/mcp__site-factory__new-site`) |
+| 2 | Agent | `create_client` + 1. tur formu (10 soru). Sen müşteriye gönderirsin |
+| 3 | Sen | Cevabı agent'a yapıştırırsın, dosyaları `../sf-inbox/`'a koyarsın |
+| 4 | Agent | Cevapları kaydeder, eksik varsa 2. tur form |
+| 5 | Agent | Tasarım sistemi + tüm metinler |
+| 6 | **Sen** | `npm run approve -- <slug> content` |
+| 7 | Agent | `build_site` → `quality-report.md` |
+| 8 | **Sen** | `dist/`'i aç, design-rules.md'deki listeyle bak → `npm run approve -- <slug> visual` |
+| 9 | Agent | `deploy` preview → link abine/müşteriye |
+| 10 | **Sen** | Müşteri onaylayınca `npm run approve -- <slug> production` |
+| 11 | Agent | `deploy` production |
+
+Herhangi bir adımda: agent'a "durum ne?" de → `get_client_status`.
+
+## Onaylar neden terminalde?
+
+Onaylar sadece sen etkileşimli terminalde slug'ı yazınca verilir. Agent'ın shell'i TTY olmadığı için
+onay veremez; ayrıca `.claude/settings.json` bu komutu agent'a yasaklar. Her onay o anki içerik
+hash'ine bağlıdır: config, metin veya görselde en küçük değişiklik onayı geçersiz kılar.
+
+## Cloudflare (deploy için)
+
+MCP server'ın ortamında (Claude Code'u başlattığın shell'de) tanımla, dosyalara yazma:
+
+```bash
+# hosting.model = managed (senin hesabın)
+export SF_CF_MANAGED_API_TOKEN=...
+export SF_CF_MANAGED_ACCOUNT_ID=...
+# hosting.model = client (müşterinin hesabı), slug: harbour-dental
+export SF_CF_CLIENT_HARBOUR_DENTAL_API_TOKEN=...
+export SF_CF_CLIENT_HARBOUR_DENTAL_ACCOUNT_ID=...
+```
+
+Token yetkisi: sadece *Workers Scripts: Edit* (+ alan adı bağlanacaksa ilgili zone için DNS/Workers Routes).
+Tokenlar log'lara ve tool çıktısına `***` olarak düşer. `deploy` `dryRun: true` ile yükleme yapmadan kontrol eder.
+
+## Şablon sözleşmesi (örnekleri agent'la yaparken)
+
+`build_site` şablondan sadece şunu bekler (detay AGENTS.md → "Working on templates"):
+
+- `templates/<ad>/package.json` içinde `npm run build`
+- Girdi: `SF_CLIENT_DIR` ortam değişkenindeki klasör (`site.config.json`, `content/<dil>.json`, `assets/`)
+- Çıktı: `SF_OUT_DIR` klasörüne statik site (`index.html` zorunlu)
+- Bir kez `npm install` (node_modules yoksa build durur)
+
+İlk şablon için agent'a şunu diyebilirsin:
+> "AGENTS.md'deki şablon sözleşmesine ve design-rules.md'ye göre templates/corporate-v1'i Astro + Tailwind ile kur.
+> Şemayı schema/*.schema.json'dan oku, varyantları (a/b/c) ve bölüm registry'sini kur. Sonra demo bir müşteriyle build_site çalıştır."
+
+## Güvenlik özeti
+
+- Slug ve tüm yollar doğrulanır; müşteri klasörü/inbox dışına çıkılamaz (symlink dahil).
+- Görseller içerikten tanınır (uzantıya bakılmaz); zararlı SVG (script, olay, dış referans, entity) reddedilir.
+- Komutlar shell'siz, argüman listesiyle çalışır; alt sürece sadece izinli ortam değişkenleri geçer.
+- Geçersiz değer içeren patch'in hiçbir parçası kaydedilmez; kayıtlar atomik yazılır.
+- Her tool çağrısı `.factory/audit.log`'a (sırlar maskeli) yazılır.
+
+`AGENTS.md`'deki kurallar agent'ı yönlendirir; güvenlik sınırları ise kodda ve testlerde.
+
+## Henüz yok (bilinçli)
+
+Lighthouse otomasyonu, görsel regresyon, rollback/domain tool'ları, config migrator, izleme script'leri.
+Plan dokümanındaki "Büyüyünce" bölümü — ihtiyaç doğunca eklenecek.

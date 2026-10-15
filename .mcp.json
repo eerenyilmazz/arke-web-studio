@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "site-factory": {
+      "command": "node",
+      "args": ["dist/server.js"]
+    }
+  }
+}
