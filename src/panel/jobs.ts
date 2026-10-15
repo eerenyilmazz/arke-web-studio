@@ -20,6 +20,8 @@ export interface Job {
   readonly slug: string;
   readonly kind: string;
   readonly title: string;
+  /** What the operator asked for, shown as their message in the conversation. */
+  readonly request?: string;
   readonly startedAt: string;
   status: JobStatus;
   endedAt?: string;
@@ -69,6 +71,37 @@ export function agentEnv(parent: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return env;
 }
 
+/** What is kept of a finished job (the full log is not): enough to show it in the conversation later. */
+export interface JobRecord {
+  readonly id: string;
+  readonly kind: string;
+  readonly title: string;
+  readonly request?: string;
+  readonly startedAt: string;
+  readonly endedAt: string;
+  readonly status: JobStatus;
+  readonly summary?: string;
+  readonly tools: string[];
+  readonly errors: string[];
+}
+
+const MAX_RECORD_ERRORS = 5;
+
+export function toRecord(job: Job): JobRecord {
+  return {
+    id: job.id,
+    kind: job.kind,
+    title: job.title,
+    ...(job.request ? { request: job.request } : {}),
+    startedAt: job.startedAt,
+    endedAt: job.endedAt ?? new Date().toISOString(),
+    status: job.status,
+    ...(job.summary ? { summary: job.summary } : {}),
+    tools: job.log.filter((l) => l.kind === "tool").map((l) => l.text.split("(")[0] ?? l.text),
+    errors: job.log.filter((l) => l.kind === "error").map((l) => l.text).slice(-MAX_RECORD_ERRORS),
+  };
+}
+
 export class JobRunner {
   private readonly jobs = new Map<string, Job>();
 
@@ -76,6 +109,8 @@ export class JobRunner {
     private readonly factoryRoot: string,
     private readonly spawn: SpawnFn = nodeSpawn,
     private readonly claudeBin: string = process.env.SF_CLAUDE_BIN ?? "claude",
+    /** Called once when a job ends (used to keep the conversation history in the client folder). */
+    private readonly onFinish: (slug: string, record: JobRecord) => void = () => {},
   ) {}
 
   running(): Job | undefined {
@@ -90,10 +125,10 @@ export class JobRunner {
     return [...this.jobs.values()].filter((j) => !slug || j.slug === slug).reverse();
   }
 
-  private create(slug: string, kind: string, title: string): Job {
+  private create(slug: string, kind: string, title: string, request?: string): Job {
     const active = this.running();
     if (active) throw new Error(`Şu an başka bir iş çalışıyor: "${active.title}" (${active.slug}). Bitmesini bekleyin.`);
-    const job: Job = { id: randomUUID(), slug, kind, title, startedAt: new Date().toISOString(), status: "running", log: [] };
+    const job: Job = { id: randomUUID(), slug, kind, title, ...(request ? { request } : {}), startedAt: new Date().toISOString(), status: "running", log: [] };
     this.jobs.set(job.id, job);
     return job;
   }
@@ -108,11 +143,16 @@ export class JobRunner {
     job.status = status;
     job.endedAt = new Date().toISOString();
     delete job.child;
+    try {
+      this.onFinish(job.slug, toRecord(job));
+    } catch (error) {
+      console.error("[panel] could not save job history:", error);
+    }
   }
 
   /** Runs a factory function (build, deploy…) as a job. */
-  startTask(slug: string, kind: string, title: string, fn: (log: (text: string) => void) => Promise<string>): Job {
-    const job = this.create(slug, kind, title);
+  startTask(slug: string, kind: string, title: string, fn: (log: (text: string) => void) => Promise<string>, request?: string): Job {
+    const job = this.create(slug, kind, title, request);
     fn((text) => this.push(job, "info", text))
       .then((summary) => {
         job.summary = summary;
@@ -129,8 +169,8 @@ export class JobRunner {
   }
 
   /** Runs Claude Code headless in the factory folder with the restricted tool set. */
-  startAgent(slug: string, kind: string, title: string, prompt: string): Job {
-    const job = this.create(slug, kind, title);
+  startAgent(slug: string, kind: string, title: string, prompt: string, request?: string): Job {
+    const job = this.create(slug, kind, title, request);
     this.push(job, "info", "Agent başlatıldı (sadece site-factory araçları; shell ve dosya düzenleme kapalı).");
     let child: ChildProcess;
     try {

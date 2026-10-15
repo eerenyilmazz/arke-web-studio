@@ -12,6 +12,7 @@ import { LOCALES } from "../schema/site-config.js";
 import { QUESTIONS } from "../schema/questions.js";
 import * as tools from "../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "./http.js";
+import { readHistory } from "./history.js";
 import { serialiseJob, type JobRunner } from "./jobs.js";
 import { answersPrompt, designContentPrompt, fixBuildPrompt, revisePrompt } from "./prompts.js";
 import type { PreviewServer } from "./preview.js";
@@ -128,7 +129,8 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     approvals: APPROVAL_KINDS.map((kind) => ({ kind, valid: valid[kind] !== null, at: valid[kind]?.at ?? null, command: `npm run approve -- ${s} ${kind}` })),
     lastDeploy: readJsonIfExists(paths.lastDeploy) ?? null,
     content: Object.fromEntries((draft.i18n?.locales ?? ["en"]).map((l) => [l, readJsonIfExists(paths.content(l)) ?? null])),
-    jobs: deps.jobs.list(s).slice(0, 10).map((j) => serialiseJob(j, j.log.length)),
+    history: readHistory(deps.factory, s),
+    running: deps.jobs.running()?.slug === s ? serialiseJob(deps.jobs.running()!, 0) : null,
   });
 }
 
@@ -178,6 +180,7 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   const body = await readJsonBody(req, JSON_LIMIT);
   let prompt: string;
   let title: string;
+  let request: string;
   switch (kind) {
     case "answers": {
       const answers = stringRecord(body.answers);
@@ -190,23 +193,28 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       }
       prompt = answersPrompt(s, { answers, extras, later, freeText, files: files.map((f) => f.name) });
       title = "Cevapları işle";
+      const answered = Object.values(answers).filter((a) => a.trim()).length + extras.filter((e) => e.answer.trim()).length;
+      request = [`Müşterinin cevaplarını işle: ${answered} cevap`, freeText.trim() ? "serbest metin" : "", files.length ? `${files.length} dosya` : ""].filter(Boolean).join(", ");
       break;
     }
     case "design-content":
       prompt = designContentPrompt(s);
       title = "Tasarım ve metinler";
+      request = "Tasarımı seç ve bütün metinleri yaz.";
       break;
     case "fix-build":
       prompt = fixBuildPrompt(s);
       title = "Build ve düzeltme";
+      request = "Build al, kontroller geçmezse düzelt.";
       break;
     default: {
-      const request = str(body, "request", { max: 4000 })!;
-      prompt = revisePrompt(s, request);
+      const change = str(body, "request", { max: 4000 })!;
+      prompt = revisePrompt(s, change);
       title = "Değişiklik isteği";
+      request = change;
     }
   }
-  const job = runOrConflict(() => deps.jobs.startAgent(s, kind!, title, prompt));
+  const job = runOrConflict(() => deps.jobs.startAgent(s, kind!, title, prompt, request));
   sendJson(res, 202, serialiseJob(job));
 }
 
@@ -219,7 +227,7 @@ function startBuild(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [
       for (const c of r.checks) log(`${c.status.toUpperCase().padEnd(4)}  ${c.name}: ${c.detail}`);
       if (!r.passed) throw new Error(`Build kontrolleri geçmedi. ${r.checks.filter((c) => c.status === "fail").map((c) => c.name).join(", ")}`);
       return "Build geçti. Önizlemeyi açıp görsel kontrol listesiyle bakın, sonra görsel onayı terminalden verin.";
-    }),
+    }, "Build al."),
   );
   sendJson(res, 202, serialiseJob(job));
 }
@@ -236,7 +244,7 @@ async function startDeploy(deps: ApiDeps, req: IncomingMessage, res: ServerRespo
       const r = await tools.deploy(deps.factory, { slug: s, target, dryRun });
       if (r.outputTail) log(r.outputTail);
       return dryRun ? "Deneme başarılı; hiçbir şey yüklenmedi." : r.url ? `Yayında: ${r.url}` : "Yüklendi. Adres wrangler çıktısında bulunamadı; Cloudflare panelinden bakın.";
-    }),
+    }, target === "production" ? `Siteyi canlıya al${dryRun ? " (deneme)" : ""}.` : `Önizlemeyi yayınla${dryRun ? " (deneme)" : ""}.`),
   );
   sendJson(res, 202, serialiseJob(job));
 }

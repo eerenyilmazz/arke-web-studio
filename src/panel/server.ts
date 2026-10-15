@@ -5,6 +5,7 @@ import { FACTORY_ROOT, loadFactoryConfig, type FactoryConfig } from "../config.j
 import { handleApi } from "./api.js";
 import { allowedHost, allowedOrigin, cookieHeader, hasSession, newSessionKey, safeEqual } from "./auth.js";
 import { HttpError, sendError } from "./http.js";
+import { appendHistory } from "./history.js";
 import { JobRunner, type SpawnFn } from "./jobs.js";
 import { PreviewServer } from "./preview.js";
 import { serveFile } from "./static.js";
@@ -32,7 +33,7 @@ export interface Panel {
 }
 
 export function createPanel(opts: PanelOptions): Panel {
-  const jobs = new JobRunner(FACTORY_ROOT, opts.spawn);
+  const jobs = new JobRunner(FACTORY_ROOT, opts.spawn, undefined, (slug, record) => appendHistory(opts.factory, slug, record));
   const preview = new PreviewServer(opts.previewPort);
   const deps = { factory: opts.factory, jobs, preview };
 

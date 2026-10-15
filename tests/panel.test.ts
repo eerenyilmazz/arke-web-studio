@@ -146,6 +146,15 @@ describe("panel flow", () => {
       expect(done.summary).toMatch(/Özet/);
       expect(done.log.map((l) => l.kind)).toEqual(["info", "agent", "tool", "error", "result"]);
       expect(done.log[2]?.text).toMatch(/^update_client_config\(/);
+
+      // The finished job is kept in the client folder, so the conversation survives a panel restart.
+      const detail = (await (await fetch(`${base}/api/clients/willow-thread`, { headers: auth })).json()) as { history: Array<{ request: string; summary: string; tools: string[]; errors: string[] }>; running: unknown };
+      expect(detail.running).toBeNull();
+      expect(detail.history).toHaveLength(1);
+      expect(detail.history[0]?.request).toMatch(/^Müşterinin cevaplarını işle: 1 cevap/);
+      expect(detail.history[0]?.summary).toMatch(/Özet/);
+      expect(detail.history[0]?.tools).toEqual(["update_client_config"]);
+      expect(detail.history[0]?.errors).toEqual(["Nothing saved."]);
     } finally {
       delete process.env.SF_CF_MANAGED_API_TOKEN;
     }
