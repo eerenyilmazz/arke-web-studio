@@ -49,7 +49,7 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     { name: "site-factory", version: "0.1.0" },
     {
       instructions:
-        "Site Factory: produces small-business websites from a fixed template. Read AGENTS.md first. You write config and content through these tools; you never edit template code and never create approvals.",
+        "Site Factory: produces small-business websites. Read AGENTS.md first. You write config and content through these tools. Template sites: never edit template code. Custom sites (template \"custom\"): you design the brand and write the site code with the site-file tools, following rules/custom-site.md. Never create approvals.",
     },
   );
 
@@ -165,6 +165,33 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     handler(factory, "build_site", (a: { slug: string }) => tools.buildSite(factory, a)),
   );
 
+  const sitePath = z.string().min(1).max(130).describe("Path inside the client's site/ folder, e.g. index.html, css/site.css, tr/index.html, brand/brand.json");
+  server.registerTool(
+    "list_site_files",
+    { title: "List site files", description: 'Files in the client\'s site/ folder (custom sites only), with sizes.', inputSchema: { slug }, annotations: { readOnlyHint: true } },
+    handler(factory, "list_site_files", (a: { slug: string }) => tools.listSiteFilesTool(factory, a)),
+  );
+  server.registerTool(
+    "read_site_file",
+    { title: "Read site file", description: "Reads one file from the client's site/ folder.", inputSchema: { slug, path: sitePath }, annotations: { readOnlyHint: true } },
+    handler(factory, "read_site_file", (a: { slug: string; path: string }) => tools.readSiteFileTool(factory, a)),
+  );
+  server.registerTool(
+    "write_site_file",
+    {
+      title: "Write site file",
+      description:
+        'Creates or replaces one file of a custom site (template "custom") in site/: .html .css .js .svg .json .txt .xml .webmanifest, up to 400 KB each. Images are added with save_asset and referenced as /assets/<name>. Follow rules/custom-site.md: brand identity first (brand/brand.json, brand/logo.svg), then pages.',
+      inputSchema: { slug, path: sitePath, content: z.string().max(400_000) },
+    },
+    handler(factory, "write_site_file", (a: { slug: string; path: string; content: string }) => tools.writeSiteFileTool(factory, a)),
+  );
+  server.registerTool(
+    "delete_site_file",
+    { title: "Delete site file", description: "Deletes one file from the client's site/ folder.", inputSchema: { slug, path: sitePath } },
+    handler(factory, "delete_site_file", (a: { slug: string; path: string }) => tools.deleteSiteFileTool(factory, a)),
+  );
+
   server.registerTool(
     "deploy",
     {
@@ -179,9 +206,11 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
 
   const agentsMd = path.join(FACTORY_ROOT, "AGENTS.md");
   const designMd = path.join(FACTORY_ROOT, "rules", "design-rules.md");
+  const customMd = path.join(FACTORY_ROOT, "rules", "custom-site.md");
   for (const [name, file] of [
     ["agents", agentsMd],
     ["design-rules", designMd],
+    ["custom-site", customMd],
   ] as const) {
     server.registerResource(name, `factory://rules/${name}`, { mimeType: "text/markdown", title: path.basename(file) }, async (uri) => ({
       contents: [{ uri: uri.href, mimeType: "text/markdown", text: existsSync(file) ? readFileSync(file, "utf8") : "(missing)" }],

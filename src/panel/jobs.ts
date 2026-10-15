@@ -40,14 +40,22 @@ export const AGENT_ALLOWED_TOOLS = [
   "mcp__site-factory__save_asset",
   "mcp__site-factory__generate_design_system",
   "mcp__site-factory__build_site",
+  "mcp__site-factory__list_site_files",
+  "mcp__site-factory__read_site_file",
+  "mcp__site-factory__write_site_file",
+  "mcp__site-factory__delete_site_file",
   "Read",
   "Grep",
   "Glob",
 ] as const;
 export const AGENT_DENIED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "WebFetch", "WebSearch", "Task", "mcp__site-factory__deploy", "mcp__site-factory__create_client"] as const;
-const MAX_AGENT_TURNS = 60;
+/** Change requests on a custom site may touch several files and rebuild. */
+const MAX_AGENT_TURNS = 120;
 /** "Prepare site" runs answers, design, content and build in one job, so it needs more turns. */
-export const MAX_AUTOPILOT_TURNS = 150;
+/** Custom sites (brand + every page written by hand) need many more tool calls than filling a template. */
+export const MAX_AUTOPILOT_TURNS = 300;
+/** Jobs that may design and write a whole site. */
+const LONG_JOBS: ReadonlySet<string> = new Set(["autopilot", "upgrade-template"]);
 const MAX_LOG_LINES = 2000;
 const MAX_TEXT = 4000;
 
@@ -176,7 +184,7 @@ export class JobRunner {
     this.push(job, "info", "Agent başlatıldı (sadece site-factory araçları; shell ve dosya düzenleme kapalı).");
     let child: ChildProcess;
     try {
-      child = this.spawn(this.claudeBin, claudeArgs(kind === "autopilot" ? MAX_AUTOPILOT_TURNS : undefined), { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
+      child = this.spawn(this.claudeBin, claudeArgs(LONG_JOBS.has(kind) ? MAX_AUTOPILOT_TURNS : undefined), { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
     } catch (error) {
       this.push(job, "error", `Claude Code başlatılamadı: ${(error as Error).message}`);
       this.finish(job, "failed");

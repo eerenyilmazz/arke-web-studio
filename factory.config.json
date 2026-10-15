@@ -2,7 +2,7 @@
   "clientsRoot": "../sf-clients",
   "inboxDir": "../sf-inbox",
   "templatesDir": "templates",
-  "defaultTemplate": "corporate-v2",
+  "defaultTemplate": "custom",
   "uupmScript": "vendor/ui-ux-pro-max/src/ui-ux-pro-max/scripts/search.py",
   "limits": {
     "maxImageBytes": 5242880,

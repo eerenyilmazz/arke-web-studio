@@ -1,6 +1,6 @@
 {
   "name": "site-factory",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "private": true,
   "description": "MCP server + rules for producing small-business showcase websites from a fixed template and a validated config.",
   "type": "module",

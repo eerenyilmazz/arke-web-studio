@@ -236,7 +236,7 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       break;
     case "upgrade-template":
       prompt = upgradeTemplatePrompt(s, deps.factory.defaultTemplate);
-      title = "Yeni şablona geç";
+      title = deps.factory.defaultTemplate === "custom" ? "Serbest tasarıma geç" : "Yeni şablona geç";
       request = `Siteyi yeni şablona (${deps.factory.defaultTemplate}) taşı.`;
       break;
     default: {

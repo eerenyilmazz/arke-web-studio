@@ -17,6 +17,12 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Serbest tasarım (yeni müşterilerin varsayılanı)
+
+Agent her müşteri için önce **marka kimliğini** tasarlar (konsept, logo, renkler, yazı tipleri, görsel dil ve o işe özel 2–4 imza animasyonu: turşucuda kavanozun dolması, kabarcıklar, kapağın açılması gibi), sonra siteyi sıfırdan yazar. Kurallar `rules/custom-site.md`, örnek `rules/examples/uzunoglu/`.
+
+Build her seferinde kontrol eder: marka dosyası ve logo var mı, renkler ve animasyonlar gerçekten kullanılmış mı, dışarıdan script / yönlendirme / takip / gömülü içerik var mı, linkler çalışıyor mu, başlık-açıklama-alt metin tam mı. Onaylar ve yayın aynı.
+
 ## Şablonlar
 
 - **corporate-v2** (yeni müşterilerin varsayılanı): sektöre göre üç kişilik (cesur / premium / samimi) ve animasyonlu sektör motifi (turşu kavanozu, kod editörü, fincan, makas…). Agent seçer; kurallar `rules/design-rules.md`.

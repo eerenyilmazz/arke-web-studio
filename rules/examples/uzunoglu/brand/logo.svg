@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" role="img" aria-label="Uzunoğlu Turşuculuk">
+  <rect x="6" y="14" width="34" height="44" rx="9" fill="#DCE6C4" stroke="#2F4A2A" stroke-width="3"/>
+  <rect x="8" y="30" width="30" height="26" rx="7" fill="#2F4A2A" opacity=".85"/>
+  <path d="M17 52c-3-8 0-16 4-20M27 52c2-7 1-13-3-18" stroke="#B3261E" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <rect x="9" y="6" width="28" height="10" rx="3" fill="#B3261E"/>
+  <path d="M38 22c6-6 10-6 14-2" stroke="#2F4A2A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <text x="58" y="35" font-family="Fraunces, Georgia, serif" font-size="25" font-weight="800" fill="#2F4A2A">Uzunoğlu</text>
+  <text x="59" y="55" font-family="'Instrument Sans', Arial, sans-serif" font-size="12.5" font-weight="600" letter-spacing="3" fill="#B3261E">TURŞUCULUK</text>
+</svg>

@@ -71,9 +71,9 @@ describe("corporate-v2 fields", () => {
 });
 
 describe("factory defaults", () => {
-  it("new clients use corporate-v2, and both templates ship", () => {
+  it("new clients get custom sites, and both templates still ship for existing clients", () => {
     const factory = JSON.parse(readFileSync("factory.config.json", "utf8"));
-    expect(factory.defaultTemplate).toBe("corporate-v2");
+    expect(factory.defaultTemplate).toBe("custom");
     for (const t of ["corporate-v1", "corporate-v2"]) expect(existsSync(`templates/${t}/package.json`)).toBe(true);
   });
 });

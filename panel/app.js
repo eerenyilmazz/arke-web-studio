@@ -416,8 +416,8 @@ function upgradeBanner(d) {
   if (!d.template || !d.latestTemplate || d.template === d.latestTemplate) return null;
   const slug = d.status.slug;
   return h("section", { class: "upgrade-banner", "aria-label": "Yeni şablon" },
-    h("p", {}, h("strong", { text: "Yeni şablon hazır. " }), h("span", { text: `Bu site eski şablonda (${d.template}). Yeni şablon sektöre göre kişilik ve animasyonlu motif kullanır; metinler aynı kalır, onaylar sıfırlanır.` })),
-    h("button", { class: "btn", type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "upgrade-template", {}) }, "Yeni şablona geç"),
+    h("p", {}, h("strong", { text: "Serbest tasarım hazır. " }), h("span", { text: `Bu site hazır şablonla yapılmış (${d.template}). Serbest tasarımda agent markaya özel kimlik, logo ve animasyonlarla siteyi baştan yazar; bilgiler aynı kalır, onaylar sıfırlanır.` })),
+    h("button", { class: "btn", type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "upgrade-template", {}) }, "Serbest tasarıma geç"),
   );
 }
 

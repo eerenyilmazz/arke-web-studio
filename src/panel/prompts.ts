@@ -56,6 +56,10 @@ function clientDataLines(slug: string, input: AnswersInput): string[] {
   return lines;
 }
 
+/** Custom sites (template "custom"): the agent designs the brand and writes the site itself. */
+const CUSTOM_STEP =
+  '4b. If the config template is "custom": read rules/custom-site.md completely, then design the brand identity first (site/brand/brand.json and site/brand/logo.svg, with signature animations that come from what this business makes), then write every page with write_site_file. If the site already exists, update only what the new information changes.';
+
 /** Colours named anywhere in the client's text (any language) are their brand colours, not a suggestion. */
 const COLOUR_RULE =
   "Colours the client names anywhere (any language, e.g. \"kırmızı ve siyah\", \"navy and gold\") are brand colours: save them as hex in brand.colors and build design.palette from them (primary/accent), changing only lightness to pass contrast. Never replace them with colours of your own.";
@@ -97,7 +101,8 @@ export function autopilotPrompt(slug: string, input: AnswersInput | null): strin
     "2. If a required field still cannot be filled without inventing a fact, stop here and do not build.",
     "3. Design (flow step 5) if design is missing.",
     "4. Content (flow step 6) for every locale if missing, or if the new information changes facts already in the text.",
-    "5. build_site. If checks fail, fix config or content only and build again; stop after 3 failed builds.",
+    CUSTOM_STEP,
+    "5. build_site. If checks fail, fix config, content or (custom sites) the site files and build again; stop after 3 failed builds.",
     "Never deploy and never touch approvals.",
     DATA_RULE,
     ...(data.trim() ? ["", "<client_data>", data.trim(), "</client_data>"] : []),
@@ -117,7 +122,8 @@ export function designContentPrompt(slug: string): string {
     "Read rules/design-rules.md first. Run generate_design_system, choose palette, fonts, style and section variants, and save them under design.",
     "Then write all text with save_content for every locale in i18n.locales, with the same number of items in each.",
     "Use only facts already recorded for this client; do not invent prices, awards or reviews.",
-    "Do not build or deploy in this job. When done, call get_client_status.",
+    "Do not deploy in this job. Template sites: do not build. When done, call get_client_status.",
+    CUSTOM_STEP,
     `${SUMMARY_RULE} Include one sentence on why you chose the style.`,
   ].join("\n");
 }
@@ -134,6 +140,17 @@ export function fixBuildPrompt(slug: string): string {
 /** Eren's own change request: an instruction, not client data. */
 /** Moves an existing client to the newest template: same facts and texts, new personality and motif. */
 export function upgradeTemplatePrompt(slug: string, template: string): string {
+  if (template === "custom") {
+    return [
+      `Site Factory, client "${slug}". Eren wants this site redesigned from scratch as a custom site.`,
+      COLOUR_RULE,
+      '1. update_site_config: set "template" to "custom". Keep all facts, palette and content.',
+      "2. Read rules/custom-site.md completely. Design the brand identity first (site/brand/brand.json, site/brand/logo.svg) with signature animations that come from what this business makes, then write every page with write_site_file.",
+      "3. build_site. If checks fail, fix the site files and build again (at most 3 attempts).",
+      "Do not deploy. Approvals reset; Eren approves the new site himself.",
+      SUMMARY_RULE,
+    ].join("\n");
+  }
   return [
     `Site Factory, client "${slug}". Eren wants this site moved to the newest template, "${template}".`,
     COLOUR_RULE,
@@ -152,7 +169,7 @@ export function revisePrompt(slug: string, request: string): string {
     "",
     request.trim(),
     "",
-    "Apply it only through the site-factory tools, following AGENTS.md and rules/design-rules.md. Do not deploy.",
+    "Apply it only through the site-factory tools, following AGENTS.md and rules/design-rules.md (custom sites: rules/custom-site.md; edit the site files with read_site_file / write_site_file and keep the brand identity). Build after the change. Do not deploy.",
     "If the request is out of scope (see AGENTS.md, Stay in scope) or unclear, change nothing and explain why.",
     SUMMARY_RULE,
   ].join("\n");

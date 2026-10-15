@@ -261,7 +261,7 @@ describe("prepare site (autopilot)", () => {
     expect(first.status).toBe(202);
     await waitFor(async () => ((await (await fetch(`${base}/api/clients/reinware`, { headers: auth })).json()) as { running: unknown }).running === null);
     const call = calls[0]!;
-    expect(call.args[call.args.indexOf("--max-turns") + 1]).toBe("150");
+    expect(call.args[call.args.indexOf("--max-turns") + 1]).toBe("300");
     expect(call.stdin).toMatch(/\n<client_data>\n/);
     expect(call.stdin).toContain("eerenyilmazz1@gmail.com");
     expect(call.stdin).toMatch(/Never deploy and never touch approvals/);

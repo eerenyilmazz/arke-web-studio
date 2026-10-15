@@ -12,6 +12,7 @@ import { contentHash, dirHash, readJsonIfExists, writeJson, writeText } from "./
 import { deepMerge } from "./lib/merge.js";
 import { assertSlug, clientPaths, safeJoin } from "./lib/paths.js";
 import { checkInputs, checkOutput, renderReport, type CheckResult } from "./lib/quality.js";
+import { buildCustomSite, checkBrand, checkCustomCode, deleteSiteFile, isCustom, listSiteFiles, readSiteFile, writeSiteFile } from "./lib/custom-site.js";
 import { buildQuestionnaire } from "./lib/questionnaire.js";
 import { findUnknownKeys } from "./lib/unknown-keys.js";
 import { validateDraft, type FieldIssue } from "./lib/validation.js";
@@ -80,7 +81,7 @@ export async function createClient(
     slug,
     folder: paths.root,
     gitInitialised: git?.code === 0,
-    templateFound: existsSync(path.join(factory.templatesDir, template, "package.json")),
+    templateFound: isCustom(template) || existsSync(path.join(factory.templatesDir, template, "package.json")),
     next: "Call generate_questionnaire with round 1 and give the text to Eren to send to the client.",
   };
 }
@@ -269,17 +270,29 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
 
   // Pin the inputs before building: if they change while the build runs, the output no longer matches them.
   const hashBefore = contentHash(paths.root);
-  const templateDir = safeJoin(factory.templatesDir, config.template);
   let buildOutput = "";
-  if (!existsSync(path.join(templateDir, "package.json"))) {
+  if (isCustom(config.template)) {
+    // The agent wrote the site itself: copy it, then check the code and the brand identity.
+    if (results.some((r) => r.status === "fail")) {
+      results.push({ name: "Custom site build", status: "skip", detail: "Skipped because input checks failed." });
+    } else {
+      const built = buildCustomSite(paths);
+      results.push(built);
+      if (built.status === "pass") {
+        results.push(...checkOutput(paths.distDir, config));
+        results.push(...checkCustomCode(paths.distDir, formActionUrl()));
+        results.push(...checkBrand(paths.distDir));
+      }
+    }
+  } else if (!existsSync(path.join(safeJoin(factory.templatesDir, config.template), "package.json"))) {
     results.push({ name: "Template build", status: "fail", detail: `Template "${config.template}" not found in templates/. See README: template contract.` });
-  } else if (!existsSync(path.join(templateDir, "node_modules"))) {
+  } else if (!existsSync(path.join(safeJoin(factory.templatesDir, config.template), "node_modules"))) {
     results.push({ name: "Template build", status: "fail", detail: `Run "npm install" once in templates/${config.template}.` });
   } else if (results.some((r) => r.status === "fail")) {
     results.push({ name: "Template build", status: "skip", detail: "Skipped because input checks failed." });
   } else {
     const res = await run("npm", ["run", "build", "--silent"], {
-      cwd: templateDir,
+      cwd: safeJoin(factory.templatesDir, config.template),
       timeoutMs: factory.limits.buildTimeoutMs,
       env: buildEnv(paths.root, paths.distDir),
     });
@@ -313,7 +326,9 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
     buildLogTail: !record.passed && buildOutput ? buildOutput.slice(-1500) : undefined,
     next: record.passed
       ? "Ask Eren to open dist/ locally and review it against the design checklist (visual approval)."
-      : "Fix the failed checks (config/content only, never the template), then build again.",
+      : isCustom(config.template)
+        ? "Fix the failed checks in config, content or the site files (write_site_file), then build again."
+        : "Fix the failed checks (config/content only, never the template), then build again.",
   };
 }
 
@@ -458,6 +473,36 @@ function cloudflareCredentials(model: "managed" | "client", slug: string): { tok
   const token = process.env[`${prefix}API_TOKEN`];
   const accountId = process.env[`${prefix}ACCOUNT_ID`];
   return token && accountId ? { token, accountId } : null;
+}
+
+/** The contact form endpoint, when configured and https. */
+function formActionUrl(): string | null {
+  const value = process.env[FORM_ACTION_ENV];
+  return value && /^https:\/\//.test(value) ? value : null;
+}
+
+// ---------------------------------------------------------------- custom site files
+
+export function listSiteFilesTool(factory: FactoryConfig, args: { slug: string }) {
+  const paths = openClient(factory, assertSlug(args.slug));
+  return listSiteFiles(paths);
+}
+
+export function readSiteFileTool(factory: FactoryConfig, args: { slug: string; path: string }) {
+  return readSiteFile(openClient(factory, assertSlug(args.slug)), args.path);
+}
+
+export function writeSiteFileTool(factory: FactoryConfig, args: { slug: string; path: string; content: string }) {
+  const paths = openClient(factory, assertSlug(args.slug));
+  const template = (readDraftConfig(paths) as { template?: string }).template ?? "";
+  if (!isCustom(template)) {
+    throw new FactoryError(`Client "${args.slug}" uses the ${template} template, which you do not write code for.`, 'Only sites with template "custom" are written by hand. Change config and content instead.');
+  }
+  return writeSiteFile(paths, args.path, args.content);
+}
+
+export function deleteSiteFileTool(factory: FactoryConfig, args: { slug: string; path: string }) {
+  return deleteSiteFile(openClient(factory, assertSlug(args.slug)), args.path);
 }
 
 function buildEnv(clientDir: string, outDir: string): Record<string, string> {

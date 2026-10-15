@@ -37,10 +37,11 @@ describe("MCP server over stdio", () => {
   it("exposes the tools, resources and prompt", async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
-      ["build_site", "create_client", "deploy", "generate_design_system", "generate_questionnaire", "get_client_status", "list_clients", "save_asset", "save_content", "update_client_config"].sort(),
+      ["build_site", "create_client", "delete_site_file", "deploy", "generate_design_system", "list_site_files", "read_site_file", "write_site_file", "generate_questionnaire", "get_client_status", "list_clients", "save_asset", "save_content", "update_client_config"].sort(),
     );
     const { resources } = await client.listResources();
     expect(resources.map((r) => r.uri)).toContain("factory://rules/agents");
+    expect(resources.map((r) => r.uri)).toContain("factory://rules/custom-site");
     const agents = await client.readResource({ uri: "factory://rules/agents" });
     expect(JSON.stringify(agents)).toContain("Approvals are human-only");
     const { prompts } = await client.listPrompts();

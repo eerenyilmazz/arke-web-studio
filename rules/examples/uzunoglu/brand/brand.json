@@ -1,0 +1,21 @@
+{
+  "concept": "Mutfak penceresindeki turşu kavanozları: ışığı yakalayan cam, bulanık salamura, kırmızı biber ve elle tarih atılmış kraft etiketler. Geleneksel, sabırlı ve iştah açıcı.",
+  "personality": ["samimi", "geleneksel", "iştah açıcı", "biraz şakacı"],
+  "palette": {
+    "salamura": "#2F4A2A",
+    "biber": "#B3261E",
+    "cam": "#DCE6C4",
+    "kraft": "#D9B98A",
+    "kagit": "#F6F1E4",
+    "murekkep": "#1B2215"
+  },
+  "fonts": { "heading": "Fraunces", "body": "Instrument Sans" },
+  "visualLanguage": "Uzun cam kavanoz siluetleri, cam üzerinde ışık yansıması, salamurada yükselen kabarcıklar, dereotu dalları, damga gibi basılmış kraft etiketler ve ahşap raf çizgileri.",
+  "voice": "Kısa, sıcak cümleler; tezgâhın arkasındaki aile gibi konuşur, abartmaz.",
+  "animations": [
+    { "id": "jar-fill", "idea": "Sayfa açılırken ana sahnedeki kavanozlar salamurayla dolar, turşular yukarı süzülür, sonra salamura hafifçe çalkalanır", "trigger": "load" },
+    { "id": "brine-bubbles", "idea": "Ana sahnede fare gezdikçe imleçten mayalanma kabarcıkları yükselir; kavanozların içinde de sürekli kabarcık çıkar", "trigger": "pointer" },
+    { "id": "lid-twist", "idea": "Raftaki ürün kavanozunun üzerine gelince kapak dönerek açılır, fiyat etiketi sallanır", "trigger": "hover" },
+    { "id": "label-stamp", "idea": "Öne çıkan bilgiler kraft etiket damgası gibi ekrana girerken yerine basılır", "trigger": "scroll" }
+  ]
+}
