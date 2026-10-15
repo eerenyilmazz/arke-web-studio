@@ -30,6 +30,10 @@ Agent bu işlerde **sadece** site-factory araçlarını kullanabilir: shell, dos
 Cloudflare değişkenleri agent'a hiç verilmez. Aynı anda tek iş çalışır.
 Onaylar bilinçli olarak panelde değil, terminalde: `npm run approve -- <slug> <content|visual|production>`.
 
+**Müşteri arşivleme:** müşteri sayfasındaki **Arşivle** düğmesi (kısa adı yazarak onaylanır). Silmez:
+`sf-clients/<slug>` ve `sf-inbox/<slug>` klasörleri `_archive/<slug>-<tarih>` altına taşınır. Geri almak için klasörü
+eski yerine taşıyıp adını `<slug>` yapın. Yayındaki site kapanmaz; Cloudflare'den ayrıca kaldırılır.
+
 ## Klasör yapısı
 
 ```

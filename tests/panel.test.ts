@@ -183,3 +183,29 @@ describe("panel flow", () => {
     expect((await fetch(`${r.url}..%2F..%2Fsite.config.json`)).status).toBeGreaterThanOrEqual(403);
   });
 });
+
+describe("archiving a client", () => {
+  it("needs the typed slug, moves folders to _archive and keeps everything", async () => {
+    const { base, auth, factory } = await start();
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients/willow-thread/inbox/logo.png`, { method: "PUT", headers: auth, body: Buffer.from("x") });
+
+    const wrong = await fetch(`${base}/api/clients/willow-thread`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "nope" }) });
+    expect(wrong.status).toBe(400);
+    expect(existsSync(path.join(factory.clientsRoot, "willow-thread", "site.config.json"))).toBe(true);
+
+    const ok = await fetch(`${base}/api/clients/willow-thread`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "willow-thread" }) });
+    expect(ok.status).toBe(200);
+    expect(existsSync(path.join(factory.clientsRoot, "willow-thread"))).toBe(false);
+    const [archived] = readdirSync(path.join(factory.clientsRoot, "_archive"));
+    expect(archived).toMatch(/^willow-thread-\d{8}-\d{6}$/);
+    expect(existsSync(path.join(factory.clientsRoot, "_archive", archived!, "site.config.json"))).toBe(true);
+    expect(existsSync(path.join(factory.inboxDir, "_archive", archived!, "logo.png"))).toBe(true);
+
+    const list = (await (await fetch(`${base}/api/clients`, { headers: auth })).json()) as { clients: unknown[] };
+    expect(list.clients).toEqual([]);
+    // The slug is free again for a new client.
+    expect((await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }) })).status).toBe(201);
+  });
+});

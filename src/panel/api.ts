@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import type { FactoryConfig } from "../config.js";
 import { approvalState, APPROVAL_KINDS } from "../lib/approvals.js";
+import { archiveClient } from "../lib/archive.js";
 import { readDraftConfig } from "../lib/client.js";
 import { dirHash, readJsonIfExists } from "../lib/files.js";
 import { assertSlug, clientPaths, safeJoin } from "../lib/paths.js";
@@ -38,6 +39,7 @@ const routes: Route[] = [
   { method: "GET", pattern: /^\/api\/clients$/, handler: listClients },
   { method: "POST", pattern: /^\/api\/clients$/, handler: createClient },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: clientDetail },
+  { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: archive },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: writeQuestionnaire },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
@@ -83,6 +85,17 @@ async function createClient(deps: ApiDeps, req: IncomingMessage, res: ServerResp
     ...(extra ? { extraLocale: extra as (typeof LOCALES)[number] } : {}),
   });
   sendJson(res, 201, result);
+}
+
+/** Archive, not delete: the operator must type the slug, and nothing may be running for this client. */
+async function archive(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  const body = await readJsonBody(req, JSON_LIMIT);
+  if (body.confirm !== s) throw new HttpError(400, "Onay için müşterinin kısa adını (slug) aynen yazın.");
+  const running = deps.jobs.running();
+  if (running?.slug === s) throw new HttpError(409, `Bu müşteri için çalışan bir iş var: "${running.title}". Bitmesini bekleyin.`);
+  const r = archiveClient(deps.factory, s);
+  sendJson(res, 200, { archived: true, slug: s, folder: path.basename(r.archivedTo) });
 }
 
 function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {

@@ -186,7 +186,10 @@ async function renderClient(view, slug, tab) {
           d.domain && h("span", { text: d.domain }),
         ),
       ),
-      h("span", { class: "badge ok", text: stageLabel(stage) }),
+      h("div", { class: "row" },
+        h("span", { class: "badge ok", text: stageLabel(stage) }),
+        h("button", { class: "btn btn-small btn-danger", type: "button", onclick: () => archiveClient(slug, d.status.stage) }, "Arşivle"),
+      ),
     ),
     h("ol", { class: "steps", "aria-label": `Aşama ${stageIndex + 1} / ${STAGES.length}` }, ...STAGES.map((s, i) => h("li", { class: i < stageIndex ? "done" : i === stageIndex ? "now" : "", title: s[1] }))),
     h("p", { class: "next" }, h("strong", { text: "Sıradaki adım: " }), STAGE_HELP[stage] || d.status.nextStep),
@@ -434,6 +437,15 @@ function tabPublish(body, d) {
       ld && h("p", { class: "small" }, `Son yayın: ${ld.target} · ${new Date(ld.at).toLocaleString("tr-TR")} `, ld.url && h("a", { href: ld.url, target: "_blank", rel: "noopener", text: ld.url })),
     ),
   );
+}
+
+async function archiveClient(slug, stage) {
+  const liveNote = stage === "live" ? "\n\nDikkat: site yayında. Arşivlemek siteyi kapatmaz; Cloudflare'de yayında kalır." : "";
+  const typed = prompt(`"${slug}" arşivlenecek: listeden kalkar, klasörü sf-clients/_archive altına taşınır (silinmez, geri alınabilir).${liveNote}\n\nOnaylamak için kısa adı yazın: ${slug}`);
+  if (typed === null) return;
+  if (typed.trim() !== slug) { toast("Kısa ad eşleşmedi, hiçbir şey yapılmadı.", true); return; }
+  const r = await guarded(() => api("DELETE", `/api/clients/${slug}`, { confirm: slug }));
+  if (r) { toast(`${slug} arşivlendi (${r.folder}).`); location.hash = "#/"; }
 }
 
 // ---------------------------------------------------------------- jobs
