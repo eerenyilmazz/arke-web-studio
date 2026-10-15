@@ -30,7 +30,23 @@ site-factory/            ← bu repo (fabrika)
 ../sf-inbox/             ← müşteriden gelen dosyaları buraya koyarsın
 ```
 
-## Kurulum
+## Kurulum (Windows: WSL2 içinde)
+
+Projeyi WSL'in kendi diskine koy (`~/projects/site-factory`), Windows sürücüsüne (`/mnt/c/...`) değil.
+Claude Code'u da WSL içine kur ve bu klasörden çalıştır; sandbox sadece böyle devreye girer.
+
+```bash
+mkdir -p ~/projects && cd ~/projects
+unzip /mnt/c/Users/<kullanıcı>/Downloads/site-factory.zip      # site-factory/ klasörü çıkar
+cd site-factory
+bash scripts/setup-wsl.sh --check   # sadece kontrol, hiçbir şeyi değiştirmez
+bash scripts/setup-wsl.sh           # klasörler + settings.local.json + git init + npm ci/build/test
+```
+
+Script `../sf-clients` ve `../sf-inbox` klasörlerini oluşturur, eksik araç varsa kurulum komutunu yazar
+(kendisi sistem paketi kurmaz, hiçbir şeyi silmez). Windows'tan erişim: `\\wsl$\Ubuntu\home\<kullanıcı>\projects`.
+
+Elle kurulum:
 
 ```bash
 npm install
