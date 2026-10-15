@@ -48,6 +48,8 @@ Motif = the animated drawing in the hero (decorative, colours from the palette):
 - `tooth`, `heartbeat` → health: calm hero with the highlights as a checklist and an hours card, equal treatment cards, contact panel. 4 highlights read best.
 - `bricks`, `car`, `leaf` → trades: dark hero with the phone number as the main button, highlights as badges (free quotes, insured, guarantee), sturdy job tiles, a huge tap-to-call number. Put the process steps in; trades customers want to know what happens.
 
+**Pointer effects.** On desktop the hero reacts to the mouse automatically, by motif: scissors become the cursor and snip, a grill throws embers, food steams, code leaves glyphs, health sparkles, trades kick up dust. Nothing to configure; touch, keyboard and reduced-motion visitors see the normal page.
+
 **Dark mode.** `design.darkMode` = `auto` (default): the site follows the visitor's device and shows a sun/moon switch; the dark palette is made from the client's colours automatically. Set `off` only if the client asks for a light-only site.
 
 Content for corporate-v2:

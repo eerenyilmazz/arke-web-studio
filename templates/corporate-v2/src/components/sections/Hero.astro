@@ -5,6 +5,7 @@ import Beauty from "./hero/Beauty.astro";
 import Health from "./hero/Health.astro";
 import Trades from "./hero/Trades.astro";
 import Standard from "./hero/Standard.astro";
+import HeroFx from "../HeroFx.astro";
 
 /* Sector layouts (beauty, health, trades) have their own version; food and everything else use Standard. */
 interface Props { readonly ctx: PageContext }
@@ -14,4 +15,7 @@ const BY_FAMILY = { beauty: Beauty, health: Health, trades: Trades } as const;
 const Chosen = family && family !== "food" ? BY_FAMILY[family] : Standard;
 const Section = Chosen;
 ---
-{Section && <Section ctx={ctx} />}
+<div class="fx-wrap">
+  {Section && <Section ctx={ctx} />}
+  <HeroFx motif={ctx.config.design.motif} />
+</div>

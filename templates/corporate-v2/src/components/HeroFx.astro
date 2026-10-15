@@ -1,0 +1,164 @@
+---
+import type { Motif } from "../lib/data";
+
+/*
+ * Pointer effects for the hero: a soft light follows the mouse, the illustration tilts toward it, and a sector
+ * touch reacts to movement (scissors become the cursor and snip, a grill throws embers, code leaves glyphs…).
+ * Decoration only: mouse users on desktop with motion allowed. Touch, keyboard and reduced-motion visitors get
+ * the normal page, and links and buttons always keep the normal cursor.
+ */
+interface Props { readonly motif: Motif }
+const { motif } = Astro.props;
+const FX_BY_MOTIF: Readonly<Record<Motif, string>> = {
+  scissors: "snip", grill: "embers", plate: "steam", bread: "steam", cup: "steam", jar: "bubbles",
+  code: "glyphs", tooth: "sparkle", heartbeat: "sparkle", scales: "sparkle", bricks: "dust", car: "dust",
+  leaf: "leaves", abstract: "sparkle", none: "sparkle",
+};
+const fx = FX_BY_MOTIF[motif];
+---
+<div class="hero-fx" data-fx={fx} aria-hidden="true">
+  {fx === "snip" && (
+    <svg class="fx-scissors" viewBox="0 0 64 64" width="56" height="56">
+      <g class="fx-blade-a"><circle cx="14" cy="18" r="8" fill="none" stroke="var(--c-accent-ink)" stroke-width="4" /><path d="M20 22 56 40" stroke="currentColor" stroke-width="5" stroke-linecap="round" /></g>
+      <g class="fx-blade-b"><circle cx="14" cy="46" r="8" fill="none" stroke="currentColor" stroke-width="4" /><path d="M20 42 56 24" stroke="currentColor" stroke-width="5" stroke-linecap="round" /></g>
+      <circle cx="33" cy="32" r="3" fill="var(--c-accent-ink)" />
+    </svg>
+  )}
+</div>
+
+<script>
+  type Particle = { x: number; y: number; vx: number; vy: number; life: number; max: number; size: number; spin: number; angle: number; glyph?: string };
+  const GLYPHS = ["</>", "{ }", "=>", "( )", "</>", "const"];
+  const MAX_PARTICLES = 140;
+  const TILT_DEG = 7;
+  const EASE = 0.18;
+
+  const fine = matchMedia("(pointer: fine)").matches;
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  for (const layer of document.querySelectorAll<HTMLElement>(".hero-fx")) {
+    const hero = layer.previousElementSibling as HTMLElement | null;
+    if (!hero || !fine || still) { layer.remove(); continue; }
+    const kind = layer.dataset.fx ?? "sparkle";
+    const wrap = layer.parentElement as HTMLElement;
+    const canvas = document.createElement("canvas");
+    layer.prepend(canvas);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) continue;
+    const scissors = layer.querySelector<SVGElement>(".fx-scissors");
+    const motif = hero.querySelector<HTMLElement | SVGElement>(".motif");
+    const css = getComputedStyle(document.documentElement);
+    const accent = css.getPropertyValue("--c-accent").trim() || "#e85d2a";
+    const soft = css.getPropertyValue("--c-brand-secondary").trim() || "#ffffff";
+    const ink = getComputedStyle(hero).color;
+
+    let w = 0, h = 0, dpr = 1;
+    const resize = () => {
+      const r = wrap.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = r.width; h = r.height;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    new ResizeObserver(resize).observe(wrap);
+
+    const parts: Particle[] = [];
+    let mx = -999, my = -999, px = -999, py = -999, sx = -999, sy = -999, angle = 0;
+    let inside = false, overControl = false, running = false, lastMove = 0;
+
+    const spawn = (x: number, y: number, speed: number) => {
+      const n = Math.min(4, 1 + Math.floor(speed / 12));
+      for (let i = 0; i < n && parts.length < MAX_PARTICLES; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const base: Particle = { x, y, vx: Math.cos(a) * 0.6, vy: Math.sin(a) * 0.6, life: 0, max: 50 + Math.random() * 40, size: 2 + Math.random() * 3, spin: (Math.random() - 0.5) * 0.2, angle: Math.random() * 6.3 };
+        if (kind === "embers") { base.vx = (Math.random() - 0.5) * 1.4; base.vy = -1.2 - Math.random() * 1.8; }
+        if (kind === "steam" || kind === "bubbles") { base.vx = (Math.random() - 0.5) * 0.5; base.vy = -0.6 - Math.random() * 0.8; base.size = 4 + Math.random() * 6; }
+        if (kind === "snip" || kind === "leaves" || kind === "dust") { base.vx = (Math.random() - 0.5) * 1.6; base.vy = 0.4 + Math.random(); }
+        if (kind === "glyphs") { base.glyph = GLYPHS[Math.floor(Math.random() * GLYPHS.length)] ?? "</>"; base.vy = -0.5 - Math.random() * 0.6; base.max = 70; }
+        parts.push(base);
+      }
+    };
+
+    const draw = (p: Particle) => {
+      const t = 1 - p.life / p.max;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, t);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      switch (kind) {
+        case "embers": {
+          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size * 3);
+          g.addColorStop(0, "#fff6d5"); g.addColorStop(0.3, "#ffb03b"); g.addColorStop(0.65, accent); g.addColorStop(1, "transparent");
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, p.size * 3, 0, 6.3); ctx.fill(); break;
+        }
+        case "steam": ctx.fillStyle = soft; ctx.globalAlpha *= 0.35; ctx.beginPath(); ctx.arc(0, 0, p.size * (1.6 - t), 0, 6.3); ctx.fill(); break;
+        case "bubbles": ctx.strokeStyle = accent; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, p.size * 0.7, 0, 6.3); ctx.stroke(); break;
+        case "snip": ctx.strokeStyle = ink; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(-p.size * 2, 0); ctx.quadraticCurveTo(0, p.size, p.size * 2, 0); ctx.stroke(); break;
+        case "leaves": ctx.fillStyle = accent; ctx.beginPath(); ctx.ellipse(0, 0, p.size * 1.8, p.size * 0.8, 0, 0, 6.3); ctx.fill(); break;
+        case "dust": ctx.fillStyle = accent; ctx.fillRect(-p.size, -p.size * 0.6, p.size * 2, p.size * 1.2); break;
+        case "glyphs": ctx.rotate(-p.angle); ctx.fillStyle = accent; ctx.font = "600 13px ui-monospace, Consolas, monospace"; ctx.fillText(p.glyph ?? "</>", 0, 0); break;
+        default: { // sparkle: four-point star
+          ctx.fillStyle = accent; const s = p.size * 1.6; ctx.beginPath();
+          ctx.moveTo(0, -s); ctx.quadraticCurveTo(0, 0, s, 0); ctx.quadraticCurveTo(0, 0, 0, s); ctx.quadraticCurveTo(0, 0, -s, 0); ctx.quadraticCurveTo(0, 0, 0, -s); ctx.fill();
+        }
+      }
+      ctx.restore();
+    };
+
+    const frame = (now: number) => {
+      ctx.clearRect(0, 0, w, h);
+      // Ease the custom cursor and the tilt toward the pointer.
+      sx += (mx - sx) * (EASE * 2); sy += (my - sy) * (EASE * 2);
+      if (scissors) {
+        scissors.style.transform = `translate(${sx - 28}px, ${sy - 28}px) rotate(${angle}deg)`;
+        scissors.classList.toggle("snipping", now - lastMove < 140);
+        scissors.style.opacity = inside && !overControl ? "1" : "0";
+      }
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i]!;
+        p.life++; p.x += p.vx; p.y += p.vy; p.angle += p.spin;
+        if (kind === "snip" || kind === "leaves" || kind === "dust") p.vy += 0.05;
+        if (p.life >= p.max) { parts.splice(i, 1); continue; }
+        draw(p);
+      }
+      if (parts.length || inside) requestAnimationFrame(frame); else running = false;
+    };
+    const start = () => { if (!running) { running = true; requestAnimationFrame(frame); } };
+
+    wrap.addEventListener("pointermove", (e) => {
+      const r = wrap.getBoundingClientRect();
+      mx = e.clientX - r.left; my = e.clientY - r.top;
+      if (sx < -900) { sx = mx; sy = my; }
+      const dx = mx - px, dy = my - py;
+      const speed = Math.hypot(dx, dy);
+      if (px > -900 && speed > 2) {
+        angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+        lastMove = performance.now();
+        overControl = !!(e.target as Element).closest("a, button, input, textarea, select, summary");
+        if (!overControl) spawn(mx, my, speed);
+      }
+      px = mx; py = my;
+      // Light follows the pointer; the illustration leans toward it.
+      wrap.style.setProperty("--fx-x", `${mx}px`);
+      wrap.style.setProperty("--fx-y", `${my}px`);
+      if (motif) {
+        const rx = (my / h - 0.5) * -TILT_DEG, ry = (mx / w - 0.5) * TILT_DEG;
+        motif.style.transform = `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+      }
+      start();
+    });
+    wrap.addEventListener("pointerenter", () => { inside = true; wrap.classList.add("fx-on"); start(); });
+    wrap.addEventListener("pointerleave", () => {
+      inside = false; wrap.classList.remove("fx-on");
+      if (motif) motif.style.transform = "";
+    });
+    wrap.addEventListener("click", (e) => {
+      if ((e.target as Element).closest("a, button")) return;
+      for (let i = 0; i < 4; i++) spawn(mx, my, 40); // a burst on click
+      if (scissors) { lastMove = performance.now() + 200; }
+      start();
+    });
+    if (scissors) wrap.classList.add("fx-snip");
+  }
+</script>
