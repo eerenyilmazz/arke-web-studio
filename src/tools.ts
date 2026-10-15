@@ -238,10 +238,11 @@ export async function generateDesignSystem(factory: FactoryConfig, args: { slug:
         "UI UX Pro Max is not installed (see README: vendor/ui-ux-pro-max). Choose the design yourself from rules/design-rules.md, then save it with update_client_config under `design`.",
     };
   }
-  // -I: isolated mode, so nothing from the current directory is imported.
+  // -E -s: ignore PYTHON* variables and the user site-packages. Not -I: that also drops the script's own
+  // folder from the import path, and UI UX Pro Max imports its sibling modules (core.py) from there.
   const res = await run(
     "python3",
-    ["-I", factory.uupmScript, query, "--design-system", "-p", business.name ?? args.slug, "-f", "markdown"],
+    ["-E", "-s", factory.uupmScript, query, "--design-system", "-p", business.name ?? args.slug, "-f", "markdown"],
     { cwd: path.dirname(factory.uupmScript), timeoutMs: 60_000 },
   );
   if (res.code !== 0) throw new FactoryError(`Design system generator failed (exit ${res.code}): ${res.stderr.slice(-800)}`);
@@ -317,11 +318,46 @@ async function runImpeccable(distDir: string, prior: CheckResult[]): Promise<Che
     return { name: "Impeccable design lint", status: "skip", detail: "No build output." };
   }
   if (!existsSync(bin)) return { name: "Impeccable design lint", status: "skip", detail: "Not installed (optional: npm i -D impeccable)." };
-  const res = await run(bin, ["detect", "--json", distDir], { cwd: FACTORY_ROOT, timeoutMs: 120_000, env: { IMPECCABLE_NO_TELEMETRY: "1", DO_NOT_TRACK: "1" } });
-  // Exit 0 = clean, 2 = findings, 1 = could not scan.
+  const res = await run(bin, ["detect", "--json", distDir], {
+    cwd: FACTORY_ROOT,
+    timeoutMs: 120_000,
+    env: { IMPECCABLE_NO_TELEMETRY: "1", DO_NOT_TRACK: "1" },
+    maxOutputChars: IMPECCABLE_MAX_OUTPUT,
+  });
+  // Exit 0 = clean, 2 = findings (warnings included), 1 = could not scan.
   if (res.code === 0) return { name: "Impeccable design lint", status: "pass", detail: "No findings." };
-  if (res.code === 2) return { name: "Impeccable design lint", status: "fail", detail: res.stdout.slice(0, 800) };
-  return { name: "Impeccable design lint", status: "warn", detail: `Could not scan: ${res.stderr.slice(-300)}` };
+  if (res.code !== 2) return { name: "Impeccable design lint", status: "warn", detail: `Could not scan: ${res.stderr.slice(-300)}` };
+  return summariseImpeccable(res.stdout);
+}
+
+const IMPECCABLE_MAX_OUTPUT = 2_000_000;
+
+interface ImpeccableFinding {
+  readonly antipattern?: string;
+  readonly severity?: string;
+}
+
+/**
+ * Design findings are advice, not proof the site is broken: warnings are reported (and the agent can act
+ * on them), only findings marked "error" fail the build.
+ */
+export function summariseImpeccable(stdout: string): CheckResult {
+  let findings: ImpeccableFinding[];
+  try {
+    const parsed: unknown = JSON.parse(stdout);
+    findings = Array.isArray(parsed) ? (parsed as ImpeccableFinding[]) : [];
+  } catch {
+    return { name: "Impeccable design lint", status: "warn", detail: "Findings could not be read." };
+  }
+  const counts = new Map<string, number>();
+  for (const f of findings) counts.set(f.antipattern ?? "unknown", (counts.get(f.antipattern ?? "unknown") ?? 0) + 1);
+  const top = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([k, n]) => `${k} ×${n}`).join(", ");
+  const errors = findings.filter((f) => f.severity === "error").length;
+  return {
+    name: "Impeccable design lint",
+    status: errors > 0 ? "fail" : findings.length > 0 ? "warn" : "pass",
+    detail: findings.length ? `${findings.length} finding(s)${errors ? `, ${errors} error(s)` : ""}: ${top}` : "No findings.",
+  };
 }
 
 // ---------------------------------------------------------------- deploy

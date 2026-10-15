@@ -7,6 +7,8 @@ export interface RunOptions {
   /** Extra variables for the child. Values listed in `secrets` are masked in returned output. */
   readonly env?: Readonly<Record<string, string>>;
   readonly secrets?: readonly string[];
+  /** Keep more output than the default (e.g. a JSON report that must be parsed whole). */
+  readonly maxOutputChars?: number;
 }
 
 export interface RunResult {
@@ -57,7 +59,7 @@ export function run(command: string, args: readonly string[], options: RunOption
       },
       (error, stdout, stderr) => {
         const code = error ? (typeof error.code === "number" ? error.code : 1) : 0;
-        const mask = (text: string) => trimOutput(redact(text, options.secrets ?? []));
+        const mask = (text: string) => trimOutput(redact(text, options.secrets ?? []), options.maxOutputChars ?? MAX_OUTPUT_CHARS);
         const timedOut = error && "killed" in error && error.killed ? "\n[timed out]" : "";
         const spawnError = error && typeof error.code === "string" ? `\n[${error.code}: ${error.message}]` : "";
         resolve({ code, stdout: mask(String(stdout)), stderr: mask(String(stderr) + timedOut + spawnError) });
@@ -74,6 +76,6 @@ export function redact(text: string, secrets: readonly string[]): string {
   return out;
 }
 
-function trimOutput(text: string): string {
-  return text.length <= MAX_OUTPUT_CHARS ? text : `…${text.slice(-MAX_OUTPUT_CHARS)}`;
+function trimOutput(text: string, max: number): string {
+  return text.length <= max ? text : `…${text.slice(-max)}`;
 }

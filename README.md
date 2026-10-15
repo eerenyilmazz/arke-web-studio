@@ -90,8 +90,8 @@ Claude Code bu klasörde açıldığında `.mcp.json` ile server'ı otomatik bul
 Kod değiştirince `npm run build` yeniden çalıştır.
 
 İsteğe bağlı:
-- **UI UX Pro Max** (tasarım sistemi önerisi): `git clone https://github.com/nextlevelbuilder/ui-ux-pro-max-skill vendor/ui-ux-pro-max` (Python 3 gerekir). Yoksa agent `design-rules.md`'ye göre kendisi seçer.
-- **Impeccable** (tasarım lint): `npm i -D impeccable`. Varsa build_site otomatik çalıştırır, telemetri kapalı.
+- **UI UX Pro Max** (sektöre göre tasarım önerisi) ve **Impeccable** (tasarım hataları kontrolü) `scripts/setup-wsl.sh` ile kurulur.
+  Impeccable uyarıları kalite raporuna yazılır, build'i durdurmaz; sadece "error" seviyesi durdurur.
 
 ## Akış (kısaca)
 

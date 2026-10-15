@@ -94,3 +94,15 @@ fs.writeFileSync(path.join(out, "index.html"), '<!doctype html><html lang="en"><
     expect(ok.buildLogTail).toBeUndefined();
   });
 });
+
+describe("Impeccable findings", () => {
+  it("reports warnings without failing the build; only errors fail", async () => {
+    const { summariseImpeccable } = await import("../src/tools.js");
+    const warn = summariseImpeccable(JSON.stringify([{ antipattern: "cream-palette", severity: "warning" }, { antipattern: "cream-palette", severity: "warning" }, { antipattern: "side-tab", severity: "warning" }]));
+    expect(warn.status).toBe("warn");
+    expect(warn.detail).toBe("3 finding(s): cream-palette ×2, side-tab ×1");
+    expect(summariseImpeccable(JSON.stringify([{ antipattern: "x", severity: "error" }])).status).toBe("fail");
+    expect(summariseImpeccable("not json").status).toBe("warn");
+    expect(summariseImpeccable("[]").status).toBe("pass");
+  });
+});

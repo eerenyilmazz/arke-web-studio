@@ -116,6 +116,20 @@ else
   npm run build >/dev/null && pass "npm run build (dist/server.js)"
   npm test --silent && pass "npm test"
   (cd templates/corporate-v1 && npm ci --no-fund --no-audit) && pass "template corporate-v1: npm ci"
+  # Design tools: Impeccable comes with npm ci (devDependency); UI UX Pro Max is a pinned git checkout.
+  UUPM_DIR="vendor/ui-ux-pro-max"
+  UUPM_COMMIT="56ea9cf174ed86786187daa9de0e6247cb0747e4"
+  if [[ ! -d "$UUPM_DIR/.git" ]]; then
+    git clone -q https://github.com/nextlevelbuilder/ui-ux-pro-max-skill "$UUPM_DIR" && git -C "$UUPM_DIR" checkout -q "$UUPM_COMMIT" \
+      && pass "UI UX Pro Max installed" || note "UI UX Pro Max could not be downloaded (the agent then follows rules/design-rules.md only)"
+  else
+    pass "UI UX Pro Max present"
+  fi
+  if has python3 && python3 -E -s "$UUPM_DIR/src/ui-ux-pro-max/scripts/search.py" "bakery friendly" --design-system -p Test -f markdown >/dev/null 2>&1; then
+    pass "UI UX Pro Max runs"
+  else
+    note "UI UX Pro Max does not run (needs python3)"
+  fi
 fi
 
 echo
