@@ -55,6 +55,15 @@ describe("corporate-v2 fields", () => {
     expect(font?.status).toBe("warn");
   });
 
+  it("dark mode defaults to auto and accepts only auto/off", async () => {
+    const { f, paths } = await readyClient();
+    const { SiteConfigSchema } = await import("../src/schema/site-config.js");
+    expect(SiteConfigSchema.parse(JSON.parse(readFileSync(paths.config, "utf8"))).design.darkMode).toBe("auto");
+    tools.updateClientConfig(f, { slug: SLUG, patch: { design: { darkMode: "off" } } });
+    expect(JSON.parse(readFileSync(paths.config, "utf8")).design.darkMode).toBe("off");
+    expect(() => tools.updateClientConfig(f, { slug: SLUG, patch: { design: { darkMode: "dim" } } })).toThrow();
+  });
+
   it("existing configs without the new fields stay valid", async () => {
     const { f } = await readyClient();
     expect(() => tools.getClientStatus(f, { slug: SLUG })).not.toThrow();

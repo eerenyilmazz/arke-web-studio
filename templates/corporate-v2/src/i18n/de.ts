@@ -5,6 +5,7 @@ export const de: UiStrings = {
   nav: { home: "Start", about: "Über uns", services: "Leistungen", gallery: "Galerie", contact: "Kontakt" },
   skipToContent: "Zum Inhalt springen",
   menu: "Menü",
+  themeToggle: "Dunkelmodus umschalten",
   mainNav: "Hauptnavigation",
   language: "Sprache",
   servicesTitle: "Leistungen",

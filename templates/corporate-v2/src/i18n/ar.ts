@@ -5,6 +5,7 @@ export const ar: UiStrings = {
   nav: { home: "الرئيسية", about: "من نحن", services: "الخدمات", gallery: "معرض الصور", contact: "اتصل بنا" },
   skipToContent: "انتقل إلى المحتوى",
   menu: "القائمة",
+  themeToggle: "تبديل الوضع الداكن",
   mainNav: "القائمة الرئيسية",
   language: "اللغة",
   servicesTitle: "الخدمات",

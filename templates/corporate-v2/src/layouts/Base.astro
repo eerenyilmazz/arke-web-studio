@@ -2,7 +2,7 @@
 import "../styles/global.css";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
-import { readableAccent, readableOn } from "../lib/color";
+import { darkPalette, mix, readableAccent, readableOn, type Palette } from "../lib/color";
 import { faviconPath, faviconType } from "../lib/files";
 import { fontStack } from "../lib/fonts";
 import { localBusinessJsonLd } from "../lib/seo";
@@ -19,15 +19,33 @@ interface Props {
 const { ctx, title, description, standalone = false } = Astro.props;
 const { config, site, locale, page, t } = ctx;
 const p = config.design.palette;
-const cta = readableAccent(p.accent, p.text, null);
-const vars = [
-  `--c-primary:${p.primary}`, `--c-on-primary:${readableOn(p.primary, p.text)}`,
-  `--c-secondary:${p.secondary}`, `--c-on-secondary:${readableOn(p.secondary, p.text)}`,
-  `--c-accent:${p.accent}`, `--c-on-accent:${readableOn(p.accent, p.text)}`,
-  // Accent for buttons/blocks with text on it, and for accent-coloured text on the page background.
-  `--c-cta:${cta}`, `--c-on-cta:${readableOn(cta, p.text)}`, `--c-accent-ink:${readableAccent(p.accent, p.text, p.background)}`, `--c-background:${p.background}`, `--c-text:${p.text}`,
-  `--f-heading:${fontStack(config.design.fonts.heading)}`, `--f-body:${fontStack(config.design.fonts.body)}`,
-].join(";");
+const darkMode = config.design.darkMode === "auto";
+
+/** Colour variables for one palette. The ink surface is the strongly contrasting band (footer, quotes). */
+function colourVars(c: Palette, dark: boolean): string {
+  const cta = readableAccent(c.accent, c.text, null);
+  const ink = dark ? mix(c.background, "#FFFFFF", 0.07) : c.text;
+  return [
+    `--c-primary:${c.primary}`, `--c-on-primary:${readableOn(c.primary, c.text)}`,
+    `--c-secondary:${c.secondary}`, `--c-on-secondary:${readableOn(c.secondary, c.text)}`,
+    `--c-accent:${c.accent}`, `--c-on-accent:${readableOn(c.accent, c.text)}`,
+    // Accent for buttons/blocks with text on it, and for accent-coloured text on the page background.
+    `--c-cta:${cta}`, `--c-on-cta:${readableOn(cta, c.text)}`,
+    `--c-accent-ink:${readableAccent(c.accent, c.text, c.background, dark ? "lighten" : "darken")}`,
+    `--c-background:${c.background}`, `--c-text:${c.text}`,
+    `--c-ink-surface:${ink}`, `--c-on-ink-surface:${dark ? c.text : c.background}`,
+  ].join(";");
+}
+const dark = darkPalette(p);
+// Brand secondary stays the same in both themes: decoration on the always-dark hero uses it.
+const fontVars = `--f-heading:${fontStack(config.design.fonts.heading)};--f-body:${fontStack(config.design.fonts.body)};--c-brand-secondary:${p.secondary}`;
+const darkVars = `${colourVars(dark, true)};color-scheme:dark;--card-shadow:none`;
+// Values are validated hex colours and sanitised font names, so this block cannot carry client markup.
+const themeCss = [
+  `:root{${colourVars(p, false)};${fontVars}}`,
+  darkMode ? `@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){${darkVars}}}` : "",
+  darkMode ? `:root[data-theme="dark"]{${darkVars}}` : "",
+].join("");
 
 const abs = (path: string) => (site.baseUrl ? `${site.baseUrl}${path}` : path);
 const canonical = standalone ? null : abs(ctx.url(page));
@@ -38,13 +56,17 @@ const jsonLd = page === "home" && !standalone ? localBusinessJsonLd(ctx) : null;
 const wa = config.whatsapp;
 ---
 <!doctype html>
-<html lang={locale} dir={ctx.dir} style={vars} data-personality={config.design.personality}>
+<html lang={locale} dir={ctx.dir} data-personality={config.design.personality}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="theme-color" content={p.primary} />
+    {darkMode && <meta name="theme-color" media="(prefers-color-scheme: dark)" content={dark.background} />}
+    <style is:inline set:html={themeCss} />
+    {/* Applies a saved light/dark choice before the first paint, so the page does not flash. */}
+    {darkMode && <script is:inline>try{var t=localStorage.getItem("sf-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>}
     {site.baseUrl && canonical && <link rel="canonical" href={canonical} />}
     {alternates.length > 1 && alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={a.href} />)}
     {alternates.length > 1 && <link rel="alternate" hreflang="x-default" href={abs(ctx.url(page, config.i18n.defaultLocale))} />}

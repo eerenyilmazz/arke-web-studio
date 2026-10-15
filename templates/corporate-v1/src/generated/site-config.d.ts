@@ -78,6 +78,7 @@ export interface SiteConfig {
       | "plate"
       | "abstract"
       | "none";
+    darkMode?: "auto" | "off";
   };
   /**
    * @minItems 1

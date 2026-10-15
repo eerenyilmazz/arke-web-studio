@@ -23,10 +23,21 @@ const AA_TEXT = 4.5;
 const DARKEN_STEP = 0.05;
 const MAX_DARKEN = 0.7;
 
+/** Mixes colour `a` toward colour `b` by `amount` (0 = a, 1 = b). */
+export function mix(a: string, b: string, amount: number): string {
+  const ch = (i: number) => {
+    const x = parseInt(a.slice(i, i + 2), 16);
+    const y = parseInt(b.slice(i, i + 2), 16);
+    return Math.round(x + (y - x) * amount).toString(16).padStart(2, "0");
+  };
+  return `#${ch(1)}${ch(3)}${ch(5)}`.toUpperCase();
+}
+
+const BLACK = "#000000";
+
 /** Mixes a colour toward black by `amount` (0–1). */
 function darken(hex: string, amount: number): string {
-  const ch = (i: number) => Math.round(parseInt(hex.slice(i, i + 2), 16) * (1 - amount)).toString(16).padStart(2, "0");
-  return `#${ch(1)}${ch(3)}${ch(5)}`.toUpperCase();
+  return mix(hex, BLACK, amount);
 }
 
 /**
@@ -34,11 +45,38 @@ function darken(hex: string, amount: number): string {
  * (best of white / text colour when `against` is null, i.e. the accent is the background). Keeps the hue,
  * so a bright orange button becomes a deeper orange instead of failing contrast.
  */
-export function readableAccent(accent: string, textColor: string, against: string | null): string {
+export function readableAccent(accent: string, textColor: string, against: string | null, direction: "darken" | "lighten" = "darken"): string {
   const ok = (c: string) => (against ? contrast(c, against) : Math.max(contrast(WHITE, c), contrast(textColor, c))) >= AA_TEXT;
   for (let a = 0; a <= MAX_DARKEN; a += DARKEN_STEP) {
-    const c = a === 0 ? accent : darken(accent, a);
+    const c = a === 0 ? accent : direction === "darken" ? darken(accent, a) : mix(accent, WHITE, a);
     if (ok(c)) return c;
   }
   return against ? textColor : accent;
+}
+
+export interface Palette {
+  readonly primary: string;
+  readonly secondary: string;
+  readonly accent: string;
+  readonly background: string;
+  readonly text: string;
+}
+
+/** Share of black mixed into the brand primary to get the dark-mode page background (keeps a hint of the hue). */
+const DARK_BG_SHADE = 0.8;
+const DARK_SECONDARY_TINT = 0.86;
+const AAA_TEXT = 7;
+const DARK_FALLBACK_TEXT = "#F3F1EE";
+
+/** Dark version of the client's palette: same hues, dark surfaces, the light background colour becomes the text. */
+export function darkPalette(p: Palette): Palette {
+  const background = darken(p.primary, DARK_BG_SHADE);
+  const text = contrast(p.background, background) >= AAA_TEXT ? p.background : DARK_FALLBACK_TEXT;
+  return {
+    primary: p.primary, // brand bands and buttons keep their colour; the darker page sets them apart
+    secondary: mix(p.secondary, background, DARK_SECONDARY_TINT),
+    accent: p.accent,
+    background,
+    text,
+  };
 }

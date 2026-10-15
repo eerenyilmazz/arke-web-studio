@@ -38,10 +38,10 @@ const food = isFood(config);
         {!image && showMotif && (
           <>
             <div aria-hidden="true" class="fire-glow absolute inset-x-[8%] bottom-0 top-[20%]"></div>
-            <div class="relative" style="--motif-line: var(--c-secondary); --motif-main: var(--c-accent); --motif-soft: color-mix(in srgb, var(--c-secondary) 55%, var(--c-accent))"><Motif name={motif} id="hero" /></div>
+            <div class="relative parallax" style="--motif-line: var(--c-brand-secondary); --motif-main: var(--c-accent); --motif-soft: color-mix(in srgb, var(--c-brand-secondary) 55%, var(--c-accent))"><Motif name={motif} id="hero" /></div>
           </>
         )}
-        {hours && <p class="stamp absolute -top-2 end-0 text-sm" style="color: var(--c-secondary)">{t.openLabel}<br />{hours}</p>}
+        {hours && <p class="stamp absolute -top-2 end-0 text-sm" style="color: var(--c-brand-secondary)">{t.openLabel}<br />{hours}</p>}
       </div>
     </div>
   </section>
@@ -61,7 +61,7 @@ const food = isFood(config);
         </div>
       </div>
       {showMotif
-        ? <div class="hero-in"><Motif name={motif} id="hero" class="max-w-xl ms-auto" /></div>
+        ? <div class="hero-in"><div class="parallax"><Motif name={motif} id="hero" class="max-w-xl ms-auto" /></div></div>
         : image && <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="photo aspect-[4/5]" />}
     </div>
   </section>
@@ -104,7 +104,7 @@ const food = isFood(config);
       <div class="relative hero-in">
         <div aria-hidden="true" class="blob absolute inset-4 tint-accent"></div>
         {showMotif
-          ? <div class="relative p-10"><Motif name={motif} id="hero" /></div>
+          ? <div class="relative p-10 parallax"><Motif name={motif} id="hero" /></div>
           : image
             ? <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="blob relative aspect-square w-full object-cover" />
             : <p class="relative p-16 font-heading text-3xl">{content.tagline}</p>}

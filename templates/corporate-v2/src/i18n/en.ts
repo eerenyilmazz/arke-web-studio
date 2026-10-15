@@ -4,6 +4,7 @@ export const en = {
   nav: { home: "Home", about: "About", services: "Services", gallery: "Gallery", contact: "Contact" },
   skipToContent: "Skip to content",
   menu: "Menu",
+  themeToggle: "Toggle dark mode",
   mainNav: "Main navigation",
   language: "Language",
   servicesTitle: "Services",

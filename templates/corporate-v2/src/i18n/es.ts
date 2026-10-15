@@ -5,6 +5,7 @@ export const es: UiStrings = {
   nav: { home: "Inicio", about: "Sobre nosotros", services: "Servicios", gallery: "Galería", contact: "Contacto" },
   skipToContent: "Saltar al contenido",
   menu: "Menú",
+  themeToggle: "Cambiar modo oscuro",
   mainNav: "Navegación principal",
   language: "Idioma",
   servicesTitle: "Servicios",

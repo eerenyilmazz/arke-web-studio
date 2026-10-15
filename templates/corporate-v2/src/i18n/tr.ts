@@ -5,6 +5,7 @@ export const tr: UiStrings = {
   nav: { home: "Ana sayfa", about: "Hakkımızda", services: "Hizmetler", gallery: "Galeri", contact: "İletişim" },
   skipToContent: "İçeriğe geç",
   menu: "Menü",
+  themeToggle: "Koyu temayı aç/kapat",
   mainNav: "Ana menü",
   language: "Dil",
   servicesTitle: "Hizmetler",

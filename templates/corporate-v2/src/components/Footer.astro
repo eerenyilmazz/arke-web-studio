@@ -12,7 +12,7 @@ const social = Object.entries(config.social).filter((e): e is [string, string] =
 const others = config.i18n.locales.filter((l) => l !== ctx.locale);
 const year = new Date().getFullYear();
 ---
-<footer class="mt-auto" style="background: var(--c-text); color: var(--c-background)">
+<footer class="mt-auto" style="background: var(--c-ink-surface); color: var(--c-on-ink-surface)">
   <div class="wrap grid gap-10 py-16 md:grid-cols-[1.4fr_1fr_1fr]">
     <div>
       <p class="font-heading text-3xl" style="font-weight: var(--h-weight); letter-spacing: var(--h-tracking)">{config.business.name}<span style="color: var(--c-accent)">.</span></p>
@@ -43,7 +43,7 @@ const year = new Date().getFullYear();
       )}
     </div>
   </div>
-  <div class="wrap py-6 text-sm flex flex-wrap gap-x-6 gap-y-1 opacity-80" style="border-top: 1px solid color-mix(in srgb, var(--c-background) 18%, transparent)">
+  <div class="wrap py-6 text-sm flex flex-wrap gap-x-6 gap-y-1 opacity-80" style="border-top: 1px solid color-mix(in srgb, var(--c-on-ink-surface) 18%, transparent)">
     <span>© {year} {legal.companyName ?? config.business.name}</span>
     {legal.companyNumber && <span>{t.companyNumber}: {legal.companyNumber}</span>}
     {legal.registeredAddress && <span>{t.registeredOffice}: {legal.registeredAddress}</span>}

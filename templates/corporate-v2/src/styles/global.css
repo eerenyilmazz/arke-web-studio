@@ -122,7 +122,7 @@
   .h-item { font-size: 1.35rem; line-height: 1.2; }
   .btn-outline { border: 1.5px solid currentColor; }
   .btn-outline:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
-  .surface-ink { background: var(--c-text); color: var(--c-background); }
+  .surface-ink { background: var(--c-ink-surface); color: var(--c-on-ink-surface); }
   /* Accent tint warmed with the secondary colour: a pale red becomes peach, not pink. */
   .tint-accent { background: color-mix(in srgb, var(--c-accent) 10%, color-mix(in srgb, var(--c-secondary) 50%, var(--c-background))); color: var(--c-text); }
   .tint-primary { background: color-mix(in srgb, var(--c-primary) 12%, var(--c-background)); color: var(--c-text); }
@@ -157,3 +157,32 @@
 }
 @keyframes ribbon { to { transform: translateX(-50%); } }
 [dir="rtl"] .ribbon-track { animation-direction: reverse; }
+
+/* ---------- theme switch and page flow ---------- */
+@layer components {
+  .theme-toggle { display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 999px; border: 1.5px solid color-mix(in srgb, currentColor 30%, transparent); cursor: pointer; transition: background-color 160ms ease, transform 300ms ease; }
+  .theme-toggle:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+  .theme-toggle:active { transform: rotate(40deg); }
+  .theme-toggle .moon { display: none; }
+  :root[data-theme="dark"] .theme-toggle .sun { display: none; }
+  :root[data-theme="dark"] .theme-toggle .moon { display: block; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .theme-toggle .sun { display: none; }
+    :root:not([data-theme="light"]) .theme-toggle .moon { display: block; }
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Pages cross-fade into each other (browsers with cross-document view transitions; others just load). */
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 320ms; }
+  @supports (animation-timeline: scroll()) {
+    /* The hero illustration drifts up slower than the page as you scroll. */
+    .parallax { animation: parallax linear both; animation-timeline: scroll(root); animation-range: 0 90vh; }
+    /* Menu price lines draw themselves as each row comes into view. */
+    .menu-row .leader { animation: leader-draw linear both; animation-timeline: view(); animation-range: entry 20% cover 40%; }
+  }
+}
+@keyframes parallax { to { transform: translateY(-70px) scale(1.04); } }
+@keyframes leader-draw { from { transform: translateY(-.3em) scaleX(0); } to { transform: translateY(-.3em) scaleX(1); } }
+.menu-row .leader { transform-origin: left center; }
+[dir="rtl"] .menu-row .leader { transform-origin: right center; }

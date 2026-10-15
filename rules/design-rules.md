@@ -43,6 +43,8 @@ Motif = the animated drawing in the hero (decorative, colours from the palette):
 
 **Food layout.** The motifs `grill`, `plate`, `bread`, `cup` and `jar` switch on the restaurant layout whatever the personality: charcoal full-width hero (photo behind it when there is one), a scrolling ribbon made of `highlights`, services shown as a menu with dotted price lines, dark quotes band and a full-width booking band. Give food clients 3–4 short `highlights` and prices on every dish you have a price for.
 
+**Dark mode.** `design.darkMode` = `auto` (default): the site follows the visitor's device and shows a sun/moon switch; the dark palette is made from the client's colours automatically. Set `off` only if the client asks for a light-only site.
+
 Content for corporate-v2:
 - `services[].icon`: pick the closest icon from the allowed list; leave it out if none fits.
 - `highlights` (up to 4, e.g. "15 years" + "of bridal tailoring"): facts the client gave only. Never invent numbers. None = leave empty, the strip is hidden.

@@ -308,6 +308,14 @@
             "abstract",
             "none"
           ]
+        },
+        "darkMode": {
+          "default": "auto",
+          "type": "string",
+          "enum": [
+            "auto",
+            "off"
+          ]
         }
       },
       "required": [
