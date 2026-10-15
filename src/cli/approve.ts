@@ -9,14 +9,15 @@ import { existsSync, readFileSync } from "node:fs";
 import os from "node:os";
 import { createInterface } from "node:readline/promises";
 import { loadFactoryConfig } from "../config.js";
-import { APPROVAL_KINDS, addApproval, approvalPins, type ApprovalKind } from "../lib/approvals.js";
+import { APPROVAL_KINDS, SITE_APPROVAL, addApproval, approvalPins, approvalTargets, type ApprovalPins } from "../lib/approvals.js";
 import { clientStatus } from "../lib/client.js";
 import { assertSlug, clientPaths } from "../lib/paths.js";
 
 async function main(): Promise<void> {
   const [slugArg, kindArg, ...noteParts] = process.argv.slice(2);
-  if (!slugArg || !kindArg || !APPROVAL_KINDS.includes(kindArg as ApprovalKind)) {
-    console.error(`Usage: npm run approve -- <slug> <${APPROVAL_KINDS.join("|")}> [note]`);
+  const kinds = kindArg ? approvalTargets(kindArg) : null;
+  if (!slugArg || !kindArg || !kinds) {
+    console.error(`Usage: npm run approve -- <slug> <${[...APPROVAL_KINDS, SITE_APPROVAL].join("|")}> [note]   (site = content + visual)`);
     process.exit(2);
   }
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
@@ -26,7 +27,6 @@ async function main(): Promise<void> {
 
   const factory = loadFactoryConfig();
   const slug = assertSlug(slugArg);
-  const kind = kindArg as ApprovalKind;
   const paths = clientPaths(factory.clientsRoot, slug);
   if (!existsSync(paths.config)) {
     console.error(`Client "${slug}" not found in ${factory.clientsRoot}`);
@@ -35,15 +35,18 @@ async function main(): Promise<void> {
 
   const status = clientStatus(factory, slug);
   // Throws (nothing approved) if visual/production has no passing, untouched build to pin.
-  const shown = approvalPins(kind, paths.root, paths.distDir, status.lastBuild);
-  console.log(`\nClient: ${slug}   stage: ${status.stage}   content hash: ${shown.hash}${shown.distHash ? `   build: ${shown.distHash}` : ""}`);
-  if (status.lastBuild && kind !== "content") console.log(`Last build: ${status.lastBuild.at} passed`);
-  if (kind === "visual" && existsSync(paths.qualityReport)) {
+  const pinsNow = (): ApprovalPins[] => kinds.map((k) => approvalPins(k, paths.root, paths.distDir, clientStatus(factory, slug).lastBuild));
+  const shown = pinsNow();
+  const first = shown[shown.length - 1]!;
+  console.log(`\nClient: ${slug}   stage: ${status.stage}   content hash: ${first.hash}${first.distHash ? `   build: ${first.distHash}` : ""}`);
+  console.log(`Approving: ${kinds.join(" + ")}`);
+  if (status.lastBuild && kinds.some((k) => k !== "content")) console.log(`Last build: ${status.lastBuild.at} passed`);
+  if (kinds.includes("visual") && existsSync(paths.qualityReport)) {
     console.log(`\n${readFileSync(paths.qualityReport, "utf8").split("\n").slice(0, 8).join("\n")}\n…`);
   }
 
   const rl = createInterface({ input: process.stdin, output: process.stdout });
-  const typed = (await rl.question(`Type the slug to approve "${kind}": `)).trim();
+  const typed = (await rl.question(`Type the slug to approve "${kindArg}": `)).trim();
   rl.close();
   if (typed !== slug) {
     console.error("Slug did not match. Nothing approved.");
@@ -51,21 +54,24 @@ async function main(): Promise<void> {
   }
 
   // Re-check: if anything changed while the prompt was open, the person approved something else.
-  const now = approvalPins(kind, paths.root, paths.distDir, clientStatus(factory, slug).lastBuild);
-  if (now.hash !== shown.hash || now.distHash !== shown.distHash) {
+  const now = pinsNow();
+  if (now.some((p, i) => p.hash !== shown[i]!.hash || p.distHash !== shown[i]!.distHash)) {
     console.error("Content or build changed while you were reviewing. Nothing approved; run the command again.");
     process.exit(1);
   }
-  const { hash, distHash } = now;
-  addApproval(paths.approvals, {
-    kind,
-    by: os.userInfo().username,
-    at: new Date().toISOString(),
-    hash,
-    ...(distHash ? { distHash } : {}),
-    ...(noteParts.length ? { note: noteParts.join(" ") } : {}),
+  const at = new Date().toISOString();
+  kinds.forEach((kind, i) => {
+    const { hash, distHash } = now[i]!;
+    addApproval(paths.approvals, {
+      kind,
+      by: os.userInfo().username,
+      at,
+      hash,
+      ...(distHash ? { distHash } : {}),
+      ...(noteParts.length ? { note: noteParts.join(" ") } : {}),
+    });
   });
-  console.log(`Approved ${kind} for ${slug} at content hash ${hash}.`);
+  console.log(`Approved ${kinds.join(" + ")} for ${slug} at content hash ${first.hash}.`);
 }
 
 main().catch((error) => {

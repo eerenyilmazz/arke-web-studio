@@ -148,6 +148,9 @@ code, pre, .mono { font-family: "Geist Mono", ui-monospace, Consolas, monospace;
 
 .now-card { display: flex; flex-wrap: wrap; align-items: center; gap: 1.2rem 2rem; padding: 1.5rem 1.6rem; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
 .now-card .text { flex: 1 1 26rem; }
+.now-card.prep { flex-direction: column; align-items: stretch; gap: 1rem; }
+.now-card.prep .text { flex: none; }
+.now-card.prep .row { align-items: center; }
 .now-card .eyebrow { font-size: 0.85rem; font-weight: 600; color: var(--accent-text); }
 .now-card h2 { font-size: 1.35rem; margin: 0.3rem 0 0.4rem; }
 .now-card p { color: var(--ink-2); max-width: 62ch; }

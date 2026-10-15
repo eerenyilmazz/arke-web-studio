@@ -224,12 +224,12 @@ function renderNew() {
     if (!res) return;
     toast("Müşteri oluşturuldu.");
     const text = info.value.trim();
-    if (!text) { location.hash = `#/c/${res.slug}/sorular`; return; }
+    if (!text) { location.hash = `#/c/${res.slug}/akis`; return; }
     location.hash = `#/c/${res.slug}/akis`;
-    await runAgent(res.slug, "answers", { freeText: text });
+    await runAgent(res.slug, "autopilot", { freeText: text });
   } },
     h("h1", { text: "Yeni müşteri" }),
-    h("p", { class: "muted", text: "Sadece iç bilgiler. Geri kalanını müşteriye soru formuyla soracağız." }),
+    h("p", { class: "muted", text: "Adını ve sektörünü yaz. Bildiklerini alttaki kutuya yapıştırırsan site hemen hazırlanmaya başlar." }),
     h("label", { for: "nc-name" }, "İşletme adı", name),
     h("label", { for: "nc-slug" }, "Kısa ad (slug)", h("span", { class: "help", text: "Klasör ve Cloudflare adı olur, sonradan değişmez. Küçük harf, rakam ve tire." }), slug),
     h("label", { for: "nc-industry" }, "Sektör (İngilizce)", h("span", { class: "help", text: "Tasarım önerisi ve sektöre özel sorular buna göre seçilir." }), industry),
@@ -239,7 +239,7 @@ function renderNew() {
     ),
     h("label", { for: "nc-lang" }, "Dil", lang),
     h("label", { for: "nc-info" }, "Elindeki bilgiler (isteğe bağlı)",
-      h("span", { class: "help", text: "Müşteriden ne biliyorsan yapıştır: hizmetler, fiyatlar, iletişim, renkler… Agent oluşturur oluşturmaz işler; eksikler için soru formu hazırlanır." }),
+      h("span", { class: "help", text: "Müşteriden ne biliyorsan yapıştır: hizmetler, fiyatlar, iletişim, renkler… Doldurursan site hemen hazırlanmaya başlar; eksik bilgi olursa agent sorar." }),
       info),
     h("div", { class: "row" }, h("button", { class: "btn btn-primary btn-lg", type: "submit" }, "Müşteriyi oluştur")),
   );
@@ -314,42 +314,17 @@ function nowCard(d) {
   const primary = (label, onclick, disabled = false) => h("button", { class: "btn btn-primary btn-lg", type: "button", disabled, onclick }, label);
   const secondary = (label, onclick, disabled = false) => h("button", { class: "btn btn-lg", type: "button", disabled, onclick }, label);
 
+  // Until the operator has approved the built site, everything is one step: "Prepare site".
+  const PREPARE_STAGES = ["collecting-answers", "design", "content", "awaiting-content-approval", "build", "awaiting-visual-approval"];
+  if (PREPARE_STAGES.includes(stage)) {
+    const approved = (k) => d.approvals.find((a) => a.kind === k)?.valid;
+    return d.distReady && !(approved("content") && approved("visual")) ? readyCard(d) : prepareCard(d);
+  }
+
   let title;
   let text;
   let actions = [];
   switch (stage) {
-    case "collecting-answers":
-      if (!d.questionnaires.length && !d.history.length) {
-        title = "Müşteri bilgilerini yapıştır ya da soru formu gönder";
-        text = "Elinde bilgi varsa olduğu gibi yapıştır, agent dağıtsın. Yoksa 10 soruluk formu müşteriye gönder.";
-        actions = [primary("Bilgileri yapıştır", go("cevaplar")), secondary("Soru formu hazırla", go("sorular"))];
-      } else {
-        title = "Eksik bilgileri tamamla";
-        text = `${d.status.config.missing.length} alan eksik. Müşteriden gelen yeni bilgileri yapıştır ya da eksikler için 2. tur formunu gönder.`;
-        actions = [primary("Bilgileri yapıştır", go("cevaplar")), secondary("2. tur formu", go("sorular"))];
-      }
-      break;
-    case "design":
-    case "content":
-      title = "Tasarımı ve metinleri agent'a hazırlat";
-      text = "Agent sektöre uygun renk, font ve düzeni seçer, her dil için bütün metinleri yazar. Birkaç dakika sürer.";
-      actions = [primary("Tasarım ve metinleri oluştur", () => runAgent(slug, "design-content", {}), busy)];
-      break;
-    case "awaiting-content-approval":
-      title = "Metinleri oku, uygunsa içerik onayını ver";
-      text = "Onay terminalden verilir. Değişiklik gerekiyorsa Akış'tan agent'a yaz.";
-      actions = [primary("Metinleri oku", go("metinler")), copyButton(cmd("content"), "Onay komutunu kopyala")];
-      break;
-    case "build":
-      title = "Siteyi oluştur (build)";
-      text = "Şablon siteyi üretir ve kalite kontrolleri çalışır. Kontroller geçmezse agent düzeltebilir.";
-      actions = [primary("Build al", () => runTask(slug, "build", {}), busy)];
-      break;
-    case "awaiting-visual-approval":
-      title = "Önizlemeye bak, uygunsa görsel onayı ver";
-      text = "Telefonda ve masaüstünde kontrol listesine göre bak. Onay terminalden verilir.";
-      actions = [primary("Önizlemeyi aç", () => openPreview(slug)), copyButton(cmd("visual"), "Onay komutunu kopyala")];
-      break;
     case "awaiting-production-approval":
       if (!preview) {
         title = "Önizlemeyi yayınla ve linki müşteriye gönder";
@@ -375,6 +350,71 @@ function nowCard(d) {
   return h("section", { class: "now-card", "aria-label": "Şimdi yapılacak" },
     h("div", { class: "text" }, h("p", { class: "eyebrow", text: working ? "Agent çalışıyor, bitince devam" : "Şimdi yapılacak" }), h("h2", { text: title }), h("p", { text })),
     h("div", { class: "row" }, ...actions),
+  );
+}
+
+/** Paste what you know, press one button; the agent does answers, design, text and build. */
+function prepareCard(d) {
+  const slug = d.status.slug;
+  const busy = isBusy();
+  const working = busy && state.running.slug === slug;
+  const draft = (state.drafts[slug] ||= { answers: {}, extras: {}, later: new Set(), freeText: "" });
+  const ranBefore = d.history.some((j) => j.kind === "autopilot");
+  const box = h("textarea", { id: "prep-text", class: "field big-paste", rows: 8, maxlength: 20000, disabled: working,
+    placeholder: ranBefore
+      ? "Agent'ın sorduğu eksikleri ya da yeni bilgileri yaz. Sonra tekrar 'Siteyi hazırla'ya bas."
+      : "Müşteri hakkında ne biliyorsan yapıştır: ne iş yaptığı, hizmetler, fiyatlar, iletişim, renk isteği… Sıra, dil ve biçim önemli değil." });
+  box.value = draft.freeText || "";
+  box.addEventListener("input", () => (draft.freeText = box.value));
+
+  const fileCount = h("span", { class: "small muted", text: d.inbox.length ? `${d.inbox.length} dosya eklendi` : "" });
+  const fileInput = h("input", { type: "file", multiple: true, accept: "image/png,image/jpeg,image/webp,image/avif,image/svg+xml", id: "prep-files", class: "sr-only" });
+  fileInput.addEventListener("change", async () => {
+    let total = d.inbox.length;
+    for (const file of fileInput.files) {
+      const res = await guarded(() => api("PUT", `/api/clients/${slug}/inbox/${encodeURIComponent(file.name)}`, file, true));
+      if (res) total = res.inbox.length;
+    }
+    fileCount.textContent = `${total} dosya eklendi`;
+  });
+
+  const go = async () => {
+    const ok = await runAgent(slug, "autopilot", { freeText: draft.freeText || "" });
+    if (ok) draft.freeText = "";
+  };
+  return h("section", { class: "now-card prep", "aria-label": "Siteyi hazırla" },
+    h("div", { class: "text" },
+      h("p", { class: "eyebrow", text: working ? "Agent çalışıyor" : ranBefore ? "Devam" : "Başla" }),
+      h("h2", { text: working ? "Site hazırlanıyor…" : "Siteyi hazırla" }),
+      h("p", { text: working
+        ? "Agent bilgileri kaydediyor, tasarımı seçiyor, metinleri yazıyor ve siteyi oluşturuyor. Birkaç dakika sürer; aşağıdan izleyebilirsin."
+        : "Bilgileri yapıştır, logo ya da fotoğraf varsa ekle, düğmeye bas. Agent gerisini yapar; eksik bilgi olursa sana sorar." }),
+    ),
+    h("label", { for: "prep-text", class: "sr-only" }, "Müşteri bilgileri"),
+    box,
+    h("div", { class: "row" },
+      h("button", { class: "btn btn-primary btn-lg", type: "button", disabled: busy, onclick: go }, ranBefore ? "Tekrar hazırla" : "Siteyi hazırla"),
+      h("label", { for: "prep-files", class: "btn btn-lg", style: working ? "pointer-events:none;opacity:.5" : "" }, "Logo / fotoğraf ekle"), fileInput,
+      fileCount,
+      h("a", { href: `#/c/${slug}/sorular`, class: "small", style: "margin-inline-start:auto" }, "Müşteriye soru formu göndermek istersen"),
+    ),
+  );
+}
+
+/** The site is built: look at it, then approve with one command (content + visuals). */
+function readyCard(d) {
+  const slug = d.status.slug;
+  return h("section", { class: "now-card prep", "aria-label": "Site hazır" },
+    h("div", { class: "text" },
+      h("p", { class: "eyebrow", text: "Site hazır" }),
+      h("h2", { text: "Siteye bak, beğenirsen onayla" }),
+      h("p", { text: "Telefonda ve bilgisayarda göz at. Değişiklik istersen aşağıdaki kutuya yaz, agent düzeltir. Beğendiysen bu komutu WSL terminalinde site-factory klasöründe çalıştır ve sorulunca kısa adı yaz." }),
+    ),
+    h("div", { class: "cmd" }, h("code", { text: d.siteApproveCommand }), copyButton(d.siteApproveCommand)),
+    h("div", { class: "row" },
+      h("button", { class: "btn btn-primary btn-lg", type: "button", onclick: () => openPreview(slug) }, "Siteye bak"),
+      h("button", { class: "btn btn-lg", type: "button", onclick: () => { location.hash = `#/c/${slug}/akis`; setTimeout(() => $("#composer")?.focus(), 80); } }, "Değişiklik iste"),
+    ),
   );
 }
 
@@ -407,7 +447,7 @@ function tabFlow(body, d) {
       feed,
       h("form", { class: "composer", onsubmit: (e) => { e.preventDefault(); send(); } },
         h("div", { class: "chips" },
-          h("button", { class: "chip", type: "button", onclick: () => (location.hash = `#/c/${slug}/cevaplar`) }, "Bilgi yapıştır"),
+          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "autopilot", {}) }, "Siteyi hazırla"),
           h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "design-content", {}) }, "Tasarım ve metinler"),
           h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Build al"),
           h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Build hatalarını düzelt"),
@@ -485,6 +525,14 @@ function drawFeed(feed, d) {
 function stageCard(d) {
   const kind = { "awaiting-content-approval": "content", "awaiting-visual-approval": "visual", "awaiting-production-approval": "production" }[d.status.stage];
   if (!kind) return null;
+  if (kind !== "production") {
+    if (!d.distReady) return null; // the "Prepare site" card covers it
+    return h("section", { class: "feed-card warn", "aria-label": "Site onayı senden" },
+      h("p", { class: "title", text: "Site onayı senden" }),
+      h("p", { class: "small", text: "Siteye bak. Beğendiysen bu komutu terminalde çalıştır (metin ve görünüm birlikte onaylanır). Agent onay veremez." }),
+      h("div", { class: "cmd" }, h("code", { text: d.siteApproveCommand }), copyButton(d.siteApproveCommand)),
+    );
+  }
   const a = d.approvals.find((x) => x.kind === kind);
   const what = { content: "İçerik onayı senden", visual: "Görsel onay senden", production: "Yayın onayı senden" }[kind];
   const why = {

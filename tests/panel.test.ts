@@ -235,3 +235,29 @@ describe("single paste box", () => {
     expect([400, 409]).toContain(empty.status);
   });
 });
+
+describe("prepare site (autopilot)", () => {
+  it("runs one longer agent job with the pasted text, or continues without input", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "Yaptıklarım: ..." }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "reinware", businessName: "Reinware", industry: "software development", hostingModel: "managed" }) });
+
+    const first = await fetch(`${base}/api/clients/reinware/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "5 yıldır yazılım yapıyorum. eerenyilmazz1@gmail.com" }) });
+    expect(first.status).toBe(202);
+    await waitFor(async () => ((await (await fetch(`${base}/api/clients/reinware`, { headers: auth })).json()) as { running: unknown }).running === null);
+    const call = calls[0]!;
+    expect(call.args[call.args.indexOf("--max-turns") + 1]).toBe("150");
+    expect(call.stdin).toMatch(/\n<client_data>\n/);
+    expect(call.stdin).toContain("eerenyilmazz1@gmail.com");
+    expect(call.stdin).toMatch(/Never deploy and never touch approvals/);
+    expect(call.stdin).toMatch(/Eksikler:/);
+
+    const again = await fetch(`${base}/api/clients/reinware/agent/autopilot`, { method: "POST", headers: json, body: "{}" });
+    expect(again.status).toBe(202);
+    expect(calls[1]!.stdin).not.toMatch(/\n<client_data>\n/);
+
+    const detail = (await (await fetch(`${base}/api/clients/reinware`, { headers: auth })).json()) as { siteApproveCommand: string };
+    expect(detail.siteApproveCommand).toBe("npm run approve -- reinware site");
+  });
+});

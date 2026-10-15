@@ -14,7 +14,7 @@ import * as tools from "../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "./http.js";
 import { readHistory } from "./history.js";
 import { serialiseJob, type JobRunner } from "./jobs.js";
-import { answersPrompt, designContentPrompt, fixBuildPrompt, revisePrompt } from "./prompts.js";
+import { answersPrompt, autopilotPrompt, designContentPrompt, fixBuildPrompt, revisePrompt, type AnswersInput } from "./prompts.js";
 import type { PreviewServer } from "./preview.js";
 
 const JSON_LIMIT = 256 * 1024;
@@ -44,7 +44,7 @@ const routes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: writeQuestionnaire },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
-  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|design-content|fix-build|revise)$`), handler: startAgent },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise)$`), handler: startAgent },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/build$`), handler: startBuild },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/deploy$`), handler: startDeploy },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/preview$`), handler: showPreview },
@@ -127,6 +127,7 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     qualityReport: existsSync(paths.qualityReport) ? readFileSync(paths.qualityReport, "utf8") : null,
     distReady: Boolean(build?.passed && build.distHash && dirHash(paths.distDir) === build.distHash),
     approvals: APPROVAL_KINDS.map((kind) => ({ kind, valid: valid[kind] !== null, at: valid[kind]?.at ?? null, command: `npm run approve -- ${s} ${kind}` })),
+    siteApproveCommand: `npm run approve -- ${s} site`,
     lastDeploy: readJsonIfExists(paths.lastDeploy) ?? null,
     content: Object.fromEntries((draft.i18n?.locales ?? ["en"]).map((l) => [l, readJsonIfExists(paths.content(l)) ?? null])),
     history: readHistory(deps.factory, s),
@@ -195,6 +196,20 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       title = "Cevapları işle";
       const answered = Object.values(answers).filter((a) => a.trim()).length + extras.filter((e) => e.answer.trim()).length;
       request = [`Müşterinin cevaplarını işle: ${answered} cevap`, freeText.trim() ? "serbest metin" : "", files.length ? `${files.length} dosya` : ""].filter(Boolean).join(", ");
+      break;
+    }
+    case "autopilot": {
+      const input: AnswersInput = {
+        answers: stringRecord(body.answers),
+        extras: Array.isArray(body.extras) ? body.extras.filter(isQa).slice(0, 20) : [],
+        later: [],
+        freeText: str(body, "freeText", { optional: true, max: MAX_TEXT }) ?? "",
+        files: inboxFiles(deps.factory, s).map((f) => f.name),
+      };
+      const hasInput = input.freeText.trim() !== "" || Object.values(input.answers).some((a) => a.trim()) || input.files.length > 0;
+      prompt = autopilotPrompt(s, hasInput ? input : null);
+      title = "Siteyi hazırla";
+      request = input.freeText.trim() ? input.freeText.trim() : input.files.length ? `Siteyi hazırla (${input.files.length} dosya)` : "Siteyi hazırla.";
       break;
     }
     case "design-content":

@@ -46,17 +46,19 @@ export const AGENT_ALLOWED_TOOLS = [
 ] as const;
 export const AGENT_DENIED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "WebFetch", "WebSearch", "Task", "mcp__site-factory__deploy", "mcp__site-factory__create_client"] as const;
 const MAX_AGENT_TURNS = 60;
+/** "Prepare site" runs answers, design, content and build in one job, so it needs more turns. */
+export const MAX_AUTOPILOT_TURNS = 150;
 const MAX_LOG_LINES = 2000;
 const MAX_TEXT = 4000;
 
 export type SpawnFn = (command: string, args: readonly string[], options: SpawnOptions) => ChildProcess;
 
-export function claudeArgs(): string[] {
+export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS): string[] {
   return [
     "-p",
     "--output-format", "stream-json",
     "--verbose",
-    "--max-turns", String(MAX_AGENT_TURNS),
+    "--max-turns", String(maxTurns),
     "--mcp-config", ".mcp.json",
     "--strict-mcp-config",
     "--allowedTools", AGENT_ALLOWED_TOOLS.join(","),
@@ -174,7 +176,7 @@ export class JobRunner {
     this.push(job, "info", "Agent başlatıldı (sadece site-factory araçları; shell ve dosya düzenleme kapalı).");
     let child: ChildProcess;
     try {
-      child = this.spawn(this.claudeBin, claudeArgs(), { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
+      child = this.spawn(this.claudeBin, claudeArgs(kind === "autopilot" ? MAX_AUTOPILOT_TURNS : undefined), { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
     } catch (error) {
       this.push(job, "error", `Claude Code başlatılamadı: ${(error as Error).message}`);
       this.finish(job, "failed");

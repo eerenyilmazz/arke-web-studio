@@ -28,6 +28,8 @@ Always call `get_client_status` when unsure; its `nextStep` is authoritative.
 10. **Preview**: `deploy` target `preview`. Give Eren the URL for the client.
 11. **Production**: after the client's OK, Eren gives the production approval; then `deploy` target `production`.
 
+**From the panel ("Prepare site")** steps 3–8 run as one job: you may build before the content approval; Eren then looks at the built site and approves content and visuals together (`npm run approve -- <slug> site`). If a required fact is missing, stop before building and list it as short questions in Turkish.
+
 Changes after launch use the same path: edit config/content, build, approvals, deploy. Any change resets approvals automatically.
 
 ## Hard rules

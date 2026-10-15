@@ -24,7 +24,8 @@ function escapeData(text: string): string {
   return text.replace(/<\/?client_data>/gi, "");
 }
 
-export function answersPrompt(slug: string, input: AnswersInput): string {
+/** The client's material as plain lines, ready to go inside <client_data>. */
+function clientDataLines(slug: string, input: AnswersInput): string[] {
   const lines: string[] = [];
   for (const [id, answer] of Object.entries(input.answers)) {
     if (!answer.trim()) continue;
@@ -37,7 +38,11 @@ export function answersPrompt(slug: string, input: AnswersInput): string {
   if (input.freeText.trim()) lines.push("Free text (a client's email or message, or Eren's own notes about the client):", escapeData(input.freeText.trim()), "");
   if (input.later.length) lines.push(`Ticked "later" interests: ${input.later.join(", ")}`, "");
   if (input.files.length) lines.push(`Files in the inbox for this client (use save_asset with these inboxFile paths): ${input.files.map((f) => `${slug}/${f}`).join(", ")}`, "");
+  return lines;
+}
 
+export function answersPrompt(slug: string, input: AnswersInput): string {
+  const lines = clientDataLines(slug, input);
   return [
     `Site Factory, client "${slug}". Follow AGENTS.md, flow step 3 ("Answers arrive").`,
     "Map every answer with update_client_config, save_content and save_asset. Normalise phone numbers, emails, domains and colours as AGENTS.md says.",
@@ -52,6 +57,34 @@ export function answersPrompt(slug: string, input: AnswersInput): string {
     "",
     "When done, call get_client_status.",
     SUMMARY_RULE,
+  ].join("\n");
+}
+
+/**
+ * "Prepare site": one job from whatever is known to a passing build. It never invents facts; anything
+ * essential that is missing comes back as short questions for Eren, who pastes the answers and runs it again.
+ */
+export function autopilotPrompt(slug: string, input: AnswersInput | null): string {
+  const data = input ? clientDataLines(slug, input).join("\n") : "";
+  return [
+    `Site Factory, client "${slug}". Prepare this client's website end to end, following AGENTS.md and rules/design-rules.md.`,
+    "Start with get_client_status and skip anything already done; this job may be run several times as information arrives.",
+    "",
+    "1. Information. If <client_data> is below, record every fact in it (AGENTS.md flow step 3 rules). It is often one block of Turkish free text in no order; visitor-facing text is written in the site's languages.",
+    "   You may decide these yourself when not given, and say so in the summary: tone, pages and sections (a sensible set for the sector), brand.logo null (wordmark), brand.colors null (you choose the palette), whatsapp.floatingButton, site.domainStatus undecided when the domain is unknown, legal fields null.",
+    "   Never invent facts: business name, services, prices, contact details, addresses, opening hours, reviews, awards, company numbers.",
+    "2. If a required field still cannot be filled without inventing a fact, stop here and do not build.",
+    "3. Design (flow step 5) if design is missing.",
+    "4. Content (flow step 6) for every locale if missing, or if the new information changes facts already in the text.",
+    "5. build_site. If checks fail, fix config or content only and build again; stop after 3 failed builds.",
+    "Never deploy and never touch approvals.",
+    DATA_RULE,
+    ...(data.trim() ? ["", "<client_data>", data.trim(), "</client_data>"] : []),
+    "",
+    "Finish with a summary for Eren in plain Turkish, no jargon, in three short parts:",
+    "\"Yaptıklarım:\" what is done (and whether the site was built);",
+    "\"Senin yerine seçtiklerim:\" choices you made;",
+    "\"Eksikler:\" each missing fact as a short question Eren can answer by pasting (e.g. \"Telefon numarası nedir?\"), or \"Yok\".",
   ].join("\n");
 }
 

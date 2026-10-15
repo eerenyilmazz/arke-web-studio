@@ -56,6 +56,16 @@ export function approvalState(clientRoot: string, approvalsFile: string, current
   return { hash, valid };
 }
 
+/**
+ * What the operator typed after the slug. "site" approves content and visuals in one go: the operator
+ * looked at the built site, which shows both. Production stays separate (it needs the client's OK).
+ */
+export const SITE_APPROVAL = "site";
+export function approvalTargets(arg: string): ApprovalKind[] | null {
+  if (arg === SITE_APPROVAL) return ["content", "visual"];
+  return (APPROVAL_KINDS as readonly string[]).includes(arg) ? [arg as ApprovalKind] : null;
+}
+
 export interface BuildPin {
   readonly hash: string;
   readonly passed: boolean;

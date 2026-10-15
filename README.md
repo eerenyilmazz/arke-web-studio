@@ -16,6 +16,10 @@ npm run panel
 Terminal bir bağlantı yazar (`http://127.0.0.1:4777/login?key=…`); Windows'taki tarayıcıda açın.
 Anahtar her başlatmada yenilenir ve sadece o oturumda geçerlidir. Panel sadece bu bilgisayardan erişilebilir.
 
+**En kısa yol:** müşteri sayfasının üstündeki kutuya bildiklerini yapıştır → **Siteyi hazırla**. Agent bilgileri kaydeder,
+tasarımı seçer, metinleri yazar, siteyi oluşturur. Eksik varsa Türkçe sorar; cevabı yazıp tekrar basarsın.
+Site hazır olunca **Siteye bak**, beğenirsen tek onay: `npm run approve -- <slug> site` (metin + görünüm).
+
 | Sekme | Ne yaparsınız |
 | --- | --- |
 | Yeni müşteri | İşletme adı, sektör, barındırma, dil |

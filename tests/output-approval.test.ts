@@ -75,3 +75,12 @@ describe("visual/production approvals are pinned to the built output", () => {
     expect(tools.getClientStatus(f, { slug: SLUG }).stage).toBe("awaiting-visual-approval");
   });
 });
+
+describe("site approval alias", () => {
+  it("'site' means content + visual; production stays separate", async () => {
+    const { approvalTargets } = await import("../src/lib/approvals.js");
+    expect(approvalTargets("site")).toEqual(["content", "visual"]);
+    expect(approvalTargets("production")).toEqual(["production"]);
+    expect(approvalTargets("everything")).toBeNull();
+  });
+});
