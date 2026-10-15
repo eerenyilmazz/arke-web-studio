@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
-import { request } from "node:http";
+import { createServer, request } from "node:http";
+import type { AddressInfo } from "node:net";
 import { existsSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { PassThrough } from "node:stream";
@@ -11,7 +12,19 @@ import { tempFactory } from "./helpers.js";
 
 const KEY = "k".repeat(64);
 let panel: Panel | null = null;
-let nextPort = 47_700 + Math.floor(Math.random() * 500) * 2;
+
+/** Asks the OS for a free port, so tests never collide with something already running on the machine. */
+function freePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = createServer();
+    srv.unref();
+    srv.on("error", reject);
+    srv.listen(0, "127.0.0.1", () => {
+      const { port } = srv.address() as AddressInfo;
+      srv.close(() => resolve(port));
+    });
+  });
+}
 
 interface SpawnCall { command: string; args: readonly string[]; options: SpawnOptions; stdin: string }
 
@@ -36,9 +49,9 @@ function fakeSpawn(calls: SpawnCall[], events: object[], exitCode = 0) {
 
 async function start(spawn?: ReturnType<typeof fakeSpawn>) {
   const factory = tempFactory();
-  const port = nextPort;
-  nextPort += 2;
-  panel = createPanel({ factory, port, previewPort: port + 1, sessionKey: KEY, ...(spawn ? { spawn } : {}) });
+  const port = await freePort();
+  const previewPort = await freePort();
+  panel = createPanel({ factory, port, previewPort, sessionKey: KEY, ...(spawn ? { spawn } : {}) });
   await panel.listen();
   const base = `http://127.0.0.1:${port}`;
   const auth = { Cookie: `sf_panel=${KEY}`, Origin: base };
@@ -187,7 +200,8 @@ describe("panel flow", () => {
     mkdirSync(dist, { recursive: true });
     writeFileSync(path.join(dist, "index.html"), "<h1>ok</h1>");
     const r = (await (await fetch(`${base}/api/clients/willow-thread/preview`, { method: "POST", headers: auth })).json()) as { url: string };
-    expect(r.url).toBe(`http://127.0.0.1:${port + 1}/`);
+    expect(r.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
+    expect(r.url).not.toBe(`http://127.0.0.1:${port}/`);
     expect(await (await fetch(r.url)).text()).toBe("<h1>ok</h1>");
     expect((await fetch(`${r.url}..%2F..%2Fsite.config.json`)).status).toBeGreaterThanOrEqual(403);
   });

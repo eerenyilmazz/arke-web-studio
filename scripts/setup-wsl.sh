@@ -112,10 +112,11 @@ if $CHECK_ONLY; then
 elif (( fail > 0 )); then
   note "skipped: fix the FAIL items above, then run this script again"
 else
-  npm ci --no-fund --no-audit && pass "npm ci"
-  npm run build >/dev/null && pass "npm run build (dist/server.js)"
-  npm test --silent && pass "npm test"
-  (cd templates/corporate-v1 && npm ci --no-fund --no-audit) && pass "template corporate-v1: npm ci"
+  # if/else, not "cmd && pass": a failing step must show up as FAIL in the summary.
+  if npm ci --no-fund --no-audit; then pass "npm ci"; else bad "npm ci failed"; fi
+  if npm run build >/dev/null; then pass "npm run build (dist/server.js)"; else bad "npm run build failed"; fi
+  if npm test --silent; then pass "npm test"; else bad "npm test failed (see the output above)"; fi
+  if (cd templates/corporate-v1 && npm ci --no-fund --no-audit); then pass "template corporate-v1: npm ci"; else bad "template npm ci failed"; fi
   # Design tools: Impeccable comes with npm ci (devDependency); UI UX Pro Max is a pinned git checkout.
   UUPM_DIR="vendor/ui-ux-pro-max"
   UUPM_COMMIT="56ea9cf174ed86786187daa9de0e6247cb0747e4"
