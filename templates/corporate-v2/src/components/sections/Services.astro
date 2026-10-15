@@ -1,12 +1,13 @@
 ---
 import type { PageContext } from "../../lib/site";
+import { isFood } from "../../lib/site";
 import Icon from "../ui/Icon.astro";
 
 interface Props { readonly ctx: PageContext }
 const { ctx } = Astro.props;
 const { services } = ctx.content;
 const { t } = ctx;
-const p = ctx.config.design.personality;
+const p = isFood(ctx.config) ? "food" : ctx.config.design.personality;
 const TINTS = ["tint-accent", "tint-primary", "tint-secondary"] as const;
 // Bold bento on 3 columns: the first card takes a 2×2 block; the last card widens so no cell stays empty.
 const BENTO_COLS = 3;
@@ -18,10 +19,25 @@ function bentoClass(i: number, n: number): string {
   return "";
 }
 ---
-<section class="wrap band">
+<section class:list={[p === "food" ? "paper" : ""]}>
+<div class="wrap band">
   <div class="reveal flex flex-wrap items-end justify-between gap-4">
-    <h2 class="h-section">{t.servicesTitle}</h2>
+    <h2 class="h-section">{p === "food" ? t.menuTitle : t.servicesTitle}</h2>
   </div>
+
+  {p === "food" && (
+    <ul class="reveal-stagger mt-12 grid gap-x-16 gap-y-9 md:grid-cols-2">
+      {services.map((s) => (
+        <li>
+          <div class="menu-row">
+            <h3 class="h-card">{s.title}</h3>
+            {s.price && <><span class="leader" aria-hidden="true"></span><p class="num text-xl whitespace-nowrap">{s.price}</p></>}
+          </div>
+          <p class="mt-2 measure muted">{s.description}</p>
+        </li>
+      ))}
+    </ul>
+  )}
 
   {p === "bold" && (
     <ul class="reveal-stagger mt-12 grid gap-4 md:grid-cols-3">
@@ -61,4 +77,5 @@ function bentoClass(i: number, n: number): string {
       ))}
     </ul>
   )}
+</div>
 </section>

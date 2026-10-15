@@ -8,6 +8,8 @@ export const tr: UiStrings = {
   mainNav: "Ana menü",
   language: "Dil",
   servicesTitle: "Hizmetler",
+  menuTitle: "Menü",
+  openLabel: "Açık",
   galleryTitle: "Galeri",
   testimonialsTitle: "Müşterilerimiz ne diyor",
   processTitle: "Nasıl çalışıyoruz",

@@ -132,3 +132,28 @@
   .blob { border-radius: 58% 42% 46% 54% / 52% 48% 52% 48%; }
   .num { font-family: var(--f-heading); font-weight: var(--h-weight); letter-spacing: var(--h-tracking); font-variant-numeric: tabular-nums; }
 }
+
+/* ---------- food layout ---------- */
+@layer components {
+  /* Fine film grain over dark surfaces, so flat colour reads as a material (charcoal, paper). */
+  .grain { position: relative; isolation: isolate; }
+  .grain::after {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .16; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .fire-glow { background: radial-gradient(closest-side, color-mix(in srgb, var(--c-accent) 55%, transparent), color-mix(in srgb, var(--c-accent) 18%, transparent) 55%, transparent); filter: blur(10px); }
+  .stamp { display: inline-grid; place-items: center; text-align: center; width: 9.5rem; aspect-ratio: 1; border-radius: 50%; border: 2px dashed currentColor; padding: 1rem; font-weight: 700; line-height: 1.15; transform: rotate(-9deg); }
+  .h-mega { font-size: clamp(3rem, 8.6vw, 7.4rem); line-height: .92; letter-spacing: -0.04em; font-weight: 800; }
+  .ribbon { overflow: hidden; white-space: nowrap; background: var(--c-cta); color: var(--c-on-cta); }
+  .ribbon-track { display: inline-flex; gap: 3rem; padding-block: 1.05rem; padding-inline-end: 3rem; font-family: var(--f-heading); font-weight: 700; font-size: clamp(1.1rem, 2vw, 1.5rem); }
+  .ribbon-track > span::after { content: "✦"; margin-inline-start: 3rem; opacity: .7; }
+  .menu-row { display: flex; align-items: baseline; gap: .75rem; }
+  .menu-row .leader { flex: 1; border-bottom: 2px dotted color-mix(in srgb, currentColor 35%, transparent); transform: translateY(-.3em); min-width: 2rem; }
+  .paper { background: color-mix(in srgb, var(--c-secondary) 30%, var(--c-background)); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ribbon-track { animation: ribbon 32s linear infinite; }
+  .ribbon:hover .ribbon-track { animation-play-state: paused; }
+}
+@keyframes ribbon { to { transform: translateX(-50%); } }
+[dir="rtl"] .ribbon-track { animation-direction: reverse; }

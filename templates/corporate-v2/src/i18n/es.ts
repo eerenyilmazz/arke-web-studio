@@ -8,6 +8,8 @@ export const es: UiStrings = {
   mainNav: "Navegación principal",
   language: "Idioma",
   servicesTitle: "Servicios",
+  menuTitle: "Carta",
+  openLabel: "Abierto",
   galleryTitle: "Galería",
   testimonialsTitle: "Lo que dicen nuestros clientes",
   processTitle: "Cómo trabajamos",

@@ -8,6 +8,8 @@ export const ar: UiStrings = {
   mainNav: "القائمة الرئيسية",
   language: "اللغة",
   servicesTitle: "الخدمات",
+  menuTitle: "القائمة",
+  openLabel: "مفتوح",
   galleryTitle: "معرض الصور",
   testimonialsTitle: "آراء عملائنا",
   processTitle: "كيف نعمل",

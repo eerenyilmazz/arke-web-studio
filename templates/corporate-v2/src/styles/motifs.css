@@ -1,6 +1,6 @@
-/* Animated sector motifs. Colours come from the container:
-   --m-line (outlines, usually the surface's text colour), --m-main (accent), --m-soft (a light tint). */
-.motif { --m-line: currentColor; --m-main: var(--c-accent); --m-soft: color-mix(in srgb, var(--c-accent) 30%, transparent); width: 100%; height: auto; display: block; }
+/* Animated sector motifs. Colours: --m-line (outlines, usually the surface's text colour), --m-main (accent), --m-soft (a light tint). */
+/* A section can recolour its motif by setting --motif-line / --motif-main / --motif-soft on a wrapper. */
+.motif { --m-line: var(--motif-line, currentColor); --m-main: var(--motif-main, var(--c-accent)); --m-soft: var(--motif-soft, color-mix(in srgb, var(--c-accent) 30%, transparent)); width: 100%; height: auto; display: block; }
 .motif * { transform-box: fill-box; }
 
 /* jar: brine fills and empties, pickles bob, bubbles rise */

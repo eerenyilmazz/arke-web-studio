@@ -1,6 +1,6 @@
 ---
 import type { PageContext } from "../../lib/site";
-import { displayPhone, primaryCta } from "../../lib/site";
+import { displayPhone, isFood, primaryCta } from "../../lib/site";
 import Motif from "../Motif.astro";
 
 interface Props { readonly ctx: PageContext }
@@ -11,8 +11,24 @@ const cta = primaryCta(ctx);
 const { phone, email, hours } = config.contact;
 const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
 const newTab = cta.external ? t.opensInNewTab : "";
+const food = isFood(config);
 ---
-{p === "bold" && (
+{food && (
+  <section class="grain overflow-hidden" style="background: var(--c-cta); color: var(--c-on-cta)">
+    <div class="wrap band grid items-center gap-10 md:grid-cols-[1.4fr_1fr]">
+      <div class="reveal">
+        <h2 class="h-display max-w-[14ch]">{content.contact.title}</h2>
+        <p class="lead mt-5 measure">{content.contact.intro}</p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={cta.href} class="btn bg-bg text-ink" {...external}>{cta.label}{newTab && <span class="sr-only"> {newTab}</span>}</a>
+          {phone && <a class="btn btn-ghost" href={`tel:${phone}`}>{displayPhone(phone)}</a>}
+        </div>
+      </div>
+      {hours && <p class="stamp reveal mx-auto text-base">{t.hoursLabel}<br />{hours}</p>}
+    </div>
+  </section>
+)}
+{!food && p === "bold" && (
   <section class="wrap band">
     <div class="reveal card relative overflow-hidden bg-primary p-8 text-on-primary md:p-14">
       <div aria-hidden="true" class="absolute -bottom-32 -end-24 h-80 w-80 rounded-full opacity-30 blur-3xl" style="background: var(--c-accent)"></div>
@@ -27,7 +43,7 @@ const newTab = cta.external ? t.opensInNewTab : "";
   </section>
 )}
 
-{p === "premium" && (
+{!food && p === "premium" && (
   <section class="wrap band grid gap-10 md:grid-cols-2 md:items-center">
     <div class="reveal">
       <h2 class="h-section">{content.contact.title}</h2>
@@ -42,7 +58,7 @@ const newTab = cta.external ? t.opensInNewTab : "";
   </section>
 )}
 
-{p === "friendly" && (
+{!food && p === "friendly" && (
   <section class="wrap band">
     <div class="reveal card grid items-center gap-8 p-8 md:grid-cols-[1.4fr_1fr] md:p-14" style="background: var(--c-cta); color: var(--c-on-cta)">
       <div>
@@ -50,7 +66,7 @@ const newTab = cta.external ? t.opensInNewTab : "";
         <p class="lead mt-4 measure">{content.contact.intro}</p>
         <a href={cta.href} class="btn mt-8 bg-bg text-ink" {...external}>{cta.label}{newTab && <span class="sr-only"> {newTab}</span>}</a>
       </div>
-      {motif !== "none" && <div class="hidden md:block" style="--m-main: var(--c-secondary); --m-soft: color-mix(in srgb, var(--c-background) 55%, transparent)"><Motif name={motif} id="cta" class="max-w-xs ms-auto" /></div>}
+      {motif !== "none" && <div class="hidden md:block" style="--motif-main: var(--c-secondary); --motif-soft: color-mix(in srgb, var(--c-background) 55%, transparent)"><Motif name={motif} id="cta" class="max-w-xs ms-auto" /></div>}
     </div>
   </section>
 )}

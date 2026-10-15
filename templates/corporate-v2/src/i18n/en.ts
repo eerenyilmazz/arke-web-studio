@@ -7,6 +7,8 @@ export const en = {
   mainNav: "Main navigation",
   language: "Language",
   servicesTitle: "Services",
+  menuTitle: "Menu",
+  openLabel: "Open",
   galleryTitle: "Gallery",
   testimonialsTitle: "What clients say",
   processTitle: "How it works",

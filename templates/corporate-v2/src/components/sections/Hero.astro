@@ -1,6 +1,6 @@
 ---
 import type { PageContext } from "../../lib/site";
-import { displayPhone, heroImage, primaryCta } from "../../lib/site";
+import { displayPhone, heroImage, isFood, primaryCta } from "../../lib/site";
 import Motif from "../Motif.astro";
 
 interface Props { readonly ctx: PageContext }
@@ -14,8 +14,40 @@ const hours = config.contact.hours;
 const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
 // The visual beside the headline: the sector motif when there is one, else the first photo, else the tagline.
 const showMotif = motif !== "none";
+const food = isFood(config);
 ---
-{personality === "bold" && (
+{food && (
+  <section class="grain relative overflow-hidden bg-primary text-on-primary">
+    {image && (
+      <>
+        <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="absolute inset-0 -z-10 h-full w-full object-cover" />
+        <div aria-hidden="true" class="absolute inset-0 -z-10" style="background: linear-gradient(90deg, var(--c-primary) 30%, color-mix(in srgb, var(--c-primary) 35%, transparent))"></div>
+      </>
+    )}
+    <div class="wrap grid items-center gap-10 pb-16 pt-8 md:grid-cols-[1.15fr_0.85fr] md:pb-24 md:pt-12">
+      <div class="hero-in">
+        <p class="font-semibold opacity-85">{content.tagline}</p>
+        <h1 class="h-mega mt-5 max-w-[13ch]">{content.hero.title}</h1>
+        <p class="lead mt-7 measure opacity-90">{content.hero.subtitle}</p>
+        <div class="mt-9 flex flex-wrap gap-3">
+          <a href={cta.href} class="btn btn-accent" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
+          {phone && <a class="btn btn-ghost" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>}
+        </div>
+      </div>
+      <div class="relative min-h-64">
+        {!image && showMotif && (
+          <>
+            <div aria-hidden="true" class="fire-glow absolute inset-x-[8%] bottom-0 top-[20%]"></div>
+            <div class="relative" style="--motif-line: var(--c-secondary); --motif-main: var(--c-accent); --motif-soft: color-mix(in srgb, var(--c-secondary) 55%, var(--c-accent))"><Motif name={motif} id="hero" /></div>
+          </>
+        )}
+        {hours && <p class="stamp absolute -top-2 end-0 text-sm" style="color: var(--c-secondary)">{t.openLabel}<br />{hours}</p>}
+      </div>
+    </div>
+  </section>
+)}
+
+{!food && personality === "bold" && (
   <section class="relative overflow-hidden bg-primary text-on-primary">
     <div aria-hidden="true" class="absolute -end-40 -top-40 h-[34rem] w-[34rem] rounded-full opacity-25 blur-3xl" style="background: var(--c-accent)"></div>
     <div class="wrap relative grid items-center gap-12 pb-20 pt-10 md:grid-cols-[1.15fr_0.85fr] md:pb-28 md:pt-16">
@@ -35,7 +67,7 @@ const showMotif = motif !== "none";
   </section>
 )}
 
-{personality === "premium" && (
+{!food && personality === "premium" && (
   <section class="wrap grid items-center gap-12 py-14 md:grid-cols-[1.05fr_0.95fr] md:gap-16 md:py-24">
     <div class="hero-in">
       <p class="eyebrow text-accent-ink">{content.tagline}</p>
@@ -57,7 +89,7 @@ const showMotif = motif !== "none";
   </section>
 )}
 
-{personality === "friendly" && (
+{!food && personality === "friendly" && (
   <section class="relative overflow-hidden">
     <div class="wrap grid items-center gap-12 py-14 md:grid-cols-2 md:py-24">
       <div class="hero-in">

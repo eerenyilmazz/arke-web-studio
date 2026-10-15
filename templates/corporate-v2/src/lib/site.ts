@@ -103,3 +103,10 @@ export function heroImage(ctx: PageContext): { src: string; alt: string; width: 
   const info = ctx.site.images.get(first.src);
   return info ? { ...info, alt: first.alt } : null;
 }
+
+/** Sector motifs that switch the food layout on (menu-style prices, charcoal hero, ribbon). */
+const FOOD_MOTIFS: ReadonlySet<string> = new Set(["grill", "plate", "bread", "cup", "jar"]);
+
+export function isFood(config: Config): boolean {
+  return FOOD_MOTIFS.has(config.design.motif);
+}

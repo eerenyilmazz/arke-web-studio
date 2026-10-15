@@ -1,10 +1,11 @@
 ---
 import type { PageContext } from "../../lib/site";
+import { isFood } from "../../lib/site";
 
 interface Props { readonly ctx: PageContext }
 const { ctx } = Astro.props;
 const { testimonials } = ctx.content;
-const p = ctx.config.design.personality;
+const p = isFood(ctx.config) ? "bold" : ctx.config.design.personality;
 const [first, ...rest] = testimonials;
 ---
 {first && p === "bold" && (

@@ -1,13 +1,24 @@
 ---
 import type { PageContext } from "../../lib/site";
+import { isFood } from "../../lib/site";
 
 /* Short facts the client gave (years in business, area covered, response time). Never invented: empty = hidden. */
 interface Props { readonly ctx: PageContext }
 const { ctx } = Astro.props;
 const { highlights } = ctx.content;
 const p = ctx.config.design.personality;
+const food = isFood(ctx.config);
+// The ribbon repeats the facts so the scroll loops without a gap; screen readers get the list once.
+const LOOP_COPIES = 3;
 ---
-{highlights.length > 0 && (
+{highlights.length > 0 && food && (
+  <section class="ribbon" aria-label={highlights.map((h) => `${h.title}: ${h.text}`).join(". ")}>
+    <div class="ribbon-track" aria-hidden="true">
+      {Array.from({ length: LOOP_COPIES * 2 }).flatMap(() => highlights.map((h) => <span>{h.title} <span class="font-normal opacity-85">{h.text}</span></span>))}
+    </div>
+  </section>
+)}
+{highlights.length > 0 && !food && (
   <section class:list={[p === "bold" ? "surface-ink" : p === "friendly" ? "" : "rule-b"]}>
     <ul class:list={["wrap reveal-stagger grid gap-6 py-10 md:py-12", highlights.length > 2 ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-2"]}>
       {highlights.map((h) => (
