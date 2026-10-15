@@ -2,6 +2,7 @@
 import type { GetStaticPaths } from "astro";
 import { SECTIONS } from "../components/sections/registry";
 import Base from "../layouts/Base.astro";
+import PageHero from "../components/PageHero.astro";
 import { loadSite, type Locale, type PageId } from "../lib/data";
 import { buildContext, routeParam, sectionsFor, seoFor } from "../lib/site";
 
@@ -24,10 +25,7 @@ const heroFirst = sections[0] === "hero";
   {page === "home"
     ? !heroFirst && <h1 class="sr-only">{ctx.config.business.name}</h1>
     : (
-      <div class="wrap pt-12 md:pt-16">
-        <p class="eyebrow text-accent-ink">{ctx.config.business.name}</p>
-        <h1 class="h-section mt-3">{ctx.t.nav[page]}</h1>
-      </div>
+      <PageHero ctx={ctx} />
     )}
   {sections.map((id) => {
     const Section = SECTIONS[id];

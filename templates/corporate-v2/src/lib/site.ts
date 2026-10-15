@@ -6,7 +6,7 @@ const PAGE_SLUGS: Readonly<Record<PageId, string>> = { home: "", about: "about",
 
 /** Used when the config lists a page but not its sections. */
 const DEFAULT_SECTIONS: Readonly<Record<PageId, readonly SectionId[]>> = {
-  home: ["hero", "highlights", "services", "process", "intro", "testimonials", "contact-cta"],
+  home: ["hero", "highlights", "services", "process", "intro", "gallery", "testimonials", "contact-cta"],
   about: ["intro", "process", "testimonials", "contact-cta"],
   services: ["services", "process", "faq", "contact-cta"],
   gallery: ["gallery", "contact-cta"],
@@ -77,10 +77,12 @@ export function primaryCta(ctx: PageContext): Cta {
   return { label, href: `mailto:${config.contact.email}`, external: false };
 }
 
-/** UK numbers read better grouped (+44 7700 900123); other countries are shown as stored. */
+/** Numbers read better grouped: UK +44 7700 900123, Turkey +90 506 101 81 82; other countries as stored. */
 export function displayPhone(e164: string): string {
   const uk = e164.match(/^\+44(\d{4})(\d+)$/);
-  return uk ? `+44 ${uk[1]} ${uk[2]}` : e164;
+  if (uk) return `+44 ${uk[1]} ${uk[2]}`;
+  const tr = e164.match(/^\+90(\d{3})(\d{3})(\d{2})(\d{2})$/);
+  return tr ? `+90 ${tr[1]} ${tr[2]} ${tr[3]} ${tr[4]}` : e164;
 }
 
 export function whatsappHref(number: string, message: string | undefined): string {

@@ -8,9 +8,9 @@ const { ctx } = Astro.props;
 const { about } = ctx.content;
 const { personality: p, motif } = ctx.config.design;
 const paragraphs = about.body.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
-// Second photo if there is one; otherwise the motif (only away from the home page, where the hero already shows it).
+// Second photo if there is one. No motif here: every page already opens with it (home hero or page hero).
 const image = galleryImage(ctx, 1);
-const showMotif = !image && motif !== "none" && ctx.page !== "home";
+const showMotif = false;
 const visual = image || showMotif;
 ---
 <section class:list={["wrap band grid gap-12 md:items-center", visual ? "md:grid-cols-2" : "md:grid-cols-3"]}>

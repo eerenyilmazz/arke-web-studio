@@ -1,0 +1,45 @@
+---
+import type { PageContext } from "../lib/site";
+import { galleryImage, sectorFamily } from "../lib/site";
+import HeroFx from "./HeroFx.astro";
+import Motif from "./Motif.astro";
+
+/*
+ * Opening band for inner pages (about, services, gallery, contact): breadcrumb, large title, the tagline, and the
+ * sector illustration or a photo behind. Dark for bold / food / trades sites, the brand's secondary colour otherwise.
+ */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { config, content, t, page } = ctx;
+const family = sectorFamily(config);
+const motif = config.design.motif;
+const SERVICES_TITLE = { food: t.menuTitle, beauty: t.priceListTitle } as const;
+const title = page === "services" && (family === "food" || family === "beauty") ? SERVICES_TITLE[family] : t.nav[page];
+const dark = config.design.personality === "bold" || family === "food" || family === "trades";
+// A later gallery photo, so inner pages do not repeat the home hero image.
+const PHOTO_INDEX = 2;
+const image = galleryImage(ctx, PHOTO_INDEX);
+---
+<div class="fx-wrap">
+  <section class:list={["grain relative overflow-hidden", dark ? "bg-primary text-on-primary" : "bg-secondary text-on-secondary"]}>
+    {image && (
+      <>
+        <img src={image.src} alt={image.alt} width={image.width} height={image.height} decoding="async" class="absolute inset-0 -z-10 h-full w-full object-cover" />
+        <div aria-hidden="true" class="absolute inset-0 -z-10" style={`background: linear-gradient(90deg, var(${dark ? "--c-primary" : "--c-secondary"}) 35%, transparent)`}></div>
+      </>
+    )}
+    <div class="wrap relative grid items-center gap-8 pb-14 pt-10 md:grid-cols-[1.5fr_0.5fr] md:pb-20 md:pt-14">
+      <div class="hero-in">
+        <p class="text-sm opacity-80"><a href={ctx.url("home")} class="underline-offset-4">{t.nav.home}</a> <span aria-hidden="true">/</span> {title}</p>
+        <h1 class="h-mega mt-4">{title}</h1>
+        <p class="lead mt-5 measure opacity-90">{content.tagline}</p>
+      </div>
+      {!image && motif !== "none" && (
+        <div class="hidden md:block parallax" style={dark ? "--motif-line: var(--c-brand-secondary); --motif-soft: color-mix(in srgb, var(--c-brand-secondary) 55%, var(--c-accent))" : ""}>
+          <Motif name={motif} id="page" />
+        </div>
+      )}
+    </div>
+  </section>
+  <HeroFx motif={motif} />
+</div>

@@ -20,13 +20,13 @@ function bentoClass(i: number, n: number): string {
 }
 ---
 <section class:list={[p === "food" ? "paper" : ""]}>
-<div class="wrap band">
+<div class:list={["wrap band", ctx.page === "services" && "!pt-12"]}>
   <div class="reveal flex flex-wrap items-end justify-between gap-4">
-    <h2 class="h-section">{p === "food" ? t.menuTitle : t.servicesTitle}</h2>
+    <h2 class={ctx.page === "services" ? "sr-only" : "h-section"}>{p === "food" ? t.menuTitle : t.servicesTitle}</h2>
   </div>
 
   {p === "food" && (
-    <ul class="reveal-stagger mt-12 grid gap-x-16 gap-y-9 md:grid-cols-2">
+    <ul class="reveal-stagger grid mt-12 gap-x-16 gap-y-9 md:grid-cols-2">
       {services.map((s) => (
         <li>
           <div class="menu-row">

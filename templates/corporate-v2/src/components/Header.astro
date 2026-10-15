@@ -10,7 +10,8 @@ const cta = primaryCta(ctx);
 const links = config.pages.filter((p) => p !== "home").map((p) => ({ id: p, href: ctx.url(p), label: t.nav[p] }));
 // Bold sites open on a dark hero: the header joins it on the home page.
 const family = sectorFamily(config);
-const onHero = (config.design.personality === "bold" || family === "food" || family === "trades") && page === "home";
+// Bold, food and trades sites open every page on a dark band (home hero or page hero): the header joins it.
+const onHero = config.design.personality === "bold" || family === "food" || family === "trades";
 const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
 const darkMode = config.design.darkMode === "auto";
 ---
