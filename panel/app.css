@@ -187,6 +187,11 @@ code, pre, .mono { font-family: "Geist Mono", ui-monospace, Consolas, monospace;
 .tools { display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .tool { font-family: "Geist Mono", ui-monospace, monospace; font-size: 0.76rem; padding: 0.15rem 0.5rem; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); }
 .summary { white-space: pre-wrap; overflow-wrap: anywhere; }
+.summary.rich { white-space: normal; display: flex; flex-direction: column; gap: 0.45rem; }
+.summary.rich ul { margin: 0; padding-inline-start: 1.2rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.summary.rich ul ul { margin-top: 0.2rem; }
+.summary.rich code { background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0 0.3rem; }
+.summary.rich .rich-h { font-weight: 700; }
 .live-lines { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.92rem; }
 .live-lines .agent { color: var(--ink); white-space: pre-wrap; }
 .live-lines .info { color: var(--ink-2); white-space: pre-wrap; }

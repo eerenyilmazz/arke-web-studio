@@ -148,17 +148,22 @@ export function updateClientConfig(
   },
 ) {
   const paths = openClient(factory, assertSlug(args.slug));
-  for (const key of Object.keys(args.patch)) {
-    if (LOCKED_CONFIG_KEYS.has(key)) {
-      throw new FactoryError(
-        `"${key}" cannot be changed.`,
-        key === "meta" ? "Use the `unmapped` and `laterInterests` arguments instead." : undefined,
-      );
-    }
-  }
-  assertNoUnknownKeys(findUnknownKeys(SiteConfigSchema, args.patch));
   const before = readDraftConfig(paths);
-  const merged = deepMerge(before, args.patch) as Record<string, unknown>;
+  // Agents sometimes resend the whole config: an unchanged slug or schemaVersion is dropped, not an error.
+  const patch: Record<string, unknown> = { ...args.patch };
+  for (const key of Object.keys(patch)) {
+    if (!LOCKED_CONFIG_KEYS.has(key)) continue;
+    if (key !== "meta" && JSON.stringify(patch[key]) === JSON.stringify(before[key])) {
+      delete patch[key];
+      continue;
+    }
+    throw new FactoryError(
+      `"${key}" cannot be changed.`,
+      key === "meta" ? "Use the `unmapped` and `laterInterests` arguments instead." : undefined,
+    );
+  }
+  assertNoUnknownKeys(findUnknownKeys(SiteConfigSchema, patch));
+  const merged = deepMerge(before, patch) as Record<string, unknown>;
 
   const meta = (merged.meta ?? { unmapped: [], laterInterests: [] }) as { unmapped: unknown[]; laterInterests: string[] };
   if (args.unmapped?.length) meta.unmapped = [...(meta.unmapped ?? []), ...args.unmapped];

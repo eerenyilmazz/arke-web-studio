@@ -479,7 +479,7 @@ function agentBlock(job, live) {
     parts.push(h("div", { class: "row" }, h("span", { class: "typing", role: "img", "aria-label": "çalışıyor" }, h("span"), h("span"), h("span")), isAgent && h("button", { class: "btn btn-sm", type: "button", onclick: () => cancelJob(job.id) }, "Durdur")));
   } else {
     if (job.tools?.length) parts.push(toolChips(job.tools));
-    if (job.summary) parts.push(h("p", { class: "summary", text: job.summary }));
+    if (job.summary) parts.push(richText(job.summary));
     for (const e of job.errors || []) parts.push(h("p", { class: "err", text: e }));
   }
   return h("div", { class: "msg-agent" },
@@ -491,6 +491,50 @@ function agentBlock(job, live) {
   );
 }
 
+/**
+ * The agent writes its summary in light Markdown (**bold**, - bullets, `code`). Rendered into DOM nodes
+ * with textContent only, so nothing in the text can become HTML.
+ */
+function inline(text) {
+  const out = [];
+  const re = /\*\*(.+?)\*\*|`([^`]+)`/g;
+  let last = 0;
+  let m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(document.createTextNode(text.slice(last, m.index)));
+    out.push(m[1] !== undefined ? h("strong", { text: m[1] }) : h("code", { text: m[2] }));
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) out.push(document.createTextNode(text.slice(last)));
+  return out;
+}
+
+function richText(text) {
+  const root = h("div", { class: "summary rich" });
+  let list = null;
+  let depth = 0;
+  for (const raw of text.split("\n")) {
+    const bullet = raw.match(/^(\s*)[-*•]\s+(.*)$/);
+    if (bullet) {
+      const indent = bullet[1].length >= 2 ? 1 : 0;
+      if (!list || indent !== depth) {
+        if (indent > depth && list?.lastElementChild) { const sub = h("ul"); list.lastElementChild.append(sub); list = sub; }
+        else if (indent < depth || !list) { list = h("ul"); root.append(list); }
+        depth = indent;
+      }
+      list.append(h("li", {}, ...inline(bullet[2])));
+      continue;
+    }
+    list = null;
+    depth = 0;
+    const line = raw.trim();
+    if (!line) continue;
+    const heading = line.match(/^#{1,4}\s+(.*)$/);
+    root.append(heading ? h("p", { class: "rich-h" }, ...inline(heading[1])) : h("p", {}, ...inline(line)));
+  }
+  return root;
+}
+
 function appendLiveLines(container, lines) {
   for (const line of lines) {
     if (line.kind === "tool") {
@@ -498,7 +542,7 @@ function appendLiveLines(container, lines) {
       if (!chips || !chips.classList.contains("tools")) { chips = h("div", { class: "tools" }); container.append(chips); }
       chips.append(h("span", { class: "tool", text: line.text.split("(")[0] }));
     } else if (line.kind === "error") container.append(h("p", { class: "err", text: line.text }));
-    else if (line.kind === "result") container.append(h("p", { class: "summary", text: line.text }));
+    else if (line.kind === "result") container.append(richText(line.text));
     else container.append(h("p", { class: line.kind === "agent" ? "agent" : "info", text: line.text }));
   }
 }

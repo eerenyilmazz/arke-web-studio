@@ -106,3 +106,14 @@ describe("Impeccable findings", () => {
     expect(summariseImpeccable("[]").status).toBe("pass");
   });
 });
+
+describe("locked config keys", () => {
+  it("drops an unchanged slug/schemaVersion instead of failing, still rejects a real change", async () => {
+    const { tempFactory, COMPLETE_PATCH } = await import("./helpers.js");
+    const f = tempFactory();
+    await tools.createClient(f, { slug: "lock-test", businessName: "Lock", industry: "salon", hostingModel: "managed" });
+    expect(tools.updateClientConfig(f, { slug: "lock-test", patch: { schemaVersion: 1, slug: "lock-test", ...COMPLETE_PATCH } }).saved).toBe(true);
+    expect(() => tools.updateClientConfig(f, { slug: "lock-test", patch: { slug: "other" } })).toThrow(/cannot be changed/);
+    expect(() => tools.updateClientConfig(f, { slug: "lock-test", patch: { meta: { unmapped: [] } } })).toThrow(/cannot be changed/);
+  });
+});
