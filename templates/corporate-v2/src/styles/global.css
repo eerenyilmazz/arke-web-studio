@@ -186,3 +186,20 @@
 @keyframes leader-draw { from { transform: translateY(-.3em) scaleX(0); } to { transform: translateY(-.3em) scaleX(1); } }
 .menu-row .leader { transform-origin: left center; }
 [dir="rtl"] .menu-row .leader { transform-origin: right center; }
+
+/* ---------- sector layouts: beauty, health, trades ---------- */
+@layer components {
+  .spin-badge { display: grid; place-items: center; width: 8.5rem; height: 8.5rem; border-radius: 50%; background: var(--c-cta); color: var(--c-on-cta); box-shadow: 0 14px 34px color-mix(in srgb, var(--c-cta) 40%, transparent); }
+  .spin-badge > svg { grid-area: 1 / 1; }
+  .spin-ring { width: 100%; height: 100%; fill: currentColor; font-size: 11.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+  .spin-badge:hover .spin-arrow { transform: translate(2px, -2px); }
+  .spin-arrow { transition: transform 200ms ease; }
+  .health-card { border: 1px solid var(--color-rule); }
+  .health-card:hover { border-color: var(--c-accent-ink); }
+  .trade-card { border-inline-start: 5px solid var(--c-cta); }
+  .hazard { background: repeating-linear-gradient(-45deg, var(--c-accent) 0 18px, var(--c-primary) 18px 36px); }
+  .phone-mega:hover .h-mega { text-decoration: underline; text-decoration-thickness: 4px; text-underline-offset: .12em; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .spin-ring { animation: m-spin 18s linear infinite; transform-origin: center; }
+}

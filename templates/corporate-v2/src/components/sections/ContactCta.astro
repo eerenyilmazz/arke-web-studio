@@ -1,72 +1,17 @@
 ---
 import type { PageContext } from "../../lib/site";
-import { displayPhone, isFood, primaryCta } from "../../lib/site";
-import Motif from "../Motif.astro";
+import { sectorFamily } from "../../lib/site";
+import Beauty from "./contactcta/Beauty.astro";
+import Health from "./contactcta/Health.astro";
+import Trades from "./contactcta/Trades.astro";
+import Standard from "./contactcta/Standard.astro";
 
+/* Sector layouts (beauty, health, trades) have their own version; food and everything else use Standard. */
 interface Props { readonly ctx: PageContext }
 const { ctx } = Astro.props;
-const { content, config, t } = ctx;
-const { personality: p, motif } = config.design;
-const cta = primaryCta(ctx);
-const { phone, email, hours } = config.contact;
-const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
-const newTab = cta.external ? t.opensInNewTab : "";
-const food = isFood(config);
+const family = sectorFamily(ctx.config);
+const BY_FAMILY = { beauty: Beauty, health: Health, trades: Trades } as const;
+const Chosen = family && family !== "food" ? BY_FAMILY[family] : Standard;
+const Section = Chosen;
 ---
-{food && (
-  <section class="grain overflow-hidden" style="background: var(--c-cta); color: var(--c-on-cta)">
-    <div class="wrap band grid items-center gap-10 md:grid-cols-[1.4fr_1fr]">
-      <div class="reveal">
-        <h2 class="h-display max-w-[14ch]">{content.contact.title}</h2>
-        <p class="lead mt-5 measure">{content.contact.intro}</p>
-        <div class="mt-8 flex flex-wrap gap-3">
-          <a href={cta.href} class="btn bg-bg text-ink" {...external}>{cta.label}{newTab && <span class="sr-only"> {newTab}</span>}</a>
-          {phone && <a class="btn btn-ghost" href={`tel:${phone}`}>{displayPhone(phone)}</a>}
-        </div>
-      </div>
-      {hours && <p class="stamp reveal mx-auto text-base">{t.hoursLabel}<br />{hours}</p>}
-    </div>
-  </section>
-)}
-{!food && p === "bold" && (
-  <section class="wrap band">
-    <div class="reveal card relative overflow-hidden bg-primary p-8 text-on-primary md:p-14">
-      <div aria-hidden="true" class="absolute -bottom-32 -end-24 h-80 w-80 rounded-full opacity-30 blur-3xl" style="background: var(--c-accent)"></div>
-      <div class="relative flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 class="h-section max-w-[18ch]">{content.contact.title}</h2>
-          <p class="lead mt-4 measure opacity-90">{content.contact.intro}</p>
-        </div>
-        <a href={cta.href} class="btn btn-accent shrink-0" {...external}>{cta.label} <span aria-hidden="true">→</span>{newTab && <span class="sr-only"> {newTab}</span>}</a>
-      </div>
-    </div>
-  </section>
-)}
-
-{!food && p === "premium" && (
-  <section class="wrap band grid gap-10 md:grid-cols-2 md:items-center">
-    <div class="reveal">
-      <h2 class="h-section">{content.contact.title}</h2>
-      <p class="lead mt-4 measure muted">{content.contact.intro}</p>
-      <div class="mt-8"><a href={cta.href} class="btn btn-primary" {...external}>{cta.label}{newTab && <span class="sr-only"> {newTab}</span>}</a></div>
-    </div>
-    <dl class="reveal card grid gap-5 bg-secondary p-8 text-on-secondary md:p-10">
-      {phone && <div><dt class="eyebrow opacity-75">{t.phoneLabel}</dt><dd class="mt-1 text-lg"><a href={`tel:${phone}`}>{displayPhone(phone)}</a></dd></div>}
-      <div><dt class="eyebrow opacity-75">{t.emailLabel}</dt><dd class="mt-1 text-lg"><a href={`mailto:${email}`}>{email}</a></dd></div>
-      {hours && <div><dt class="eyebrow opacity-75">{t.hoursLabel}</dt><dd class="mt-1 text-lg">{hours}</dd></div>}
-    </dl>
-  </section>
-)}
-
-{!food && p === "friendly" && (
-  <section class="wrap band">
-    <div class="reveal card grid items-center gap-8 p-8 md:grid-cols-[1.4fr_1fr] md:p-14" style="background: var(--c-cta); color: var(--c-on-cta)">
-      <div>
-        <h2 class="h-section">{content.contact.title}</h2>
-        <p class="lead mt-4 measure">{content.contact.intro}</p>
-        <a href={cta.href} class="btn mt-8 bg-bg text-ink" {...external}>{cta.label}{newTab && <span class="sr-only"> {newTab}</span>}</a>
-      </div>
-      {motif !== "none" && <div class="hidden md:block" style="--motif-main: var(--c-secondary); --motif-soft: color-mix(in srgb, var(--c-background) 55%, transparent)"><Motif name={motif} id="cta" class="max-w-xs ms-auto" /></div>}
-    </div>
-  </section>
-)}
+{Section && <Section ctx={ctx} />}

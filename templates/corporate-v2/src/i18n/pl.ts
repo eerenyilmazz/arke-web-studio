@@ -10,6 +10,8 @@ export const pl: UiStrings = {
   language: "Język",
   servicesTitle: "Usługi",
   menuTitle: "Menu",
+  priceListTitle: "Cennik",
+  callNow: "Zadzwoń teraz",
   openLabel: "Otwarte",
   galleryTitle: "Galeria",
   testimonialsTitle: "Opinie klientów",

@@ -10,6 +10,8 @@ export const tr: UiStrings = {
   language: "Dil",
   servicesTitle: "Hizmetler",
   menuTitle: "Menü",
+  priceListTitle: "Fiyat listesi",
+  callNow: "Hemen arayın",
   openLabel: "Açık",
   galleryTitle: "Galeri",
   testimonialsTitle: "Müşterilerimiz ne diyor",

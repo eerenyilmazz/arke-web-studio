@@ -1,0 +1,26 @@
+---
+import type { PageContext } from "../../../lib/site";
+import { displayPhone, primaryCta } from "../../../lib/site";
+
+/* The phone number, set big enough to tap from across the room. Without a phone: heading and button only. */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { content, config, t } = ctx;
+const cta = primaryCta(ctx);
+const phone = config.contact.phone;
+const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
+---
+<section class="surface-ink grain relative overflow-hidden">
+  <div aria-hidden="true" class="hazard absolute inset-x-0 top-0 h-3"></div>
+  <div class="wrap band reveal">
+    <h2 class="h-section max-w-[20ch]">{content.contact.title}</h2>
+    <p class="lead mt-4 measure opacity-85">{content.contact.intro}</p>
+    {phone && (
+      <a href={`tel:${phone}`} class="phone-mega mt-10 block no-underline">
+        <span class="block text-base font-semibold opacity-80">{t.callNow}</span>
+        <span class="h-mega block">{displayPhone(phone)}</span>
+      </a>
+    )}
+    <a href={cta.href} class="btn btn-accent mt-8" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
+  </div>
+</section>

@@ -1,115 +1,17 @@
 ---
 import type { PageContext } from "../../lib/site";
-import { displayPhone, heroImage, isFood, primaryCta } from "../../lib/site";
-import Motif from "../Motif.astro";
+import { sectorFamily } from "../../lib/site";
+import Beauty from "./hero/Beauty.astro";
+import Health from "./hero/Health.astro";
+import Trades from "./hero/Trades.astro";
+import Standard from "./hero/Standard.astro";
 
+/* Sector layouts (beauty, health, trades) have their own version; food and everything else use Standard. */
 interface Props { readonly ctx: PageContext }
 const { ctx } = Astro.props;
-const { content, config, t } = ctx;
-const { personality, motif } = config.design;
-const cta = primaryCta(ctx);
-const image = heroImage(ctx);
-const phone = config.contact.phone && config.contact.showCallButton ? config.contact.phone : null;
-const hours = config.contact.hours;
-const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
-// The visual beside the headline: the sector motif when there is one, else the first photo, else the tagline.
-const showMotif = motif !== "none";
-const food = isFood(config);
+const family = sectorFamily(ctx.config);
+const BY_FAMILY = { beauty: Beauty, health: Health, trades: Trades } as const;
+const Chosen = family && family !== "food" ? BY_FAMILY[family] : Standard;
+const Section = Chosen;
 ---
-{food && (
-  <section class="grain relative overflow-hidden bg-primary text-on-primary">
-    {image && (
-      <>
-        <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="absolute inset-0 -z-10 h-full w-full object-cover" />
-        <div aria-hidden="true" class="absolute inset-0 -z-10" style="background: linear-gradient(90deg, var(--c-primary) 30%, color-mix(in srgb, var(--c-primary) 35%, transparent))"></div>
-      </>
-    )}
-    <div class="wrap grid items-center gap-10 pb-16 pt-8 md:grid-cols-[1.15fr_0.85fr] md:pb-24 md:pt-12">
-      <div class="hero-in">
-        <p class="font-semibold opacity-85">{content.tagline}</p>
-        <h1 class="h-mega mt-5 max-w-[13ch]">{content.hero.title}</h1>
-        <p class="lead mt-7 measure opacity-90">{content.hero.subtitle}</p>
-        <div class="mt-9 flex flex-wrap gap-3">
-          <a href={cta.href} class="btn btn-accent" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
-          {phone && <a class="btn btn-ghost" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>}
-        </div>
-      </div>
-      <div class="relative min-h-64">
-        {!image && showMotif && (
-          <>
-            <div aria-hidden="true" class="fire-glow absolute inset-x-[8%] bottom-0 top-[20%]"></div>
-            <div class="relative parallax" style="--motif-line: var(--c-brand-secondary); --motif-main: var(--c-accent); --motif-soft: color-mix(in srgb, var(--c-brand-secondary) 55%, var(--c-accent))"><Motif name={motif} id="hero" /></div>
-          </>
-        )}
-        {hours && <p class="stamp absolute -top-2 end-0 text-sm" style="color: var(--c-brand-secondary)">{t.openLabel}<br />{hours}</p>}
-      </div>
-    </div>
-  </section>
-)}
-
-{!food && personality === "bold" && (
-  <section class="relative overflow-hidden bg-primary text-on-primary">
-    <div aria-hidden="true" class="absolute -end-40 -top-40 h-[34rem] w-[34rem] rounded-full opacity-25 blur-3xl" style="background: var(--c-accent)"></div>
-    <div class="wrap relative grid items-center gap-12 pb-20 pt-10 md:grid-cols-[1.15fr_0.85fr] md:pb-28 md:pt-16">
-      <div class="hero-in">
-        <p class="chip" style="background: color-mix(in srgb, currentColor 12%, transparent)"><span aria-hidden="true" class="h-2 w-2 rounded-full" style="background: var(--c-accent)"></span>{content.tagline}</p>
-        <h1 class="h-display mt-6 max-w-[16ch]">{content.hero.title}</h1>
-        <p class="lead mt-6 measure opacity-90">{content.hero.subtitle}</p>
-        <div class="mt-9 flex flex-wrap gap-3">
-          <a href={cta.href} class="btn btn-accent" {...external}>{cta.label} <span aria-hidden="true">→</span>{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
-          {phone && <a class="btn btn-ghost" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>}
-        </div>
-      </div>
-      {showMotif
-        ? <div class="hero-in"><div class="parallax"><Motif name={motif} id="hero" class="max-w-xl ms-auto" /></div></div>
-        : image && <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="photo aspect-[4/5]" />}
-    </div>
-  </section>
-)}
-
-{!food && personality === "premium" && (
-  <section class="wrap grid items-center gap-12 py-14 md:grid-cols-[1.05fr_0.95fr] md:gap-16 md:py-24">
-    <div class="hero-in">
-      <p class="eyebrow text-accent-ink">{content.tagline}</p>
-      <h1 class="h-display mt-5">{content.hero.title}</h1>
-      <p class="lead mt-6 measure muted">{content.hero.subtitle}</p>
-      <div class="mt-9 flex flex-wrap items-center gap-3">
-        <a href={cta.href} class="btn btn-primary" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
-        {phone && <a class="btn btn-ghost" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>}
-      </div>
-      {hours && <p class="mt-8 text-sm muted">{t.hoursLabel}: {hours}</p>}
-    </div>
-    <div class="arch hero-in mx-auto w-full max-w-md bg-secondary text-on-secondary">
-      {image
-        ? <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="aspect-[4/5] w-full object-cover" />
-        : showMotif
-          ? <div class="px-10 pb-12 pt-24"><Motif name={motif} id="hero" /></div>
-          : <p class="px-10 pb-14 pt-28 font-heading text-3xl leading-snug">{content.tagline}</p>}
-    </div>
-  </section>
-)}
-
-{!food && personality === "friendly" && (
-  <section class="relative overflow-hidden">
-    <div class="wrap grid items-center gap-12 py-14 md:grid-cols-2 md:py-24">
-      <div class="hero-in">
-        <p class="chip tint-accent">{content.tagline}</p>
-        <h1 class="h-display mt-6">{content.hero.title}</h1>
-        <p class="lead mt-6 measure">{content.hero.subtitle}</p>
-        <div class="mt-9 flex flex-wrap gap-3">
-          <a href={cta.href} class="btn btn-accent" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
-          {phone && <a class="btn btn-ghost" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>}
-        </div>
-      </div>
-      <div class="relative hero-in">
-        <div aria-hidden="true" class="blob absolute inset-4 tint-accent"></div>
-        {showMotif
-          ? <div class="relative p-10 parallax"><Motif name={motif} id="hero" /></div>
-          : image
-            ? <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="blob relative aspect-square w-full object-cover" />
-            : <p class="relative p-16 font-heading text-3xl">{content.tagline}</p>}
-        {hours && <p class="chip absolute bottom-2 start-2 bg-bg shadow-[0_8px_24px_rgb(0_0_0/0.12)]"><span aria-hidden="true">●</span> {hours}</p>}
-      </div>
-    </div>
-  </section>
-)}
+{Section && <Section ctx={ctx} />}

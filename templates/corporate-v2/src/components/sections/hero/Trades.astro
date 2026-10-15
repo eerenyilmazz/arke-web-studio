@@ -1,0 +1,41 @@
+---
+import type { PageContext } from "../../../lib/site";
+import { displayPhone, heroImage, primaryCta } from "../../../lib/site";
+import Motif from "../../Motif.astro";
+
+/* Builders, plumbers, garages, gardeners: strong band, the phone number as the main button, facts as badges. */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { content, config, t } = ctx;
+const cta = primaryCta(ctx);
+const image = heroImage(ctx);
+const phone = config.contact.phone;
+const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
+---
+<section class="grain relative overflow-hidden bg-primary text-on-primary">
+  {image && (
+    <>
+      <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="absolute inset-0 -z-10 h-full w-full object-cover" />
+      <div aria-hidden="true" class="absolute inset-0 -z-10" style="background: linear-gradient(90deg, var(--c-primary) 35%, color-mix(in srgb, var(--c-primary) 40%, transparent))"></div>
+    </>
+  )}
+  <div class="wrap grid items-center gap-12 pb-20 pt-10 md:grid-cols-[1.2fr_0.8fr] md:pb-28 md:pt-14">
+    <div class="hero-in">
+      {content.highlights.length > 0 && (
+        <ul class="flex flex-wrap gap-2">
+          {content.highlights.map((h) => <li class="chip" style="background: color-mix(in srgb, currentColor 12%, transparent)"><span aria-hidden="true" style="color: var(--c-accent)">✔</span> {h.title}</li>)}
+        </ul>
+      )}
+      <h1 class="h-mega mt-6 max-w-[14ch]">{content.hero.title}</h1>
+      <p class="lead mt-6 measure opacity-90">{content.hero.subtitle}</p>
+      <div class="mt-9 flex flex-wrap items-center gap-3">
+        {phone
+          ? <a class="btn btn-accent text-lg" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>
+          : null}
+        <a href={cta.href} class:list={["btn", phone ? "btn-ghost" : "btn-accent"]} {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
+      </div>
+    </div>
+    {!image && config.design.motif !== "none" && <div class="parallax hero-in" style="--motif-line: var(--c-brand-secondary)"><Motif name={config.design.motif} id="hero" /></div>}
+  </div>
+  <div aria-hidden="true" class="hazard absolute inset-x-0 bottom-0 h-3"></div>
+</section>

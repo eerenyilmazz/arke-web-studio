@@ -1,0 +1,22 @@
+---
+import type { PageContext } from "../../../lib/site";
+import Icon from "../../ui/Icon.astro";
+
+/* Treatments as clear, equal cards: icon, name, what it is, price when given. */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { services } = ctx.content;
+---
+<section class="wrap band">
+  <h2 class="h-section reveal">{ctx.t.servicesTitle}</h2>
+  <ul class="reveal-stagger mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {services.map((s) => (
+      <li class="card card-lift health-card flex flex-col bg-bg p-7">
+        <span class="grid h-12 w-12 place-items-center rounded-full tint-primary text-accent-ink"><Icon name={s.icon} /></span>
+        <h3 class="h-card mt-5">{s.title}</h3>
+        <p class="mt-2 muted">{s.description}</p>
+        {s.price && <p class="mt-auto pt-5 font-semibold">{s.price}</p>}
+      </li>
+    ))}
+  </ul>
+</section>

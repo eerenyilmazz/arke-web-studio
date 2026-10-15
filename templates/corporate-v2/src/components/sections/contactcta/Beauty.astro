@@ -1,0 +1,18 @@
+---
+import type { PageContext } from "../../../lib/site";
+import { primaryCta } from "../../../lib/site";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { content, config, t } = ctx;
+const cta = primaryCta(ctx);
+const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
+---
+<section class="bg-secondary text-on-secondary">
+  <div class="wrap band reveal text-center">
+    <h2 class="h-display mx-auto max-w-[16ch]">{content.contact.title}</h2>
+    <p class="lead mx-auto mt-5 measure opacity-90">{content.contact.intro}</p>
+    <a href={cta.href} class="btn btn-accent mt-9" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
+    {config.contact.hours && <p class="mt-6 opacity-80">{t.hoursLabel}: {config.contact.hours}</p>}
+  </div>
+</section>

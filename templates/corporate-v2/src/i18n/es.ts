@@ -10,6 +10,8 @@ export const es: UiStrings = {
   language: "Idioma",
   servicesTitle: "Servicios",
   menuTitle: "Carta",
+  priceListTitle: "Tarifas",
+  callNow: "Llame ahora",
   openLabel: "Abierto",
   galleryTitle: "Galería",
   testimonialsTitle: "Lo que dicen nuestros clientes",

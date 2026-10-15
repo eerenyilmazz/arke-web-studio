@@ -1,32 +1,17 @@
 ---
 import type { PageContext } from "../../lib/site";
-import { isFood } from "../../lib/site";
+import { sectionsFor, sectorFamily } from "../../lib/site";
+import Beauty from "./highlights/Beauty.astro";
+import Standard from "./highlights/Standard.astro";
 
-/* Short facts the client gave (years in business, area covered, response time). Never invented: empty = hidden. */
+/* Sector layouts (beauty, health, trades) have their own version; food and everything else use Standard. */
 interface Props { readonly ctx: PageContext }
 const { ctx } = Astro.props;
-const { highlights } = ctx.content;
-const p = ctx.config.design.personality;
-const food = isFood(ctx.config);
-// The ribbon repeats the facts so the scroll loops without a gap; screen readers get the list once.
-const LOOP_COPIES = 3;
+const family = sectorFamily(ctx.config);
+const BY_FAMILY = { beauty: Beauty, health: null, trades: null } as const;
+const Chosen = family && family !== "food" ? BY_FAMILY[family] : Standard;
+// Health and trades show the facts inside their hero; repeat them only on pages without a hero.
+const inHero = sectionsFor(ctx.config, ctx.page).includes("hero");
+const Section = Chosen === null ? (inHero ? null : Standard) : Chosen;
 ---
-{highlights.length > 0 && food && (
-  <section class="ribbon" aria-label={highlights.map((h) => `${h.title}: ${h.text}`).join(". ")}>
-    <div class="ribbon-track" aria-hidden="true">
-      {Array.from({ length: LOOP_COPIES * 2 }).flatMap(() => highlights.map((h) => <span>{h.title} <span class="font-normal opacity-85">{h.text}</span></span>))}
-    </div>
-  </section>
-)}
-{highlights.length > 0 && !food && (
-  <section class:list={[p === "bold" ? "surface-ink" : p === "friendly" ? "" : "rule-b"]}>
-    <ul class:list={["wrap reveal-stagger grid gap-6 py-10 md:py-12", highlights.length > 2 ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-2"]}>
-      {highlights.map((h) => (
-        <li class:list={[p === "friendly" && "card tint-accent p-6", p === "premium" && "border-s ps-5 border-[var(--color-rule)]"]}>
-          <p class:list={["num leading-none", p === "bold" ? "text-4xl md:text-5xl text-accent" : "text-3xl md:text-4xl"]}>{h.title}</p>
-          <p class="mt-2 opacity-85">{h.text}</p>
-        </li>
-      ))}
-    </ul>
-  </section>
-)}
+{Section && <Section ctx={ctx} />}

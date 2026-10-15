@@ -10,6 +10,8 @@ export const ar: UiStrings = {
   language: "اللغة",
   servicesTitle: "الخدمات",
   menuTitle: "القائمة",
+  priceListTitle: "قائمة الأسعار",
+  callNow: "اتصل الآن",
   openLabel: "مفتوح",
   galleryTitle: "معرض الصور",
   testimonialsTitle: "آراء عملائنا",

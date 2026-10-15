@@ -1,0 +1,43 @@
+---
+import type { PageContext } from "../../../lib/site";
+import { displayPhone, heroImage, primaryCta } from "../../../lib/site";
+import Motif from "../../Motif.astro";
+
+/* Salon / barber / beauty: editorial headline, tall arch with photo or motif, and a slowly turning booking badge. */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { content, config, t } = ctx;
+const cta = primaryCta(ctx);
+const image = heroImage(ctx);
+const phone = config.contact.phone && config.contact.showCallButton ? config.contact.phone : null;
+const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
+const RING_REPEAT = 3;
+const ring = Array.from({ length: RING_REPEAT }, () => cta.label).join(" • ") + " • ";
+---
+<section class="relative overflow-hidden">
+  <div class="wrap grid items-end gap-12 py-14 md:grid-cols-[1.15fr_0.85fr] md:py-20">
+    <div class="hero-in pb-4">
+      <p class="font-semibold text-accent-ink">{content.tagline}</p>
+      <h1 class="h-mega mt-5" style="font-weight: var(--h-weight)">{content.hero.title}</h1>
+      <p class="lead mt-7 measure muted">{content.hero.subtitle}</p>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href={cta.href} class="btn btn-accent" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
+        {phone && <a class="btn btn-ghost" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>}
+      </div>
+    </div>
+    <div class="relative hero-in">
+      <div class="arch aspect-[3/4] w-full bg-secondary text-on-secondary">
+        {image
+          ? <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="h-full w-full object-cover" />
+          : config.design.motif !== "none" && <div class="grid h-full place-items-center p-10 pt-24 parallax"><Motif name={config.design.motif} id="hero" /></div>}
+      </div>
+      <a href={cta.href} class="spin-badge absolute -bottom-6 start-3 md:-start-14" aria-label={cta.label} {...external}>
+        <svg viewBox="0 0 120 120" aria-hidden="true" class="spin-ring">
+          <defs><path id="ring-path" d="M60 60m-46 0a46 46 0 1 1 92 0a46 46 0 1 1-92 0" /></defs>
+          <text><textPath href="#ring-path" textLength="289">{ring}</textPath></text>
+        </svg>
+        <svg class="spin-arrow" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9" /></svg>
+      </a>
+    </div>
+  </div>
+</section>

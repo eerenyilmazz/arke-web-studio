@@ -9,6 +9,8 @@ export const en = {
   language: "Language",
   servicesTitle: "Services",
   menuTitle: "Menu",
+  priceListTitle: "Price list",
+  callNow: "Call now",
   openLabel: "Open",
   galleryTitle: "Gallery",
   testimonialsTitle: "What clients say",

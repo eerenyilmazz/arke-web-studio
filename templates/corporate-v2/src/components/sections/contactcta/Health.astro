@@ -1,0 +1,26 @@
+---
+import type { PageContext } from "../../../lib/site";
+import { displayPhone, primaryCta } from "../../../lib/site";
+import Icon from "../../ui/Icon.astro";
+
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { content, config, t } = ctx;
+const cta = primaryCta(ctx);
+const { phone, email, hours } = config.contact;
+const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
+---
+<section class="wrap band">
+  <div class="reveal card grid gap-10 tint-primary p-8 md:grid-cols-[1.2fr_1fr] md:items-center md:p-14">
+    <div>
+      <h2 class="h-section">{content.contact.title}</h2>
+      <p class="lead mt-4 measure">{content.contact.intro}</p>
+      <a href={cta.href} class="btn btn-primary mt-8" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
+    </div>
+    <ul class="grid gap-4">
+      {phone && <li class="flex items-center gap-4"><span class="icon-tile bg-bg"><Icon name="chat" /></span><a class="text-2xl font-semibold" href={`tel:${phone}`}>{displayPhone(phone)}</a></li>}
+      <li class="flex items-center gap-4"><span class="icon-tile bg-bg"><Icon name="globe" /></span><a href={`mailto:${email}`}>{email}</a></li>
+      {hours && <li class="flex items-center gap-4"><span class="icon-tile bg-bg"><Icon name="clock" /></span><span>{hours}</span></li>}
+    </ul>
+  </div>
+</section>

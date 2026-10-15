@@ -1,0 +1,52 @@
+---
+import type { PageContext } from "../../../lib/site";
+import { displayPhone, heroImage, primaryCta } from "../../../lib/site";
+import Motif from "../../Motif.astro";
+import Icon from "../../ui/Icon.astro";
+
+/* Clinic / dentist / physio: calm and reassuring. Facts are a checklist under the actions; hours sit on a floating card. */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { content, config, t } = ctx;
+const cta = primaryCta(ctx);
+const image = heroImage(ctx);
+const phone = config.contact.phone && config.contact.showCallButton ? config.contact.phone : null;
+const hours = config.contact.hours;
+const external = cta.external ? { target: "_blank", rel: "noopener" } : {};
+---
+<section class="relative overflow-hidden" style="background: linear-gradient(180deg, color-mix(in srgb, var(--c-primary) 8%, var(--c-background)), var(--c-background))">
+  <div class="wrap grid items-center gap-14 py-14 md:grid-cols-2 md:py-24">
+    <div class="hero-in">
+      <p class="chip tint-primary"><Icon name="shield" size={16} /> {content.tagline}</p>
+      <h1 class="h-display mt-6">{content.hero.title}</h1>
+      <p class="lead mt-6 measure muted">{content.hero.subtitle}</p>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href={cta.href} class="btn btn-primary" {...external}>{cta.label}{cta.external && <span class="sr-only"> {t.opensInNewTab}</span>}</a>
+        {phone && <a class="btn btn-ghost" href={`tel:${phone}`}>{t.call} {displayPhone(phone)}</a>}
+      </div>
+      {content.highlights.length > 0 && (
+        <ul class="mt-10 grid gap-4 sm:grid-cols-2">
+          {content.highlights.map((h) => (
+            <li class="flex gap-3">
+              <span class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full" style="background: var(--c-cta); color: var(--c-on-cta)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg></span>
+              <span><strong class="block">{h.title}</strong><span class="text-sm muted">{h.text}</span></span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+    <div class="relative hero-in">
+      <div class="card overflow-hidden tint-primary">
+        {image
+          ? <img src={image.src} alt={image.alt} width={image.width} height={image.height} fetchpriority="high" decoding="async" class="aspect-[4/5] w-full object-cover" />
+          : config.design.motif !== "none" && <div class="p-10 md:p-14 parallax"><Motif name={config.design.motif} id="hero" /></div>}
+      </div>
+      {hours && (
+        <div class="card absolute -bottom-6 start-4 flex items-center gap-3 bg-bg p-4 pe-6 shadow-[0_14px_40px_rgb(0_0_0/0.14)] md:-start-8">
+          <span class="icon-tile tint-primary"><Icon name="clock" /></span>
+          <span><strong class="block text-sm">{t.hoursLabel}</strong><span class="text-sm muted">{hours}</span></span>
+        </div>
+      )}
+    </div>
+  </div>
+</section>

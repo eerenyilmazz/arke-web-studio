@@ -1,0 +1,22 @@
+---
+import type { PageContext } from "../../../lib/site";
+
+/* A salon price list: name and price on one line, a short note under it. */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { services } = ctx.content;
+---
+<section class="wrap band">
+  <h2 class="h-section reveal">{ctx.t.priceListTitle}</h2>
+  <ul class="reveal-stagger mt-12 grid gap-x-16 md:grid-cols-2">
+    {services.map((s) => (
+      <li class="rule-b py-6">
+        <div class="flex items-baseline justify-between gap-6">
+          <h3 class="font-heading text-2xl" style="font-weight: var(--h-weight)">{s.title}</h3>
+          {s.price && <p class="num whitespace-nowrap text-xl text-accent-ink">{s.price}</p>}
+        </div>
+        <p class="mt-2 measure muted">{s.description}</p>
+      </li>
+    ))}
+  </ul>
+</section>

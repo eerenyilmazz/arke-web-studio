@@ -104,9 +104,19 @@ export function heroImage(ctx: PageContext): { src: string; alt: string; width: 
   return info ? { ...info, alt: first.alt } : null;
 }
 
-/** Sector motifs that switch the food layout on (menu-style prices, charcoal hero, ribbon). */
-const FOOD_MOTIFS: ReadonlySet<string> = new Set(["grill", "plate", "bread", "cup", "jar"]);
+/** Sector layouts, picked from the motif. Each changes hero, highlights, services and call to action. */
+export type SectorFamily = "food" | "beauty" | "health" | "trades";
+const FAMILY_BY_MOTIF: Readonly<Partial<Record<Config["design"]["motif"], SectorFamily>>> = {
+  grill: "food", plate: "food", bread: "food", cup: "food", jar: "food",
+  scissors: "beauty",
+  tooth: "health", heartbeat: "health",
+  bricks: "trades", car: "trades", leaf: "trades",
+};
+
+export function sectorFamily(config: Config): SectorFamily | null {
+  return FAMILY_BY_MOTIF[config.design.motif] ?? null;
+}
 
 export function isFood(config: Config): boolean {
-  return FOOD_MOTIFS.has(config.design.motif);
+  return sectorFamily(config) === "food";
 }

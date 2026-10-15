@@ -1,0 +1,20 @@
+---
+import type { PageContext } from "../../../lib/site";
+
+/* Facts set as a quiet band between hero and price list. Empty = hidden. */
+interface Props { readonly ctx: PageContext }
+const { ctx } = Astro.props;
+const { highlights } = ctx.content;
+---
+{highlights.length > 0 && (
+  <section class="bg-secondary text-on-secondary">
+    <ul class="wrap reveal-stagger grid gap-8 py-10 text-center sm:grid-cols-2 md:py-12 lg:grid-flow-col lg:auto-cols-fr">
+      {highlights.map((h, i) => (
+        <li class:list={["px-4", i > 0 && "lg:border-s lg:border-[color-mix(in_srgb,currentColor_25%,transparent)]"]}>
+          <p class="font-heading text-3xl" style="font-weight: var(--h-weight)">{h.title}</p>
+          <p class="mt-1 opacity-80">{h.text}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
