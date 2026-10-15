@@ -28,6 +28,7 @@ const LOCKED_CONFIG_KEYS = new Set(["slug", "schemaVersion", "meta"]);
 /** Optional form endpoint passed through to the template build (see template contract). */
 const FORM_ACTION_ENV = "SF_FORM_ACTION";
 const WRANGLER_COMPAT_DATE = "2026-10-01";
+const PREVIEW_SUFFIX = "-preview";
 
 // ---------------------------------------------------------------- clients
 
@@ -343,7 +344,10 @@ export async function deploy(factory: FactoryConfig, args: { slug: string; targe
     throw new FactoryError(`Deploy blocked:\n- ${blockers.join("\n- ")}`, "Approvals are given by Eren in a terminal. Never try to create them yourself.");
   }
 
-  const workerName = config.hosting.workerName ?? `sf-${config.slug}`;
+  // Preview is its own Worker on workers.dev (never the custom domain), so the client can review it
+  // while production stays untouched, and a first-ever preview works without an existing Worker.
+  const baseWorker = config.hosting.workerName ?? `sf-${config.slug}`;
+  const workerName = args.target === "preview" ? `${baseWorker}${PREVIEW_SUFFIX}` : baseWorker;
   const routes = args.target === "production" && config.site.domain ? [{ pattern: config.site.domain, custom_domain: true }] : undefined;
   writeText(
     paths.wranglerConfig,
@@ -372,7 +376,7 @@ export async function deploy(factory: FactoryConfig, args: { slug: string; targe
   // Local wrangler (pinned in package.json), run through node: no download at deploy time, no Windows .cmd shim.
   const wranglerJs = path.join(FACTORY_ROOT, "node_modules", "wrangler", "bin", "wrangler.js");
   if (!existsSync(wranglerJs)) throw new FactoryError("wrangler is not installed.", "Run npm install in the factory folder.");
-  const wranglerArgs = [wranglerJs, ...(args.target === "preview" ? ["versions", "upload"] : ["deploy"]), ...(args.dryRun ? ["--dry-run"] : [])];
+  const wranglerArgs = [wranglerJs, "deploy", ...(args.dryRun ? ["--dry-run"] : [])];
   const res = await run(process.execPath, wranglerArgs, {
     cwd: paths.root,
     timeoutMs: factory.limits.deployTimeoutMs,

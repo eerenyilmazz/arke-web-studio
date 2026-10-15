@@ -135,6 +135,9 @@ export SF_CF_CLIENT_HARBOUR_DENTAL_ACCOUNT_ID=...
 
 İletişim formu için (isteğe bağlı) aynı ortamda `export SF_FORM_ACTION=https://...` tanımla; build_site bunu şablona geçirir. Yoksa form yerine e-posta/telefon/WhatsApp butonları çıkar.
 
+İlk kez: Cloudflare panelinde **Workers & Pages** sayfasını bir kez açıp workers.dev alt alan adını seç (ör. `eren.workers.dev`).
+Önizleme `sf-<slug>-preview.<alt-alan>.workers.dev` adresine, canlı site `sf-<slug>` Worker'ına (+ alan adı) gider.
+
 Token yetkisi: sadece *Workers Scripts: Edit* (+ alan adı bağlanacaksa ilgili zone için DNS/Workers Routes).
 Tokenlar log'lara ve tool çıktısına `***` olarak düşer. `deploy` `dryRun: true` ile yükleme yapmadan kontrol eder.
 

@@ -84,3 +84,17 @@ describe("site approval alias", () => {
     expect(approvalTargets("everything")).toBeNull();
   });
 });
+
+describe("preview deploy target", () => {
+  it("uses a separate -preview Worker and never the custom domain", async () => {
+    const { f, paths } = await builtClient();
+    addApproval(paths.approvals, { kind: "visual", by: "t", at: new Date().toISOString(), ...approvalPins("visual", paths.root, paths.distDir, lastBuild(paths.buildRecord)) });
+    tools.updateClientConfig(f, { slug: SLUG, patch: {} });
+    const r = await tools.deploy(f, { slug: SLUG, target: "preview", dryRun: true }).catch((e: Error) => e);
+    // wrangler may be missing in the test env; the generated config is what matters.
+    void r;
+    const cfg = readFileSync(path.join(paths.root, "wrangler.jsonc"), "utf8");
+    expect(cfg).toContain('"name": "sf-willow-thread-preview"');
+    expect(cfg).not.toContain("routes");
+  });
+});
