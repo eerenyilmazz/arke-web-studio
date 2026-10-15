@@ -239,11 +239,68 @@ function renderNew() {
     ),
     h("label", { for: "nc-lang" }, "Dil", lang),
     h("label", { for: "nc-info" }, "Elindeki bilgiler (isteğe bağlı)",
-      h("span", { class: "help", text: "Müşteriden ne biliyorsan yapıştır: hizmetler, fiyatlar, iletişim, renkler… Doldurursan site hemen hazırlanmaya başlar; eksik bilgi olursa agent sorar." }),
+      h("span", { class: "help", text: "Müşteriden ne biliyorsan yapıştır. Doldurursan site hemen hazırlanmaya başlar; eksik bilgi olursa agent sorar." }),
       info),
+    infoGuide(info),
     h("div", { class: "row" }, h("button", { class: "btn btn-primary btn-lg", type: "submit" }, "Müşteriyi oluştur")),
   );
   return form;
+}
+
+// ---------------------------------------------------------------- what to paste
+
+/** What the agent can use from a pasted text. "need" = the site cannot be finished without it. */
+const INFO_GROUPS = [
+  { title: "İşletme", need: true, items: ["İşletmenin tam adı (sitede nasıl görünecekse)", "Ne iş yapıyor, hangi şehir/bölgede", "Hedef müşteri: kimler, nereden (ör. Manchester'da aileler)"] },
+  { title: "Hizmetler", need: true, items: ["3–8 ana hizmet, her biri bir satır", "Fiyat varsa: \"kadın kesim £35\", \"£120'den başlayan\"", "Öne çıkan bilgiler: \"15 yıllık\", \"aynı gün servis\" (sadece gerçekse)"] },
+  { title: "İletişim", need: true, items: ["E-posta ve telefon", "Adres ve çalışma saatleri", "WhatsApp numarası (buton istenirse)", "Online randevu linki, Google Maps linki, sosyal medya"] },
+  { title: "Hikâye ve his", need: true, items: ["Nasıl başladılar, farkları ne (2–3 cümle)", "Sitenin havası: resmi, samimi, premium, enerjik…", "Çalışma şekli: ilk görüşme → teklif → iş → teslim"] },
+  { title: "Görünüm", need: false, items: ["Logo ve fotoğraflar: 'Logo / fotoğraf ekle' ile yükle", "Marka renkleri (ör. lacivert + altın) ya da sevdikleri/sevmedikleri siteler"] },
+  { title: "Ek bilgiler", need: false, items: ["Müşteri yorumları (ad + yorum, izinli)", "Sık sorulan sorular", "Şirket bilgileri: unvan, şirket no, kayıtlı adres", "Alan adı varsa adı ve kimin yönettiği"] },
+];
+
+const INFO_TEMPLATE = [
+  "İşletme adı: ",
+  "Ne iş yapıyor / şehir: ",
+  "Hedef müşteri: ",
+  "Hizmetler ve fiyatlar (her satıra bir tane):",
+  "- ",
+  "- ",
+  "- ",
+  "Öne çıkan bilgiler (yıl, bölge, hız…): ",
+  "E-posta: ",
+  "Telefon: ",
+  "Adres ve saatler: ",
+  "WhatsApp: ",
+  "Randevu / Maps / sosyal medya linkleri: ",
+  "Hikâye (nasıl başladı, farkı ne): ",
+  "Çalışma şekli (adımlar): ",
+  "Sitenin havası (resmi / samimi / premium / enerjik): ",
+  "Renkler / beğendiği siteler: ",
+  "Müşteri yorumları: ",
+  "Sık sorulan sorular: ",
+  "Şirket bilgileri (unvan, no, adres): ",
+  "Alan adı: ",
+].join("\n");
+
+/** Collapsible checklist under a paste box, with a button that drops a fill-in template into it. */
+function infoGuide(textarea, onChange) {
+  const fill = () => {
+    textarea.value = textarea.value.trim() ? `${textarea.value.trimEnd()}\n\n${INFO_TEMPLATE}` : INFO_TEMPLATE;
+    onChange?.(textarea.value);
+    textarea.focus();
+  };
+  return h("details", { class: "info-guide" },
+    h("summary", { text: "Neler yazabilirim? (liste ve doldurulacak şablon)" }),
+    h("p", { class: "small muted", text: "Sıra, dil ve biçim önemli değil; Türkçe yazabilirsin, site metinlerini agent İngilizce yazar. ★ olanlar olmadan site bitmez: eksikse agent sana kısa sorularla sorar. Uydurma bilgi eklenmez." }),
+    h("div", { class: "info-groups" },
+      ...INFO_GROUPS.map((g) => h("div", {},
+        h("p", { class: "info-title", text: `${g.need ? "★ " : ""}${g.title}` }),
+        h("ul", {}, ...g.items.map((i) => h("li", { text: i }))),
+      )),
+    ),
+    h("button", { class: "btn", type: "button", onclick: fill }, "Boş şablonu kutuya ekle"),
+  );
 }
 
 // ---------------------------------------------------------------- client page
@@ -403,6 +460,7 @@ function prepareCard(d) {
     ),
     h("label", { for: "prep-text", class: "sr-only" }, "Müşteri bilgileri"),
     box,
+    working ? null : infoGuide(box, (v) => (draft.freeText = v)),
     h("div", { class: "row" },
       h("button", { class: "btn btn-primary btn-lg", type: "button", disabled: busy, onclick: go }, ranBefore ? "Tekrar hazırla" : "Siteyi hazırla"),
       h("label", { for: "prep-files", class: "btn btn-lg", style: working ? "pointer-events:none;opacity:.5" : "" }, "Logo / fotoğraf ekle"), fileInput,

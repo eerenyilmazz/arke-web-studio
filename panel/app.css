@@ -264,3 +264,13 @@ th { font-weight: 600; color: var(--ink-2); }
 /* Template upgrade notice (older sites only). */
 .upgrade-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .8rem 1.5rem; margin-top: 1rem; padding: 1rem 1.3rem; border: 1px dashed var(--line); border-radius: 14px; background: var(--surface); }
 .upgrade-banner p { margin: 0; max-width: 62ch; }
+
+/* "What can I paste?" checklist under the paste boxes. */
+.info-guide { border: 1px solid var(--line); border-radius: 12px; padding: .7rem 1rem; background: var(--surface); flex-basis: 100%; }
+.info-guide summary { cursor: pointer; font-weight: 600; }
+.info-guide[open] { display: grid; gap: .8rem; }
+.info-groups { display: grid; gap: .9rem 1.6rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+.info-title { margin: 0 0 .25rem; font-weight: 600; }
+.info-groups ul { margin: 0; padding-inline-start: 1.1rem; display: grid; gap: .2rem; font-size: .9rem; }
+.info-guide .btn { justify-self: start; }
+label .field { font-weight: 400; }
