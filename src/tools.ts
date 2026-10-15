@@ -13,6 +13,7 @@ import { deepMerge } from "./lib/merge.js";
 import { assertSlug, clientPaths, safeJoin } from "./lib/paths.js";
 import { checkInputs, checkOutput, renderReport, type CheckResult } from "./lib/quality.js";
 import { buildQuestionnaire } from "./lib/questionnaire.js";
+import { findUnknownKeys } from "./lib/unknown-keys.js";
 import { validateDraft, type FieldIssue } from "./lib/validation.js";
 
 /*
@@ -22,7 +23,10 @@ import { validateDraft, type FieldIssue } from "./lib/validation.js";
  */
 
 const CLIENT_GITIGNORE = ["dist/", "node_modules/", ".wrangler/", ".env", ".env.*", ".factory/audit.log", "*.tmp", ""].join("\n");
-const LOCKED_CONFIG_KEYS = new Set(["slug", "schemaVersion"]);
+/** `meta` is only changed through the `unmapped` / `laterInterests` arguments, so recorded answers can never be wiped by a patch. */
+const LOCKED_CONFIG_KEYS = new Set(["slug", "schemaVersion", "meta"]);
+/** Optional form endpoint passed through to the template build (see template contract). */
+const FORM_ACTION_ENV = "SF_FORM_ACTION";
 const WRANGLER_COMPAT_DATE = "2026-10-01";
 
 // ---------------------------------------------------------------- clients
@@ -135,8 +139,14 @@ export function updateClientConfig(
 ) {
   const paths = openClient(factory, assertSlug(args.slug));
   for (const key of Object.keys(args.patch)) {
-    if (LOCKED_CONFIG_KEYS.has(key)) throw new FactoryError(`"${key}" cannot be changed.`);
+    if (LOCKED_CONFIG_KEYS.has(key)) {
+      throw new FactoryError(
+        `"${key}" cannot be changed.`,
+        key === "meta" ? "Use the `unmapped` and `laterInterests` arguments instead." : undefined,
+      );
+    }
   }
+  assertNoUnknownKeys(findUnknownKeys(SiteConfigSchema, args.patch));
   const before = readDraftConfig(paths);
   const merged = deepMerge(before, args.patch) as Record<string, unknown>;
 
@@ -169,6 +179,7 @@ export function saveContent(factory: FactoryConfig, args: { slug: string; locale
     throw new FactoryError(`Locale "${args.locale}" is not in i18n.locales (${locales.join(", ")}).`, "Add it with update_client_config first.");
   }
   const file = paths.content(args.locale);
+  assertNoUnknownKeys(findUnknownKeys(ContentSchema, args.content));
   const existing = args.replace ? {} : (readJsonIfExists(file) ?? {});
   const merged = deepMerge(existing, args.content);
   const result = validateDraft(ContentSchema, merged);
@@ -240,6 +251,8 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
   const results: CheckResult[] = [{ name: "Config and content schema", status: "pass", detail: `locales: ${config.i18n.locales.join(", ")}` }];
   results.push(...checkInputs(paths.root, config, content));
 
+  // Pin the inputs before building: if they change while the build runs, the output no longer matches them.
+  const hashBefore = contentHash(paths.root);
   const templateDir = safeJoin(factory.templatesDir, config.template);
   let buildOutput = "";
   if (!existsSync(path.join(templateDir, "package.json"))) {
@@ -252,7 +265,7 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
     const res = await run("npm", ["run", "build", "--silent"], {
       cwd: templateDir,
       timeoutMs: factory.limits.buildTimeoutMs,
-      env: { SF_CLIENT_DIR: paths.root, SF_OUT_DIR: paths.distDir, NODE_ENV: "production" },
+      env: buildEnv(paths.root, paths.distDir),
     });
     buildOutput = `${res.stdout}\n${res.stderr}`.trim();
     results.push({
@@ -265,7 +278,10 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
 
   results.push(await runImpeccable(paths.distDir, results));
 
-  const hash = contentHash(paths.root);
+  const hash = hashBefore;
+  if (contentHash(paths.root) !== hashBefore) {
+    results.push({ name: "Inputs unchanged during build", status: "fail", detail: "Config, content or assets changed while building. Run build_site again." });
+  }
   const failures = results.filter((r) => r.status === "fail").map((r) => `${r.name}: ${r.detail}`);
   const record: BuildRecord = { hash, at: new Date().toISOString(), passed: failures.length === 0, failures };
   writeJson(paths.buildRecord, record);
@@ -276,7 +292,8 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
     report: "quality-report.md",
     dist: record.passed ? paths.distDir : null,
     checks: results,
-    buildLogTail: buildOutput ? buildOutput.slice(-1500) : undefined,
+    // Log only when something failed: it is long and costs tokens on every successful build.
+    buildLogTail: !record.passed && buildOutput ? buildOutput.slice(-1500) : undefined,
     next: record.passed
       ? "Ask Eren to open dist/ locally and review it against the design checklist (visual approval)."
       : "Fix the failed checks (config/content only, never the template), then build again.",
@@ -363,7 +380,8 @@ export async function deploy(factory: FactoryConfig, args: { slug: string; targe
     worker: workerName,
     url,
     customDomain: routes ? config.site.domain : null,
-    outputTail: output.slice(-1200),
+    // Full output only when it is needed: a dry run, or no URL could be read from it.
+    outputTail: args.dryRun || url === null ? output.slice(-1200) : undefined,
     next:
       args.target === "preview"
         ? "Send the preview URL to Eren for the client. After the client's OK, Eren gives the production approval."
@@ -382,6 +400,21 @@ function cloudflareCredentials(model: "managed" | "client", slug: string): { tok
   const token = process.env[`${prefix}API_TOKEN`];
   const accountId = process.env[`${prefix}ACCOUNT_ID`];
   return token && accountId ? { token, accountId } : null;
+}
+
+function buildEnv(clientDir: string, outDir: string): Record<string, string> {
+  const env: Record<string, string> = { SF_CLIENT_DIR: clientDir, SF_OUT_DIR: outDir, NODE_ENV: "production" };
+  const formAction = process.env[FORM_ACTION_ENV];
+  if (formAction) env[FORM_ACTION_ENV] = formAction;
+  return env;
+}
+
+function assertNoUnknownKeys(unknown: readonly string[]): void {
+  if (unknown.length === 0) return;
+  throw new FactoryError(
+    `Nothing saved. Unknown field(s): ${unknown.slice(0, 10).join(", ")}`,
+    "Check the spelling against schema/*.schema.json. Answers that fit no field go in `unmapped`.",
+  );
 }
 
 function formatIssues(issues: readonly FieldIssue[]): string {

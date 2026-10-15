@@ -35,7 +35,7 @@ site-factory/            ← bu repo (fabrika)
 ```bash
 npm install
 npm run build          # dist/server.js
-npm test               # 20 test: güvenlik, akış, MCP stdio
+npm test               # 26 test: güvenlik, akış, MCP stdio, düzeltmeler
 ```
 
 Claude Code bu klasörde açıldığında `.mcp.json` ile server'ı otomatik bulur (`node dist/server.js`).
@@ -81,6 +81,8 @@ export SF_CF_MANAGED_ACCOUNT_ID=...
 export SF_CF_CLIENT_HARBOUR_DENTAL_API_TOKEN=...
 export SF_CF_CLIENT_HARBOUR_DENTAL_ACCOUNT_ID=...
 ```
+
+İletişim formu için (isteğe bağlı) aynı ortamda `export SF_FORM_ACTION=https://...` tanımla; build_site bunu şablona geçirir. Yoksa form yerine e-posta/telefon/WhatsApp butonları çıkar.
 
 Token yetkisi: sadece *Workers Scripts: Edit* (+ alan adı bağlanacaksa ilgili zone için DNS/Workers Routes).
 Tokenlar log'lara ve tool çıktısına `***` olarak düşer. `deploy` `dryRun: true` ile yükleme yapmadan kontrol eder.

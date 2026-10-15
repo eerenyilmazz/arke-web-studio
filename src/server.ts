@@ -29,7 +29,8 @@ function handler<A extends Record<string, unknown>>(factory: FactoryConfig, name
       if (logFile && existsSync(path.dirname(path.dirname(logFile)))) {
         audit(logFile, { tool: name, ok: true, ms: Date.now() - started, args: summariseArgs(args) });
       }
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      // Compact JSON: the agent parses it fine and indentation only adds tokens.
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
     } catch (error) {
       const known = error instanceof FactoryError;
       const message = known ? error.message : "Internal error. Details were written to the server log.";
