@@ -35,7 +35,7 @@ site-factory/            ← bu repo (fabrika)
 ```bash
 npm install
 npm run build          # dist/server.js
-npm test               # 26 test: güvenlik, akış, MCP stdio, düzeltmeler
+npm test               # 31 test: güvenlik, akış, MCP stdio, düzeltmeler, onay sabitleme
 ```
 
 Claude Code bu klasörde açıldığında `.mcp.json` ile server'ı otomatik bulur (`node dist/server.js`).
@@ -68,6 +68,9 @@ Herhangi bir adımda: agent'a "durum ne?" de → `get_client_status`.
 Onaylar sadece sen etkileşimli terminalde slug'ı yazınca verilir. Agent'ın shell'i TTY olmadığı için
 onay veremez; ayrıca `.claude/settings.json` bu komutu agent'a yasaklar. Her onay o anki içerik
 hash'ine bağlıdır: config, metin veya görselde en küçük değişiklik onayı geçersiz kılar.
+`visual` ve `production` onayları ayrıca son build'in `dist/` hash'ine bağlıdır: şablon değişip çıktı farklılaşırsa
+ya da `dist/` elle değiştirilirse onay geçmez ve deploy durur. Geçerli bir build yoksa bu onaylar verilemez.
+Onay sırasında içerik değişirse (slug'ı yazarken) onay kaydedilmez.
 
 ## Cloudflare (deploy için)
 

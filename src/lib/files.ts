@@ -45,6 +45,22 @@ export function contentHash(clientRoot: string): string {
   return hash.digest("hex").slice(0, 16);
 }
 
+/**
+ * Fingerprint of the built site (every file under `dir`). Visual and production approvals pin it,
+ * so what is deployed is byte-for-byte what a person reviewed. null if the folder does not exist.
+ */
+export function dirHash(dir: string): string | null {
+  if (!existsSync(dir)) return null;
+  const hash = createHash("sha256");
+  for (const rel of listFiles(dir, ".").sort()) {
+    hash.update(rel.replaceAll("\\", "/"));
+    hash.update("\0");
+    hash.update(readFileSync(path.join(dir, rel)));
+    hash.update("\0");
+  }
+  return hash.digest("hex").slice(0, 16);
+}
+
 function listFiles(root: string, dir: string): string[] {
   const abs = path.join(root, dir);
   if (!existsSync(abs)) return [];

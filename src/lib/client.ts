@@ -14,6 +14,8 @@ export interface BuildRecord {
   readonly at: string;
   readonly passed: boolean;
   readonly failures: string[];
+  /** Hash of dist/ right after this build. Missing in records written before it existed. */
+  readonly distHash?: string;
 }
 
 export interface DeployRecord {
@@ -98,8 +100,8 @@ export function clientStatus(factory: FactoryConfig, slug: string): ClientStatus
     if (!r.data) contentOk = false;
   }
 
-  const { hash, valid } = approvalState(paths.root, paths.approvals);
   const lastBuild = (readJsonIfExists(paths.buildRecord) as BuildRecord | undefined) ?? null;
+  const { hash, valid } = approvalState(paths.root, paths.approvals, lastBuild?.distHash ?? null);
   const lastDeploy = (readJsonIfExists(paths.lastDeploy) as DeployRecord | undefined) ?? null;
 
   const missingPaths = cfg.missing.map((m) => m.path);

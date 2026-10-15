@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from "node:fs";
 import os from "node:os";
 import { createInterface } from "node:readline/promises";
 import { loadFactoryConfig } from "../config.js";
-import { APPROVAL_KINDS, addApproval, approvalState, type ApprovalKind } from "../lib/approvals.js";
+import { APPROVAL_KINDS, addApproval, approvalPins, type ApprovalKind } from "../lib/approvals.js";
 import { clientStatus } from "../lib/client.js";
 import { assertSlug, clientPaths } from "../lib/paths.js";
 
@@ -34,13 +34,10 @@ async function main(): Promise<void> {
   }
 
   const status = clientStatus(factory, slug);
-  console.log(`\nClient: ${slug}   stage: ${status.stage}   content hash: ${status.contentHash}`);
-  if (kind !== "content") {
-    const build = status.lastBuild;
-    const ok = build?.hash === status.contentHash && build.passed;
-    console.log(`Last build: ${build ? `${build.at} ${build.passed ? "passed" : "FAILED"}` : "none"}${ok ? "" : "  <-- not current"}`);
-    if (!ok) console.log("Warning: there is no passing build for the current content.");
-  }
+  // Throws (nothing approved) if visual/production has no passing, untouched build to pin.
+  const shown = approvalPins(kind, paths.root, paths.distDir, status.lastBuild);
+  console.log(`\nClient: ${slug}   stage: ${status.stage}   content hash: ${shown.hash}${shown.distHash ? `   build: ${shown.distHash}` : ""}`);
+  if (status.lastBuild && kind !== "content") console.log(`Last build: ${status.lastBuild.at} passed`);
   if (kind === "visual" && existsSync(paths.qualityReport)) {
     console.log(`\n${readFileSync(paths.qualityReport, "utf8").split("\n").slice(0, 8).join("\n")}\n…`);
   }
@@ -53,12 +50,19 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const { hash } = approvalState(paths.root, paths.approvals);
+  // Re-check: if anything changed while the prompt was open, the person approved something else.
+  const now = approvalPins(kind, paths.root, paths.distDir, clientStatus(factory, slug).lastBuild);
+  if (now.hash !== shown.hash || now.distHash !== shown.distHash) {
+    console.error("Content or build changed while you were reviewing. Nothing approved; run the command again.");
+    process.exit(1);
+  }
+  const { hash, distHash } = now;
   addApproval(paths.approvals, {
     kind,
     by: os.userInfo().username,
     at: new Date().toISOString(),
     hash,
+    ...(distHash ? { distHash } : {}),
     ...(noteParts.length ? { note: noteParts.join(" ") } : {}),
   });
   console.log(`Approved ${kind} for ${slug} at content hash ${hash}.`);

@@ -8,7 +8,7 @@ import { saveAsset, type AssetKind } from "./lib/assets.js";
 import { clientStatus, loadValidClient, openClient, readDraftConfig, type BuildRecord, type DeployRecord } from "./lib/client.js";
 import { FactoryError } from "./lib/errors.js";
 import { run } from "./lib/exec.js";
-import { contentHash, readJsonIfExists, writeJson, writeText } from "./lib/files.js";
+import { contentHash, dirHash, readJsonIfExists, writeJson, writeText } from "./lib/files.js";
 import { deepMerge } from "./lib/merge.js";
 import { assertSlug, clientPaths, safeJoin } from "./lib/paths.js";
 import { checkInputs, checkOutput, renderReport, type CheckResult } from "./lib/quality.js";
@@ -283,7 +283,8 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
     results.push({ name: "Inputs unchanged during build", status: "fail", detail: "Config, content or assets changed while building. Run build_site again." });
   }
   const failures = results.filter((r) => r.status === "fail").map((r) => `${r.name}: ${r.detail}`);
-  const record: BuildRecord = { hash, at: new Date().toISOString(), passed: failures.length === 0, failures };
+  const distHash = dirHash(paths.distDir);
+  const record: BuildRecord = { hash, at: new Date().toISOString(), passed: failures.length === 0, failures, ...(distHash ? { distHash } : {}) };
   writeJson(paths.buildRecord, record);
   writeText(paths.qualityReport, renderReport(config.slug, hash, results));
 
@@ -317,14 +318,17 @@ async function runImpeccable(distDir: string, prior: CheckResult[]): Promise<Che
 
 export async function deploy(factory: FactoryConfig, args: { slug: string; target: "preview" | "production"; dryRun?: boolean }) {
   const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
-  const { hash, valid } = approvalState(paths.root, paths.approvals);
   const build = readJsonIfExists(paths.buildRecord) as BuildRecord | undefined;
+  const { hash, valid } = approvalState(paths.root, paths.approvals, build?.distHash ?? null);
 
   const blockers: string[] = [];
   if (!build || build.hash !== hash) blockers.push("No build for the current content. Run build_site.");
   else if (!build.passed) blockers.push("Last build failed its checks. See quality-report.md.");
+  else if (!build.distHash || dirHash(paths.distDir) !== build.distHash) {
+    blockers.push("dist/ is not the output of the last build (changed or rebuilt elsewhere). Run build_site; visual approval is needed again.");
+  }
   if (!valid.content) blockers.push("Missing content approval (npm run approve -- <slug> content).");
-  if (!valid.visual) blockers.push("Missing visual approval (npm run approve -- <slug> visual).");
+  if (!valid.visual) blockers.push("Missing visual approval for this build output (npm run approve -- <slug> visual).");
   if (args.target === "production" && !valid.production) blockers.push("Missing production approval (npm run approve -- <slug> production).");
   if (blockers.length > 0) {
     throw new FactoryError(`Deploy blocked:\n- ${blockers.join("\n- ")}`, "Approvals are given by Eren in a terminal. Never try to create them yourself.");
