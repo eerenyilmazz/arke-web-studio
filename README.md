@@ -23,6 +23,8 @@ Agent her müşteri için önce **marka kimliğini** tasarlar (konsept, logo, re
 
 **Marka kartı (Marka Atölyesi):** her markanın bir sloganı, bir **imza hareketi** (adı, fikri ve kendi canlı demosu `site/brand/signature.html`) ve tipografi örneği olur. Panelde müşterinin **Marka** sekmesi bunu koyu bir kart olarak gösterir: logo ve slogan, adlandırılmış renkler, canlı imza hareketi, yazı tipleri, logonun koyu zeminde hâli, "Logoyu indir" ve "Yazdır / PDF". Eksikse kart "Marka kartını tamamlat" düğmesi gösterir; build durmaz, uyarı verir (eski siteler bozulmaz). İmza demosu panelde kum havuzunda çalışır: panele, çereze ve internete erişemez.
 
+**İmza tasarım:** her sayfada marka hissedilmeli: kahramanda büyük imza hareketi, marka etiketleri (ör. `No. 01 · Saç kesimi · 30 dk`), en az bir kompozisyon bölümü, logonun grafik olarak tekrar kullanımı, ekranı dolduran düzen. Build "Design depth" uyarısıyla düz sayfaları yakalar. Var olan bir siteyi bu seviyeye çekmek için **Marka** sekmesinde "Markayla yeniden tasarla" (bilgiler ve fiyatlar aynı kalır).
+
 **Tasarım skill'leri:** agent `.claude/skills/` altındaki **Impeccable**, **taste-skill** ve **UI UX Pro Max** skill'lerini yükler (lisansları klasörlerinde; UI UX Pro Max `scripts/link-skills.sh` ile vendor'dan kopyalanır, kurulum ve güncelleme bunu kendisi çalıştırır). Skill'lerin script'leri çalışmaz (agent'ta Bash yok); çakışırsa fabrikanın kuralları geçerli.
 
 Build her seferinde kontrol eder: marka dosyası ve logo var mı, renkler ve animasyonlar gerçekten kullanılmış mı, dışarıdan script / yönlendirme / takip / gömülü içerik var mı, linkler çalışıyor mu, başlık-açıklama-alt metin tam mı. Onaylar ve yayın aynı.

@@ -320,6 +320,8 @@ describe("brand board", () => {
     expect(args).toMatch(/--allowedTools \S*Skill/);
     expect(args).toMatch(/--disallowedTools Bash/);
     expect(calls[0]!.stdin).toMatch(/signature\.html/);
+    expect(calls[0]!.stdin).toMatch(/mcp__site-factory__get_client_status/);
+    expect(calls[0]!.stdin).toMatch(/Skill tool.*impeccable.*design-taste-frontend/);
   });
 });
 

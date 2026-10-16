@@ -315,6 +315,43 @@ export function readBrandBoard(paths: ClientPaths, template: string): BrandBoard
   return { source: "custom", brand, logoSvg: read(LOGO_FILE), signatureHtml: read(SIGNATURE_FILE), missing };
 }
 
+const MIN_HOME_SECTIONS = 5;
+const MIN_HOME_SVGS = 2;
+const MIN_LAYOUT_WIDTH_PX = 1100;
+const REM_PX = 16;
+
+/**
+ * "Signature design" (rules/custom-site.md): the brand must be visible on the pages, not only in brand.json.
+ * Cheap, structural signals only; a warning, so existing sites keep building.
+ */
+export function designDepth(distDir: string, code: string, brand: Brand): CheckResult {
+  const homeFile = path.join(distDir, "index.html");
+  const home = existsSync(homeFile) ? readFileSync(homeFile, "utf8") : "";
+  const main = home.match(/<main[\s\S]*?<\/main>/i)?.[0] ?? home;
+  const firstBlock = main.match(/<(section|header|div)\b[\s\S]*?<\/\1>/i)?.[0] ?? "";
+  const out: string[] = [];
+  const sig = brand.signature?.id;
+  if (sig && !firstBlock.includes(sig)) out.push(`the signature motion "${sig}" is not in the home page's first section (the hero)`);
+  const sections = (main.match(/<section\b/gi) ?? []).length;
+  if (sections < MIN_HOME_SECTIONS) out.push(`home page has ${sections} sections (at least ${MIN_HOME_SECTIONS}: hero, a composed brand section, services, story or process, contact)`);
+  const svgs = (home.match(/<svg\b/gi) ?? []).length + (home.match(/<img[^>]+\.svg/gi) ?? []).length;
+  if (svgs < MIN_HOME_SVGS + 1) out.push("home page has almost no drawn graphics: use the mark and the brand's visual language as illustrations, not only text");
+  // Container widths: max-width declarations (not media queries) and width-like custom properties (--wrap: 76rem).
+  const css = code.replace(/@media[^{]*/gi, "");
+  const px = (m: RegExpMatchArray) => Number(m[1]) * (m[2]!.toLowerCase() === "rem" ? REM_PX : 1);
+  const widths = [
+    ...[...css.matchAll(/max-width\s*:\s*(?:min\()?\s*(\d+(?:\.\d+)?)(px|rem)/gi)].map(px),
+    ...[...css.matchAll(/--[\w-]*(?:wrap|container|max|width|page)[\w-]*\s*:\s*(?:min\()?\s*(\d+(?:\.\d+)?)(px|rem)/gi)].map(px),
+  ];
+  const widest = widths.length ? Math.max(...widths) : 0;
+  if (widest > 0 && widest < MIN_LAYOUT_WIDTH_PX) out.push(`the layout is at most ${Math.round(widest)}px wide; use the screen (around 1200-1360px containers, full-bleed bands)`);
+  return {
+    name: "Design depth (the brand on every page)",
+    status: out.length === 0 ? "pass" : "warn",
+    detail: out.length === 0 ? `${sections} home sections, signature in the hero` : out.join("; "),
+  };
+}
+
 export function brandProblems(raw: unknown): string[] {
   const out: string[] = [];
   const b = raw as Partial<Brand> | null;
@@ -371,6 +408,7 @@ export function checkBrand(distDir: string): CheckResult[] {
       status: usage.length === 0 ? "pass" : "fail",
       detail: usage.length === 0 ? `${brand.animations.length} signature animations: ${brand.animations.map((a) => a.id).join(", ")}` : usage.join("; "),
     },
+    designDepth(distDir, code, brand),
     {
       name: "Brand board (tagline, signature motion, type specimen)",
       status: board.length === 0 ? "pass" : "warn",

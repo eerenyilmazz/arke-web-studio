@@ -114,6 +114,33 @@ Plan before writing: palette roles, type scale, layout concept for each page, an
 - **Depth and texture where the brand has it**: paper grain, glass highlights, overlapping layers, a photo breaking
   out of its frame. Not decoration for its own sake.
 
+## Signature design (what every custom site must feel like)
+
+The brand board (Eren's "Marka Atölyesi" card) is the standard: dark or light, the brand is *felt* on every screen,
+not written in a file. A site that is a heading, a paragraph and a price list on an empty background is a fail,
+however clean. Every custom site has all of these, designed for its own business (never copy the example's shapes):
+
+1. **A hero built around the signature motion.** The signature visual (the mark, the product, the tool of the
+   trade, drawn in SVG or the client's best photo) takes 40–60% of the hero and plays the signature motion at full
+   size on load. Not an underline under a heading. The headline is set large in the heading font (clamp up to
+   5–7rem) with the tagline.
+2. **A label system ("marka etiketi").** Small labels in a mono or condensed face that carry codes from the
+   business's world: a barber's `No. 01 · Saç kesimi · 30 dk`, a pickle maker's batch `P-024 / 2 kg`, a builder's
+   drawing number. Use them on cards, section starts and prices, consistently. They replace generic eyebrows.
+3. **At least one composed section** in the board's spirit: cards of unequal sizes (bento), overlapping layers or a
+   photo breaking its frame, with one card in a full brand colour carrying the mark or a big number from real facts.
+4. **The mark as a graphic.** The logo mark returns large: a watermark behind a section, a divider, a stamp on a
+   card, a loader. Draw at least two brand illustrations on the home page (inline SVG in the visual language).
+5. **Use the screen.** Containers around 1200–1360px, full-bleed colour bands, generous but intentional spacing.
+   A 900px column in the middle of a 1920px screen reads as unfinished.
+6. **Every page has a designed page hero** (title, a label, a piece of the visual language), not just an `h1`.
+7. **Motion with meaning**: the signature in the hero, 1–3 supporting animations from `brand.json`, scroll reveals
+   that stagger; nothing moves without a reason, everything calms under `prefers-reduced-motion`.
+8. **Both themes are designed**: the dark look is built from the palette (like the board), not inverted colours.
+
+The build's "Design depth" check warns when the home page has no signature in the hero, fewer than five sections,
+almost no drawn graphics or a narrow layout. Treat that warning as a failure to fix.
+
 ## Step 3: write the site
 
 Files (paths inside `site/`):

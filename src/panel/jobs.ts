@@ -31,6 +31,8 @@ export interface Job {
   phase?: Phase;
   /** Site files written so far (custom sites). */
   filesWritten?: number;
+  /** Design skills the agent loaded (Skill tool), shown in the panel. */
+  skillsUsed?: string[];
   /** Not serialised. */
   child?: ChildProcess;
 }
@@ -62,7 +64,7 @@ const MAX_AGENT_TURNS = 120;
 /** Custom sites (brand + every page written by hand) need many more tool calls than filling a template. */
 export const MAX_AUTOPILOT_TURNS = 300;
 /** Jobs that may design and write a whole site. */
-const LONG_JOBS: ReadonlySet<string> = new Set(["autopilot", "upgrade-template", "concepts", "choose-concept"]);
+const LONG_JOBS: ReadonlySet<string> = new Set(["autopilot", "upgrade-template", "concepts", "choose-concept", "redesign"]);
 const MAX_LOG_LINES = 2000;
 const MAX_TEXT = 4000;
 
@@ -258,6 +260,10 @@ export class JobRunner {
           const phase = phaseOf(shortTool(String(b.name)), b.input);
           if (phase) job.phase = phase;
           if (phase === "pages" || phase === "brand") job.filesWritten = (job.filesWritten ?? 0) + 1;
+          if (String(b.name) === "Skill") {
+            const name = String((b.input as { skill?: unknown } | undefined)?.skill ?? "").slice(0, 60);
+            if (name && !(job.skillsUsed ?? []).includes(name)) job.skillsUsed = [...(job.skillsUsed ?? []), name];
+          }
         }
       }
     } else if (event.type === "user") {
@@ -286,7 +292,7 @@ export function phaseOf(tool: string, input: unknown): Phase | null {
       return "reading";
     case "update_client_config": case "save_content": case "save_asset":
       return "saving";
-    case "generate_design_system":
+    case "generate_design_system": case "Skill":
       return "design";
     case "write_site_file": case "delete_site_file":
       return path.startsWith("brand/") ? "brand" : "pages";

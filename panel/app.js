@@ -1011,7 +1011,10 @@ async function tabBrand(body, d) {
   const busy = isBusy();
   const actions = h("div", { class: "row board-actions" },
     h("button", { class: "btn", type: "button", onclick: () => window.print() }, "Yazdır / PDF"),
-    custom && missing.length > 0 && h("button", { class: "btn btn-primary", type: "button", disabled: busy, onclick: () => runAgent(slug, "brand-board", {}) }, "Marka kartını tamamlat"),
+    custom && missing.length > 0 && h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runAgent(slug, "brand-board", {}) }, "Marka kartını tamamlat"),
+    custom && h("button", { class: "btn btn-primary", type: "button", disabled: busy, title: "Bilgiler ve metinler aynı kalır; sayfalar markanın imza tasarımıyla baştan yazılır.", onclick: () => {
+      if (confirm("Site markanın imza tasarımıyla baştan yazılacak (bilgiler ve fiyatlar aynı kalır; önceki hâl Sürümler'de durur). Devam?")) runAgent(slug, "redesign", {});
+    } }, "Markayla yeniden tasarla"),
   );
   const notice = custom && missing.length > 0
     ? h("p", { class: "notice small", text: `Eksik: ${[...new Set(missing)].join(", ")}. Agent mevcut markayı bozmadan tamamlar.` })
@@ -1443,6 +1446,7 @@ function jobProgress(job) {
     h("p", { class: "small muted" },
       h("span", { id: "job-elapsed", text: `Geçen süre ${fmtDuration((Date.now() - Date.parse(job.startedAt)) / 1000)}` }),
       job.filesWritten ? ` · ${job.filesWritten} dosya yazıldı` : "",
+      job.skillsUsed?.length ? ` · skill: ${job.skillsUsed.join(", ")}` : "",
       typical ? ` · genelde ${fmtDuration(typical)} sürer` : ""),
     h("div", { class: "bar" }, h("span", { id: "job-bar" })),
   );

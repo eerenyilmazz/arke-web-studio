@@ -20,7 +20,7 @@ import * as tools from "../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "./http.js";
 import { appendInput, readHistory, readInputs } from "./history.js";
 import { serialiseJob, type JobRunner } from "./jobs.js";
-import { answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
+import { TOOLS_NOTE, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
 import { OPTION_IDS, readBrandBoard, readBrandOptions } from "../lib/custom-site.js";
 import type { PreviewServer } from "./preview.js";
 
@@ -52,7 +52,7 @@ const routes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: writeQuestionnaire },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
-  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise|upgrade-template|concepts|choose-concept|brand-board)$`), handler: startAgent },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise|upgrade-template|concepts|choose-concept|brand-board|redesign)$`), handler: startAgent },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/build$`), handler: startBuild },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/deploy$`), handler: startDeploy },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/preview$`), handler: showPreview },
@@ -220,7 +220,7 @@ function meta(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse): void {
 }
 
 /** Rough time a job of each kind takes here: median of recent successful runs across clients, else a default. */
-const DEFAULT_SECONDS: Readonly<Record<string, number>> = { autopilot: 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, concepts: 360, "quick-edit": 180, "brand-board": 300 };
+const DEFAULT_SECONDS: Readonly<Record<string, number>> = { autopilot: 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, concepts: 360, "quick-edit": 180, "brand-board": 300, redesign: 900 };
 const RECENT_RUNS = 20;
 function typicalSeconds(deps: ApiDeps): Record<string, number> {
   const byKind = new Map<string, number[]>();
@@ -427,12 +427,19 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       title = "Build ve düzeltme";
       request = "Build al, kontroller geçmezse düzelt.";
       break;
+    case "redesign":
     case "brand-board": {
       const template = (readDraftConfig(clientPaths(deps.factory.clientsRoot, s)) as { template?: string }).template;
       if (template !== "custom") throw new HttpError(409, "Marka kartı serbest tasarımlı sitelerde var. Önce 'Serbest tasarıma geç'.");
-      prompt = brandBoardPrompt(s);
-      title = "Marka kartını tamamla";
-      request = "Marka kartını tamamla: slogan, imza hareketi ve tipografi örneği.";
+      if (kind === "redesign") {
+        prompt = redesignPrompt(s);
+        title = "Markayla yeniden tasarla";
+        request = "Siteyi markanın imza tasarımıyla baştan tasarla.";
+      } else {
+        prompt = brandBoardPrompt(s);
+        title = "Marka kartını tamamla";
+        request = "Marka kartını tamamla: slogan, imza hareketi ve tipografi örneği.";
+      }
       break;
     }
     case "concepts":
@@ -467,7 +474,7 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   }
   // A version before the agent touches anything, so its changes can always be undone.
   if (!deps.jobs.running()) await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${title}`).catch(() => null);
-  const job = runOrConflict(() => deps.jobs.startAgent(s, kind!, title, prompt + earlierInputsBlock(earlier), request));
+  const job = runOrConflict(() => deps.jobs.startAgent(s, kind!, title, `${TOOLS_NOTE}\n${prompt}${earlierInputsBlock(earlier)}`, request));
   appendInput(deps.factory, s, kind!, input);
   sendJson(res, 202, serialiseJob(job));
 }

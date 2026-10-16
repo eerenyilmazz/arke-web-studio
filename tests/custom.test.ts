@@ -170,3 +170,23 @@ describe("fixes from real jobs", () => {
     expect(hasMetaDescription(`<meta name="description" content="kısa">`)).toBe(false);
   });
 });
+
+describe("design depth", () => {
+  it("warns on a plain home page and passes a composed one with the signature in the hero", async () => {
+    const { designDepth } = await import("../src/lib/custom-site.js");
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const dir = mkdtempSync(path.join(os.tmpdir(), "depth-"));
+    const brand = { ...BRAND, signature: { id: "jar-fill", name: "Jar fills", idea: "The jar fills with brine and settles." } } as never;
+    writeFileSync(path.join(dir, "index.html"), "<main><section><h1>Hi</h1></section><section><p>Prices</p></section></main>");
+    let r = designDepth(dir, ".wrap{max-width:860px}@media (max-width: 1400px){a{b:c}}", brand);
+    expect(r.status).toBe("warn");
+    expect(r.detail).toMatch(/hero/);
+    expect(r.detail).toMatch(/860px/);
+    const svg = '<svg viewBox="0 0 1 1"></svg>';
+    writeFileSync(path.join(dir, "index.html"), `<main><section class="hero"><div class="jar-fill">${svg}</div></section>${"<section>x</section>".repeat(4)}${svg}${svg}</main>`);
+    r = designDepth(dir, ":root{--wrap: 80rem}.wrap{max-width:var(--wrap)}", brand);
+    expect(r.status).toBe("pass");
+  });
+});
