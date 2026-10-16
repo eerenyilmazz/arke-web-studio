@@ -150,6 +150,22 @@ export function generateQuestionnaire(factory: FactoryConfig, args: { slug: stri
 
 // ---------------------------------------------------------------- config & content
 
+/**
+ * Removing a page also removes its section settings (otherwise the config is invalid and nothing saves), and
+ * `sections.<page>: null` means "remove these settings". Other null values keep their normal meaning.
+ */
+function dropOrphanSections(merged: Record<string, unknown>, patch: Record<string, unknown>): void {
+  const sections = merged.sections;
+  if (!sections || typeof sections !== "object" || Array.isArray(sections)) return;
+  const record = sections as Record<string, unknown>;
+  const patchSections = patch.sections as Record<string, unknown> | undefined;
+  for (const [page, value] of Object.entries(patchSections ?? {})) if (value === null) delete record[page];
+  if (Array.isArray(patch.pages) && Array.isArray(merged.pages)) {
+    const pages = new Set(merged.pages as string[]);
+    for (const page of Object.keys(record)) if (!pages.has(page)) delete record[page];
+  }
+}
+
 export function updateClientConfig(
   factory: FactoryConfig,
   args: {
@@ -176,6 +192,7 @@ export function updateClientConfig(
   }
   assertNoUnknownKeys(findUnknownKeys(SiteConfigSchema, patch));
   const merged = deepMerge(before, patch) as Record<string, unknown>;
+  dropOrphanSections(merged, patch);
 
   const meta = (merged.meta ?? { unmapped: [], laterInterests: [] }) as { unmapped: unknown[]; laterInterests: string[] };
   if (args.unmapped?.length) meta.unmapped = [...(meta.unmapped ?? []), ...args.unmapped];

@@ -17,6 +17,18 @@ const WHITE = "#FFFFFF";
 const CAPS_ONLY_FONT = /\bSC\b|small ?caps|cinzel|trajan|bebas|anton|oswald|league gothic|alfa slab one|abril fatface/i;
 
 /** Checks that need only config + content (run before the template build). */
+/** A meta description of at least 10 characters, attributes in any order, apostrophes allowed inside double quotes. */
+export function hasMetaDescription(html: string): boolean {
+  for (const tag of html.match(/<meta\b[^>]*>/gi) ?? []) {
+    const attr = (name: string) => tag.match(new RegExp(`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i"));
+    const n = attr("name");
+    if ((n?.[1] ?? n?.[2] ?? n?.[3] ?? "").toLowerCase() !== "description") continue;
+    const c = attr("content");
+    if ((c?.[1] ?? c?.[2] ?? c?.[3] ?? "").trim().length >= 10) return true;
+  }
+  return false;
+}
+
 export function checkInputs(clientRoot: string, config: SiteConfig, content: Record<string, Content>): CheckResult[] {
   const results: CheckResult[] = [];
   const p = config.design.palette;
@@ -109,7 +121,7 @@ export function checkOutput(distDir: string, config: SiteConfig): CheckResult[] 
     const html = readFileSync(file, "utf8");
     if (!/<html[^>]*\slang=["'][a-z]{2}/i.test(html)) problems.push(`${rel}: <html> has no lang`);
     if (!/<title>[^<]{3,}<\/title>/i.test(html)) problems.push(`${rel}: missing <title>`);
-    if (!/<meta[^>]+name=["']description["'][^>]*content=["'][^"']{10,}/i.test(html)) warnings.push(`${rel}: missing meta description`);
+    if (!hasMetaDescription(html)) warnings.push(`${rel}: missing meta description`);
     for (const img of html.match(/<img\b[^>]*>/gi) ?? []) {
       if (!/\salt=/i.test(img)) problems.push(`${rel}: <img> without alt`);
     }

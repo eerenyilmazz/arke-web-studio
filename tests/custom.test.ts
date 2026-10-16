@@ -148,3 +148,25 @@ describe("design proposals", () => {
     expect(existsSync(path.join(paths.distDir, "brand", "brand.json"))).toBe(true);
   });
 });
+
+describe("fixes from real jobs", () => {
+  it("removes a page together with its section settings, and accepts sections.<page>: null", async () => {
+    const { f } = await customClient();
+    const { readDraftConfig } = await import("../src/lib/client.js");
+    const read = () => readDraftConfig(clientPaths(f.clientsRoot, SLUG)) as { pages: string[]; sections: Record<string, unknown> };
+    const pages = read().pages;
+    tools.updateClientConfig(f, { slug: SLUG, patch: { pages: pages.filter((p) => p !== "contact") } });
+    expect(read().pages).not.toContain("contact");
+    expect(read().sections.contact).toBeUndefined();
+    tools.updateClientConfig(f, { slug: SLUG, patch: { pages: [...read().pages, "contact"], sections: { contact: ["contact-form"] } } });
+    tools.updateClientConfig(f, { slug: SLUG, patch: { pages: read().pages.filter((p) => p !== "contact"), sections: { contact: null } } });
+    expect(read().sections.contact).toBeUndefined();
+  });
+
+  it("finds a meta description with apostrophes and any attribute order", async () => {
+    const { hasMetaDescription } = await import("../src/lib/quality.js");
+    expect(hasMetaDescription(`<meta name="description" content="Ankara'nın erkek kuaförü">`)).toBe(true);
+    expect(hasMetaDescription(`<meta content="Eryaman'da saç ve sakal" name="description">`)).toBe(true);
+    expect(hasMetaDescription(`<meta name="description" content="kısa">`)).toBe(false);
+  });
+});
