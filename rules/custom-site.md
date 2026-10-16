@@ -176,8 +176,10 @@ Only the pages listed in `config.pages`. Every page:
   for limited companies, company name, number and registered office (`config.legal`).
 - Home page: `LocalBusiness` JSON-LD (`<script type="application/ld+json">`) from the config facts.
 - Contact: `tel:` and `mailto:` links, WhatsApp `https://wa.me/<number without +>` when there is a number, address with
-  a link to the map (`config.contact.mapsUrl`). **No `<form>`** (forms need the factory's form service), **no embedded
-  maps or videos** (`<iframe>` sets cookies).
+  a link to the map (`config.contact.mapsUrl`). **A `<form>` only when `get_client_status` shows `contactForm`**: then
+  it posts to exactly that `action` (method POST, labelled fields, a hidden honeypot, Web3Forms' hidden `access_key`
+  when given); any other form address fails the build. Without `contactForm`: no form. **No embedded maps or
+  videos** (`<iframe>` sets cookies).
 - Semantic HTML (`header`, `nav`, `main`, `section`, `footer`), one `h1` per page, a skip link, visible keyboard focus,
   AA contrast (4.5:1 text, 3:1 large text and UI), alt text that describes each image, tap targets ≥ 44 px.
 - Responsive from 360 px to 1600 px; check the layout in your head at 375, 768 and 1440.
@@ -199,7 +201,12 @@ do not exist, `<form>`, missing `404.html` or viewport meta, missing alt, lang o
 
 ## Step 4: build, read, fix
 
-`build_site`, then read every failed check and the Impeccable warnings (contrast, cramped padding, tells of generated
+`build_site` also saves a phone and a desktop screenshot of the home page when a browser is available (check
+"Screenshots"): **Read both images** and judge them like a designer: overlapping or cut-off text, empty or
+unbalanced areas, unreadable contrast, a hero without the signature visual, a layout that looks plain. Fix what you
+see, then build again and look once more.
+
+Then read every failed check and the Impeccable warnings (contrast, cramped padding, tells of generated
 design) and fix them in the files. Build again; stop after 3 failed builds and report.
 
 In your summary for Eren (Turkish, plain): the brand concept in one sentence, the palette and fonts, and each

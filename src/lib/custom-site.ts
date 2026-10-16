@@ -270,6 +270,32 @@ interface Brand {
 }
 
 export const SIGNATURE_FILE = "brand/signature.html";
+/** Written by the panel when a site starts from a library design: the source client's facts (see panel/library.ts). */
+export const LIBRARY_SOURCE_FILE = "library-source.json";
+
+/** A site started from a library design must not keep the source client's name, phone, e-mail or address. */
+export function checkLibraryLeftovers(distDir: string, factoryDir: string): CheckResult[] {
+  const f = path.join(factoryDir, LIBRARY_SOURCE_FILE);
+  if (!existsSync(f)) return [];
+  let source: { name?: string; forbidden?: unknown };
+  try {
+    source = JSON.parse(readFileSync(f, "utf8")) as typeof source;
+  } catch {
+    return [];
+  }
+  const forbidden = Array.isArray(source.forbidden) ? source.forbidden.filter((s): s is string => typeof s === "string" && s.length >= 4) : [];
+  const text = readdirSync(distDir, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile() && /\.(html|css|js|json|svg|txt|xml)$/.test(e.name))
+    .map((e) => readFileSync(path.join(e.parentPath, e.name), "utf8"))
+    .join("\n")
+    .toLowerCase();
+  const left = forbidden.filter((s) => text.includes(s.toLowerCase()));
+  return [{
+    name: "Library design adapted (no facts of the source client)",
+    status: left.length === 0 ? "pass" : "fail",
+    detail: left.length === 0 ? `started from "${source.name ?? "library"}"; nothing of the source client left` : `still on the site from the design's source client: ${left.join(", ")}. Replace them with this client's facts or remove them.`,
+  }];
+}
 
 /** Brand board completeness. Warnings only, so sites made before the board existed keep building. */
 export function brandBoardProblems(raw: unknown, siteRoot: string): string[] {

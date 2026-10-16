@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { effectiveFormAction, readClientForm } from "./form.js";
 import type { FactoryConfig } from "../config.js";
 import { ContentSchema, type Content } from "../schema/content.js";
 import { QUESTIONS, type Question } from "../schema/questions.js";
@@ -47,6 +48,8 @@ export interface ClientStatus {
   readonly lastBuild: BuildRecord | null;
   readonly lastDeploy: DeployRecord | null;
   readonly contentHash: string;
+  /** Where a contact form may post (set by Eren in the panel), or null: then no <form>, only contact buttons. */
+  readonly contactForm: { action: string; accessKey?: string } | null;
 }
 
 export function openClient(factory: FactoryConfig, slug: string): ClientPaths {
@@ -157,6 +160,7 @@ export function clientStatus(factory: FactoryConfig, slug: string): ClientStatus
     lastBuild,
     lastDeploy,
     contentHash: hash,
+    contactForm: readClientForm(paths.factoryDir) ?? (effectiveFormAction(paths.factoryDir) ? { action: effectiveFormAction(paths.factoryDir)! } : null),
   };
 }
 

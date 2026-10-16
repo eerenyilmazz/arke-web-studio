@@ -23,6 +23,15 @@ Agent her müşteri için önce **marka kimliğini** tasarlar (konsept, logo, re
 
 **Marka kartı (Marka Atölyesi):** her markanın bir sloganı, bir **imza hareketi** (adı, fikri ve kendi canlı demosu `site/brand/signature.html`) ve tipografi örneği olur. Panelde müşterinin **Marka** sekmesi bunu koyu bir kart olarak gösterir: logo ve slogan, adlandırılmış renkler, canlı imza hareketi, yazı tipleri, logonun koyu zeminde hâli, "Logoyu indir" ve "Yazdır / PDF". Eksikse kart "Marka kartını tamamlat" düğmesi gösterir; build durmaz, uyarı verir (eski siteler bozulmaz). İmza demosu panelde kum havuzunda çalışır: panele, çereze ve internete erişemez.
 
+**1.6.0 ile gelenler:**
+- **Düzenle sekmesi:** sohbet yerine formlar. Renkler (renk seçici), sayfalar (işaretle), hizmetler ve fiyatlar (tablo), metin değiştir, iletişim formu, hızlı düzenleme. Agent'a sadece o değişikliği yapan net bir talimat gider; basit olanları panel kendisi kaydeder.
+- **Tasarım kütüphanesi** (üstteki kitap simgesi): Marka sekmesinden "Kütüphaneye kaydet"; yeni müşteride "Başlangıç tasarımı" olarak seç ya da "Bu tasarımla yeniden kur". Logo ve müşterinin bilgileri taşınmaz; eski müşterinin adı, telefonu, e-postası sitede kalırsa build durur.
+- **Gruplama:** ana sayfada duruma / sektöre / etikete göre; etiketler Bilgiler → iş bilgilerinde.
+- **Teklif:** Bilgiler → "Teklif hazırla"; metinler tıklanıp düzeltilir, Yazdır / PDF. Gönderen bilgileri Ayarlar → Teklif.
+- **Yedek:** Ayarlar → Yedek; klasör seç (ör. OneDrive). İş bittikçe otomatik (en sık 30 dakikada bir), son 10 yedek.
+- **Agent sitesini görür:** build telefon ve masaüstü ekran görüntüsü alır (Windows'taki Edge/Chrome ya da Linux Chrome; yoksa atlanır), agent bakıp düzeltir. Gerekirse `export SF_BROWSER=/yol/chrome`.
+- **İletişim formu:** Düzenle → İletişim formu; Formspree / Getform / FormSubmit / Web3Forms adresini sadece sen girersin.
+
 **Önce araştır, sor, sonra tasarla** (`rules/research.md`): agent emin olmadığı hiçbir bilgiyi uydurmaz, sana sorar. "Siteyi hazırla"da "Önce araştırsın ve bana sorsun" işaretliyse (varsayılan) önce işletmeyi ve sektördeki iyi siteleri araştırır, bulduklarını kaynaklarıyla (doğrulanmış / tahmin / doğrulanamayan) ve en fazla 5 soruyla getirir, tasarıma geçmez; cevapları yapıştırıp tekrar basınca devam eder. İnternet erişimi Ayarlar → "İnternet araştırması" ile açılıp kapanır (varsayılan açık).
 
 **İmza tasarım:** her sayfada marka hissedilmeli: kahramanda büyük imza hareketi, marka etiketleri (ör. `No. 01 · Saç kesimi · 30 dk`), en az bir kompozisyon bölümü, logonun grafik olarak tekrar kullanımı, ekranı dolduran düzen. Build "Design depth" uyarısıyla düz sayfaları yakalar. Var olan bir siteyi bu seviyeye çekmek için **Marka** sekmesinde "Markayla yeniden tasarla" (bilgiler ve fiyatlar aynı kalır).

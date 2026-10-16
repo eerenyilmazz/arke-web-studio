@@ -12,7 +12,9 @@ import { contentHash, dirHash, readJsonIfExists, writeJson, writeText } from "./
 import { deepMerge } from "./lib/merge.js";
 import { assertSlug, clientPaths, safeJoin } from "./lib/paths.js";
 import { checkInputs, checkOutput, renderReport, type CheckResult } from "./lib/quality.js";
-import { buildCustomSite, checkBrand, checkCustomCode, deleteSiteFile, isCustom, listSiteFiles, readSiteFile, writeSiteFile } from "./lib/custom-site.js";
+import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, deleteSiteFile, isCustom, listSiteFiles, readSiteFile, writeSiteFile } from "./lib/custom-site.js";
+import { takeScreenshots } from "./lib/screenshots.js";
+import { effectiveFormAction } from "./lib/form.js";
 import { buildQuestionnaire } from "./lib/questionnaire.js";
 import { findUnknownKeys } from "./lib/unknown-keys.js";
 import { validateDraft, type FieldIssue } from "./lib/validation.js";
@@ -308,8 +310,10 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
       results.push(built);
       if (built.status === "pass") {
         results.push(...checkOutput(paths.distDir, config));
-        results.push(...checkCustomCode(paths.distDir, formActionUrl()));
+        results.push(...checkCustomCode(paths.distDir, effectiveFormAction(paths.factoryDir)));
         results.push(...checkBrand(paths.distDir, config.brand.logo));
+        results.push(...checkLibraryLeftovers(paths.distDir, paths.factoryDir));
+        results.push(await takeScreenshots(paths.distDir, path.join(paths.factoryDir, "shots")));
       }
     }
   } else if (!existsSync(path.join(safeJoin(factory.templatesDir, config.template), "package.json"))) {
@@ -562,7 +566,8 @@ export function deleteSiteFileTool(factory: FactoryConfig, args: { slug: string;
 
 function buildEnv(clientDir: string, outDir: string): Record<string, string> {
   const env: Record<string, string> = { SF_CLIENT_DIR: clientDir, SF_OUT_DIR: outDir, NODE_ENV: "production" };
-  const formAction = process.env[FORM_ACTION_ENV];
+  // The client's own form service (panel setting) wins over the factory-wide one.
+  const formAction = effectiveFormAction(path.join(clientDir, ".factory"));
   if (formAction) env[FORM_ACTION_ENV] = formAction;
   return env;
 }

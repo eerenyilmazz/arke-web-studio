@@ -78,7 +78,7 @@ function clientDataLines(slug: string, input: AnswersInput): string[] {
 
 /** Custom sites (template "custom"): the agent designs the brand and writes the site itself. */
 const CUSTOM_STEP =
-  '4b. If the config template is "custom": read rules/custom-site.md completely, load the design skills (' + "impeccable, design-taste-frontend, ui-ux-pro-max, brand" + ') with the Skill tool, then design the brand identity first (site/brand/brand.json and site/brand/logo.svg; if the client sent a logo (an inbox file named or looking like a logo; Read shows images), save it with save_asset kind logo, set brand.logo, and build the brand from that logo as rules/custom-site.md says instead of drawing one; if saving it fails, stop and ask Eren, never draw a replacement, with signature animations that come from what this business makes, plus the brand board: tagline, signature motion with brand/signature.html, typeSample), then write every page with write_site_file. If the site already exists, update only what the new information changes.';
+  '4b. If the config template is "custom": read rules/custom-site.md completely, load the design skills (' + "impeccable, design-taste-frontend, ui-ux-pro-max, brand" + ') with the Skill tool, then design the brand identity first (site/brand/brand.json and site/brand/logo.svg; if the client sent a logo (an inbox file named or looking like a logo; Read shows images), save it with save_asset kind logo, set brand.logo, and build the brand from that logo as rules/custom-site.md says instead of drawing one; if saving it fails, stop and ask Eren, never draw a replacement, with signature animations that come from what this business makes, plus the brand board: tagline, signature motion with brand/signature.html, typeSample), then write every page with write_site_file. After build_site, Read the screenshots it lists (phone and desktop) and fix what looks wrong. If the site already exists, update only what the new information changes.';
 
 /** Colours named anywhere in the client's text (any language) are their brand colours, not a suggestion. */
 const COLOUR_RULE =
@@ -108,7 +108,7 @@ export function answersPrompt(slug: string, input: AnswersInput): string {
  * "Prepare site": one job from whatever is known to a passing build. It never invents facts; anything
  * essential that is missing comes back as short questions for Eren, who pastes the answers and runs it again.
  */
-export function autopilotPrompt(slug: string, input: AnswersInput | null, opts: { web?: boolean; askFirst?: boolean } = {}): string {
+export function autopilotPrompt(slug: string, input: AnswersInput | null, opts: { web?: boolean; askFirst?: boolean; libraryName?: string } = {}): string {
   const data = input ? clientDataLines(slug, input).join("\n") : "";
   const askFirst = opts.askFirst ?? false;
   return [
@@ -116,6 +116,9 @@ export function autopilotPrompt(slug: string, input: AnswersInput | null, opts: 
     COLOUR_RULE,
     UNSURE_RULE,
     `0. ${researchStep(opts.web ?? false)}`,
+    ...(opts.libraryName
+      ? [`   Eren chose to start from the library design "${opts.libraryName}": its files are already in site/ and were made for another business. When you design (step 4b), keep its layout, sections, components and motion system, and make everything else this client's: new brand.json, tagline and signature motion from this client's world, the client's logo or a new one, every text and fact from this client only, only this client's pages. The build fails while the other business's name, phone, e-mail or address is still there. These library files do not count as an existing site for the consult-first rule.`]
+      : []),
     ...(askFirst
       ? [
           "   Eren asked to be consulted first: unless the brand and pages already exist, or his latest text clearly settles every open question (or says \"sormadan devam\" / \"sen seç\"), record the facts, then STOP before design and finish with the research summary and questions (rules/research.md, \"Summary format for a research stop\"). Do not build in that case.",
@@ -207,6 +210,21 @@ export function conceptsPrompt(slug: string): string {
 }
 
 /** Completes the brand board (tagline, signature motion, type specimen) without redesigning the brand. */
+/** A library design was copied into site/: keep its craft, make everything else this client's. */
+export function fromLibraryPrompt(slug: string, designName: string): string {
+  return [
+    `Site Factory, client "${slug}". Eren chose the library design "${designName}" for this client; its files are now in site/. It was made for another business.`,
+    "1. get_client_status and read this client's facts. Read rules/custom-site.md completely, then list_site_files and read the pages, css and js.",
+    SKILLS_STEP,
+    "2. Keep what makes the design good: the layout, section structure, components, spacing, motion system and code quality.",
+    "3. Make everything else this client's: a new brand/brand.json from this client's world (concept, palette, fonts if they fit better, visual language, voice, tagline, signature motion and brand/signature.html); the client's own logo if brand.logo is set, otherwise a new brand/logo.svg; every text, list, price, contact detail, page and alt text from this client's facts only. Rename animation ids and illustrations that belonged to the other business.",
+    "4. Pages: only those in this client's config.pages; delete the others with delete_site_file.",
+    "5. build_site. The build fails while any name, phone, e-mail or address of the design's source business is still on the site: replace them. Fix every failed check (at most 4 builds). Do not deploy.",
+    UNSURE_RULE,
+    SUMMARY_RULE,
+  ].join("\n");
+}
+
 /** Eren finds the site plain: redesign every page so the brand is felt everywhere, like the brand board. */
 export function redesignPrompt(slug: string): string {
   return [
@@ -215,7 +233,7 @@ export function redesignPrompt(slug: string): string {
     SKILLS_STEP,
     "2. Keep every fact, price and text from config and content. Keep the brand's concept, palette, fonts and logo unless they are weak; improve them where needed and complete the brand board (tagline, signature, typeSample, brand/signature.html).",
     "3. Rewrite every page and css/js so the site meets every point of \"Signature design\": the signature motion large in the hero, the brand's label system, at least one composed section, the mark used as a graphic, full-width layout, a designed page hero on every page, and a dark/light look built from the palette.",
-    "4. build_site. Fix every failed check and every \"Design depth\" warning, then build again (at most 4 builds). Do not deploy.",
+    "4. build_site. Read the phone and desktop screenshots it lists and fix what looks wrong. Fix every failed check and every \"Design depth\" warning, then build again (at most 4 builds). Do not deploy.",
     "In the summary, name the skills you loaded and describe the hero, the signature motion and the label system in plain Turkish.",
     SUMMARY_RULE,
   ].join("\n");

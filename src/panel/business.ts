@@ -19,6 +19,8 @@ export const BusinessSchema = z.object({
   payment: z.enum(PAYMENT_STATES).default("none"),
   deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
   note: z.string().max(2000).default(""),
+  /** Eren's own labels for grouping clients (e.g. "abim", "acil", "Ankara"). */
+  tags: z.array(z.string().trim().min(1).max(24)).max(8).default([]),
 });
 export type Business = z.infer<typeof BusinessSchema> & { updatedAt?: string };
 

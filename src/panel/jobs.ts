@@ -72,7 +72,7 @@ const MAX_TEXT = 4000;
 
 export type SpawnFn = (command: string, args: readonly string[], options: SpawnOptions) => ChildProcess;
 
-export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false): string[] {
+export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false, readDirs: readonly string[] = []): string[] {
   return [
     "-p",
     "--output-format", "stream-json",
@@ -82,6 +82,8 @@ export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false): str
     "--strict-mcp-config",
     "--allowedTools", [...AGENT_ALLOWED_TOOLS, ...(web ? WEB_TOOLS : [])].join(","),
     "--disallowedTools", [...AGENT_DENIED_TOOLS, ...(web ? [] : WEB_TOOLS)].join(","),
+    // Client folders and the inbox, so Read can open logos, uploads and screenshots (writing stays denied).
+    ...readDirs.flatMap((d) => ["--add-dir", d]),
   ];
 }
 
@@ -134,6 +136,7 @@ export class JobRunner {
     private readonly onFinish: (slug: string, record: JobRecord) => void = () => {},
     /** Read at the start of every job, so the setting applies from the next job on. */
     private readonly webResearch: () => boolean = () => false,
+    private readonly readDirs: readonly string[] = [],
   ) {}
 
   running(): Job | undefined {
@@ -197,7 +200,7 @@ export class JobRunner {
     this.push(job, "info", "Agent başlatıldı (sadece site-factory araçları; shell ve dosya düzenleme kapalı).");
     let child: ChildProcess;
     try {
-      child = this.spawn(this.claudeBin, claudeArgs(LONG_JOBS.has(kind) ? MAX_AUTOPILOT_TURNS : undefined, this.webResearch()), { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
+      child = this.spawn(this.claudeBin, claudeArgs(LONG_JOBS.has(kind) ? MAX_AUTOPILOT_TURNS : undefined, this.webResearch(), this.readDirs), { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
     } catch (error) {
       this.push(job, "error", `Claude Code başlatılamadı: ${(error as Error).message}`);
       this.finish(job, "failed");

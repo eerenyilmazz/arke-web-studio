@@ -377,6 +377,54 @@ describe("client logo from the panel", () => {
   });
 });
 
+describe("structured edits (Düzenle)", () => {
+  it("saves services itself, gives the agent a narrow instruction, and validates the forms", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth, factory } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "edit-me", businessName: "Edit Me", industry: "barber shop", hostingModel: "managed" }) });
+    tools.updateClientConfig(factory, { slug: "edit-me", patch: { ...COMPLETE_PATCH, template: "custom" } });
+    tools.saveContent(factory, { slug: "edit-me", locale: "en", content: COMPLETE_CONTENT });
+    const post = (type: string, payload: unknown) => fetch(`${base}/api/clients/edit-me/edit/${type}`, { method: "POST", headers: json, body: JSON.stringify(payload) });
+
+    expect((await post("colors", { colors: { primary: "not-a-colour" } })).status).toBe(400);
+    expect((await post("pages", { pages: ["contact"] })).status).toBe(400);
+    expect((await post("text", { page: "home", oldText: "", newText: "x" })).status).toBe(400);
+
+    const r = await post("services", { services: [{ title: "Saç kesimi", price: "400 TL", description: "Yıkama dahil." }, { title: "" }] });
+    expect(r.status).toBe(202);
+    const saved = (await import("node:fs")).readFileSync((await import("node:path")).join(factory.clientsRoot, "edit-me", "content", "en.json"), "utf8");
+    expect(JSON.parse(saved).services).toEqual([{ title: "Saç kesimi", description: "Yıkama dahil.", price: "400 TL" }]);
+    const prompt = calls[0]!.stdin;
+    expect(prompt).toMatch(/1\. Saç kesimi — 400 TL/);
+    expect(prompt).toMatch(/Change nothing else/);
+    expect(calls[0]!.args.join(" ")).toMatch(/--disallowedTools Bash/);
+  });
+});
+
+describe("backups", () => {
+  it("refuses a bad folder, writes a .tar.gz of the clients and lists it", async () => {
+    const { base, auth, factory } = await start();
+    const json = { ...auth, "Content-Type": "application/json" };
+    expect((await fetch(`${base}/api/backups`, { method: "POST", headers: auth })).status).toBe(400);
+    expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ backupDir: "relative/dir" }) })).status).toBe(400);
+    expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ backupDir: factory.clientsRoot }) })).status).toBe(400);
+    const os = await import("node:os");
+    const { mkdtempSync } = await import("node:fs");
+    const dir = mkdtempSync(path.join(os.tmpdir(), "sf-backup-"));
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "keep-me", businessName: "Keep", industry: "bakery", hostingModel: "managed" }) });
+    expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ backupDir: dir }) })).status).toBe(200);
+    const r = await fetch(`${base}/api/backups`, { method: "POST", headers: auth });
+    expect(r.status).toBe(201);
+    const { file } = (await r.json()) as { file: string };
+    expect(file).toMatch(/^site-factory-yedek-.*\.tar\.gz$/);
+    const listed = (await (await fetch(`${base}/api/backups`, { headers: auth })).json()) as { backups: { file: string }[] };
+    expect(listed.backups[0]!.file).toBe(file);
+    const { execFileSync } = await import("node:child_process");
+    expect(execFileSync("tar", ["-tzf", path.join(dir, file)]).toString()).toMatch(/keep-me\/site\.config\.json/);
+  });
+});
+
 describe("earlier inputs are kept between agent jobs", () => {
   it("gives the next job everything pasted before, as client data", async () => {
     const calls: SpawnCall[] = [];

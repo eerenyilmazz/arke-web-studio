@@ -12,6 +12,15 @@ const FILE = ".panel-settings.json";
 export const SettingsSchema = z.object({
   /** The agent may search the web and read pages (business research, sector examples). */
   webResearch: z.boolean().default(true),
+  /** Who the proposal (Teklif) is from. */
+  sender: z.object({
+    name: z.string().trim().max(80).default(""),
+    email: z.string().trim().max(120).default(""),
+    phone: z.string().trim().max(40).default(""),
+    web: z.string().trim().max(120).default(""),
+  }).default({ name: "", email: "", phone: "", web: "" }),
+  /** Folder for automatic backups (a path on this computer, e.g. a OneDrive folder under /mnt/c). Empty = off. */
+  backupDir: z.string().trim().max(400).default(""),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 

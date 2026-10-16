@@ -465,9 +465,10 @@ body.agent-busy .brand-mark .f3 { animation-delay: .4s; }
 }
 
 @media print {
-  /* Only the brand board is printed (Yazdır / PDF), in its own colours. */
+  /* Only the brand board or the proposal is printed (Yazdır / PDF), in its own colours. */
   body * { visibility: hidden; }
-  .board, .board * { visibility: visible; }
+  .board, .board *, .proposal, .proposal * { visibility: visible; }
+  .proposal { position: absolute; inset: 0 0 auto 0; box-shadow: none !important; border: 0 !important; }
   .board { position: absolute; inset: 0 0 auto 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .board-card { break-inside: avoid; }
   .board-btn { display: none; }
@@ -482,3 +483,59 @@ body.agent-busy .brand-mark .f3 { animation-delay: .4s; }
 .files.thumbs img { width: 56px; height: 40px; object-fit: contain; background: #fff; border-radius: 6px; border: 1px solid var(--line); }
 .files.thumbs .meta { display: grid; min-width: 0; }
 .files.thumbs .meta span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Dashboard grouping and the design library */
+.dash-tools { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; align-items: center; margin: .25rem 0 1rem; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); color: var(--ink-2); padding: .45rem .8rem; font: inherit; font-size: .88rem; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.chip { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: .25rem .7rem; font: inherit; font-size: .82rem; cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); }
+span.chip { cursor: default; }
+.group { margin-bottom: 1.5rem; }
+.group-title { text-transform: capitalize; margin: .5rem 0 .75rem; font-size: 1rem; color: var(--ink-2); }
+.lib-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.lib-card { display: grid; gap: .55rem; align-content: start; }
+.lib-controls .row { gap: .5rem; flex-wrap: wrap; }
+.lib-controls input, .lib-controls select { flex: 1 1 220px; }
+
+/* Düzenle tab */
+.edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem; align-items: start; }
+.edit-grid .wide { grid-column: 1 / -1; }
+.stack-sm { display: grid; gap: .45rem; }
+.colour-row { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: .75rem; text-transform: capitalize; }
+.colour-row input[type="color"] { width: 44px; height: 36px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: none; cursor: pointer; }
+.svc-rows { display: grid; gap: .5rem; }
+.svc-row { display: grid; grid-template-columns: 1.2fr .7fr 2fr auto; gap: .5rem; align-items: center; }
+@media (max-width: 760px) { .svc-row { grid-template-columns: 1fr 1fr; } .svc-row input:nth-child(3) { grid-column: 1 / -1; } }
+
+/* Teklif */
+.proposal { background: #fff; color: #151719; border: 1px solid var(--line); border-radius: 16px; padding: clamp(1.25rem, 4vw, 3rem); max-width: 860px; display: grid; gap: 1.5rem; font-size: 15px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.proposal h1 { font-size: 2rem; letter-spacing: -0.02em; color: #151719; }
+.proposal h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .1em; color: #a63f17; margin-bottom: .5rem; font-family: "Geist Mono", ui-monospace, monospace; }
+.proposal ul { margin: .4rem 0 0; padding-left: 1.2rem; display: grid; gap: .25rem; }
+.proposal [contenteditable]:hover, .proposal [contenteditable]:focus { outline: 1px dashed #f27a4b; outline-offset: 2px; }
+.p-head { display: flex; justify-content: space-between; gap: 1.5rem; align-items: flex-start; border-bottom: 2px solid #151719; padding-bottom: 1rem; }
+.p-kicker { font-family: "Geist Mono", ui-monospace, monospace; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: #6b7380; }
+.p-meta { color: #6b7380; font-size: .85rem; margin-top: .25rem; }
+.p-logo { max-width: 180px; max-height: 80px; object-fit: contain; }
+.p-tag { font-size: 1.15rem; font-weight: 600; margin-bottom: .5rem; }
+.p-swatches { display: flex; flex-wrap: wrap; gap: .6rem 1rem; font-family: "Geist Mono", ui-monospace, monospace; font-size: .75rem; text-transform: uppercase; }
+.p-swatches span { display: inline-flex; align-items: center; gap: .4rem; }
+.p-swatches i { width: 18px; height: 18px; border-radius: 5px; border: 1px solid rgb(0 0 0 / .12); display: inline-block; }
+.p-price table { border-collapse: collapse; width: 100%; }
+.p-price th { text-align: left; font-weight: 500; color: #6b7380; width: 9rem; padding: .45rem 0; vertical-align: top; }
+.p-price td { padding: .45rem 0; border-bottom: 1px solid #e3e6eb; }
+.p-big { font-size: 1.6rem; font-weight: 700; }
+.p-foot { border-top: 1px solid #e3e6eb; padding-top: .8rem; color: #4a5260; font-size: .85rem; }
+
+/* Form fields in the edit, settings and library forms (inputs without a type attribute included). */
+:is(.edit-grid, .settings, .lib-controls, .biz-form) :is(input:not([type]), input[type="text"], input[type="email"], input[type="tel"], input[type="number"], input[type="date"], textarea, select) {
+  display: block; width: 100%; margin-top: .3rem; padding: .5rem .65rem; border: 1px solid var(--line-strong); border-radius: 8px; font: inherit; font-weight: 400; background: var(--surface); color: var(--ink);
+}
+:is(.edit-grid, .settings, .lib-controls) label:not(.check):not(.colour-row) { display: grid; gap: .1rem; font-size: .85rem; font-weight: 600; }
+.svc-row input { margin-top: 0 !important; }
+.edit-grid textarea { min-height: 4.5rem; resize: vertical; }
+.lib-cards > .card { margin: 0; }
+.lib-shot { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); }
