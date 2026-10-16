@@ -410,8 +410,12 @@ export function checkBrand(distDir: string, clientLogo: string | null = null): C
     .join("\n");
   const lower = code.toLowerCase();
   const usage: string[] = [];
-  const logoUsed = /brand\/logo\.svg/.test(code) || /<svg[^>]*class=["'][^"']*logo/i.test(code) || (ownLogo !== null && code.includes(`/${ownLogo}`));
-  if (!logoUsed) usage.push(ownLogo ? `the client's logo (/${ownLogo}) is not used on the pages` : "the logo (brand/logo.svg) is not used on the pages");
+  // With a client logo, only that file counts: a drawn logo (brand/logo.svg or an inline "logo" SVG) must not replace it.
+  const logoUsed = ownLogo !== null
+    ? code.includes(`/${ownLogo}`)
+    : /brand\/logo\.svg/.test(code) || /<svg[^>]*class=["'][^"']*logo/i.test(code);
+  if (!logoUsed) usage.push(ownLogo ? `the client's own logo (/${ownLogo}) is not used on the pages: use that file in the header and as the favicon, never a drawn replacement` : "the logo (brand/logo.svg) is not used on the pages");
+  if (ownLogo !== null && (/brand\/logo\.svg/.test(code) || existsSync(path.join(distDir, LOGO_FILE)))) usage.push(`the client has a logo (/${ownLogo}): delete site/${LOGO_FILE} and do not use a drawn logo`);
   const missingColours = Object.entries(brand.palette).filter(([, hex]) => !lower.includes(hex.toLowerCase()));
   if (missingColours.length > 0) usage.push(`brand colours not used in the code: ${missingColours.map(([n]) => n).join(", ")}`);
   const missingAnims = brand.animations.filter((a) => !code.includes(a.id));

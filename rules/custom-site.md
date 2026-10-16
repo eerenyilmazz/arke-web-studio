@@ -96,7 +96,10 @@ never replaced. Look at the file with Read (it shows you the image), then:
   becomes the motion; a script wordmark asks for a handwritten line), and say in `concept` that it comes from the logo,
 - use the file itself in the header and as the favicon (`<img src="/assets/<logo file>" alt="…">`), large in the
   hero or brand section too. Do **not** write `brand/logo.svg` and never redraw or "improve" the client's logo.
-- If the logo is low quality (tiny, blurry), still use it and say so in the summary so Eren can ask for a better file.
+- If the logo is low quality (tiny, blurry) or sits on a photo or coloured background (a JPG with a grey backdrop),
+  still use that file: place it on a light plate (a rounded card in the logo's background tone) in the header and
+  hero, and ask Eren in the summary for a transparent PNG or SVG. Drawing your own version is never the fix.
+- The build fails when the client's logo file is not used, or when `brand/logo.svg` (a drawn logo) exists next to it.
 
 Then (only when the client has no logo) write `site/brand/logo.svg`: a real mark plus wordmark drawn in SVG (shapes and paths, using the brand
 colours), with a `viewBox`, readable at 32 px and on light and dark backgrounds. No `<script>`, no event attributes,

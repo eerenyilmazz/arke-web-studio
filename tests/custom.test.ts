@@ -204,10 +204,15 @@ describe("client's own logo", () => {
     writeFileSync(path.join(dir, "index.html"), `<style>${CSS}</style><h1 class="jar-fill"></h1><div data-anim="brine-bubbles"></div>`);
     expect(checkBrand(dir)[0]!.status).toBe("fail");
     let r = checkBrand(dir, "assets/logo.png");
-    expect(r[0]!.detail).toMatch(/client's logo/);
+    expect(r[0]!.detail).toMatch(/client's own logo/);
     writeFileSync(path.join(dir, "index.html"), `<img src="/assets/logo.png" alt="x"><style>${CSS}</style><h1 class="jar-fill"></h1><div data-anim="brine-bubbles"></div>`);
     r = checkBrand(dir, "assets/logo.png");
     expect(r[0]!.status).toBe("pass");
+    // A drawn logo next to the client's logo is refused.
+    writeFileSync(path.join(dir, "brand", "logo.svg"), "<svg/>");
+    r = checkBrand(dir, "assets/logo.png");
+    expect(r[0]!.status).toBe("fail");
+    expect(r[0]!.detail).toMatch(/do not use a drawn logo/);
   });
 });
 
