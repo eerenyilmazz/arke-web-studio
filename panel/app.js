@@ -12,7 +12,31 @@ const STAGES = [
   { id: "ready-to-deploy", label: "Yayın onayı", long: "Yayına hazır" },
   { id: "live", label: "Yayında", long: "Yayında" },
 ];
-const TABS = [["akis", "Akış"], ["sorular", "Sorular"], ["cevaplar", "Cevaplar"], ["metinler", "Metinler"], ["build", "Build"], ["yayin", "Onay ve yayın"]];
+const TABS = [["sohbet", "Sohbet"], ["site", "Site ve yayın"], ["bilgiler", "Bilgiler"]];
+/** Old tab links (bookmarks, earlier versions) land on the tab that now holds that content. */
+const OLD_TABS = { akis: "sohbet", build: "site", yayin: "site", sorular: "bilgiler", cevaplar: "bilgiler", metinler: "bilgiler" };
+/** Four steps the operator thinks in; the nine internal stages map onto them. */
+const STEPS = [
+  { label: "Bilgiler", stages: ["collecting-answers"] },
+  { label: "Site hazırlanıyor", stages: ["design", "content", "build"] },
+  { label: "Senin onayın", stages: ["awaiting-content-approval", "awaiting-visual-approval", "awaiting-production-approval", "ready-to-deploy"] },
+  { label: "Yayında", stages: ["live"] },
+];
+/** Plain status per stage for lists and cards. tone: who acts next (you / client / agent / done). */
+const PLAIN = {
+  "collecting-answers": { text: "Bilgi bekleniyor", tone: "client" },
+  design: { text: "Hazırlanıyor", tone: "you" },
+  content: { text: "Hazırlanıyor", tone: "you" },
+  build: { text: "Oluşturulmayı bekliyor", tone: "you" },
+  "awaiting-content-approval": { text: "Siteye bakıp onayla", tone: "you" },
+  "awaiting-visual-approval": { text: "Siteye bakıp onayla", tone: "you" },
+  "awaiting-production-approval": { text: "Önizleme / müşteri onayı", tone: "you" },
+  "ready-to-deploy": { text: "Canlıya almaya hazır", tone: "you" },
+  live: { text: "Yayında", tone: "done" },
+  unreadable: { text: "Dosyası okunamadı", tone: "bad" },
+};
+function plainOf(stage) { return PLAIN[stage] || { text: stage, tone: "you" }; }
+function stepIndex(stage) { const i = STEPS.findIndex((s) => s.stages.includes(stage)); return i < 0 ? 0 : i; }
 const LANG_NAMES = { en: "İngilizce", tr: "Türkçe", de: "Almanca", fr: "Fransızca", es: "İspanyolca", it: "İtalyanca", pl: "Lehçe", ar: "Arapça" };
 const APPROVAL_NAMES = { content: "İçerik", visual: "Görsel", production: "Yayın" };
 const AVATAR_COLORS = ["#5b2333", "#1d4e89", "#2c6e8f", "#6b7a2e", "#8a4b16", "#6a3d8f", "#2f6b52", "#8f2d56"];
@@ -52,6 +76,8 @@ const ICON = {
   send: ["M12 19V5M5 12l7-7 7 7"],
   more: ["M5 12h.01M12 12h.01M19 12h.01"],
   check: ["m5 12 4 4L19 6"],
+  plus: ["M12 5v14M5 12h14"],
+  eye: ["M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z", "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"],
 };
 
 function toast(message, isError = false) {
@@ -140,7 +166,7 @@ $("#search").addEventListener("input", (e) => { state.search = e.target.value.to
 function route() {
   const parts = location.hash.replace(/^#\/?/, "").split("/");
   if (parts[0] === "new") return { view: "new" };
-  if (parts[0] === "c" && parts[1]) return { view: "client", slug: parts[1], tab: parts[2] || "akis" };
+  if (parts[0] === "c" && parts[1]) return { view: "client", slug: parts[1], tab: OLD_TABS[parts[2]] || parts[2] || "sohbet" };
   return { view: "home" };
 }
 
@@ -172,7 +198,7 @@ function groupOf(stage) {
 function renderSidebar() {
   const r = route();
   const nav = $("#clients");
-  const list = state.clients.filter((c) => !state.search || c.slug.includes(state.search));
+  const list = state.clients.filter((c) => !state.search || c.slug.includes(state.search) || (c.name || "").toLowerCase().includes(state.search));
   if (!list.length) {
     nav.replaceChildren(h("p", { class: "empty-nav", text: state.clients.length ? "Eşleşen müşteri yok." : "Henüz müşteri yok." }));
     return;
@@ -185,8 +211,8 @@ function renderSidebar() {
         h("p", { class: "group-title", text: g }),
         ...items.map((c) =>
           h("a", { class: "client-link", href: `#/c/${c.slug}`, "aria-current": r.slug === c.slug ? "page" : null },
-            avatar(c.slug, c.slug, false, isBusy() && state.running.slug === c.slug),
-            h("span", { class: "meta" }, h("span", { class: "name", text: c.slug }), h("span", { class: "sub", text: stageInfo(c.stage).long })),
+            avatar(c.slug, c.name || c.slug, false, isBusy() && state.running.slug === c.slug),
+            h("span", { class: "meta" }, h("span", { class: "name", text: c.name || c.slug }), h("span", { class: "sub", text: isBusy() && state.running.slug === c.slug ? "Agent çalışıyor…" : plainOf(c.stage).text })),
           )),
       ];
     }),
@@ -195,12 +221,55 @@ function renderSidebar() {
 
 // ---------------------------------------------------------------- home and new client
 
+/** Home: who needs what, at a glance. One card per client with its next step. */
 function renderHome() {
-  return h("section", { class: "empty" },
-    h("h1", { text: state.clients.length ? "Bir müşteri seçin" : "İlk müşteriyi ekleyin" }),
-    h("p", { class: "muted", text: state.clients.length ? "Soldan bir müşteri seçin. 'Senin sıran' grubundakiler sizden bir adım bekliyor." : "'Yeni müşteri' ile başlayın: panel soru formunu hazırlar, cevapları agent işler, site şablondan çıkar." }),
-    !state.clients.length && h("p", { style: "margin-top:1.2rem" }, h("a", { class: "btn btn-primary btn-lg", href: "#/new" }, "Yeni müşteri")),
+  if (!state.clients.length) {
+    return h("section", { class: "empty" },
+      h("h1", { text: "İlk müşteriyi ekleyin" }),
+      h("p", { class: "muted", text: "Adını ve sektörünü yaz, bildiklerini yapıştır; agent markayı tasarlar ve siteyi hazırlar." }),
+      h("p", { style: "margin-top:1.2rem" }, h("a", { class: "btn btn-primary btn-lg", href: "#/new" }, "Yeni müşteri")),
+    );
+  }
+  const running = isBusy() ? state.running.slug : null;
+  const bucket = (c) => (c.slug === running ? "agent" : plainOf(c.stage).tone);
+  const COUNTS = [["you", "Senin sıran", "Bir adım seni bekliyor"], ["agent", "Agent çalışıyor", "Şu an hazırlanıyor"], ["client", "Müşteride", "Bilgi bekleniyor"], ["done", "Yayında", "Canlı siteler"]];
+  const order = { agent: 0, you: 1, bad: 2, client: 3, done: 4 };
+  const cards = [...state.clients].sort((a, b) => order[bucket(a)] - order[bucket(b)]);
+  return h("section", { class: "dash" },
+    h("div", { class: "dash-head" },
+      h("div", {}, h("h1", { text: "Müşteriler" }), h("p", { class: "muted", text: "Sıradaki işi olan müşteriler en üstte." })),
+      h("a", { class: "btn btn-primary btn-lg", href: "#/new" }, svg(ICON.plus, 18, 2.4), "Yeni müşteri"),
+    ),
+    h("div", { class: "counts" }, ...COUNTS.map(([key, label, sub]) => {
+      const n = state.clients.filter((c) => bucket(c) === key).length;
+      return h("div", { class: `count tone-${key}` }, h("strong", { text: String(n) }), h("span", { class: "label", text: label }), h("span", { class: "sub", text: sub }));
+    })),
+    h("div", { class: "client-cards" }, ...cards.map((c) => {
+      const b = bucket(c);
+      const step = stepIndex(c.stage);
+      return h("a", { class: `client-card tone-${b}`, href: `#/c/${c.slug}` },
+        h("div", { class: "top" }, avatar(c.slug, c.name || c.slug, false, b === "agent"), h("span", { class: `pill tone-${b}`, text: b === "agent" ? "Agent çalışıyor" : plainOf(c.stage).text })),
+        h("strong", { class: "name", text: c.name || c.slug }),
+        h("span", { class: "sub", text: c.industry || "" }),
+        h("div", { class: "mini-steps", "aria-label": `Adım ${step + 1} / ${STEPS.length}: ${STEPS[step].label}` }, ...STEPS.map((s, i) => h("span", { class: i < step ? "done" : i === step ? "now" : "" }))),
+        h("span", { class: "next", text: nextHint(c, b) }),
+      );
+    })),
   );
+}
+
+/** One-line next step shown on a client card. */
+function nextHint(c, tone) {
+  if (tone === "agent") return "Bitince bildirim düşer";
+  switch (c.stage) {
+    case "collecting-answers": return "Bilgileri yapıştır → Siteyi hazırla";
+    case "design": case "content": case "build": return "Siteyi hazırla'ya bas";
+    case "awaiting-content-approval": case "awaiting-visual-approval": return "Siteye bak, beğenirsen onayla";
+    case "awaiting-production-approval": return "Önizlemeyi müşteriye gönder";
+    case "ready-to-deploy": return "Canlıya al";
+    case "live": return "Değişiklik için yaz";
+    default: return "Aç";
+  }
 }
 
 function slugify(name) {
@@ -311,14 +380,15 @@ async function renderClient(view, slug, tab) {
   state.detail = d;
   if (d.running) { state.running = d.running; setStatus(d.running); }
   const stage = d.status.stage;
-  const idx = STAGES.findIndex((s) => s.id === stage);
+  const step = stepIndex(stage);
   const name = d.business.name || slug;
+  if (!TABS.some(([id]) => id === tab)) tab = "sohbet";
 
   const menu = h("details", { class: "menu" },
     h("summary", { class: "icon-btn", "aria-label": "Diğer işlemler" }, svg(ICON.more, 20, 3)),
     h("div", { class: "menu-items" },
-      h("button", { type: "button", disabled: !d.distReady, onclick: () => openPreview(slug) }, "Önizlemeyi aç"),
-      h("button", { type: "button", disabled: isBusy(), onclick: () => runTask(slug, "build", {}) }, "Build al"),
+      h("button", { type: "button", disabled: isBusy(), onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
+      h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları agent düzeltsin"),
       h("button", { type: "button", class: "danger", onclick: () => archiveClient(slug, stage) }, "Müşteriyi arşivle"),
     ),
   );
@@ -339,23 +409,20 @@ async function renderClient(view, slug, tab) {
         ),
       ),
       h("div", { class: "row" },
-        h("button", { class: "btn", type: "button", disabled: !d.distReady, onclick: () => openPreview(slug) }, "Önizlemeyi aç"),
+        h("button", { class: d.distReady ? "btn btn-primary" : "btn", type: "button", disabled: !d.distReady, title: d.distReady ? "" : "Site henüz oluşturulmadı", onclick: () => openPreview(slug) }, svg(ICON.eye, 18, 2), "Siteye bak"),
         menu,
       ),
     ),
-    h("ol", { class: "stepper", "aria-label": `Aşama ${idx + 1} / ${STAGES.length}: ${stageInfo(stage).long}` },
-      ...STAGES.map((s, i) => h("li", { class: i < idx ? "done" : i === idx ? "now" : "", "aria-current": i === idx ? "step" : null }, h("span", { class: "bar" }), h("span", { class: "label", text: s.label })))),
-    nowCard(d),
-    upgradeBanner(d),
+    h("ol", { class: "steps4", "aria-label": `Adım ${step + 1} / ${STEPS.length}: ${STEPS[step].label}` },
+      ...STEPS.map((s, i) => h("li", { class: i < step ? "done" : i === step ? "now" : "", "aria-current": i === step ? "step" : null },
+        h("span", { class: "dot", text: i < step ? "✓" : String(i + 1) }), h("span", { class: "label", text: s.label })))),
+    ...[nowCard(d), upgradeBanner(d)].filter(Boolean),
     h("nav", { class: "tabs", "aria-label": "Bölümler" }, ...TABS.map(([id, label]) => h("a", { href: `#/c/${slug}/${id}`, "aria-current": id === tab ? "page" : null, text: label }))),
     body,
   );
 
-  if (tab === "sorular") tabQuestions(body, d);
-  else if (tab === "cevaplar") await tabAnswers(body, d);
-  else if (tab === "metinler") tabContent(body, d);
-  else if (tab === "build") tabBuild(body, d);
-  else if (tab === "yayin") tabPublish(body, d);
+  if (tab === "site") tabSite(body, d);
+  else if (tab === "bilgiler") await tabInfo(body, d);
   else tabFlow(body, d);
 
   if (isBusy() && state.running.slug === slug) startPolling();
@@ -494,7 +561,7 @@ function tabFlow(body, d) {
   const feed = h("div", { class: "feed", id: "feed" });
   drawFeed(feed, d);
   const busy = isBusy();
-  const composer = h("textarea", { id: "composer", rows: 2, placeholder: "Agent'a talimat yaz: ör. Hero başlığını kısalt, hizmetlere gelinlik temizliğini ekle." });
+  const composer = h("textarea", { id: "composer", rows: 2, placeholder: "Agent'a yaz: ör. Başlığı kısalt, menüye mantı ekle, renkleri biraz koyulaştır." });
   // The page re-renders when a job ends; the draft lives in state so typing is never lost.
   const hadFocus = document.activeElement?.id === "composer";
   composer.value = state.composer[slug] || "";
@@ -516,16 +583,15 @@ function tabFlow(body, d) {
       feed,
       h("form", { class: "composer", onsubmit: (e) => { e.preventDefault(); send(); } },
         h("div", { class: "chips" },
-          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "autopilot", {}) }, "Siteyi hazırla"),
-          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "design-content", {}) }, "Tasarım ve metinler"),
-          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Build al"),
-          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Build hatalarını düzelt"),
+          h("span", { class: "chips-label", text: "Hızlı:" }),
+          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "autopilot", {}) }, "Eksikleri tamamla ve hazırla"),
+          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
+          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları düzelt"),
         ),
         h("label", { for: "composer", class: "sr-only" }, "Agent'a talimat"),
         h("div", { class: "box" }, composer, h("button", { class: "send", type: "submit", "aria-label": "Gönder (Ctrl+Enter)", disabled: busy }, svg(ICON.send, 18, 2.4))),
       ),
     ),
-    rail(d),
   ));
 }
 
@@ -628,9 +694,8 @@ function drawFeed(feed, d) {
     items.push(agentBlock(running, true));
     state.logSince = running.logTotal ?? (running.log || []).length;
   }
-  const card = running ? null : stageCard(d);
-  if (card) items.push(card);
-  if (!items.length) items.push(h("div", { class: "feed-empty" }, h("p", { text: "Henüz agent işi yok." }), h("p", { class: "small", text: "Müşterinin cevapları gelince Cevaplar sekmesinden girin ya da aşağıya talimat yazın." })));
+  // The approval step itself is shown once, in the "now" card above the tabs.
+  if (!items.length) items.push(h("div", { class: "feed-empty" }, h("p", { text: "Henüz agent ile konuşma yok." }), h("p", { class: "small", text: "Yukarıdaki kutuya bildiklerini yapıştırıp 'Siteyi hazırla'ya bas ya da aşağıya yaz." })));
   feed.replaceChildren(...items);
 }
 
@@ -671,12 +736,10 @@ function rail(d) {
       d.design && h("p", { class: "small", style: "margin-top:0.6rem", text: `${d.design.fonts?.heading || ""} / ${d.design.fonts?.body || ""}` }),
       d.design && h("p", { class: "small muted", text: d.design.style || "" }),
     ),
-    h("section", { class: "card" }, h("h3", { text: "Onaylar" }),
-      h("div", { class: "row" }, ...d.approvals.map((a) => h("span", { class: `badge ${a.valid ? "ok" : "skip"}`, text: `${APPROVAL_NAMES[a.kind]}${a.valid ? " ✓" : ""}` })))),
     h("section", { class: "card" },
-      h("h3", { text: "Bilgiler" }),
+      h("h3", { text: "Durum" }),
       h("dl", { class: "kv" },
-        h("div", {}, h("dt", { text: "Kalite" }), h("dd", { text: b ? (b.passed ? "Build geçti" : "Kontroller kaldı") : "Build yok" })),
+        h("div", {}, h("dt", { text: "Kontroller" }), h("dd", { text: b ? (b.passed ? "Geçti" : "Kaldı") : "Site yok" })),
         h("div", {}, h("dt", { text: "Eksik alan" }), h("dd", { text: String(d.status.config.missing.length) })),
         h("div", {}, h("dt", { text: "Gelen dosya" }), h("dd", { text: String(d.inbox.length) })),
         h("div", {}, h("dt", { text: "Eşleşmeyen cevap" }), h("dd", { text: String(d.unmapped.length) })),
@@ -688,9 +751,43 @@ function rail(d) {
   );
 }
 
+// ---------------------------------------------------------------- tab: site and publish
+
+/** Everything about the built site in one place: look, checks, approvals, publishing. */
+function tabSite(body, d) {
+  const look = h("div", { class: "site-grid" });
+  body.append(look);
+  look.append(rail(d));
+  const right = h("div");
+  look.append(right);
+  tabPublish(right, d);
+  tabBuild(right, d);
+}
+
+// ---------------------------------------------------------------- tab: information
+
+/** What the agent knows: the texts on the site, the answers and files, and the optional questionnaire. */
+async function tabInfo(body, d) {
+  const section = (title, sub) => {
+    const el = h("section", { class: "info-section" }, h("div", { class: "info-head" }, h("h2", { text: title }), sub && h("p", { class: "muted small", text: sub })));
+    body.append(el);
+    return el;
+  };
+  if (d.status.openQuestions.length) {
+    const miss = section("Eksik bilgiler", "Cevapları yukarıdaki kutuya yapıştırıp 'Siteyi hazırla'ya bas.");
+    miss.append(h("ul", { class: "missing" }, ...d.status.openQuestions.map((q) => h("li", { title: q.text, text: MISSING_TR[q.id] || q.text }))));
+  }
+  tabContent(section("Sitedeki metinler", "Agent'ın yazdığı metinler. Değiştirmek için Sohbet'e yaz."), d);
+  section("Logo ve fotoğraflar", "Yüklediklerini agent siteye ekler.").append(uploadCard(d.status.slug, d.inbox));
+  const more = h("details", { class: "card advanced" }, h("summary", { text: "Müşteriye soru formu göndermek ya da formu soru soru girmek (isteğe bağlı)" }));
+  body.append(more);
+  tabQuestions(more, d, { compact: true });
+  await tabAnswers(more, d, { compact: true });
+}
+
 // ---------------------------------------------------------------- tab: questions
 
-function tabQuestions(body, d) {
+function tabQuestions(body, d, { compact = false } = {}) {
   const slug = d.status.slug;
   const replyBy = h("input", { type: "text", id: "reply-by", maxlength: 40, placeholder: "ör. Friday 24 October" });
   const out = h("div");
@@ -710,7 +807,7 @@ function tabQuestions(body, d) {
     ),
     out,
   ));
-  if (d.status.openQuestions.length) {
+  if (!compact && d.status.openQuestions.length) {
     body.append(h("section", { class: "card" }, h("h2", { text: "Hâlâ açık sorular" }),
       h("ul", { style: "margin:0;padding-inline-start:1.2rem" }, ...d.status.openQuestions.map((q) => h("li", { text: `${q.text} (${q.round}. tur)` })))));
   }
@@ -718,7 +815,7 @@ function tabQuestions(body, d) {
 
 // ---------------------------------------------------------------- tab: answers
 
-async function tabAnswers(body, d) {
+async function tabAnswers(body, d, { compact = false } = {}) {
   const slug = d.status.slug;
   const round = d.questionnaires.includes(2) ? 2 : 1;
   const q = await guarded(() => api("GET", `/api/clients/${slug}/questionnaire/${round}`));
@@ -747,13 +844,13 @@ async function tabAnswers(body, d) {
   free.placeholder = "Müşterinin e-postasını, WhatsApp mesajını ya da kendi notlarını olduğu gibi yapıştır. Sıra, dil ve biçim önemli değil.\n\nÖr: Kuaför, adı Bella Hair. Kadın kesim 35£, boya 60£'dan başlıyor. Tel 07700 900123, Kingston'da. Renkleri pembe-gri olsun. Instagram @bellahair";
 
   body.append(
-    h("section", { class: "card stack" },
+    compact ? null : h("section", { class: "card stack" },
       h("h2", { text: "Bilgileri yapıştır, agent dağıtsın" }),
       h("p", { class: "muted small", text: "Agent her bilgiyi doğru alana kendisi yerleştirir, siteye girecek metinleri İngilizce yazar. Eksik kalanları uydurmaz; 2. tur formuna ekler." }),
       h("label", { for: "free", class: "sr-only" }, "Müşteri bilgileri"),
       free,
     ),
-    uploadCard(slug, d.inbox),
+    compact ? null : uploadCard(slug, d.inbox),
     h("details", { class: "card" },
       h("summary", { style: "cursor:pointer;font-weight:600" }, `Soru soru gir (isteğe bağlı) · ${round}. tur, ${q.questions.length} soru`),
       h("p", { class: "muted small", style: "margin-top:0.6rem", text: "Müşteri formu soru soru cevapladıysa kullan. Boş bıraktıkların atlanır; 'please suggest' dediyse aynen yaz." }),
@@ -796,8 +893,7 @@ function uploadCard(slug, inbox) {
 // ---------------------------------------------------------------- tab: content review
 
 function tabContent(body, d) {
-  const section = h("section", { class: "card content-view stack" }, h("h2", { text: "Metinleri gözden geçir" }),
-    h("p", { class: "muted small", text: "İçerik onayından önce okuyun. Değişiklik için Akış'tan agent'a yazın." }));
+  const section = h("section", { class: "card content-view stack" });
   for (const [locale, c] of Object.entries(d.content)) {
     if (!c) { section.append(h("p", { class: "muted", text: `${LANG_NAMES[locale] || locale}: henüz metin yok.` })); continue; }
     const rows = [
@@ -821,16 +917,15 @@ function tabBuild(body, d) {
   const b = d.status.lastBuild;
   const busy = isBusy();
   body.append(h("section", { class: "card stack" },
-    h("h2", { text: "Build ve kalite kontrolü" }),
-    h("p", { class: "muted", text: b ? `Son build: ${time(b.at)} · ${b.passed ? "geçti" : "kontroller geçmedi"}` : "Henüz build alınmadı." }),
+    h("h2", { text: "Kalite kontrolü" }),
+    h("p", { class: "muted", text: b ? `Son oluşturma: ${time(b.at)} · ${b.passed ? "kontroller geçti" : "bazı kontroller geçmedi"}` : "Site henüz oluşturulmadı." }),
     h("div", { class: "row" },
-      h("button", { class: "btn btn-primary", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Build al"),
-      h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Agent build alsın ve düzeltsin"),
-      h("button", { class: "btn", type: "button", disabled: !d.distReady, onclick: () => openPreview(slug) }, "Önizlemeyi aç"),
+      h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
+      h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları agent düzeltsin"),
     ),
   ));
   if (d.qualityReport) body.append(qualityTable(d.qualityReport));
-  body.append(h("section", { class: "card" }, h("h2", { text: "Görsel kontrol listesi" }),
+  body.append(h("details", { class: "card advanced" }, h("summary", { text: "Onaylamadan önce bakılacaklar" }),
     h("ul", { style: "margin:0;padding-inline-start:1.2rem" }, ...[
       "5 saniyede işletmenin ne yaptığı ve sonra ne yapılacağı anlaşılıyor.",
       "Her sayfada tek net çağrı; iletişim en fazla bir dokunuş uzakta.",
@@ -842,13 +937,70 @@ function tabBuild(body, d) {
     ].map((t) => h("li", { text: t })))));
 }
 
+/** Short Turkish names for the open questions (the questions themselves are written for the client, in English). */
+const MISSING_TR = {
+  "business-name": "İşletmenin tam adı",
+  services: "Hizmetler / ürünler (3–8 tane, fiyatlarıyla)",
+  audience: "Hedef müşteri ve bölge",
+  logo: "Logo (yoksa yazı logo yapılır)",
+  "brand-colours": "Marka renkleri (yoksa agent seçer)",
+  tone: "Sitenin havası (samimi, premium…)",
+  pages: "Hangi sayfalar olsun",
+  "contact-details": "E-posta, telefon, adres, saatler",
+  whatsapp: "WhatsApp numarası",
+  languages: "Ek dil",
+  about: "Hikâye: nasıl başladı, farkı ne",
+  photos: "Fotoğraflar",
+  "testimonials-faq": "Müşteri yorumları ve sık sorulanlar",
+  "form-recipient": "Form mesajlarının gideceği e-posta",
+  "maps-booking": "Google Maps / online randevu linki",
+  social: "Sosyal medya linkleri",
+  domain: "Alan adı",
+  legal: "Şirket bilgileri (unvan, numara, adres)",
+  "style-references": "Beğendiği / beğenmediği siteler",
+  "ai-crawlers": "Yapay zekâ aramalarına açık mı",
+  rights: "Logo ve fotoğraf kullanım izni",
+  approver: "Siteyi kim onaylayacak",
+};
+
+/** Check names from the quality report, in plain Turkish for the panel. */
+const CHECK_NAMES = [
+  [/^Config and content schema/, "Bilgiler eksiksiz"],
+  [/^Contrast: body/, "Yazı okunurluğu"],
+  [/^Contrast: button/, "Buton okunurluğu"],
+  [/^Contrast: accent/, "Vurgu rengi okunurluğu"],
+  [/^Referenced images/, "Görseller yerinde"],
+  [/^Legal details/, "Yasal bilgiler"],
+  [/^Locales have/, "Diller aynı içerikte"],
+  [/^Contact form/, "İletişim formu"],
+  [/^(Custom site build|Template build)/, "Site oluşturuldu"],
+  [/^Build output/, "Sayfalar üretildi"],
+  [/^HTML basics/, "Başlık, açıklama, alt metin"],
+  [/^HTML warnings/, "Sayfa uyarıları"],
+  [/^Custom code safety/, "Kod güvenliği"],
+  [/^Brand identity/, "Marka kimliği"],
+  [/^Fonts have lowercase/, "Yazı tipi"],
+  [/^Impeccable/, "Tasarım kontrolü (Impeccable)"],
+  [/^Inputs unchanged/, "Oluştururken değişiklik olmadı"],
+];
+
 function qualityTable(md) {
   const rows = md.split("\n").filter((l) => l.startsWith("| ") && !l.startsWith("| Check") && !l.startsWith("| ---")).map((l) => l.slice(2, -2).split(" | "));
   const cls = { PASS: "ok", FAIL: "bad", WARN: "warn", SKIP: "skip" };
   const names = { PASS: "geçti", FAIL: "kaldı", WARN: "uyarı", SKIP: "atlandı" };
-  return h("section", { class: "card" }, h("h2", { text: "Kalite raporu" }),
+  const tr = (n) => {
+    for (const [re, t] of CHECK_NAMES) if (re.test(n)) return t;
+    return n;
+  };
+  const counts = { PASS: 0, FAIL: 0, WARN: 0, SKIP: 0 };
+  for (const [, r] of rows) counts[r] = (counts[r] || 0) + 1;
+  const issues = rows.filter(([, r]) => r === "FAIL" || r === "WARN");
+  return h("section", { class: "card stack" },
+    h("div", { class: "row" }, h("span", { class: "badge ok", text: `${counts.PASS} geçti` }), counts.WARN ? h("span", { class: "badge warn", text: `${counts.WARN} uyarı` }) : null, counts.FAIL ? h("span", { class: "badge bad", text: `${counts.FAIL} kaldı` }) : null),
+    issues.length ? h("ul", { class: "issues" }, ...issues.map(([n, r, detail]) => h("li", {}, h("span", { class: `badge ${cls[r]}`, text: names[r] }), h("strong", { text: tr(n) }), h("span", { class: "muted small", text: (detail || "").replace(/\\\|/g, "|") })))) : h("p", { class: "muted small", text: "Sorun yok." }),
+    h("details", {}, h("summary", { class: "small", text: "Bütün kontroller" }),
     h("div", { style: "overflow-x:auto" }, h("table", {}, h("thead", {}, h("tr", {}, h("th", { text: "Kontrol" }), h("th", { text: "Sonuç" }), h("th", { text: "Ayrıntı" }))),
-      h("tbody", {}, ...rows.map(([name, result, detail]) => h("tr", {}, h("td", { text: name }), h("td", {}, h("span", { class: `badge ${cls[result] || "skip"}`, text: names[result] || result })), h("td", { text: (detail || "").replace(/\\\|/g, "|") })))))));
+      h("tbody", {}, ...rows.map(([name, result, detail]) => h("tr", {}, h("td", { text: tr(name) }), h("td", {}, h("span", { class: `badge ${cls[result] || "skip"}`, text: names[result] || result })), h("td", { text: (detail || "").replace(/\\\|/g, "|") }))))))));
 }
 
 // ---------------------------------------------------------------- tab: approvals and publish
@@ -858,21 +1010,33 @@ function tabPublish(body, d) {
   const dry = h("input", { type: "checkbox", id: "dry" });
   const busy = isBusy();
   const ld = d.lastDeploy;
+  const site = d.approvals.filter((a) => a.kind !== "production");
+  const prod = d.approvals.find((a) => a.kind === "production");
+  const siteOk = site.every((a) => a.valid);
   body.append(
     h("section", { class: "card stack" },
-      h("h2", { text: "Onaylar" }),
-      h("p", { class: "muted small", text: "Onaylar güvenlik için sadece terminalden verilir (agent veremez). Komutu kopyalayıp WSL terminalinde factory klasöründe çalıştırın, sorulduğunda kısa adı yazın. Her değişiklik onayları sıfırlar." }),
+      h("h2", { text: "Onay" }),
+      h("p", { class: "muted small", text: "Güvenlik için onayı sadece sen verirsin: komutu kopyala, WSL terminalinde site-factory klasöründe çalıştır, sorulunca kısa adı yaz. Sitede her değişiklik onayı sıfırlar." }),
+      h("ol", { class: "approve-steps" },
+        h("li", { class: siteOk ? "ok" : "" },
+          h("div", {}, h("strong", { text: "1. Siteyi onayla" }), h("span", { class: "muted small", text: " metin ve görünüm birlikte" })),
+          siteOk ? h("span", { class: "badge ok", text: "onaylandı" }) : h("span", { class: "cmd" }, h("code", { text: d.siteApproveCommand }), copyButton(d.siteApproveCommand))),
+        prod && h("li", { class: prod.valid ? "ok" : "" },
+          h("div", {}, h("strong", { text: "2. Yayın onayı" }), h("span", { class: "muted small", text: " müşteri önizlemeyi beğenince" })),
+          prod.valid ? h("span", { class: "badge ok", text: "onaylandı" }) : h("span", { class: "cmd" }, h("code", { text: prod.command }), copyButton(prod.command))),
+      ),
+      h("details", { class: "small" }, h("summary", { text: "Ayrı ayrı onay komutları" }),
       h("ul", { class: "approvals" }, ...d.approvals.map((a) =>
         h("li", {},
           h("strong", { text: APPROVAL_NAMES[a.kind] }),
           h("span", { class: `badge ${a.valid ? "ok" : "skip"}`, text: a.valid ? `verildi · ${time(a.at)}` : "yok" }),
           h("span", { class: "cmd" }, h("code", { text: a.command }), copyButton(a.command)),
-        ))),
-      h("button", { class: "btn btn-sm", type: "button", onclick: render }, "Durumu yenile"),
+        )))),
+      h("button", { class: "btn btn-sm", type: "button", onclick: render }, "Onayı verdim, yenile"),
     ),
     h("section", { class: "card stack" },
       h("h2", { text: "Yayın" }),
-      h("p", { class: "muted small", text: "Önizleme: içerik ve görsel onayı gerekir; çıkan linki müşteriye gönderin. Canlı: ayrıca yayın onayı gerekir." }),
+      h("p", { class: "muted small", text: "Önizleme: site onayından sonra geçici bir adreste açılır, linki müşteriye gönder. Canlı: ayrıca yayın onayı gerekir." }),
       h("label", { class: "choice", for: "dry" }, dry, "Deneme (hiçbir şey yüklemeden kontrol et)"),
       h("div", { class: "row" },
         h("button", { class: "btn btn-primary", type: "button", disabled: busy, onclick: () => runTask(slug, "deploy", { target: "preview", dryRun: dry.checked }) }, "Önizleme yayınla"),

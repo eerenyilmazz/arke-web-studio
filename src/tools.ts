@@ -40,7 +40,9 @@ export function listClients(factory: FactoryConfig) {
     .map((e) => {
       try {
         const s = clientStatus(factory, e.name);
-        return { slug: e.name, stage: s.stage };
+        // Name and sector for the panel's list (additive fields; agents ignore them).
+        const draft = readDraftConfig(clientPaths(factory.clientsRoot, e.name)) as { business?: { name?: string; industry?: string } };
+        return { slug: e.name, stage: s.stage, name: draft.business?.name ?? e.name, industry: draft.business?.industry ?? "" };
       } catch (error) {
         return { slug: e.name, stage: "unreadable", error: (error as Error).message };
       }
