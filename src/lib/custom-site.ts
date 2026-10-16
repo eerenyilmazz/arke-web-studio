@@ -262,6 +262,57 @@ interface Brand {
   readonly visualLanguage: string;
   readonly animations: readonly BrandAnimation[];
   readonly voice: string;
+  /** Brand board (Marka Atölyesi) fields: slogan, signature motion with its own demo, type specimen. */
+  readonly tagline?: string;
+  readonly signature?: { readonly id?: string; readonly name?: string; readonly idea?: string; readonly file?: string };
+  readonly typeSample?: string;
+  readonly monoFont?: string;
+}
+
+export const SIGNATURE_FILE = "brand/signature.html";
+
+/** Brand board completeness. Warnings only, so sites made before the board existed keep building. */
+export function brandBoardProblems(raw: unknown, siteRoot: string): string[] {
+  const b = (raw ?? {}) as Brand;
+  const text = (v: unknown, min: number) => typeof v === "string" && v.trim().length >= min;
+  const out: string[] = [];
+  if (!text(b.tagline, 3)) out.push("tagline: the brand's short line (a few words)");
+  const s = b.signature;
+  if (!s || !ANIMATION_ID.test(s.id ?? "") || !text(s.name, 3) || !text(s.idea, 15)) out.push("signature: { id, name, idea } of the one signature motion");
+  if (!existsSync(path.join(siteRoot, SIGNATURE_FILE))) out.push(`${SIGNATURE_FILE}: a small self-contained page that plays the signature motion on its own`);
+  if (!text(b.typeSample, 6)) out.push("typeSample: one line set in the heading font (a line in the brand's voice)");
+  return out;
+}
+
+const MAX_BOARD_FILE = 120_000;
+
+export interface BrandBoard {
+  /** "custom": the brand the agent designed (brand.json). "template": palette and fonts from the config only. */
+  readonly source: "custom" | "template";
+  readonly brand: Brand | null;
+  readonly logoSvg: string | null;
+  readonly signatureHtml: string | null;
+  /** What is missing for a complete board (custom sites only). */
+  readonly missing: string[];
+}
+
+/** Everything the panel's brand board (Marka Atölyesi) shows. Read-only. */
+export function readBrandBoard(paths: ClientPaths, template: string): BrandBoard {
+  const root = siteDir(paths);
+  const read = (rel: string) => {
+    const f = path.join(root, rel);
+    return existsSync(f) && statSync(f).size <= MAX_BOARD_FILE ? readFileSync(f, "utf8") : null;
+  };
+  if (!isCustom(template)) return { source: "template", brand: null, logoSvg: null, signatureHtml: null, missing: [] };
+  const raw = read(BRAND_FILE);
+  let brand: Brand | null = null;
+  try {
+    brand = raw ? (JSON.parse(raw) as Brand) : null;
+  } catch {
+    brand = null;
+  }
+  const missing = brand ? [...brandProblems(brand), ...brandBoardProblems(brand, root)] : [`${BRAND_FILE}: the brand identity`];
+  return { source: "custom", brand, logoSvg: read(LOGO_FILE), signatureHtml: read(SIGNATURE_FILE), missing };
 }
 
 export function brandProblems(raw: unknown): string[] {
@@ -300,7 +351,8 @@ export function checkBrand(distDir: string): CheckResult[] {
   if (problems.length > 0) return [{ name: "Brand identity", status: "fail", detail: `site/${BRAND_FILE} incomplete: ${problems.join("; ")}` }];
 
   const code = readdirSync(distDir, { recursive: true, withFileTypes: true })
-    .filter((e) => e.isFile() && /\.(html|css|js)$/.test(e.name) && !path.relative(distDir, path.join(e.parentPath, e.name)).startsWith(`${ASSETS_URL_DIR}`))
+    // The site's own pages and code only: assets/ and brand/ (board files, signature demo) do not count as usage.
+    .filter((e) => e.isFile() && /\.(html|css|js)$/.test(e.name) && !/^(assets|brand)[\\/]/.test(path.relative(distDir, path.join(e.parentPath, e.name))))
     .map((e) => readFileSync(path.join(e.parentPath, e.name), "utf8"))
     .join("\n");
   const lower = code.toLowerCase();
@@ -311,11 +363,18 @@ export function checkBrand(distDir: string): CheckResult[] {
   const missingAnims = brand.animations.filter((a) => !code.includes(a.id));
   if (missingAnims.length > 0) usage.push(`signature animations not found in the code (use the id as class, keyframes or data attribute): ${missingAnims.map((a) => a.id).join(", ")}`);
   if (!/prefers-reduced-motion/.test(code)) usage.push("no prefers-reduced-motion handling (animations must calm down for visitors who ask)");
+  const board = brandBoardProblems(brand, distDir);
+  if (board.length === 0 && brand.signature?.id && !code.includes(brand.signature.id)) board.push(`the signature motion "${brand.signature.id}" is not used on the site's pages`);
   return [
     {
       name: "Brand identity (designed first, used everywhere)",
       status: usage.length === 0 ? "pass" : "fail",
       detail: usage.length === 0 ? `${brand.animations.length} signature animations: ${brand.animations.map((a) => a.id).join(", ")}` : usage.join("; "),
+    },
+    {
+      name: "Brand board (tagline, signature motion, type specimen)",
+      status: board.length === 0 ? "pass" : "warn",
+      detail: board.length === 0 ? `signature motion: ${brand.signature?.name}` : `site/${BRAND_FILE}: ${board.join("; ")}`,
     },
   ];
 }

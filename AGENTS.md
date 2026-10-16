@@ -37,7 +37,7 @@ Changes after launch use the same path: edit config/content, build, approvals, d
 
 ## Custom sites (template "custom", the default for new clients)
 
-There is no template: you design the brand identity and write the whole site yourself with the site-file tools, following `rules/custom-site.md` (read it completely first). Steps 3–6 of the flow still apply (facts in config and content first); step 5 becomes "brand identity", step 6 also writes the pages. Template sites (`corporate-v1`, `corporate-v2`) stay as they are: never write code for them.
+There is no template: you design the brand identity and write the whole site yourself with the site-file tools, following `rules/custom-site.md` (read it completely first). Steps 3–6 of the flow still apply (facts in config and content first); step 5 becomes "brand identity", step 6 also writes the pages. Every custom brand has a complete brand board (tagline, signature motion with its own demo page, type specimen). Load the design skills in `.claude/skills/` (impeccable, taste-skill, UI UX Pro Max) for judgement; where they conflict with the factory rules, the factory rules win. Template sites (`corporate-v1`, `corporate-v2`) stay as they are: never write code for them.
 
 ## Hard rules
 

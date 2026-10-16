@@ -5,3 +5,7 @@ dist/
 *.tmp
 vendor/
 .claude/settings.local.json
+# Copied from vendor/ by scripts/link-skills.sh
+.claude/skills/ui-ux-pro-max/
+.claude/skills/brand/
+.claude/skills/design-system/

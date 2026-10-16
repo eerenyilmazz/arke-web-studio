@@ -51,6 +51,9 @@ export const AGENT_ALLOWED_TOOLS = [
   "Read",
   "Grep",
   "Glob",
+  // Design skills in .claude/skills (impeccable, taste-skill, UI UX Pro Max): instructions only. Their scripts
+  // would need Bash, which stays denied below.
+  "Skill",
 ] as const;
 export const AGENT_DENIED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "WebFetch", "WebSearch", "Task", "mcp__site-factory__deploy", "mcp__site-factory__create_client"] as const;
 /** Change requests on a custom site may touch several files and rebuild. */

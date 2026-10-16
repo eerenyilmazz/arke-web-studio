@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="description" content="Uzunoğlu Turşuculuk markasının imza hareketi: kavanoz salamurayla dolar.">
+<title>İmza hareketi: Kavanoz dolar | Uzunoğlu Turşuculuk</title>
+<style>
+  /* Signature motion "jar-fill": brine rises in the jar, the pickles bob up and settle, a few bubbles escape. */
+  html, body { margin: 0; height: 100%; }
+  body { display: grid; place-items: center; background: #F6F1E4; }
+  svg { height: 82vh; width: auto; max-width: 90vw; overflow: visible; }
+  .glass { fill: #DCE6C4; fill-opacity: .55; stroke: #1B2215; stroke-width: 3; }
+  .lid { fill: #B3261E; }
+  .label { fill: #D9B98A; }
+  .brine { fill: #2F4A2A; fill-opacity: .82; transform-box: fill-box; transform-origin: 50% 100%; animation: jar-fill 5.6s cubic-bezier(.3, .7, .2, 1) infinite; }
+  .veg { transform-box: fill-box; animation: veg-bob 5.6s cubic-bezier(.3, .7, .2, 1) infinite; }
+  .veg.b { animation-delay: .15s; } .veg.c { animation-delay: .3s; }
+  .bubble { fill: none; stroke: #F6F1E4; stroke-width: 1.6; opacity: 0; animation: bubble 5.6s ease-in infinite; }
+  .bubble.b { animation-delay: .4s; } .bubble.c { animation-delay: .8s; }
+  .shine { fill: #fff; opacity: .5; }
+  @keyframes jar-fill { 0% { transform: scaleY(.04); } 34%, 82% { transform: scaleY(1); } 100% { transform: scaleY(.04); } }
+  @keyframes veg-bob { 0% { transform: translateY(46px); opacity: 0; } 30% { transform: translateY(-6px); opacity: 1; } 40%, 80% { transform: none; opacity: 1; } 100% { transform: translateY(46px); opacity: 0; } }
+  @keyframes bubble { 0%, 34% { transform: translateY(0); opacity: 0; } 42% { opacity: .9; } 66%, 100% { transform: translateY(-120px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .brine, .veg, .bubble { animation: none; }
+    .veg { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 200 260" role="img" aria-label="Salamurayla dolan turşu kavanozu">
+  <rect class="lid" x="52" y="10" width="96" height="26" rx="6"/>
+  <path class="glass" d="M58 40h84c10 0 16 8 16 18v168c0 14-10 24-24 24H66c-14 0-24-10-24-24V58c0-10 6-18 16-18z"/>
+  <clipPath id="inside"><path d="M60 46h80c8 0 12 6 12 14v164c0 11-8 19-19 19H67c-11 0-19-8-19-19V60c0-8 4-14 12-14z"/></clipPath>
+  <g clip-path="url(#inside)">
+    <rect class="brine" x="44" y="70" width="112" height="180"/>
+    <g class="veg"><ellipse cx="80" cy="190" rx="13" ry="30" fill="#6B8E3A" transform="rotate(-12 80 190)"/></g>
+    <g class="veg b"><ellipse cx="118" cy="200" rx="12" ry="28" fill="#7FA343" transform="rotate(10 118 200)"/></g>
+    <g class="veg c"><path d="M96 140c10-4 22 4 20 18-2 18-10 30-14 30s-8-14-10-28c-1-10-2-17 4-20z" fill="#B3261E"/></g>
+    <circle class="bubble" cx="76" cy="150" r="4"/><circle class="bubble b" cx="122" cy="160" r="3"/><circle class="bubble c" cx="100" cy="176" r="5"/>
+  </g>
+  <rect class="label" x="70" y="52" width="60" height="24" rx="4" opacity=".92"/>
+  <path class="shine" d="M60 66c-3 30-3 100 0 150" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity=".45"/>
+</svg>
+</body>
+</html>

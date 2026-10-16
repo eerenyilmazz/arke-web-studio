@@ -48,6 +48,7 @@ for kept in "$KEEP"/templates/*-node_modules; do
   [[ -d "templates/$name" ]] && mv "$kept" "templates/$name/node_modules"
 done
 
+bash scripts/link-skills.sh
 npm ci --no-fund --no-audit
 npm run build >/dev/null
 for t in templates/*/; do [[ -f "$t/package.json" ]] && (cd "$t" && npm ci --no-fund --no-audit); done

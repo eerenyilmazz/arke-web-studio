@@ -20,8 +20,8 @@ import * as tools from "../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "./http.js";
 import { appendInput, readHistory, readInputs } from "./history.js";
 import { serialiseJob, type JobRunner } from "./jobs.js";
-import { answersPrompt, autopilotPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
-import { OPTION_IDS, readBrandOptions } from "../lib/custom-site.js";
+import { answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
+import { OPTION_IDS, readBrandBoard, readBrandOptions } from "../lib/custom-site.js";
 import type { PreviewServer } from "./preview.js";
 
 const JSON_LIMIT = 256 * 1024;
@@ -52,7 +52,7 @@ const routes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: writeQuestionnaire },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
-  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise|upgrade-template|concepts|choose-concept)$`), handler: startAgent },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise|upgrade-template|concepts|choose-concept|brand-board)$`), handler: startAgent },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/build$`), handler: startBuild },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/deploy$`), handler: startDeploy },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/preview$`), handler: showPreview },
@@ -60,6 +60,7 @@ const routes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/versions$`), handler: versions },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/quick-edit$`), handler: quickEdit },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/concepts$`), handler: concepts },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/brand$`), handler: brandBoard },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/business$`), handler: saveBusiness },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/versions/restore$`), handler: restore },
   { method: "GET", pattern: /^\/api\/jobs\/([0-9a-f-]{36})$/, handler: getJob },
@@ -84,6 +85,21 @@ function concepts(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [sl
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
   sendJson(res, 200, { options: readBrandOptions(clientPaths(deps.factory.clientsRoot, s)) });
+}
+
+/** The brand board: the custom brand (logo, signature demo) or, for template sites, the config's palette and fonts. */
+function brandBoard(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const paths = clientPaths(deps.factory.clientsRoot, s);
+  const cfg = readDraftConfig(paths) as { template?: string; business?: { name?: string; industry?: string }; design?: { palette?: Record<string, string>; fonts?: { heading?: string; body?: string } } };
+  sendJson(res, 200, {
+    name: cfg.business?.name ?? s,
+    industry: cfg.business?.industry ?? "",
+    palette: cfg.design?.palette ?? null,
+    fonts: cfg.design?.fonts ?? null,
+    ...readBrandBoard(paths, cfg.template ?? ""),
+  });
 }
 
 async function versions(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
@@ -204,7 +220,7 @@ function meta(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse): void {
 }
 
 /** Rough time a job of each kind takes here: median of recent successful runs across clients, else a default. */
-const DEFAULT_SECONDS: Readonly<Record<string, number>> = { autopilot: 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, concepts: 360, "quick-edit": 180 };
+const DEFAULT_SECONDS: Readonly<Record<string, number>> = { autopilot: 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, concepts: 360, "quick-edit": 180, "brand-board": 300 };
 const RECENT_RUNS = 20;
 function typicalSeconds(deps: ApiDeps): Record<string, number> {
   const byKind = new Map<string, number[]>();
@@ -411,6 +427,14 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       title = "Build ve düzeltme";
       request = "Build al, kontroller geçmezse düzelt.";
       break;
+    case "brand-board": {
+      const template = (readDraftConfig(clientPaths(deps.factory.clientsRoot, s)) as { template?: string }).template;
+      if (template !== "custom") throw new HttpError(409, "Marka kartı serbest tasarımlı sitelerde var. Önce 'Serbest tasarıma geç'.");
+      prompt = brandBoardPrompt(s);
+      title = "Marka kartını tamamla";
+      request = "Marka kartını tamamla: slogan, imza hareketi ve tipografi örneği.";
+      break;
+    }
     case "concepts":
     case "choose-concept": {
       const template = (readDraftConfig(clientPaths(deps.factory.clientsRoot, s)) as { template?: string }).template;

@@ -58,7 +58,7 @@ function clientDataLines(slug: string, input: AnswersInput): string[] {
 
 /** Custom sites (template "custom"): the agent designs the brand and writes the site itself. */
 const CUSTOM_STEP =
-  '4b. If the config template is "custom": read rules/custom-site.md completely, then design the brand identity first (site/brand/brand.json and site/brand/logo.svg, with signature animations that come from what this business makes), then write every page with write_site_file. If the site already exists, update only what the new information changes.';
+  '4b. If the config template is "custom": read rules/custom-site.md completely, then design the brand identity first (site/brand/brand.json and site/brand/logo.svg, with signature animations that come from what this business makes, plus the brand board: tagline, signature motion with brand/signature.html, typeSample), then write every page with write_site_file. If the site already exists, update only what the new information changes.';
 
 /** Colours named anywhere in the client's text (any language) are their brand colours, not a suggestion. */
 const COLOUR_RULE =
@@ -169,10 +169,22 @@ export function conceptsPrompt(slug: string): string {
     `Site Factory, client "${slug}". Eren wants three different design proposals for this client to choose from.`,
     COLOUR_RULE,
     "1. get_client_status and read the client's facts. Read rules/custom-site.md (step 1 and step 2) completely.",
-    "2. Write three clearly different brand identities with write_site_file: site/brand/options/a.json, b.json, c.json (same fields as brand.json, plus \"name\": a two- or three-word title for the direction) and a logo for each: site/brand/options/a-logo.svg, b-logo.svg, c-logo.svg.",
+    "2. Write three clearly different brand identities with write_site_file: site/brand/options/a.json, b.json, c.json (same fields as brand.json including tagline and signature, plus \"name\": a two- or three-word title for the direction) and a logo for each: site/brand/options/a-logo.svg, b-logo.svg, c-logo.svg.",
     "   Make them genuinely different: different concept from the business's world, different palette roles and fonts, different signature animations. If the client named colours, all three use them (in different roles).",
     "3. Do not write pages, do not change brand/brand.json, do not build or deploy.",
     "Finish with a short Turkish summary: one line per proposal (name and idea).",
+  ].join("\n");
+}
+
+/** Completes the brand board (tagline, signature motion, type specimen) without redesigning the brand. */
+export function brandBoardPrompt(slug: string): string {
+  return [
+    `Site Factory, client "${slug}". Eren wants this client's brand board completed.`,
+    "1. get_client_status. Read rules/custom-site.md, step 1 (the brand board part) completely. read_site_file brand/brand.json and brand/logo.svg.",
+    "2. Keep the brand as it is (concept, palette, fonts, logo). Add the missing board fields to brand/brand.json: tagline, signature { id, name, idea }, typeSample (and monoFont if the brand has one). The signature is one of the existing signature animations, or a new one that fits the concept.",
+    "3. Write brand/signature.html: a small self-contained page that plays the signature motion on its own, in the brand's colours (inline CSS and JS only, prefers-reduced-motion handled).",
+    "4. Make sure the signature motion is used on the site's pages; if not, add it where it belongs. build_site, fix failed checks (at most 3 builds). Do not deploy.",
+    SUMMARY_RULE,
   ].join("\n");
 }
 
@@ -180,7 +192,7 @@ export function conceptsPrompt(slug: string): string {
 export function chooseConceptPrompt(slug: string, option: string): string {
   return [
     `Site Factory, client "${slug}". Eren chose design proposal "${option}".`,
-    `1. read_site_file brand/options/${option}.json and brand/options/${option}-logo.svg. Write them as brand/brand.json (without the "name" field) and brand/logo.svg; improve details if needed but keep the direction.`,
+    `1. read_site_file brand/options/${option}.json and brand/options/${option}-logo.svg. Write them as brand/brand.json (without the "name" field) and brand/logo.svg; improve details if needed but keep the direction. Complete the brand board (tagline, signature, typeSample) and write brand/signature.html (rules/custom-site.md, step 1).`,
     "2. Following rules/custom-site.md, write (or rewrite) every page so the whole site uses this brand: palette, fonts, visual language and every signature animation.",
     "3. build_site. If checks fail, fix the site files and build again (at most 3 attempts). Do not deploy.",
     SUMMARY_RULE,

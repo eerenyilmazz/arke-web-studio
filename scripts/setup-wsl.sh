@@ -130,6 +130,7 @@ else
   else
     pass "UI UX Pro Max present"
   fi
+  if bash scripts/link-skills.sh >/dev/null; then pass "design skills ready (.claude/skills)"; else note "design skills could not be copied"; fi
   if has python3 && python3 -E -s "$UUPM_DIR/src/ui-ux-pro-max/scripts/search.py" "bakery friendly" --design-system -p Test -f markdown >/dev/null 2>&1; then
     pass "UI UX Pro Max runs"
   else

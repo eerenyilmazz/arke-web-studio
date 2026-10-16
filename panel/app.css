@@ -3,15 +3,15 @@
   --bg: #f5f6f8;
   --surface: #ffffff;
   --surface-2: #f3f4f7;
-  --ink: #141821;
+  --ink: #151719;
   --ink-2: #4a5260;
   --ink-3: #6b7380;
   --line: #e3e6eb;
   --line-strong: #d3d8df;
-  --accent: #2f54eb;
-  --accent-ink: #ffffff;
-  --accent-soft: #eef1fd;
-  --accent-text: #2441c9;
+  --accent: #f27a4b;
+  --accent-ink: #151719;
+  --accent-soft: #fdede5;
+  --accent-text: #a63f17;
   --ok: #17643e;
   --ok-soft: #e7f5ee;
   --warn: #7a4b00;
@@ -19,23 +19,23 @@
   --warn-line: #ecd29a;
   --bad: #a3261d;
   --bad-soft: #fcebe9;
-  --bubble: #eef1fd;
+  --bubble: #fbeee7;
   --shadow: 0 1px 2px rgb(20 24 33 / 0.05);
   color-scheme: light;
 }
 [data-theme="dark"] {
-  --bg: #141922;
-  --surface: #19202b;
-  --surface-2: #1f2733;
-  --ink: #e7ebf2;
-  --ink-2: #b2bccb;
-  --ink-3: #8d97a8;
-  --line: #2a3240;
-  --line-strong: #364050;
-  --accent: #9db4ff;
-  --accent-ink: #141922;
-  --accent-soft: #232d45;
-  --accent-text: #b6c7ff;
+  --bg: #151719;
+  --surface: #1c1f22;
+  --surface-2: #23272b;
+  --ink: #eeeeea;
+  --ink-2: #bdbdb6;
+  --ink-3: #94948d;
+  --line: #2c3035;
+  --line-strong: #3a3f45;
+  --accent: #f58255;
+  --accent-ink: #151719;
+  --accent-soft: #3a2519;
+  --accent-text: #f7a07d;
   --ok: #8fe3b4;
   --ok-soft: #173628;
   --warn: #f3d48b;
@@ -43,7 +43,7 @@
   --warn-line: #5d4a1e;
   --bad: #ffaaa2;
   --bad-soft: #3a1c1a;
-  --bubble: #232b38;
+  --bubble: #262a2f;
   --shadow: none;
   color-scheme: dark;
 }
@@ -395,3 +395,80 @@ details > summary.small { cursor: pointer; color: var(--ink-2); }
 .biz.late { color: var(--bad); font-weight: 600; }
 .device .screen { box-sizing: content-box; }
 .code-input::placeholder { letter-spacing: normal; font-size: 1rem; font-weight: 500; }
+
+/* ---------------------------------------------------------------- Site Factory's own mark and signature motion
+   The mark is three floors of a site. Signature motion "Katlar oturur": the floors drop onto the axis one by one.
+   It plays once when the panel opens and loops quietly while the agent is working. */
+.brand-mark { overflow: hidden; }
+.brand-mark .floor { transform-box: fill-box; transform-origin: 50% 100%; }
+.brand-mark .axis { opacity: .55; }
+.brand-mark .floor { animation: floor-settle .7s cubic-bezier(.2, .9, .25, 1.25) both; }
+.brand-mark .f2 { animation-delay: .12s; }
+.brand-mark .f3 { animation-delay: .24s; }
+body.agent-busy .brand-mark .floor { animation: floor-loop 2.4s cubic-bezier(.2, .9, .25, 1.2) infinite; }
+body.agent-busy .brand-mark .f2 { animation-delay: .2s; }
+body.agent-busy .brand-mark .f3 { animation-delay: .4s; }
+@keyframes floor-settle { from { transform: translateY(-140%); opacity: 0; } 70% { opacity: 1; } to { transform: none; opacity: 1; } }
+@keyframes floor-loop { 0% { transform: translateY(-140%); opacity: 0; } 25%, 80% { transform: none; opacity: 1; } 100% { transform: translateY(40%); opacity: 0; } }
+.brand small { display: block; font-family: "Geist Mono", ui-monospace, monospace; font-size: .68rem; font-weight: 500; letter-spacing: .02em; color: var(--ink-3); line-height: 1.1; }
+
+/* ---------------------------------------------------------------- Marka Atölyesi (brand board) */
+.board { --b-bg: #121416; --b-card: #1b1e21; --b-ink: #eeeeea; --b-mute: #9a9a93; --b-line: #2b2f33;
+  background: var(--b-bg); color: var(--b-ink); border-radius: 20px; padding: clamp(1rem, 2.5vw, 1.75rem); display: grid; gap: 1rem; }
+.board-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; flex-wrap: wrap; }
+.board-top h2 { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 700; letter-spacing: -0.02em; color: var(--b-ink); }
+.board-kicker, .board-label, .board-meta, .board-foot { font-family: "Geist Mono", ui-monospace, monospace; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--b-mute); }
+.board-kicker { display: block; margin-bottom: .25rem; color: #f58255; }
+.board-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 1rem; }
+.board-card { background: var(--b-card); border: 1px solid var(--b-line); border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; gap: .85rem; min-width: 0; }
+.board-label { color: inherit; opacity: .7; }
+.board-hero { grid-column: span 7; min-height: 300px; border: 0; justify-content: space-between; }
+.board-concept { grid-column: span 5; }
+.board-sig { grid-column: span 6; }
+.board-type { grid-column: span 6; }
+.board-anims { grid-column: span 12; }
+.hero-logo { flex: 1; display: grid; place-items: center; background: #f4f3ef; border-radius: 12px; padding: clamp(1.25rem, 4vw, 2.5rem); }
+.hero-logo img { width: min(100%, 440px); max-height: 200px; object-fit: contain; }
+.hero-word { flex: 1; display: flex; align-items: center; font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+.hero-tag { font-size: clamp(1.3rem, 2.6vw, 1.9rem); font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; }
+.concept-text { font-size: 1.12rem; line-height: 1.4; }
+.swatch-list { list-style: none; margin: auto 0 0; padding: 0; display: grid; gap: .45rem; }
+.swatch-list li { display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: .75rem; }
+.swatch-list .chip { width: 40px; height: 40px; border-radius: 10px; border: 1px solid rgb(255 255 255 / .12); }
+.sw-name { font-family: "Geist Mono", ui-monospace, monospace; font-size: .78rem; letter-spacing: .06em; text-transform: uppercase; }
+.sw-hex { font: 500 .78rem "Geist Mono", ui-monospace, monospace; color: var(--b-mute); background: none; border: 0; cursor: pointer; padding: .4rem; border-radius: 6px; }
+.sw-hex:hover, .sw-hex:focus-visible { color: var(--b-ink); background: rgb(255 255 255 / .06); }
+.sig-name { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: var(--b-ink); }
+.sig-frame { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 12px; background: #0e0f11; }
+.sig-empty { aspect-ratio: 16 / 9; border: 1px dashed var(--b-line); border-radius: 12px; display: grid; place-items: center; padding: 1rem; text-align: center; color: var(--b-mute); font-size: .9rem; }
+.board-note { font-family: "Geist Mono", ui-monospace, monospace; font-size: .72rem; color: var(--b-mute); }
+.type-head { display: flex; align-items: center; gap: 1rem; }
+.type-head strong { display: block; font-size: 1.05rem; }
+.type-head .muted { color: var(--b-mute); }
+.type-aa { font-size: 3.6rem; line-height: 1; font-weight: 700; color: #f58255; }
+.type-sample { font-size: clamp(1.4rem, 2.6vw, 2rem); line-height: 1.15; font-weight: 600; letter-spacing: -0.01em; }
+.type-body { color: var(--b-mute); }
+.type-mono { font-size: .8rem; color: var(--b-mute); word-spacing: .4em; }
+.logo-dark { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; border-radius: 12px; background: #0e0f11; border: 1px solid var(--b-line); }
+.logo-dark img { max-height: 56px; max-width: 70%; }
+.board-btn { align-self: flex-start; margin-top: auto; background: #f58255; color: #151719; border-color: #f58255; }
+.board-btn:hover { filter: brightness(1.06); }
+.board-anims ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .6rem 1.25rem; }
+.board-anims li { display: grid; gap: .2rem; }
+.board-anims .trigger { font-family: "Geist Mono", ui-monospace, monospace; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #f58255; }
+.board-foot { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: space-between; padding-top: .25rem; border-top: 1px solid var(--b-line); }
+.board-actions { gap: .5rem; }
+@media (max-width: 900px) { .board-grid > * { grid-column: span 12; } .board-hero { min-height: 240px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-mark .floor, body.agent-busy .brand-mark .floor { animation: none; }
+}
+
+@media print {
+  /* Only the brand board is printed (Yazdır / PDF), in its own colours. */
+  body * { visibility: hidden; }
+  .board, .board * { visibility: visible; }
+  .board { position: absolute; inset: 0 0 auto 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .board-card { break-inside: avoid; }
+  .board-btn { display: none; }
+}

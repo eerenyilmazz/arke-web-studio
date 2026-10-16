@@ -105,6 +105,28 @@ describe("custom sites: the agent writes the site, the factory checks it", () =>
   });
 });
 
+describe("brand board (Marka Atölyesi)", () => {
+  it("warns (never fails) when the board is incomplete, passes when it is complete and used", async () => {
+    const { f } = await customClient();
+    writeGoodSite(f);
+    let r = await tools.buildSite(f, { slug: SLUG });
+    const board = () => r.checks.find((c) => c.name.startsWith("Brand board"));
+    expect(board()?.status).toBe("warn");
+    expect(r.passed).toBe(true);
+
+    const full = { ...BRAND, tagline: "Crunch since 1962", typeSample: "Brine, dill and patience.", signature: { id: "jar-fill", name: "Kavanoz dolar", idea: "The jar fills with brine and settles, once." } };
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/brand.json", content: JSON.stringify(full) });
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/signature.html", content: page("Signature", '<div class="jar-fill"></div>') });
+    r = await tools.buildSite(f, { slug: SLUG });
+    expect(board()?.status).toBe("pass");
+
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/brand.json", content: JSON.stringify({ ...full, signature: { ...full.signature, id: "lid-twist" } }) });
+    r = await tools.buildSite(f, { slug: SLUG });
+    expect(board()?.status).toBe("warn");
+    expect(board()?.detail).toMatch(/lid-twist/);
+  });
+});
+
 describe("design proposals", () => {
   it("reads three options, checks them like brand.json, and keeps them out of the published site", async () => {
     const { f, paths } = await customClient();

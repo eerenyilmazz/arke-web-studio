@@ -9,6 +9,18 @@ The bar: a small business owner opens the site and says "this is us". Not a them
 
 ---
 
+## Design skills
+
+Before designing, load the design skills in `.claude/skills/` with the Skill tool and use their judgement:
+
+- **impeccable**: design direction, typography, colour, motion and the audit of generated-looking design.
+- **design-taste-frontend** (taste-skill): art direction for public pages, composition and the no-slop house style.
+- **ui-ux-pro-max** and **brand** (when installed): sector palettes, font pairings, brand identity structure.
+
+Their scripts, browser tools and image generation are not available here (no shell); read their references instead.
+When a skill disagrees with this file, **this file wins**: plain HTML/CSS/JS only (no React, Tailwind builds, CDNs
+or npm packages), no generated images, no external resources except Google Fonts, and the brand board below.
+
 ## Step 0: read the client
 
 `get_client_status`, then read `site.config.json` facts and `content/<locale>.json` (save content first if it is
@@ -32,7 +44,11 @@ Write `site/brand/brand.json`:
     { "id": "jar-fill", "idea": "Hero jars fill with brine as the page loads, pickles bob up", "trigger": "load" },
     { "id": "brine-bubbles", "idea": "Bubbles rise from the cursor over the hero, like fermentation", "trigger": "pointer" },
     { "id": "lid-twist", "idea": "Product cards: the jar lid twists open on hover and the price label swings", "trigger": "hover" }
-  ]
+  ],
+  "tagline": "Crunch, the slow way.",
+  "signature": { "id": "jar-fill", "name": "The jar fills", "idea": "Brine rises in the jar, the pickles bob up and settle: the brand's one recognisable move." },
+  "typeSample": "Brine, dill and a little patience.",
+  "monoFont": "JetBrains Mono"
 }
 ```
 
@@ -55,6 +71,21 @@ Write `site/brand/brand.json`:
 | Gardener / florist | stems grow along the page edge, leaves fall from the cursor, flowers open on hover |
 | Software / agency | code types itself, a cursor blinks, UI pieces snap together on scroll |
 | Solicitor / accountant | scales settle, numbers count up to real facts, a pen signs the headline |
+
+**The brand board** (Eren shows it to the client as the "Marka Atölyesi" card, so it must stand on its own):
+
+- **tagline**: a few words in the site's main language that only this business could say. Not "Quality and trust".
+- **signature**: the one **signature motion** people remember the brand by (usually one of the animations above):
+  `id` (used in the site's code), `name` (2–4 words) and `idea` (one sentence). It appears on the site where it
+  matters most (hero, logo or the main action), not everywhere.
+- **`site/brand/signature.html`**: a small self-contained page that plays the signature motion on its own, centred
+  on the brand's background, with inline CSS/JS only (no other files), looping calmly, and still under
+  `prefers-reduced-motion`, with `<title>`, meta description, viewport and `<meta name="robots" content="noindex">`.
+  The panel shows it live in the board. It is not linked from the site.
+- **typeSample**: one line in the brand's voice, set in the heading font on the board.
+- **monoFont** (optional): a Google monospace font for numbers, codes and labels when the brand uses one.
+
+The build warns until the board is complete; the pages themselves still build.
 
 Then write `site/brand/logo.svg`: a real mark plus wordmark drawn in SVG (shapes and paths, using the brand
 colours), with a `viewBox`, readable at 32 px and on light and dark backgrounds. No `<script>`, no event attributes,
@@ -88,7 +119,7 @@ Plan before writing: palette roles, type scale, layout concept for each page, an
 Files (paths inside `site/`):
 
 ```
-brand/brand.json   brand/logo.svg
+brand/brand.json   brand/logo.svg    brand/signature.html
 css/site.css       js/site.js          (shared by all pages; small, no frameworks)
 index.html         about/index.html    services/index.html   gallery/index.html   contact/index.html
 404.html           robots.txt          sitemap.xml (only when site.domain is set)

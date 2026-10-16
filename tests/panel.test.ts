@@ -297,6 +297,32 @@ describe("move to the new template", () => {
   });
 });
 
+describe("brand board", () => {
+  it("serves the board read-only, allows design skills but not Bash, and refuses the board job on template sites", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth, factory } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "tpl-site", businessName: "Tpl", industry: "bakery", hostingModel: "managed", template: "stub-v1" }) });
+    const board = (await (await fetch(`${base}/api/clients/tpl-site/brand`, { headers: auth })).json()) as { source: string; name: string };
+    expect(board.name).toBe("Tpl");
+    if (board.source === "template") {
+      expect((await fetch(`${base}/api/clients/tpl-site/agent/brand-board`, { method: "POST", headers: json, body: "{}" })).status).toBe(409);
+    }
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "own-brand", businessName: "Own", industry: "bakery", hostingModel: "managed", template: "custom" }) });
+    (await import("../src/tools.js")).updateClientConfig(factory, { slug: "own-brand", patch: { template: "custom" } });
+    const own = (await (await fetch(`${base}/api/clients/own-brand/brand`, { headers: auth })).json()) as { source: string; brand: unknown; missing: string[] };
+    expect(own.source).toBe("custom");
+    expect(own.brand).toBeNull();
+    expect((await fetch(`${base}/api/clients/own-brand/brand`)).status).toBe(401);
+    const res = await fetch(`${base}/api/clients/own-brand/agent/brand-board`, { method: "POST", headers: json, body: "{}" });
+    expect(res.status).toBe(202);
+    const args = calls[0]!.args.join(" ");
+    expect(args).toMatch(/--allowedTools \S*Skill/);
+    expect(args).toMatch(/--disallowedTools Bash/);
+    expect(calls[0]!.stdin).toMatch(/signature\.html/);
+  });
+});
+
 describe("earlier inputs are kept between agent jobs", () => {
   it("gives the next job everything pasted before, as client data", async () => {
     const calls: SpawnCall[] = [];
