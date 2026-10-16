@@ -58,5 +58,6 @@ name the trade-off in one line. Keep real business information and examples clea
 
 - "Bulduklarım:" verified facts, each with its source link; estimated and unverified ones marked as such.
 - "Sektörden örnekler:" 3–5 sites with one line each on what is worth learning.
-- "Önerdiğim yön:" one short paragraph (direction, colours, type, the signature idea).
+- "Önerilerim:" your proposals, none of them saved yet: direction, colours (hex values for colour names), type,
+  the signature idea, pages. Eren says yes or changes them.
 - "Sorularım:" at most 5 short, specific questions Eren can answer by pasting.

@@ -337,6 +337,9 @@ describe("research first", () => {
     expect(on.args[on.args.indexOf("--allowedTools") + 1]).toMatch(/WebSearch,WebFetch/);
     expect(on.args[on.args.indexOf("--disallowedTools") + 1]).not.toMatch(/WebFetch/);
     expect(on.stdin).toMatch(/STOP before design/);
+    expect(on.stdin).toMatch(/choose nothing for him/);
+    expect(on.stdin).not.toMatch(/Senin yerine seçtiklerim:" choices/);
+    expect(on.stdin).toMatch(/Önerilerim:" your proposals/);
     expect(on.stdin).toMatch(/do not make it up/);
     await waitFor(async () => !((await (await fetch(`${base}/api/meta`, { headers: auth })).json()) as { running: unknown }).running);
 
@@ -348,6 +351,7 @@ describe("research first", () => {
     expect(off.args[off.args.indexOf("--disallowedTools") + 1]).toMatch(/WebSearch,WebFetch/);
     expect(off.stdin).toMatch(/Web research is turned off/);
     expect(off.stdin).not.toMatch(/STOP before design/);
+    expect(off.stdin).toMatch(/Senin yerine seçtiklerim:" choices/);
   });
 });
 

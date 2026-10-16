@@ -117,7 +117,10 @@ export function autopilotPrompt(slug: string, input: AnswersInput | null, opts: 
     UNSURE_RULE,
     `0. ${researchStep(opts.web ?? false)}`,
     ...(askFirst
-      ? ["   Eren asked to be consulted first: unless the brand and pages already exist, or his latest text clearly settles every open question (or says \"sormadan devam\" / \"sen seç\"), record the facts, then STOP before design and finish with the research summary and questions (rules/research.md, \"Summary format for a research stop\"). Do not build in that case."]
+      ? [
+          "   Eren asked to be consulted first: unless the brand and pages already exist, or his latest text clearly settles every open question (or says \"sormadan devam\" / \"sen seç\"), record the facts, then STOP before design and finish with the research summary and questions (rules/research.md, \"Summary format for a research stop\"). Do not build in that case.",
+          "   While consulting, choose nothing for him: save only facts he or the client gave word for word, or that you verified. Your own conversions and choices (a hex for a colour name, a palette, tone, pages, extra languages, a logo crop) are not saved; list them under \"Önerilerim:\" for him to confirm. When the client named colours only by name, the hex values are such a proposal. Never write a \"Senin yerine seçtiklerim\" part in a research stop.",
+        ]
       : []),
     "Start with get_client_status and skip anything already done; this job may be run several times as information arrives.",
     "",
@@ -136,7 +139,7 @@ export function autopilotPrompt(slug: string, input: AnswersInput | null, opts: 
     "Eren reviews the site with the panel's \"Siteye bak\" button and approves with the command the panel shows: never mention dist/, file paths or terminal commands. Hosting model and languages were set when the client was created: never ask about them.",
     "Finish with a summary for Eren in plain Turkish, no jargon, in three short parts:",
     "\"Yaptıklarım:\" what is done (and whether the site was built);",
-    "\"Senin yerine seçtiklerim:\" choices you made;",
+    askFirst ? "\"Önerilerim:\" your proposals waiting for his yes (nothing you chose is saved yet);" : "\"Senin yerine seçtiklerim:\" choices you made;",
     "\"Eksikler:\" each missing fact as a short question Eren can answer by pasting (e.g. \"Telefon numarası nedir?\"), or \"Yok\".",
   ].join("\n");
 }
