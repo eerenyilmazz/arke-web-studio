@@ -1,0 +1,41 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { z } from "zod";
+import type { FactoryConfig } from "../config.js";
+import { readJsonIfExists, writeJson } from "../lib/files.js";
+import { clientPaths } from "../lib/paths.js";
+
+/**
+ * Sales tracking per client (quote, payment, delivery date, a note), for Eren and his brother.
+ * Kept in .factory/business.json: panel only, never shown to the agent, not part of the site.
+ */
+const FILE = "business.json";
+
+export const PAYMENT_STATES = ["none", "quoted", "deposit", "paid"] as const;
+
+export const BusinessSchema = z.object({
+  price: z.number().nonnegative().max(10_000_000).nullable().default(null),
+  currency: z.enum(["TRY", "GBP", "EUR", "USD"]).default("TRY"),
+  payment: z.enum(PAYMENT_STATES).default("none"),
+  deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+  note: z.string().max(2000).default(""),
+});
+export type Business = z.infer<typeof BusinessSchema> & { updatedAt?: string };
+
+function file(factory: FactoryConfig, slug: string): string {
+  return path.join(clientPaths(factory.clientsRoot, slug).factoryDir, FILE);
+}
+
+export function readBusiness(factory: FactoryConfig, slug: string): Business | null {
+  const f = file(factory, slug);
+  if (!existsSync(f)) return null;
+  const parsed = BusinessSchema.safeParse(readJsonIfExists(f));
+  return parsed.success ? { ...parsed.data, updatedAt: (readJsonIfExists(f) as { updatedAt?: string }).updatedAt } : null;
+}
+
+export function writeBusiness(factory: FactoryConfig, slug: string, input: unknown): Business {
+  const data = BusinessSchema.parse(input);
+  const record = { ...data, updatedAt: new Date().toISOString() };
+  writeJson(file(factory, slug), record);
+  return record;
+}

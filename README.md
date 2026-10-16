@@ -54,7 +54,14 @@ Site hazır olunca **Siteye bak**, beğenirsen tek onay: `npm run approve -- <sl
 Agent işleri arka planda Claude Code ile (`claude -p`) çalışır, sağdaki kayıtta canlı görünür.
 Agent bu işlerde **sadece** site-factory araçlarını kullanabilir: shell, dosya düzenleme, yayın ve müşteri oluşturma kapalı;
 Cloudflare değişkenleri agent'a hiç verilmez. Aynı anda tek iş çalışır.
-Onaylar bilinçli olarak panelde değil, terminalde: `npm run approve -- <slug> <content|visual|production>`.
+**Onay:** panelde **Onayla** butonu. Panel, başlattığın terminalde yazan 6 haneli **onay kodunu** sorar; kod sadece o terminalde görünür, tarayıcıya ve agent'a gitmez, her başlatmada değişir, 5 yanlış denemede kilitlenir. İstersen eskisi gibi terminalden de onaylayabilirsin: `npm run approve -- <slug> <site|production>`.
+
+**Diğerleri:**
+- **Ülke:** yeni müşteride Türkiye (Türkçe, ₺) ya da İngiltere (İngilizce, £).
+- **İlerleme:** uzun işlerde aşama, geçen süre ve tahmini süre; bitince ses ve bildirim.
+- **Ayarlar (dişli simgesi):** Cloudflare kurulum adımları ve bağlantı testi.
+- **Site ve yayın:** telefon/masaüstü görünümü, hızlı düzenleme (telefon, e-posta, adres, saat, WhatsApp), önceki sürümlere dönme, 3 tasarım önerisi (serbest tasarımda).
+- **Bilgiler:** iş takibi (fiyat, ödeme durumu, teslim tarihi, not); anasayfadaki kartlarda görünür, geciken teslim kırmızı.
 
 **Müşteri arşivleme:** müşteri sayfasındaki **Arşivle** düğmesi (kısa adı yazarak onaylanır). Silmez:
 `sf-clients/<slug>` ve `sf-inbox/<slug>` klasörleri `_archive/<slug>-<tarih>` altına taşınır. Geri almak için klasörü

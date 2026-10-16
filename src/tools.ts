@@ -50,22 +50,31 @@ export function listClients(factory: FactoryConfig) {
   return { clients };
 }
 
+/** Where the client is: decides the site's main language, currency and time zone. */
+export const COUNTRIES = ["GB", "TR"] as const;
+export type Country = (typeof COUNTRIES)[number];
+const MARKETS: Readonly<Record<Country, { locale: Locale; timezone: string; currency: string }>> = {
+  GB: { locale: "en", timezone: "Europe/London", currency: "GBP" },
+  TR: { locale: "tr", timezone: "Europe/Istanbul", currency: "TRY" },
+};
+
 export async function createClient(
   factory: FactoryConfig,
-  args: { slug: string; businessName: string; industry: string; hostingModel: "managed" | "client"; extraLocale?: Locale; template?: string },
+  args: { slug: string; businessName: string; industry: string; hostingModel: "managed" | "client"; extraLocale?: Locale; template?: string; country?: Country },
 ) {
   const slug = assertSlug(args.slug);
   const template = assertSlug(args.template ?? factory.defaultTemplate);
   const paths = clientPaths(factory.clientsRoot, slug);
   if (existsSync(paths.root)) throw new FactoryError(`Client folder "${slug}" already exists.`, "Pick another slug or continue with get_client_status.");
 
-  const locales: Locale[] = args.extraLocale && args.extraLocale !== "en" ? ["en", args.extraLocale] : ["en"];
+  const market = MARKETS[args.country ?? "GB"];
+  const locales: Locale[] = args.extraLocale && args.extraLocale !== market.locale ? [market.locale, args.extraLocale] : [market.locale];
   const draft = {
     schemaVersion: SCHEMA_VERSION,
     slug,
     template,
-    i18n: { defaultLocale: "en", locales },
-    business: { name: args.businessName, industry: args.industry, country: "GB", timezone: "Europe/London", currency: "GBP" },
+    i18n: { defaultLocale: market.locale, locales },
+    business: { name: args.businessName, industry: args.industry, country: args.country ?? "GB", timezone: market.timezone, currency: market.currency },
     hosting: { model: args.hostingModel, workerName: null },
     meta: { unmapped: [], laterInterests: [] },
   };
@@ -464,6 +473,33 @@ export async function deploy(factory: FactoryConfig, args: { slug: string; targe
           ? "Check the custom domain loads over HTTPS. DNS for the domain must be on Cloudflare."
           : "Live on workers.dev. Connect the domain once DNS is on Cloudflare (set site.domain, rebuild, deploy).",
   };
+}
+
+/** Which Cloudflare settings are present (never their values), for the panel's setup page. */
+export function cloudflareStatus() {
+  const wranglerJs = path.join(FACTORY_ROOT, "node_modules", "wrangler", "bin", "wrangler.js");
+  return {
+    managed: { token: Boolean(process.env.SF_CF_MANAGED_API_TOKEN), accountId: Boolean(process.env.SF_CF_MANAGED_ACCOUNT_ID) },
+    wrangler: existsSync(wranglerJs),
+    formAction: formActionUrl() !== null,
+  };
+}
+
+/** Checks the managed token works (wrangler whoami). Returns only ok and a short, token-free message. */
+export async function cloudflareTest(factory: FactoryConfig) {
+  const creds = cloudflareCredentials("managed", "x");
+  if (!creds) return { ok: false, message: "Token ya da hesap kimliği tanımlı değil." };
+  const wranglerJs = path.join(FACTORY_ROOT, "node_modules", "wrangler", "bin", "wrangler.js");
+  if (!existsSync(wranglerJs)) return { ok: false, message: "wrangler kurulu değil (npm install)." };
+  const res = await run(process.execPath, [wranglerJs, "whoami"], {
+    cwd: FACTORY_ROOT,
+    timeoutMs: Math.min(factory.limits.deployTimeoutMs, 60_000),
+    env: { CLOUDFLARE_API_TOKEN: creds.token, CLOUDFLARE_ACCOUNT_ID: creds.accountId, WRANGLER_SEND_METRICS: "false" },
+    secrets: [creds.token],
+  });
+  const out = `${res.stdout}\n${res.stderr}`;
+  if (res.code !== 0) return { ok: false, message: /Authentication|10000|Invalid/i.test(out) ? "Token geçersiz ya da yetkisi eksik." : "Cloudflare'e bağlanılamadı." };
+  return { ok: true, message: "Bağlantı çalışıyor." };
 }
 
 function clientEnvPrefix(slug: string): string {

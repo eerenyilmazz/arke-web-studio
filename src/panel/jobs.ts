@@ -27,6 +27,10 @@ export interface Job {
   endedAt?: string;
   log: LogLine[];
   summary?: string;
+  /** Plain-language stage of an agent job, worked out from the tools it calls (see phaseOf). */
+  phase?: Phase;
+  /** Site files written so far (custom sites). */
+  filesWritten?: number;
   /** Not serialised. */
   child?: ChildProcess;
 }
@@ -55,7 +59,7 @@ const MAX_AGENT_TURNS = 120;
 /** Custom sites (brand + every page written by hand) need many more tool calls than filling a template. */
 export const MAX_AUTOPILOT_TURNS = 300;
 /** Jobs that may design and write a whole site. */
-const LONG_JOBS: ReadonlySet<string> = new Set(["autopilot", "upgrade-template"]);
+const LONG_JOBS: ReadonlySet<string> = new Set(["autopilot", "upgrade-template", "concepts", "choose-concept"]);
 const MAX_LOG_LINES = 2000;
 const MAX_TEXT = 4000;
 
@@ -246,7 +250,12 @@ export class JobRunner {
     if (event.type === "assistant") {
       for (const b of blocks) {
         if (b.type === "text" && typeof b.text === "string" && b.text.trim()) this.push(job, "agent", b.text.trim());
-        if (b.type === "tool_use") this.push(job, "tool", `${shortTool(String(b.name))}(${summariseInput(b.input)})`);
+        if (b.type === "tool_use") {
+          this.push(job, "tool", `${shortTool(String(b.name))}(${summariseInput(b.input)})`);
+          const phase = phaseOf(shortTool(String(b.name)), b.input);
+          if (phase) job.phase = phase;
+          if (phase === "pages" || phase === "brand") job.filesWritten = (job.filesWritten ?? 0) + 1;
+        }
       }
     } else if (event.type === "user") {
       for (const b of blocks) {
@@ -260,6 +269,28 @@ export class JobRunner {
         this.finish(job, "failed");
       }
     }
+  }
+}
+
+/** What the operator sees while an agent works. Order matters: it is the usual sequence. */
+export const PHASES = ["reading", "saving", "design", "brand", "pages", "checking"] as const;
+export type Phase = (typeof PHASES)[number];
+
+export function phaseOf(tool: string, input: unknown): Phase | null {
+  const path = typeof input === "object" && input !== null ? String((input as { path?: unknown }).path ?? "") : "";
+  switch (tool) {
+    case "get_client_status": case "list_clients": case "read_site_file": case "list_site_files": case "Read": case "Glob": case "Grep":
+      return "reading";
+    case "update_client_config": case "save_content": case "save_asset":
+      return "saving";
+    case "generate_design_system":
+      return "design";
+    case "write_site_file": case "delete_site_file":
+      return path.startsWith("brand/") ? "brand" : "pages";
+    case "build_site":
+      return "checking";
+    default:
+      return null;
   }
 }
 

@@ -77,3 +77,14 @@ describe("factory defaults", () => {
     for (const t of ["corporate-v1", "corporate-v2"]) expect(existsSync(`templates/${t}/package.json`)).toBe(true);
   });
 });
+
+describe("Turkish clients", () => {
+  it("open with Turkish as the main language, lira and Istanbul time", async () => {
+    const f = tempFactory();
+    installStubTemplate(f.templatesDir);
+    await tools.createClient(f, { slug: "mono-berber", businessName: "Mono Erkek Kuaförü", industry: "barber shop", hostingModel: "managed", country: "TR", extraLocale: "en" });
+    const cfg = JSON.parse(readFileSync(clientPaths(f.clientsRoot, "mono-berber").config, "utf8"));
+    expect(cfg.i18n).toEqual({ defaultLocale: "tr", locales: ["tr", "en"] });
+    expect(cfg.business).toMatchObject({ country: "TR", currency: "TRY", timezone: "Europe/Istanbul" });
+  });
+});

@@ -89,7 +89,8 @@ export function buildCustomSite(paths: ClientPaths): CheckResult {
   }
   rmSync(paths.distDir, { recursive: true, force: true });
   mkdirSync(paths.distDir, { recursive: true });
-  cpSync(src, paths.distDir, { recursive: true, dereference: false });
+  // Design proposals (brand/options/) are for choosing, not for the published site.
+  cpSync(src, paths.distDir, { recursive: true, dereference: false, filter: (from) => !path.relative(src, from).replaceAll("\\", "/").startsWith(OPTIONS_DIR) });
   if (existsSync(paths.assetsDir)) cpSync(paths.assetsDir, path.join(paths.distDir, ASSETS_URL_DIR), { recursive: true });
   return { name: "Custom site build", status: "pass", detail: `${listSiteFiles(paths).files.length} file(s) from site/ plus assets/` };
 }
@@ -213,6 +214,35 @@ export function checkCustomCode(distDir: string, formAction: string | null): Che
  * (logo shown, brand colours in the CSS, each signature animation present in the code).
  */
 export const BRAND_FILE = "brand/brand.json";
+/** Three brand proposals the operator chooses from: brand/options/{a,b,c}.json and {a,b,c}-logo.svg. */
+export const OPTIONS_DIR = "brand/options";
+export const OPTION_IDS = ["a", "b", "c"] as const;
+
+export interface BrandOption {
+  readonly id: string;
+  readonly brand: unknown;
+  readonly problems: string[];
+  readonly logoSvg: string | null;
+}
+
+/** The proposals written so far, each checked like a real brand.json. */
+export function readBrandOptions(paths: ClientPaths): BrandOption[] {
+  const out: BrandOption[] = [];
+  for (const id of OPTION_IDS) {
+    const file = path.join(siteDir(paths), OPTIONS_DIR, `${id}.json`);
+    if (!existsSync(file)) continue;
+    let brand: unknown = null;
+    try {
+      brand = JSON.parse(readFileSync(file, "utf8"));
+    } catch {
+      out.push({ id, brand: null, problems: ["not valid JSON"], logoSvg: null });
+      continue;
+    }
+    const logo = path.join(siteDir(paths), OPTIONS_DIR, `${id}-logo.svg`);
+    out.push({ id, brand, problems: brandProblems(brand), logoSvg: existsSync(logo) ? readFileSync(logo, "utf8").slice(0, 60_000) : null });
+  }
+  return out;
+}
 export const LOGO_FILE = "brand/logo.svg";
 const MIN_ANIMATIONS = 2;
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -234,7 +264,7 @@ interface Brand {
   readonly voice: string;
 }
 
-function brandProblems(raw: unknown): string[] {
+export function brandProblems(raw: unknown): string[] {
   const out: string[] = [];
   const b = raw as Partial<Brand> | null;
   if (!b || typeof b !== "object") return ["brand.json is not a JSON object"];

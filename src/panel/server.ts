@@ -3,9 +3,12 @@ import { createServer, type Server } from "node:http";
 import path from "node:path";
 import { FACTORY_ROOT, loadFactoryConfig, type FactoryConfig } from "../config.js";
 import { handleApi } from "./api.js";
+import { ApprovalGate } from "./approval-gate.js";
 import { allowedHost, allowedOrigin, cookieHeader, hasSession, newSessionKey, safeEqual } from "./auth.js";
 import { HttpError, sendError } from "./http.js";
 import { appendHistory } from "./history.js";
+import { clientPaths } from "../lib/paths.js";
+import { snapshot } from "../lib/versions.js";
 import { JobRunner, type SpawnFn } from "./jobs.js";
 import { PreviewServer } from "./preview.js";
 import { serveFile } from "./static.js";
@@ -22,20 +25,28 @@ export interface PanelOptions {
   readonly previewPort: number;
   readonly sessionKey: string;
   readonly spawn?: SpawnFn;
+  /** Tests pass a known code; normally a random one is made and printed in the terminal. */
+  readonly approvalCode?: string;
 }
 
 export interface Panel {
   readonly server: Server;
   readonly preview: PreviewServer;
   readonly jobs: JobRunner;
+  readonly gate: ApprovalGate;
   listen(): Promise<void>;
   close(): void;
 }
 
 export function createPanel(opts: PanelOptions): Panel {
-  const jobs = new JobRunner(FACTORY_ROOT, opts.spawn, undefined, (slug, record) => appendHistory(opts.factory, slug, record));
+  const jobs = new JobRunner(FACTORY_ROOT, opts.spawn, undefined, (slug, record) => {
+    appendHistory(opts.factory, slug, record);
+    // Every finished job leaves a version the operator can go back to (no-op when nothing changed).
+    void snapshot(clientPaths(opts.factory.clientsRoot, slug).root, record.title).catch(() => {});
+  });
   const preview = new PreviewServer(opts.previewPort);
-  const deps = { factory: opts.factory, jobs, preview };
+  const gate = new ApprovalGate(opts.approvalCode);
+  const deps = { factory: opts.factory, jobs, preview, gate };
 
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", `http://${HOST}`);
@@ -75,6 +86,7 @@ export function createPanel(opts: PanelOptions): Panel {
     server,
     preview,
     jobs,
+    gate,
     listen: async () => {
       await new Promise<void>((resolve) => server.listen(opts.port, HOST, resolve));
       await preview.listen(HOST);
@@ -94,6 +106,7 @@ async function main(): Promise<void> {
   console.log("\nSite Factory paneli hazır. Bu bağlantıyı tarayıcıda açın (anahtar sadece bu oturum için geçerli):\n");
   console.log(`  http://${HOST}:${port}/login?key=${sessionKey}\n`);
   console.log(`Önizleme adresi: http://${HOST}:${port + 1}/   ·   Kapatmak için Ctrl+C\n`);
+  console.log(`Onay kodu: ${panel.gate.code}   (panelde "Onayla" derken sorulur; sadece bu terminalde görünür, kimseyle paylaşma)\n`);
   const stop = () => {
     panel.close();
     process.exit(0);

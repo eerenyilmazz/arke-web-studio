@@ -2,7 +2,13 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import type { FactoryConfig } from "../config.js";
-import { approvalState, APPROVAL_KINDS } from "../lib/approvals.js";
+import os from "node:os";
+import { addApproval, approvalPins, approvalState, approvalTargets, APPROVAL_KINDS } from "../lib/approvals.js";
+import { clientStatus } from "../lib/client.js";
+import type { ApprovalGate } from "./approval-gate.js";
+import { listVersions, restoreVersion, snapshot } from "../lib/versions.js";
+import { readBusiness, writeBusiness } from "./business.js";
+import { ZodError } from "zod";
 import { archiveClient } from "../lib/archive.js";
 import { readDraftConfig } from "../lib/client.js";
 import { dirHash, readJsonIfExists } from "../lib/files.js";
@@ -14,7 +20,8 @@ import * as tools from "../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "./http.js";
 import { appendInput, readHistory, readInputs } from "./history.js";
 import { serialiseJob, type JobRunner } from "./jobs.js";
-import { answersPrompt, autopilotPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
+import { answersPrompt, autopilotPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
+import { OPTION_IDS, readBrandOptions } from "../lib/custom-site.js";
 import type { PreviewServer } from "./preview.js";
 
 const JSON_LIMIT = 256 * 1024;
@@ -25,6 +32,7 @@ export interface ApiDeps {
   readonly factory: FactoryConfig;
   readonly jobs: JobRunner;
   readonly preview: PreviewServer;
+  readonly gate: ApprovalGate;
 }
 
 type Handler = (deps: ApiDeps, req: IncomingMessage, res: ServerResponse, params: string[]) => Promise<void> | void;
@@ -44,13 +52,21 @@ const routes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: writeQuestionnaire },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
-  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise|upgrade-template)$`), handler: startAgent },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise|upgrade-template|concepts|choose-concept)$`), handler: startAgent },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/build$`), handler: startBuild },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/deploy$`), handler: startDeploy },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/preview$`), handler: showPreview },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/approve$`), handler: approveFromPanel },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/versions$`), handler: versions },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/quick-edit$`), handler: quickEdit },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/concepts$`), handler: concepts },
+  { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/business$`), handler: saveBusiness },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/versions/restore$`), handler: restore },
   { method: "GET", pattern: /^\/api\/jobs\/([0-9a-f-]{36})$/, handler: getJob },
   { method: "POST", pattern: /^\/api\/jobs\/([0-9a-f-]{36})\/cancel$/, handler: cancelJob },
   { method: "GET", pattern: /^\/api\/meta$/, handler: meta },
+  { method: "GET", pattern: /^\/api\/cloudflare$/, handler: (_d, _r, res) => sendJson(res, 200, tools.cloudflareStatus()) },
+  { method: "POST", pattern: /^\/api\/cloudflare\/test$/, handler: async (d, _r, res) => sendJson(res, 200, await tools.cloudflareTest(d.factory)) },
 ];
 
 export async function handleApi(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, pathname: string): Promise<void> {
@@ -64,12 +80,164 @@ export async function handleApi(deps: ApiDeps, req: IncomingMessage, res: Server
 
 // ---------------------------------------------------------------- handlers
 
+function concepts(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  sendJson(res, 200, { options: readBrandOptions(clientPaths(deps.factory.clientsRoot, s)) });
+}
+
+async function versions(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  sendJson(res, 200, { versions: await listVersions(clientPaths(deps.factory.clientsRoot, s).root) });
+}
+
+/** Back to an earlier version of config, texts, images and site code. Not while a job runs for this client. */
+async function restore(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  if (deps.jobs.running()?.slug === s) throw new HttpError(409, "Bu müşteri için çalışan bir iş var. Bitince geri al.");
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const root = clientPaths(deps.factory.clientsRoot, s).root;
+  await snapshot(root, "Geri almadan önceki hâl");
+  sendJson(res, 200, await restoreVersion(root, str(body, "id", { max: 40 })!));
+}
+
+/** "0534 985 63 19" → "+905349856319" (country decides the prefix for numbers starting with 0). */
+export function normalisePhone(raw: string, country: string): string {
+  let n = raw.replace(/[\s().-]/g, "");
+  if (n.startsWith("00")) n = `+${n.slice(2)}`;
+  if (!n.startsWith("+") && n.startsWith("0")) n = `${country === "TR" ? "+90" : "+44"}${n.slice(1)}`;
+  if (!n.startsWith("+") && /^\d{10,13}$/.test(n)) n = `+${n}`;
+  return n;
+}
+
+const QUICK_FIELDS = ["phone", "email", "address", "hours"] as const;
+
+/**
+ * Small fixes without writing to the agent: contact details are validated and saved in the config, then
+ * template sites rebuild; custom sites get a short agent job that changes those values in the site files.
+ */
+async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  const paths = clientPaths(deps.factory.clientsRoot, s);
+  const before = readDraftConfig(paths) as { template?: string; business?: { country?: string }; contact?: Record<string, unknown>; whatsapp?: { number?: string | null } };
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const country = before.business?.country ?? "GB";
+  const contact: Record<string, string | null> = {};
+  for (const f of QUICK_FIELDS) {
+    const v = str(body, f, { optional: true, max: 300 });
+    if (v === undefined) continue;
+    const t = v.trim();
+    if (f === "email") {
+      if (t) contact.email = t; // the email is required: an empty box keeps the old one
+      continue;
+    }
+    contact[f] = t === "" ? null : f === "phone" ? normalisePhone(t, country) : t;
+  }
+  const waRaw = str(body, "whatsapp", { optional: true, max: 40 });
+  const patch: Record<string, unknown> = { contact };
+  if (waRaw !== undefined) patch.whatsapp = { number: waRaw.trim() ? normalisePhone(waRaw.trim(), country) : null };
+  tools.updateClientConfig(deps.factory, { slug: s, patch });
+
+  const changes = [
+    ...Object.entries(contact).map(([k, v]) => `${k}: "${String(before.contact?.[k] ?? "")}" → "${v ?? ""}"`),
+    ...(waRaw !== undefined ? [`whatsapp: "${before.whatsapp?.number ?? ""}" → "${(patch.whatsapp as { number: string | null }).number ?? ""}"`] : []),
+  ];
+  if (changes.length === 0) throw new HttpError(400, "Değişiklik yok.");
+  let job;
+  if (before.template === "custom") {
+    const prompt = [
+      `Site Factory, client "${s}". Eren changed these contact details in the panel (already saved in site.config.json):`,
+      ...changes.map((c) => `- ${c}`),
+      "Update every place in the site files where the old values appear: header, footer, contact page, buttons (tel:, mailto:, wa.me links) and the JSON-LD. Show phone numbers in the usual local format. Change nothing else. Then build_site; if a check fails, fix it and build again.",
+      "Finish with one or two sentences in Turkish saying what you changed.",
+    ].join("\n");
+    job = runOrConflict(() => deps.jobs.startAgent(s, "quick-edit", "Hızlı düzenleme", prompt, `Hızlı düzenleme: ${changes.join("; ")}`));
+  } else {
+    job = runOrConflict(() =>
+      deps.jobs.startTask(s, "build", "Hızlı düzenleme", async (log) => {
+        log("Bilgiler kaydedildi, site yeniden oluşturuluyor…");
+        const r = await tools.buildSite(deps.factory, { slug: s });
+        if (!r.passed) throw new Error(`Kontroller geçmedi: ${r.checks.filter((c) => c.status === "fail").map((c) => c.name).join(", ")}`);
+        return "Kaydedildi ve site yeniden oluşturuldu.";
+      }, `Hızlı düzenleme: ${changes.join("; ")}`),
+    );
+  }
+  sendJson(res, 202, serialiseJob(job));
+}
+
+const PANEL_APPROVALS = new Set(["site", "production"]);
+
+/**
+ * Approval from the panel, with the one-time code shown only in the panel's terminal. Pins exactly what the
+ * operator was looking at: if content or build changed meanwhile, nothing is approved.
+ */
+async function approveFromPanel(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const kind = str(body, "kind", { max: 20 })!;
+  const kinds = PANEL_APPROVALS.has(kind) ? approvalTargets(kind) : null;
+  if (!kinds) throw new HttpError(400, "Onay türü site ya da production olmalı.");
+  if (deps.jobs.running()?.slug === s) throw new HttpError(409, "Bu müşteri için çalışan bir iş var. Bitince onayla.");
+  if (deps.gate.locked) throw new HttpError(423, "Çok fazla yanlış kod girildi. Paneli kapatıp yeniden başlat (yeni kod çıkar).");
+  if (!deps.gate.check(str(body, "code", { max: 12 }) ?? "")) {
+    throw new HttpError(403, deps.gate.locked ? "Kod yanlış. Onay kilitlendi; paneli yeniden başlat." : `Kod yanlış. Kalan deneme: ${deps.gate.triesLeft}. Kod, paneli başlattığın terminalde yazıyor.`);
+  }
+  const paths = clientPaths(deps.factory.clientsRoot, s);
+  const pinsNow = kinds.map((k) => approvalPins(k, paths.root, paths.distDir, clientStatus(deps.factory, s).lastBuild));
+  const seen = body.pins as { hash?: unknown; distHash?: unknown } | undefined;
+  const last = pinsNow[pinsNow.length - 1]!;
+  if (seen && (seen.hash !== last.hash || (last.distHash && seen.distHash !== last.distHash))) {
+    throw new HttpError(409, "Site sen bakarken değişti. Sayfayı yenile, tekrar bak, sonra onayla.");
+  }
+  const at = new Date().toISOString();
+  kinds.forEach((k, i) => {
+    const { hash, distHash } = pinsNow[i]!;
+    addApproval(paths.approvals, { kind: k, by: `panel:${os.userInfo().username}`, at, hash, ...(distHash ? { distHash } : {}), note: "panel" });
+  });
+  sendJson(res, 200, { approved: kinds, at });
+}
+
 function meta(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse): void {
-  sendJson(res, 200, { locales: LOCALES, running: deps.jobs.running() ? serialiseJob(deps.jobs.running()!, 0) : null });
+  sendJson(res, 200, { locales: LOCALES, running: deps.jobs.running() ? serialiseJob(deps.jobs.running()!, 0) : null, typicalSeconds: typicalSeconds(deps) });
+}
+
+/** Rough time a job of each kind takes here: median of recent successful runs across clients, else a default. */
+const DEFAULT_SECONDS: Readonly<Record<string, number>> = { autopilot: 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, concepts: 360, "quick-edit": 180 };
+const RECENT_RUNS = 20;
+function typicalSeconds(deps: ApiDeps): Record<string, number> {
+  const byKind = new Map<string, number[]>();
+  for (const c of tools.listClients(deps.factory).clients) {
+    for (const r of readHistory(deps.factory, c.slug)) {
+      if (r.status !== "succeeded") continue;
+      const secs = (Date.parse(r.endedAt) - Date.parse(r.startedAt)) / 1000;
+      if (secs > 0) byKind.set(r.kind, [...(byKind.get(r.kind) ?? []), secs]);
+    }
+  }
+  const out: Record<string, number> = { ...DEFAULT_SECONDS };
+  for (const [kind, list] of byKind) {
+    const recent = list.slice(-RECENT_RUNS).sort((a, b) => a - b);
+    out[kind] = Math.round(recent[Math.floor(recent.length / 2)]!);
+  }
+  return out;
 }
 
 function listClients(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse): void {
-  sendJson(res, 200, tools.listClients(deps.factory));
+  const { clients } = tools.listClients(deps.factory);
+  sendJson(res, 200, { clients: clients.map((c) => ({ ...c, business: c.stage === "unreadable" ? null : readBusiness(deps.factory, c.slug) })) });
+}
+
+async function saveBusiness(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const body = await readJsonBody(req, JSON_LIMIT);
+  try {
+    sendJson(res, 200, writeBusiness(deps.factory, s, body));
+  } catch (error) {
+    if (error instanceof ZodError) throw new HttpError(400, `Geçersiz bilgi: ${error.issues.map((i) => i.path.join(".")).join(", ")}`);
+    throw error;
+  }
 }
 
 async function createClient(deps: ApiDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -78,11 +246,14 @@ async function createClient(deps: ApiDeps, req: IncomingMessage, res: ServerResp
   if (hosting !== "managed" && hosting !== "client") throw new HttpError(400, "Barındırma modeli managed ya da client olmalı.");
   const extra = str(body, "extraLocale", { optional: true });
   if (extra && !(LOCALES as readonly string[]).includes(extra)) throw new HttpError(400, "Desteklenmeyen dil.");
+  const country = str(body, "country", { optional: true }) ?? "GB";
+  if (!(tools.COUNTRIES as readonly string[]).includes(country)) throw new HttpError(400, "Ülke GB ya da TR olmalı.");
   const result = await tools.createClient(deps.factory, {
     slug: str(body, "slug", { max: 40 })!,
     businessName: str(body, "businessName", { max: 80 })!,
     industry: str(body, "industry", { max: 60 })!,
     hostingModel: hosting,
+    country: country as tools.Country,
     ...(extra ? { extraLocale: extra as (typeof LOCALES)[number] } : {}),
   });
   sendJson(res, 201, result);
@@ -111,6 +282,8 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     meta?: { unmapped?: unknown[]; laterInterests?: string[] };
     design?: unknown;
     template?: string;
+    contact?: Record<string, unknown>;
+    whatsapp?: { number?: string | null };
   };
   const build = status.lastBuild;
   const { valid } = approvalState(paths.root, paths.approvals, build?.distHash ?? null);
@@ -124,6 +297,10 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     laterInterests: draft.meta?.laterInterests ?? [],
     design: draft.design ?? null,
     template: draft.template ?? null,
+    contact: draft.contact ?? {},
+    whatsapp: draft.whatsapp?.number ?? null,
+    country: (draft as { business?: { country?: string } }).business?.country ?? "GB",
+    businessTracking: readBusiness(deps.factory, s),
     latestTemplate: deps.factory.defaultTemplate,
     inbox: inboxFiles(deps.factory, s),
     questionnaires: existingQuestionnaires(paths.questionnaireDir),
@@ -234,6 +411,23 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       title = "Build ve düzeltme";
       request = "Build al, kontroller geçmezse düzelt.";
       break;
+    case "concepts":
+    case "choose-concept": {
+      const template = (readDraftConfig(clientPaths(deps.factory.clientsRoot, s)) as { template?: string }).template;
+      if (template !== "custom") throw new HttpError(409, "Tasarım önerileri serbest tasarımlı sitelerde var. Önce 'Serbest tasarıma geç'.");
+      if (kind === "concepts") {
+        prompt = conceptsPrompt(s);
+        title = "3 tasarım önerisi";
+        request = "Bu müşteri için 3 farklı tasarım önerisi hazırla.";
+      } else {
+        const option = str(body, "option", { max: 1 })!;
+        if (!(OPTION_IDS as readonly string[]).includes(option)) throw new HttpError(400, "Öneri a, b ya da c olmalı.");
+        prompt = chooseConceptPrompt(s, option);
+        title = "Seçilen tasarımla siteyi kur";
+        request = `Öneri ${option.toUpperCase()} seçildi; siteyi bu tasarımla kur.`;
+      }
+      break;
+    }
     case "upgrade-template":
       prompt = upgradeTemplatePrompt(s, deps.factory.defaultTemplate);
       title = deps.factory.defaultTemplate === "custom" ? "Serbest tasarıma geç" : "Yeni şablona geç";
@@ -247,6 +441,8 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       request = change;
     }
   }
+  // A version before the agent touches anything, so its changes can always be undone.
+  if (!deps.jobs.running()) await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${title}`).catch(() => null);
   const job = runOrConflict(() => deps.jobs.startAgent(s, kind!, title, prompt + earlierInputsBlock(earlier), request));
   appendInput(deps.factory, s, kind!, input);
   sendJson(res, 202, serialiseJob(job));

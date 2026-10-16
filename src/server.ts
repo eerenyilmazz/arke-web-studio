@@ -63,13 +63,14 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     "create_client",
     {
       title: "Create client",
-      description: "Creates the client folder (own git repo), a draft site.config.json and empty content/assets folders. English is always included.",
+      description: "Creates the client folder (own git repo), a draft site.config.json and empty content/assets folders. The country decides the main language (GB = English, TR = Turkish), currency and time zone.",
       inputSchema: {
         slug,
         businessName: z.string().min(1).max(80),
         industry: z.string().min(2).max(60).describe("Short sector name in English, e.g. 'hair salon', 'family law solicitor'"),
         hostingModel: z.enum(["managed", "client"]).describe("managed = our Cloudflare account; client = the client's own. Ask Eren."),
         extraLocale: z.enum(LOCALES).optional().describe("Second language, only if the client asked for one"),
+        country: z.enum(tools.COUNTRIES).optional().describe("GB (default) or TR"),
         template: z.string().regex(SLUG_PATTERN).optional(),
       },
     },

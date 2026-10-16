@@ -104,3 +104,25 @@ describe("custom sites: the agent writes the site, the factory checks it", () =>
     expect(contentHash(paths.root)).not.toBe(before);
   });
 });
+
+describe("design proposals", () => {
+  it("reads three options, checks them like brand.json, and keeps them out of the published site", async () => {
+    const { f, paths } = await customClient();
+    writeGoodSite(f);
+    const { readBrandOptions } = await import("../src/lib/custom-site.js");
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/options/a.json", content: JSON.stringify({ ...BRAND, name: "Kitchen window" }) });
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/options/a-logo.svg", content: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>' });
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/options/b.json", content: JSON.stringify({ name: "Thin" }) });
+    const options = readBrandOptions(paths);
+    expect(options.map((o) => o.id)).toEqual(["a", "b"]);
+    expect(options[0]!.problems).toEqual([]);
+    expect(options[0]!.logoSvg).toContain("<svg");
+    expect(options[1]!.problems.length).toBeGreaterThan(0);
+    const r = await tools.buildSite(f, { slug: SLUG });
+    expect(r.passed).toBe(true);
+    const { existsSync } = await import("node:fs");
+    const path = await import("node:path");
+    expect(existsSync(path.join(paths.distDir, "brand", "options"))).toBe(false);
+    expect(existsSync(path.join(paths.distDir, "brand", "brand.json"))).toBe(true);
+  });
+});

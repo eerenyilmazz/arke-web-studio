@@ -163,6 +163,30 @@ export function upgradeTemplatePrompt(slug: string, template: string): string {
   ].join("\n");
 }
 
+/** Three brand directions for a custom site, to choose from before any page is written. */
+export function conceptsPrompt(slug: string): string {
+  return [
+    `Site Factory, client "${slug}". Eren wants three different design proposals for this client to choose from.`,
+    COLOUR_RULE,
+    "1. get_client_status and read the client's facts. Read rules/custom-site.md (step 1 and step 2) completely.",
+    "2. Write three clearly different brand identities with write_site_file: site/brand/options/a.json, b.json, c.json (same fields as brand.json, plus \"name\": a two- or three-word title for the direction) and a logo for each: site/brand/options/a-logo.svg, b-logo.svg, c-logo.svg.",
+    "   Make them genuinely different: different concept from the business's world, different palette roles and fonts, different signature animations. If the client named colours, all three use them (in different roles).",
+    "3. Do not write pages, do not change brand/brand.json, do not build or deploy.",
+    "Finish with a short Turkish summary: one line per proposal (name and idea).",
+  ].join("\n");
+}
+
+/** Builds the site from the proposal Eren chose. */
+export function chooseConceptPrompt(slug: string, option: string): string {
+  return [
+    `Site Factory, client "${slug}". Eren chose design proposal "${option}".`,
+    `1. read_site_file brand/options/${option}.json and brand/options/${option}-logo.svg. Write them as brand/brand.json (without the "name" field) and brand/logo.svg; improve details if needed but keep the direction.`,
+    "2. Following rules/custom-site.md, write (or rewrite) every page so the whole site uses this brand: palette, fonts, visual language and every signature animation.",
+    "3. build_site. If checks fail, fix the site files and build again (at most 3 attempts). Do not deploy.",
+    SUMMARY_RULE,
+  ].join("\n");
+}
+
 export function revisePrompt(slug: string, request: string): string {
   return [
     `Site Factory, client "${slug}". Eren (the operator) asks for this change:`,

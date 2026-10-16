@@ -150,7 +150,13 @@ function setStatus(job) {
 async function refreshStatus() {
   const m = await api("GET", "/api/meta").catch(() => null);
   if (!m) return;
+  state.typical = m.typicalSeconds || {};
   const before = state.running?.id;
+  // Finished while the panel was on another page (no job polling): still announce it.
+  if (before && !m.running && !state.pollTimer) {
+    const done = await api("GET", `/api/jobs/${before}`).catch(() => null);
+    if (done && done.status !== "running") announceFinished(done);
+  }
   if (m.running) state.running = { ...m.running, log: [] };
   else if (!state.pollTimer) state.running = null;
   setStatus(m.running);
@@ -166,6 +172,7 @@ $("#search").addEventListener("input", (e) => { state.search = e.target.value.to
 function route() {
   const parts = location.hash.replace(/^#\/?/, "").split("/");
   if (parts[0] === "new") return { view: "new" };
+  if (parts[0] === "ayarlar") return { view: "settings" };
   if (parts[0] === "c" && parts[1]) return { view: "client", slug: parts[1], tab: OLD_TABS[parts[2]] || parts[2] || "sohbet" };
   return { view: "home" };
 }
@@ -175,6 +182,7 @@ async function render() {
   const r = route();
   const view = $("#view");
   if (r.view === "new") view.replaceChildren(renderNew());
+  else if (r.view === "settings") view.replaceChildren(await renderSettings());
   else if (r.view === "client") await renderClient(view, r.slug, r.tab);
   else view.replaceChildren(renderHome());
 }
@@ -253,6 +261,7 @@ function renderHome() {
         h("span", { class: "sub", text: c.industry || "" }),
         h("div", { class: "mini-steps", "aria-label": `Adım ${step + 1} / ${STEPS.length}: ${STEPS[step].label}` }, ...STEPS.map((s, i) => h("span", { class: i < step ? "done" : i === step ? "now" : "" }))),
         h("span", { class: "next", text: nextHint(c, b) }),
+        businessLine(c.business),
       );
     })),
   );
@@ -283,30 +292,38 @@ function renderNew() {
   name.addEventListener("input", () => { if (!slugTouched) slug.value = slugify(name.value); });
   slug.addEventListener("input", () => (slugTouched = true));
   const industry = h("input", { type: "text", id: "nc-industry", required: true, maxlength: 60, placeholder: "ör. hair salon, family law solicitor" });
-  const info = h("textarea", { id: "nc-info", rows: 7, class: "field", maxlength: 20000, placeholder: "Ör: Diş kliniği, Harbour Dental. Dr. Sarah Lee. NHS ve özel hasta. Beyazlatma, implant, acil randevu. 0161 496 0000, Manchester." });
-  const lang = h("select", { id: "nc-lang" }, h("option", { value: "" }, "Sadece İngilizce"), ...Object.entries(LANG_NAMES).filter(([k]) => k !== "en").map(([k, v]) => h("option", { value: k }, `İngilizce + ${v}`)));
+  const info = h("textarea", { id: "nc-info", rows: 7, class: "field", maxlength: 20000, placeholder: "Ör: Erkek kuaförü, Mono. Saç kesimi 500 TL, sakal 300 TL. Ankara Sincan, 0534 985 63 19. Siyah-beyaz renkler." });
+  const MAIN = { GB: "en", TR: "tr" };
+  const country = h("select", { id: "nc-country" }, h("option", { value: "TR" }, "Türkiye (Türkçe, ₺)"), h("option", { value: "GB" }, "İngiltere (İngilizce, £)"));
+  const lang = h("select", { id: "nc-lang" });
+  const fillLangs = () => {
+    const main = MAIN[country.value];
+    lang.replaceChildren(h("option", { value: "" }, `Sadece ${LANG_NAMES[main]}`), ...Object.entries(LANG_NAMES).filter(([k]) => k !== main).map(([k, v]) => h("option", { value: k }, `${LANG_NAMES[main]} + ${v}`)));
+  };
+  country.addEventListener("change", fillLangs);
+  fillLangs();
 
   const form = h("form", { class: "card stack", style: "max-width:40rem", onsubmit: async (e) => {
     e.preventDefault();
     const hosting = form.querySelector("input[name=hosting]:checked")?.value;
-    const res = await guarded(() => api("POST", "/api/clients", { businessName: name.value.trim(), slug: slug.value.trim(), industry: industry.value.trim(), hostingModel: hosting, extraLocale: lang.value || undefined }));
+    const res = await guarded(() => api("POST", "/api/clients", { businessName: name.value.trim(), slug: slug.value.trim(), industry: industry.value.trim(), hostingModel: hosting, country: country.value, extraLocale: lang.value || undefined }));
     if (!res) return;
     toast("Müşteri oluşturuldu.");
     const text = info.value.trim();
-    if (!text) { location.hash = `#/c/${res.slug}/akis`; return; }
-    location.hash = `#/c/${res.slug}/akis`;
+    location.hash = `#/c/${res.slug}/sohbet`;
+    if (!text) return;
     await runAgent(res.slug, "autopilot", { freeText: text });
   } },
     h("h1", { text: "Yeni müşteri" }),
     h("p", { class: "muted", text: "Adını ve sektörünü yaz. Bildiklerini alttaki kutuya yapıştırırsan site hemen hazırlanmaya başlar." }),
     h("label", { for: "nc-name" }, "İşletme adı", name),
-    h("label", { for: "nc-slug" }, "Kısa ad (slug)", h("span", { class: "help", text: "Klasör ve Cloudflare adı olur, sonradan değişmez. Küçük harf, rakam ve tire." }), slug),
-    h("label", { for: "nc-industry" }, "Sektör (İngilizce)", h("span", { class: "help", text: "Tasarım önerisi ve sektöre özel sorular buna göre seçilir." }), industry),
+    h("label", { for: "nc-slug" }, "Kısa ad (slug)", h("span", { class: "help", text: "Klasör ve web adresi için kullanılır, sonradan değişmez. Otomatik doldurulur." }), slug),
+    h("label", { for: "nc-industry" }, "Sektör", h("span", { class: "help", text: "İngilizce kısa ad en iyi sonucu verir: barber shop, pickle shop, dentist. Tasarım ve sektör soruları buna göre seçilir." }), industry),
     h("fieldset", {}, h("legend", { text: "Barındırma" }),
       h("label", { class: "choice" }, h("input", { type: "radio", name: "hosting", value: "managed", checked: true }), "Bizim Cloudflare hesabımız"),
       h("label", { class: "choice" }, h("input", { type: "radio", name: "hosting", value: "client" }), "Müşterinin kendi hesabı"),
     ),
-    h("label", { for: "nc-lang" }, "Dil", lang),
+    h("div", { class: "two" }, h("label", { for: "nc-country" }, "Ülke", country), h("label", { for: "nc-lang" }, "Site dili", lang)),
     h("label", { for: "nc-info" }, "Elindeki bilgiler (isteğe bağlı)",
       h("span", { class: "help", text: "Müşteriden ne biliyorsan yapıştır. Doldurursan site hemen hazırlanmaya başlar; eksik bilgi olursa agent sorar." }),
       info),
@@ -361,7 +378,7 @@ function infoGuide(textarea, onChange) {
   };
   return h("details", { class: "info-guide" },
     h("summary", { text: "Neler yazabilirim? (liste ve doldurulacak şablon)" }),
-    h("p", { class: "small muted", text: "Sıra, dil ve biçim önemli değil; Türkçe yazabilirsin, site metinlerini agent İngilizce yazar. ★ olanlar olmadan site bitmez: eksikse agent sana kısa sorularla sorar. Uydurma bilgi eklenmez." }),
+    h("p", { class: "small muted", text: "Sıra, dil ve biçim önemli değil; Türkçe yazabilirsin; agent site metinlerini sitenin dilinde yazar. ★ olanlar olmadan site bitmez: eksikse agent sana kısa sorularla sorar. Uydurma bilgi eklenmez." }),
     h("div", { class: "info-groups" },
       ...INFO_GROUPS.map((g) => h("div", {},
         h("p", { class: "info-title", text: `${g.need ? "★ " : ""}${g.title}` }),
@@ -453,12 +470,12 @@ function nowCard(d) {
     case "awaiting-production-approval":
       if (!preview) {
         title = "Önizlemeyi yayınla ve linki müşteriye gönder";
-        text = "Site Cloudflare'de geçici bir adreste açılır. Müşteri onaylayınca yayın onayını terminalden verirsin.";
+        text = "Site Cloudflare'de geçici bir adreste açılır. Müşteri onaylayınca yayın onayını verirsin.";
         actions = [primary("Önizleme yayınla", () => runTask(slug, "deploy", { target: "preview", dryRun: false }), busy), secondary("Önce dene", () => runTask(slug, "deploy", { target: "preview", dryRun: true }), busy)];
       } else {
         title = "Müşterinin onayını bekle";
-        text = "Önizleme yayında. Müşteri onaylayınca yayın onayını terminalden ver.";
-        actions = [preview.url && h("a", { class: "btn btn-lg", href: preview.url, target: "_blank", rel: "noopener" }, "Önizleme linki"), preview.url && copyButton(preview.url, "Linki kopyala"), copyButton(cmd("production"), "Onay komutunu kopyala")];
+        text = "Önizleme yayında. Linki müşteriye gönder; o onaylayınca yayın onayını ver.";
+        actions = [preview.url && h("a", { class: "btn btn-lg", href: preview.url, target: "_blank", rel: "noopener" }, "Önizleme linki"), preview.url && copyButton(preview.url, "Linki kopyala"), h("button", { class: "btn btn-ok btn-lg", type: "button", disabled: busy, onclick: () => approveDialog(d, "production") }, "Müşteri onayladı: yayın onayı ver")];
       }
       break;
     case "ready-to-deploy":
@@ -544,13 +561,14 @@ function readyCard(d) {
     h("div", { class: "text" },
       h("p", { class: "eyebrow", text: "Site hazır" }),
       h("h2", { text: "Siteye bak, beğenirsen onayla" }),
-      h("p", { text: "Telefonda ve bilgisayarda göz at. Değişiklik istersen aşağıdaki kutuya yaz, agent düzeltir. Beğendiysen bu komutu WSL terminalinde site-factory klasöründe çalıştır ve sorulunca kısa adı yaz." }),
+      h("p", { text: "Telefonda ve bilgisayarda göz at. Değişiklik istersen Sohbet'e yaz, agent düzeltir. Beğendiysen onayla." }),
     ),
-    h("div", { class: "cmd" }, h("code", { text: d.siteApproveCommand }), copyButton(d.siteApproveCommand)),
     h("div", { class: "row" },
-      h("button", { class: "btn btn-primary btn-lg", type: "button", onclick: () => openPreview(slug) }, "Siteye bak"),
-      h("button", { class: "btn btn-lg", type: "button", onclick: () => { location.hash = `#/c/${slug}/akis`; setTimeout(() => $("#composer")?.focus(), 80); } }, "Değişiklik iste"),
+      h("button", { class: "btn btn-primary btn-lg", type: "button", onclick: () => openPreview(slug) }, svg(ICON.eye, 18, 2), "Siteye bak"),
+      h("button", { class: "btn btn-ok btn-lg", type: "button", disabled: isBusy(), onclick: () => approveDialog(d, "site") }, svg(ICON.check, 18, 2.4), "Onayla"),
+      h("button", { class: "btn btn-lg", type: "button", onclick: () => { location.hash = `#/c/${slug}/sohbet`; setTimeout(() => $("#composer")?.focus(), 80); } }, "Değişiklik iste"),
     ),
+    terminalFold(d.siteApproveCommand),
   );
 }
 
@@ -587,6 +605,7 @@ function tabFlow(body, d) {
           h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "autopilot", {}) }, "Eksikleri tamamla ve hazırla"),
           h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
           h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları düzelt"),
+          d.template === "custom" ? h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "concepts", {}) }, "3 tasarım önerisi") : null,
         ),
         h("label", { for: "composer", class: "sr-only" }, "Agent'a talimat"),
         h("div", { class: "box" }, composer, h("button", { class: "send", type: "submit", "aria-label": "Gönder (Ctrl+Enter)", disabled: busy }, svg(ICON.send, 18, 2.4))),
@@ -608,8 +627,9 @@ function agentBlock(job, live) {
   const isAgent = !["build", "deploy"].includes(job.kind);
   const parts = [];
   if (live) {
-    const lines = h("div", { class: "live-lines", id: "live-lines" });
-    appendLiveLines(lines, job.log || []);
+    if (isAgent) parts.push(jobProgress(job));
+    const lines = h("details", { class: "live-details" }, h("summary", { text: "Ayrıntılı kayıt" }), h("div", { class: "live-lines", id: "live-lines" }));
+    appendLiveLines(lines.querySelector("#live-lines"), job.log || []);
     parts.push(lines);
     parts.push(h("div", { class: "row" }, h("span", { class: "typing", role: "img", "aria-label": "çalışıyor" }, h("span"), h("span"), h("span")), isAgent && h("button", { class: "btn btn-sm", type: "button", onclick: () => cancelJob(job.id) }, "Durdur")));
   } else {
@@ -755,13 +775,168 @@ function rail(d) {
 
 /** Everything about the built site in one place: look, checks, approvals, publishing. */
 function tabSite(body, d) {
+  if (d.template === "custom") body.append(conceptsCard(d));
+  if (d.distReady) body.append(devicePreview(d));
   const look = h("div", { class: "site-grid" });
   body.append(look);
-  look.append(rail(d));
+  const left = h("div", { class: "stack" }, rail(d), quickEditCard(d));
+  look.append(left);
   const right = h("div");
   look.append(right);
   tabPublish(right, d);
   tabBuild(right, d);
+  right.append(versionsCard(d));
+}
+
+const PAYMENT_LABELS = { none: "Teklif verilmedi", quoted: "Teklif verildi", deposit: "Kapora alındı", paid: "Ödendi" };
+const CURRENCY_SIGNS = { TRY: "₺", GBP: "£", EUR: "€", USD: "$" };
+
+/** One line for a client card: price, payment and delivery date (red when late and unpaid). */
+function businessLine(b) {
+  if (!b) return null;
+  const parts = [];
+  if (b.price != null) parts.push(`${CURRENCY_SIGNS[b.currency] || ""}${Number(b.price).toLocaleString("tr-TR")}`);
+  parts.push(PAYMENT_LABELS[b.payment] || b.payment);
+  let late = false;
+  if (b.deadline) {
+    const due = new Date(`${b.deadline}T23:59:59`);
+    late = due < new Date() && b.payment !== "paid";
+    parts.push(`Teslim ${due.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}`);
+  }
+  return h("span", { class: `biz ${late ? "late" : ""} pay-${b.payment}`, text: parts.join(" · ") });
+}
+
+function businessForm(d) {
+  const slug = d.status.slug;
+  const b = d.businessTracking || { price: null, currency: d.country === "TR" ? "TRY" : "GBP", payment: "none", deadline: null, note: "" };
+  const price = h("input", { id: "biz-price", type: "number", min: 0, step: "50", value: b.price ?? "" });
+  const currency = h("select", { id: "biz-cur" }, ...Object.entries(CURRENCY_SIGNS).map(([k, v]) => h("option", { value: k, selected: k === b.currency }, `${v} ${k}`)));
+  const payment = h("select", { id: "biz-pay" }, ...Object.entries(PAYMENT_LABELS).map(([k, v]) => h("option", { value: k, selected: k === b.payment }, v)));
+  const deadline = h("input", { id: "biz-date", type: "date", value: b.deadline || "" });
+  const note = h("textarea", { id: "biz-note", rows: 2, maxlength: 2000 });
+  note.value = b.note || "";
+  const form = h("form", { class: "card biz-form", onsubmit: async (e) => {
+    e.preventDefault();
+    const r = await guarded(() => api("PUT", `/api/clients/${slug}/business`, {
+      price: price.value === "" ? null : Number(price.value), currency: currency.value, payment: payment.value, deadline: deadline.value || null, note: note.value,
+    }));
+    if (r) { toast("İş bilgileri kaydedildi."); loadClients(); }
+  } },
+    h("div", { class: "biz-grid" },
+      h("label", { for: "biz-price" }, "Fiyat", h("div", { class: "row nowrap" }, price, currency)),
+      h("label", { for: "biz-pay" }, "Ödeme", payment),
+      h("label", { for: "biz-date" }, "Teslim tarihi", deadline),
+    ),
+    h("label", { for: "biz-note" }, "Not", note),
+    h("div", {}, h("button", { class: "btn btn-primary", type: "submit" }, "Kaydet")),
+  );
+  return form;
+}
+
+/** Three brand proposals from the agent, shown as cards; choosing one builds the site with it. */
+function conceptsCard(d) {
+  const slug = d.status.slug;
+  const busy = isBusy();
+  const body = h("div", { class: "concepts" }, h("p", { class: "muted small", text: "Yükleniyor…" }));
+  const card = h("section", { class: "card stack" },
+    h("div", { class: "row", style: "justify-content:space-between" },
+      h("h2", { text: "Tasarım önerileri" }),
+      h("button", { class: "btn btn-sm", type: "button", disabled: busy, onclick: () => runAgent(slug, "concepts", {}) }, "3 yeni öneri hazırlat")),
+    h("p", { class: "muted small", text: "Agent bu müşteri için üç farklı marka yönü çizer (logo, renkler, yazı tipleri, animasyon fikirleri). Müşteriye ekran görüntüsüyle gösterip seçtir; seçince site o tasarımla kurulur." }),
+    body,
+  );
+  api("GET", `/api/clients/${slug}/concepts`).then(({ options }) => {
+    if (!options.length) { body.replaceChildren(h("p", { class: "muted small", text: "Henüz öneri yok." })); return; }
+    body.replaceChildren(...options.map((o) => {
+      const b = o.brand || {};
+      const colours = Object.entries(b.palette || {}).filter(([, v]) => /^#[0-9a-f]{6}$/i.test(String(v)));
+      // The logo is shown as an image (data URI): nothing in it can run in the panel.
+      const logo = o.logoSvg ? h("img", { class: "concept-logo", alt: `Öneri ${o.id.toUpperCase()} logosu`, src: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(o.logoSvg)}` }) : null;
+      return h("article", { class: "concept" },
+        h("div", { class: "concept-head" }, h("span", { class: "letter", text: o.id.toUpperCase() }), h("strong", { text: b.name || `Öneri ${o.id.toUpperCase()}` })),
+        logo,
+        h("div", { class: "swatches" }, ...colours.map(([n, v]) => h("span", { title: `${n} ${v}`, style: `background:${v}` }))),
+        b.fonts && h("p", { class: "small", text: `${b.fonts.heading || ""} / ${b.fonts.body || ""}` }),
+        b.concept && h("p", { class: "small", text: b.concept }),
+        Array.isArray(b.animations) && h("ul", { class: "small anims" }, ...b.animations.map((a) => h("li", { text: a.idea || a.id }))),
+        o.problems.length ? h("p", { class: "err small", text: `Eksik: ${o.problems.join("; ")}` }) : null,
+        h("button", { class: "btn btn-primary", type: "button", disabled: busy || o.problems.length > 0, onclick: () => {
+          if (confirm(`Öneri ${o.id.toUpperCase()} ile site kurulacak (mevcut sayfalar yeniden yazılır; önceki hâl Sürümler'de kalır). Devam?`)) runAgent(slug, "choose-concept", { option: o.id });
+        } }, "Bunu seç ve siteyi kur"),
+      );
+    }));
+  }).catch(() => body.replaceChildren(h("p", { class: "err", text: "Öneriler okunamadı." })));
+  return card;
+}
+
+/** Phone, email, address, hours and WhatsApp, fixed straight from the panel. */
+function quickEditCard(d) {
+  const slug = d.status.slug;
+  const c = d.contact || {};
+  const field = (id, label, value, attrs = {}) => {
+    const input = h("input", { id: `qe-${id}`, name: id, value: value || "", ...attrs });
+    return h("label", { for: `qe-${id}` }, label, input);
+  };
+  const form = h("form", { class: "card stack quick-edit", onsubmit: async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(form).entries());
+    const job = await guarded(() => api("POST", `/api/clients/${slug}/quick-edit`, data));
+    if (job) { toast("Kaydedildi; site güncelleniyor."); await jobStarted(job); }
+  } },
+    h("h3", { text: "Hızlı düzenle" }),
+    h("p", { class: "muted small", text: "Telefonu 0 ile yazabilirsin; ülke koduna çevrilir." }),
+    field("phone", "Telefon", c.phone, { type: "tel", autocomplete: "off" }),
+    field("whatsapp", "WhatsApp", d.whatsapp, { type: "tel", autocomplete: "off" }),
+    field("email", "E-posta", c.email, { type: "email" }),
+    field("address", "Adres", c.address),
+    field("hours", "Çalışma saatleri", c.hours),
+    h("button", { class: "btn btn-primary", type: "submit", disabled: isBusy() }, "Kaydet ve siteye uygula"),
+  );
+  return form;
+}
+
+/** Earlier versions of the site (recorded before and after every job), with "go back". */
+function versionsCard(d) {
+  const slug = d.status.slug;
+  const list = h("ul", { class: "versions" }, h("li", { class: "muted small", text: "Yükleniyor…" }));
+  const card = h("details", { class: "card advanced", open: false }, h("summary", { text: "Önceki sürümler (geri al)" }),
+    h("p", { class: "muted small", text: "Her işten önce ve sonra site kaydedilir. Bir sürüme dönünce metinler, görseller ve site kodu o hâline gelir; onayı yeniden vermen gerekir." }), list);
+  card.addEventListener("toggle", async () => {
+    if (!card.open || card.dataset.loaded) return;
+    card.dataset.loaded = "1";
+    const r = await guarded(() => api("GET", `/api/clients/${slug}/versions`));
+    if (!r) return;
+    if (!r.versions.length) { list.replaceChildren(h("li", { class: "muted small", text: "Henüz kayıtlı sürüm yok." })); return; }
+    list.replaceChildren(...r.versions.map((v, i) => h("li", {},
+      h("span", { class: "when", text: time(v.at) }),
+      h("span", { class: "what", text: i === 0 ? `${v.message} (şu anki)` : v.message }),
+      i === 0 ? null : h("button", { class: "btn btn-sm", type: "button", disabled: isBusy(), onclick: async () => {
+        if (!confirm(`Site "${v.message}" sonrasındaki hâline dönecek. Sonraki değişiklikler kaybolmaz, yine listede kalır. Devam?`)) return;
+        const res = await guarded(() => api("POST", `/api/clients/${slug}/versions/restore`, { id: v.id }));
+        if (res) { toast("Geri alındı. Siteyi yeniden oluşturup bak."); render(); }
+      } }, "Bu hâline dön"),
+    )));
+  });
+  return card;
+}
+
+/** The built site in a phone frame and a desktop frame, side by side, without leaving the panel. */
+function devicePreview(d) {
+  const slug = d.status.slug;
+  const wrap = h("section", { class: "card devices" });
+  const head = h("div", { class: "row", style: "justify-content:space-between" },
+    h("h2", { text: "Görünüm" }),
+    h("div", { class: "row" },
+      h("button", { class: "btn btn-sm", type: "button", onclick: () => openPreview(slug) }, "Yeni sekmede aç"),
+    ),
+  );
+  const stage = h("div", { class: "device-stage" }, h("p", { class: "muted small", text: "Yükleniyor…" }));
+  wrap.append(head, stage, h("p", { class: "muted small", text: "Müşteriye göstermek için: Windows'ta Win+Shift+S ile ekran görüntüsü al ve WhatsApp'tan gönder. Kalıcı link için Ayarlar'dan Cloudflare'i kur." }));
+  api("POST", `/api/clients/${slug}/preview`).then((r) => {
+    const frame = (cls, label) => h("figure", { class: `device ${cls}` }, h("div", { class: "screen" }, h("iframe", { src: r.url, title: `${label} görünümü`, tabindex: "-1" })), h("figcaption", { text: label }));
+    stage.replaceChildren(frame("phone", "Telefon"), frame("desktop", "Masaüstü"));
+  }).catch(() => stage.replaceChildren(h("p", { class: "err", text: "Önizleme açılamadı." })));
+  return wrap;
 }
 
 // ---------------------------------------------------------------- tab: information
@@ -773,6 +948,7 @@ async function tabInfo(body, d) {
     body.append(el);
     return el;
   };
+  section("İş takibi", "Teklif, ödeme ve teslim tarihi. Sadece panelde durur, siteye ve agent'a gitmez.").append(businessForm(d));
   if (d.status.openQuestions.length) {
     const miss = section("Eksik bilgiler", "Cevapları yukarıdaki kutuya yapıştırıp 'Siteyi hazırla'ya bas.");
     miss.append(h("ul", { class: "missing" }, ...d.status.openQuestions.map((q) => h("li", { title: q.text, text: MISSING_TR[q.id] || q.text }))));
@@ -846,7 +1022,7 @@ async function tabAnswers(body, d, { compact = false } = {}) {
   body.append(
     compact ? null : h("section", { class: "card stack" },
       h("h2", { text: "Bilgileri yapıştır, agent dağıtsın" }),
-      h("p", { class: "muted small", text: "Agent her bilgiyi doğru alana kendisi yerleştirir, siteye girecek metinleri İngilizce yazar. Eksik kalanları uydurmaz; 2. tur formuna ekler." }),
+      h("p", { class: "muted small", text: "Agent her bilgiyi doğru alana kendisi yerleştirir, siteye girecek metinleri sitenin dilinde yazar. Eksik kalanları uydurmaz; 2. tur formuna ekler." }),
       h("label", { for: "free", class: "sr-only" }, "Müşteri bilgileri"),
       free,
     ),
@@ -1016,16 +1192,16 @@ function tabPublish(body, d) {
   body.append(
     h("section", { class: "card stack" },
       h("h2", { text: "Onay" }),
-      h("p", { class: "muted small", text: "Güvenlik için onayı sadece sen verirsin: komutu kopyala, WSL terminalinde site-factory klasöründe çalıştır, sorulunca kısa adı yaz. Sitede her değişiklik onayı sıfırlar." }),
+      h("p", { class: "muted small", text: "Onayı sadece sen verirsin: panel, başlattığın terminalde yazan onay kodunu sorar (agent bu kodu göremez). Sitede her değişiklik onayı sıfırlar." }),
       h("ol", { class: "approve-steps" },
         h("li", { class: siteOk ? "ok" : "" },
           h("div", {}, h("strong", { text: "1. Siteyi onayla" }), h("span", { class: "muted small", text: " metin ve görünüm birlikte" })),
-          siteOk ? h("span", { class: "badge ok", text: "onaylandı" }) : h("span", { class: "cmd" }, h("code", { text: d.siteApproveCommand }), copyButton(d.siteApproveCommand))),
+          siteOk ? h("span", { class: "badge ok", text: "onaylandı" }) : h("button", { class: "btn btn-ok", type: "button", disabled: !d.distReady || isBusy(), onclick: () => approveDialog(d, "site") }, "Onayla")),
         prod && h("li", { class: prod.valid ? "ok" : "" },
           h("div", {}, h("strong", { text: "2. Yayın onayı" }), h("span", { class: "muted small", text: " müşteri önizlemeyi beğenince" })),
-          prod.valid ? h("span", { class: "badge ok", text: "onaylandı" }) : h("span", { class: "cmd" }, h("code", { text: prod.command }), copyButton(prod.command))),
+          prod.valid ? h("span", { class: "badge ok", text: "onaylandı" }) : h("button", { class: "btn btn-ok", type: "button", disabled: !siteOk || isBusy(), onclick: () => approveDialog(d, "production") }, "Yayın onayı ver")),
       ),
-      h("details", { class: "small" }, h("summary", { text: "Ayrı ayrı onay komutları" }),
+      h("details", { class: "small" }, h("summary", { text: "Terminalden onaylamak istersen (komutlar)" }),
       h("ul", { class: "approvals" }, ...d.approvals.map((a) =>
         h("li", {},
           h("strong", { text: APPROVAL_NAMES[a.kind] }),
@@ -1045,6 +1221,178 @@ function tabPublish(body, d) {
       ld && h("p", { class: "small" }, `Son yayın: ${ld.target === "production" ? "canlı" : "önizleme"} · ${time(ld.at)} `, ld.url && h("a", { href: ld.url, target: "_blank", rel: "noopener", text: ld.url })),
     ),
   );
+}
+
+// ---------------------------------------------------------------- settings: publishing setup
+
+/** Step-by-step Cloudflare setup with live checks. Only whether a value is set is ever shown, never the value. */
+async function renderSettings() {
+  const st = await guarded(() => api("GET", "/api/cloudflare"));
+  const ok = (b) => h("span", { class: `badge ${b ? "ok" : "warn"}`, text: b ? "tamam" : "eksik" });
+  const result = h("p", { class: "small", role: "status" });
+  const test = async (btn) => {
+    btn.disabled = true; result.textContent = "Deneniyor…";
+    const r = await guarded(() => api("POST", "/api/cloudflare/test"));
+    btn.disabled = false;
+    if (r) { result.textContent = r.message; result.className = `small ${r.ok ? "ok-text" : "err"}`; }
+  };
+  const lines = 'export SF_CF_MANAGED_API_TOKEN="buraya-token"\nexport SF_CF_MANAGED_ACCOUNT_ID="buraya-hesap-kimligi"';
+  const ready = st && st.managed.token && st.managed.accountId;
+  return h("section", { class: "settings stack", style: "max-width:46rem" },
+    h("h1", { text: "Ayarlar" }),
+    h("section", { class: "card stack" },
+      h("div", { class: "row", style: "justify-content:space-between" }, h("h2", { text: "Yayın: Cloudflare bağlantısı" }), ready ? h("span", { class: "badge ok", text: "hazır" }) : h("span", { class: "badge warn", text: "kurulmadı" })),
+      h("p", { class: "muted small", text: "Önizleme linki ve canlı yayın için bir kez yapılır. Token panelde ya da dosyada saklanmaz; sadece terminal ortamında durur ve agent'a hiç verilmez." }),
+      st && h("ul", { class: "checks" },
+        h("li", {}, ok(st.managed.token), " API token (SF_CF_MANAGED_API_TOKEN)"),
+        h("li", {}, ok(st.managed.accountId), " Hesap kimliği (SF_CF_MANAGED_ACCOUNT_ID)"),
+        h("li", {}, ok(st.wrangler), " Yayın aracı (wrangler)"),
+      ),
+      h("ol", { class: "setup-steps" },
+        h("li", {}, h("strong", { text: "Cloudflare hesabı aç " }), "(ücretsiz): ", h("a", { href: "https://dash.cloudflare.com/sign-up", target: "_blank", rel: "noopener", text: "dash.cloudflare.com" })),
+        h("li", {}, h("strong", { text: "Token oluştur: " }), "Profil → API Tokens → Create Token → ", h("em", { text: "Edit Cloudflare Workers" }), " şablonu → Continue → Create. Çıkan token'ı kopyala (bir kez gösterilir). ", h("a", { href: "https://dash.cloudflare.com/profile/api-tokens", target: "_blank", rel: "noopener", text: "Token sayfası" })),
+        h("li", {}, h("strong", { text: "Hesap kimliğini al: " }), "Cloudflare'de Workers & Pages sayfasının sağında ", h("em", { text: "Account ID" }), " yazar."),
+        h("li", {}, h("strong", { text: "WSL'de kaydet: " }), h("code", { text: "nano ~/.bashrc" }), " ile dosyanın en altına şu iki satırı ekle (tırnak içine kendi değerlerini yaz), kaydet:",
+          h("div", { class: "copybox" }, h("pre", { text: lines }), copyButton(lines))),
+        h("li", {}, h("strong", { text: "Paneli yeniden başlat: " }), "terminalde Ctrl+C, sonra ", h("code", { text: "source ~/.bashrc && npm run panel" }), "."),
+        h("li", {}, h("strong", { text: "Dene: " }), h("button", { class: "btn btn-sm", type: "button", onclick: (e) => test(e.currentTarget) }, "Bağlantıyı test et"), " ", result),
+      ),
+      h("p", { class: "muted small", text: "Token'ı kimseyle, bana da gönderme. Sızdığını düşünürsen Cloudflare'de silip yenisini oluştur." }),
+    ),
+    h("section", { class: "card stack" },
+      h("h2", { text: "Onay kodu" }),
+      h("p", { class: "muted small", text: "Panelden onay verirken sorulan 6 haneli kod, paneli başlattığın terminalde \"Onay kodu\" satırında yazar. Her başlatmada değişir; 5 yanlış denemede onay kilitlenir (paneli yeniden başlat)." }),
+    ),
+    h("section", { class: "card stack" },
+      h("h2", { text: "Bildirimler" }),
+      h("p", { class: "muted small", text: "Uzun işler bitince ses çalar; panel arka plandaysa bilgisayar bildirimi gelir." }),
+      h("div", { class: "row" },
+        h("button", { class: "btn btn-sm", type: "button", onclick: () => { askNotifyPermission(); toast("Tarayıcı izin sorabilir; izin ver."); } }, "Bildirime izin ver"),
+        h("button", { class: "btn btn-sm", type: "button", onclick: () => chime(true) }, "Sesi dene"),
+      ),
+    ),
+  );
+}
+
+// ---------------------------------------------------------------- job progress and notifications
+
+const PHASE_LABELS = { reading: "Bilgileri okuyor", saving: "Bilgileri kaydediyor", design: "Tasarımı araştırıyor", brand: "Markayı tasarlıyor", pages: "Sayfaları yazıyor", checking: "Kontrol ediyor" };
+const PHASE_ORDER = ["reading", "saving", "design", "brand", "pages", "checking"];
+
+function fmtDuration(secs) {
+  const m = Math.floor(secs / 60), s = Math.floor(secs % 60);
+  return m ? `${m} dk ${s.toString().padStart(2, "0")} sn` : `${s} sn`;
+}
+
+/** Where a running agent job is: plain stages, elapsed time and a rough estimate from earlier runs. */
+function jobProgress(job) {
+  const typical = (state.typical || {})[job.kind];
+  const now = PHASE_ORDER.indexOf(job.phase);
+  const el = h("div", { class: "progress", id: "job-progress", "data-started": job.startedAt, "data-typical": typical || "" },
+    h("ol", { class: "phases" }, ...PHASE_ORDER.map((p, i) => h("li", { class: i < now ? "done" : i === now ? "now" : "" }, PHASE_LABELS[p]))),
+    h("p", { class: "small muted" },
+      h("span", { id: "job-elapsed", text: `Geçen süre ${fmtDuration((Date.now() - Date.parse(job.startedAt)) / 1000)}` }),
+      job.filesWritten ? ` · ${job.filesWritten} dosya yazıldı` : "",
+      typical ? ` · genelde ${fmtDuration(typical)} sürer` : ""),
+    h("div", { class: "bar" }, h("span", { id: "job-bar" })),
+  );
+  return el;
+}
+
+/** Ticks the elapsed time and the bar once a second while a job runs. */
+setInterval(() => {
+  const p = $("#job-progress");
+  if (!p) return;
+  const secs = (Date.now() - Date.parse(p.dataset.started)) / 1000;
+  const typical = Number(p.dataset.typical) || 0;
+  const el = $("#job-elapsed");
+  if (el) el.textContent = `Geçen süre ${fmtDuration(secs)}`;
+  const bar = $("#job-bar");
+  // Never shows 100% before the job really ends; slows down past the usual time instead.
+  if (bar && typical) bar.style.width = `${Math.min(95, (secs / typical) * 85)}%`;
+}, 1000);
+
+/** Asked once, on a click that starts a job (browsers only allow it after a user action). */
+function askNotifyPermission() {
+  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission().catch(() => {});
+}
+
+function chime(ok) {
+  try {
+    const ctx = new AudioContext();
+    const notes = ok ? [660, 880] : [440, 330];
+    notes.forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f; o.type = "sine";
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.18);
+      g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + i * 0.18 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.18 + 0.3);
+      o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + i * 0.18); o.stop(ctx.currentTime + i * 0.18 + 0.32);
+    });
+  } catch { /* no audio */ }
+}
+
+/** A finished job: sound, a system notification when the panel is in the background, and the tab title. */
+function announceFinished(job) {
+  const ok = job.status === "succeeded";
+  const name = state.clients.find((c) => c.slug === job.slug)?.name || job.slug;
+  chime(ok);
+  if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+    new Notification(ok ? `${name}: hazır` : `${name}: tamamlanamadı`, { body: `${job.title} ${ok ? "bitti. Panelde sonucu gör." : "başarısız oldu."}`, tag: job.id });
+  }
+  if (document.hidden) {
+    const original = "Site Factory";
+    document.title = ok ? `✓ ${name} hazır · ${original}` : `✕ ${name} · ${original}`;
+    const reset = () => { document.title = original; document.removeEventListener("visibilitychange", reset); };
+    document.addEventListener("visibilitychange", reset);
+  }
+}
+
+// ---------------------------------------------------------------- approval from the panel
+
+/** Folded terminal alternative under an approval button. */
+function terminalFold(command) {
+  return h("details", { class: "small term-fold" }, h("summary", { text: "Terminalden onaylamak istersen" }), h("div", { class: "cmd" }, h("code", { text: command }), copyButton(command)));
+}
+
+/**
+ * Asks for the one-time code printed in the panel's terminal and approves exactly what is on screen:
+ * the content and build fingerprints go with the request, so a change in the meantime approves nothing.
+ */
+function approveDialog(d, kind) {
+  const slug = d.status.slug;
+  const what = kind === "site" ? "Siteyi onayla (metin + görünüm)" : "Yayın onayı";
+  const code = h("input", { id: "approve-code", inputmode: "numeric", autocomplete: "off", maxlength: 6, pattern: "[0-9]{6}", placeholder: "6 haneli kod", class: "code-input" });
+  const err = h("p", { class: "err", role: "alert" });
+  const dialog = h("dialog", { class: "approve-dialog", "aria-labelledby": "approve-title" });
+  const close = () => { dialog.close(); dialog.remove(); };
+  const submit = async (e) => {
+    e.preventDefault();
+    err.textContent = "";
+    const res = await fetch(`/api/clients/${slug}/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, code: code.value, pins: { hash: d.status.contentHash, distHash: d.status.lastBuild?.distHash ?? null } }),
+    }).catch(() => null);
+    const data = res ? await res.json().catch(() => ({})) : {};
+    if (!res || !res.ok) { err.textContent = data.error || "Onay verilemedi."; code.select(); return; }
+    close();
+    toast(kind === "site" ? "Site onaylandı." : "Yayın onayı verildi.");
+    render();
+  };
+  dialog.append(h("form", { method: "dialog", onsubmit: submit },
+    h("h2", { id: "approve-title", text: what }),
+    h("p", { class: "muted small", text: `${d.business.name || slug}: şu an ekranda gördüğün hâli onaylanır. Kod, paneli başlattığın terminalde "Onay kodu" satırında yazıyor.` }),
+    h("label", { for: "approve-code" }, "Onay kodu", code),
+    err,
+    h("div", { class: "row" },
+      h("button", { class: "btn btn-ok", type: "submit" }, "Onayla"),
+      h("button", { class: "btn", type: "button", onclick: close }, "Vazgeç"),
+    ),
+  ));
+  document.body.append(dialog);
+  dialog.showModal();
+  code.focus();
 }
 
 // ---------------------------------------------------------------- actions
@@ -1069,9 +1417,10 @@ async function archiveClient(slug, stage) {
 }
 
 async function runAgent(slug, kind, payload) {
+  askNotifyPermission();
   const job = await guarded(() => api("POST", `/api/clients/${slug}/agent/${kind}`, payload));
   if (!job) return false;
-  toast("Agent çalışıyor. Akış'tan takip edin.");
+  toast("Agent çalışıyor. Bitince ses ve bildirim gelir.");
   await jobStarted(job);
   return true;
 }
@@ -1104,7 +1453,19 @@ function startPolling() {
     const lines = $("#live-lines");
     if (lines && next.log.length) appendLiveLines(lines, next.log);
     state.logSince = next.logTotal;
-    if (next.status === "running") { state.running = { ...next, log: [] }; startPolling(); return; }
+    if (next.status === "running") {
+      state.running = { ...next, log: [] };
+      const old = $("#job-progress");
+      if (old && (old.dataset.phase !== String(next.phase) || old.dataset.files !== String(next.filesWritten || 0))) {
+        const fresh = jobProgress(next);
+        fresh.dataset.phase = String(next.phase);
+        fresh.dataset.files = String(next.filesWritten || 0);
+        old.replaceWith(fresh);
+      }
+      startPolling();
+      return;
+    }
+    announceFinished(next);
     state.running = null;
     state.pollTimer = null;
     setStatus(null);

@@ -8,7 +8,8 @@ import type { ChildProcess, SpawnOptions } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import { AGENT_DENIED_TOOLS } from "../src/panel/jobs.js";
 import { createPanel, type Panel } from "../src/panel/server.js";
-import { tempFactory } from "./helpers.js";
+import * as tools from "../src/tools.js";
+import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } from "./helpers.js";
 
 const KEY = "k".repeat(64);
 let panel: Panel | null = null;
@@ -47,11 +48,11 @@ function fakeSpawn(calls: SpawnCall[], events: object[], exitCode = 0) {
   };
 }
 
-async function start(spawn?: ReturnType<typeof fakeSpawn>) {
+async function start(spawn?: ReturnType<typeof fakeSpawn>, approvalCode?: string) {
   const factory = tempFactory();
   const port = await freePort();
   const previewPort = await freePort();
-  panel = createPanel({ factory, port, previewPort, sessionKey: KEY, ...(spawn ? { spawn } : {}) });
+  panel = createPanel({ factory, port, previewPort, sessionKey: KEY, ...(spawn ? { spawn } : {}), ...(approvalCode ? { approvalCode } : {}) });
   await panel.listen();
   const base = `http://127.0.0.1:${port}`;
   const auth = { Cookie: `sf_panel=${KEY}`, Origin: base };
@@ -311,5 +312,63 @@ describe("earlier inputs are kept between agent jobs", () => {
     expect(prompt).toContain("Earlier information Eren gave about this client");
     expect(prompt).toContain("Saç kesimi 500 TL");
     expect(prompt.lastIndexOf("<client_data>")).toBeLessThan(prompt.lastIndexOf("Saç kesimi 500 TL"));
+  });
+});
+
+describe("approval from the panel", () => {
+  it("approves with the terminal code only, pins what was on screen, and locks after wrong codes", async () => {
+    const { factory, base, auth } = await start(undefined, "424242");
+    const json = { ...auth, "Content-Type": "application/json" };
+    installStubTemplate(factory.templatesDir);
+    await tools.createClient(factory, { slug: "willow-thread", businessName: "Willow & Thread", industry: "bridal salon", hostingModel: "managed" });
+    tools.updateClientConfig(factory, { slug: "willow-thread", patch: COMPLETE_PATCH });
+    tools.saveContent(factory, { slug: "willow-thread", locale: "en", content: COMPLETE_CONTENT });
+    await tools.buildSite(factory, { slug: "willow-thread" });
+    const d = (await (await fetch(`${base}/api/clients/willow-thread`, { headers: auth })).json()) as { status: { contentHash: string; lastBuild: { distHash: string } } };
+    const pins = { hash: d.status.contentHash, distHash: d.status.lastBuild.distHash };
+    const post = (body: object) => fetch(`${base}/api/clients/willow-thread/approve`, { method: "POST", headers: json, body: JSON.stringify(body) });
+
+    expect((await post({ kind: "site", code: "000000", pins })).status).toBe(403);
+    expect((await post({ kind: "site", code: "424242", pins: { hash: "stale", distHash: pins.distHash } })).status).toBe(409);
+    expect((await post({ kind: "visual", code: "424242", pins })).status).toBe(400);
+    const ok = await post({ kind: "site", code: "424242", pins });
+    expect(ok.status).toBe(200);
+    const after = (await (await fetch(`${base}/api/clients/willow-thread`, { headers: auth })).json()) as { approvals: { kind: string; valid: boolean }[] };
+    expect(after.approvals.filter((a) => a.valid).map((a) => a.kind).sort()).toEqual(["content", "visual"]);
+
+    for (let i = 0; i < 5; i++) await post({ kind: "production", code: "111111", pins });
+    expect((await post({ kind: "production", code: "424242", pins })).status).toBe(423);
+  });
+
+  it("never sends the code to the browser", async () => {
+    const { base, auth } = await start(undefined, "987654");
+    const meta = await (await fetch(`${base}/api/meta`, { headers: auth })).text();
+    const page = await (await fetch(`${base}/`, { headers: auth })).text();
+    expect(meta).not.toContain("987654");
+    expect(page).not.toContain("987654");
+  });
+});
+
+describe("quick edit", () => {
+  it("normalises local phone numbers to the client's country", async () => {
+    const { normalisePhone } = await import("../src/panel/api.js");
+    expect(normalisePhone("0534 985 63 19", "TR")).toBe("+905349856319");
+    expect(normalisePhone("07700 900123", "GB")).toBe("+447700900123");
+    expect(normalisePhone("+90 (506) 101-81-82", "TR")).toBe("+905061018182");
+    expect(normalisePhone("00447700900123", "TR")).toBe("+447700900123");
+  });
+});
+
+describe("business tracking", () => {
+  it("saves quote, payment and deadline per client, validates them, and lists them for the dashboard", async () => {
+    const { base, auth } = await start();
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "uzunoglu", businessName: "Uzunoğlu", industry: "pickle shop", hostingModel: "managed", country: "TR" }) });
+    const ok = await fetch(`${base}/api/clients/uzunoglu/business`, { method: "PUT", headers: json, body: JSON.stringify({ price: 4000, currency: "TRY", payment: "deposit", deadline: "2026-10-30", note: "Kapora 1000" }) });
+    expect(ok.status).toBe(200);
+    const bad = await fetch(`${base}/api/clients/uzunoglu/business`, { method: "PUT", headers: json, body: JSON.stringify({ payment: "maybe" }) });
+    expect(bad.status).toBe(400);
+    const list = (await (await fetch(`${base}/api/clients`, { headers: auth })).json()) as { clients: { slug: string; name: string; business: { price: number; payment: string } }[] };
+    expect(list.clients[0]).toMatchObject({ slug: "uzunoglu", name: "Uzunoğlu", business: { price: 4000, payment: "deposit" } });
   });
 });
