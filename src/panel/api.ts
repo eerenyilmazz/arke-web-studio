@@ -92,13 +92,13 @@ function brandBoard(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
   const paths = clientPaths(deps.factory.clientsRoot, s);
-  const cfg = readDraftConfig(paths) as { template?: string; business?: { name?: string; industry?: string }; design?: { palette?: Record<string, string>; fonts?: { heading?: string; body?: string } } };
+  const cfg = readDraftConfig(paths) as { template?: string; brand?: { logo?: string | null }; business?: { name?: string; industry?: string }; design?: { palette?: Record<string, string>; fonts?: { heading?: string; body?: string } } };
   sendJson(res, 200, {
     name: cfg.business?.name ?? s,
     industry: cfg.business?.industry ?? "",
     palette: cfg.design?.palette ?? null,
     fonts: cfg.design?.fonts ?? null,
-    ...readBrandBoard(paths, cfg.template ?? ""),
+    ...readBrandBoard(paths, cfg.template ?? "", cfg.brand?.logo ?? null),
   });
 }
 

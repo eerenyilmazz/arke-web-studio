@@ -292,18 +292,32 @@ export interface BrandBoard {
   readonly brand: Brand | null;
   readonly logoSvg: string | null;
   readonly signatureHtml: string | null;
+  /** The client's own logo (uploaded file), when there is one. */
+  readonly clientLogo?: string | null;
   /** What is missing for a complete board (custom sites only). */
   readonly missing: string[];
 }
 
 /** Everything the panel's brand board (Marka Atölyesi) shows. Read-only. */
-export function readBrandBoard(paths: ClientPaths, template: string): BrandBoard {
+const LOGO_MIME: Readonly<Record<string, string>> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml" };
+
+/** The client's own logo file as a data URI for the panel (shown as an image, never run). */
+function clientLogoDataUri(paths: ClientPaths, clientLogo: string | null): string | null {
+  if (!clientLogo) return null;
+  const file = safeJoin(paths.root, clientLogo);
+  const mime = LOGO_MIME[path.extname(file).toLowerCase()];
+  if (!mime || !existsSync(file) || statSync(file).size > MAX_BOARD_FILE * 4) return null;
+  return `data:${mime};base64,${readFileSync(file).toString("base64")}`;
+}
+
+export function readBrandBoard(paths: ClientPaths, template: string, clientLogo: string | null = null): BrandBoard {
   const root = siteDir(paths);
   const read = (rel: string) => {
     const f = path.join(root, rel);
     return existsSync(f) && statSync(f).size <= MAX_BOARD_FILE ? readFileSync(f, "utf8") : null;
   };
-  if (!isCustom(template)) return { source: "template", brand: null, logoSvg: null, signatureHtml: null, missing: [] };
+  const own = clientLogoDataUri(paths, clientLogo);
+  if (!isCustom(template)) return { source: "template", brand: null, logoSvg: null, signatureHtml: null, clientLogo: own, missing: [] };
   const raw = read(BRAND_FILE);
   let brand: Brand | null = null;
   try {
@@ -312,7 +326,7 @@ export function readBrandBoard(paths: ClientPaths, template: string): BrandBoard
     brand = null;
   }
   const missing = brand ? [...brandProblems(brand), ...brandBoardProblems(brand, root)] : [`${BRAND_FILE}: the brand identity`];
-  return { source: "custom", brand, logoSvg: read(LOGO_FILE), signatureHtml: read(SIGNATURE_FILE), missing };
+  return { source: "custom", brand, logoSvg: read(LOGO_FILE), signatureHtml: read(SIGNATURE_FILE), clientLogo: own, missing };
 }
 
 const MIN_HOME_SECTIONS = 5;
@@ -373,9 +387,11 @@ export function brandProblems(raw: unknown): string[] {
 }
 
 /** Brand identity present, complete, and used by the site. */
-export function checkBrand(distDir: string): CheckResult[] {
+export function checkBrand(distDir: string, clientLogo: string | null = null): CheckResult[] {
   const brandPath = path.join(distDir, BRAND_FILE);
-  if (!existsSync(brandPath) || !existsSync(path.join(distDir, LOGO_FILE))) {
+  // The client's own logo (config brand.logo, e.g. "assets/logo.png") is used as it is; then no drawn logo is needed.
+  const ownLogo = clientLogo && existsSync(path.join(distDir, clientLogo)) ? clientLogo : null;
+  if (!existsSync(brandPath) || (!ownLogo && !existsSync(path.join(distDir, LOGO_FILE)))) {
     return [{ name: "Brand identity", status: "fail", detail: `Design the brand first: write site/${BRAND_FILE} and site/${LOGO_FILE} (rules/custom-site.md, step 1).` }];
   }
   let brand: Brand;
@@ -394,7 +410,8 @@ export function checkBrand(distDir: string): CheckResult[] {
     .join("\n");
   const lower = code.toLowerCase();
   const usage: string[] = [];
-  if (!/brand\/logo\.svg/.test(code) && !/<svg[^>]*class=["'][^"']*logo/i.test(code)) usage.push("the logo (brand/logo.svg) is not used on the pages");
+  const logoUsed = /brand\/logo\.svg/.test(code) || /<svg[^>]*class=["'][^"']*logo/i.test(code) || (ownLogo !== null && code.includes(`/${ownLogo}`));
+  if (!logoUsed) usage.push(ownLogo ? `the client's logo (/${ownLogo}) is not used on the pages` : "the logo (brand/logo.svg) is not used on the pages");
   const missingColours = Object.entries(brand.palette).filter(([, hex]) => !lower.includes(hex.toLowerCase()));
   if (missingColours.length > 0) usage.push(`brand colours not used in the code: ${missingColours.map(([n]) => n).join(", ")}`);
   const missingAnims = brand.animations.filter((a) => !code.includes(a.id));

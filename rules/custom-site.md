@@ -87,7 +87,18 @@ Write `site/brand/brand.json`:
 
 The build warns until the board is complete; the pages themselves still build.
 
-Then write `site/brand/logo.svg`: a real mark plus wordmark drawn in SVG (shapes and paths, using the brand
+**When the client has a logo** (`brand.logo` in the config, saved with `save_asset`): the brand is built **from it**,
+never replaced. Look at the file with Read (it shows you the image), then:
+
+- take the palette from the logo (exact hex values of its colours; add neutrals and one supporting colour only if needed),
+- choose fonts that match the logo's lettering (its weight, width and contrast), not against it,
+- take the concept, visual language and signature motion from the logo's shapes (a pair of scissors in the mark
+  becomes the motion; a script wordmark asks for a handwritten line), and say in `concept` that it comes from the logo,
+- use the file itself in the header and as the favicon (`<img src="/assets/<logo file>" alt="…">`), large in the
+  hero or brand section too. Do **not** write `brand/logo.svg` and never redraw or "improve" the client's logo.
+- If the logo is low quality (tiny, blurry), still use it and say so in the summary so Eren can ask for a better file.
+
+Then (only when the client has no logo) write `site/brand/logo.svg`: a real mark plus wordmark drawn in SVG (shapes and paths, using the brand
 colours), with a `viewBox`, readable at 32 px and on light and dark backgrounds. No `<script>`, no event attributes,
 no external references. Use it in the header of every page (`<img src="/brand/logo.svg" alt="…">` or inline SVG
 with `class="logo"`) and as the favicon.

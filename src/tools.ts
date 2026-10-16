@@ -309,7 +309,7 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
       if (built.status === "pass") {
         results.push(...checkOutput(paths.distDir, config));
         results.push(...checkCustomCode(paths.distDir, formActionUrl()));
-        results.push(...checkBrand(paths.distDir));
+        results.push(...checkBrand(paths.distDir, config.brand.logo));
       }
     }
   } else if (!existsSync(path.join(safeJoin(factory.templatesDir, config.template), "package.json"))) {

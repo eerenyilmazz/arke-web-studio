@@ -945,7 +945,8 @@ async function tabBrand(body, d) {
   const bodyFont = fontStack(fonts.body, "Geist, sans-serif");
   const monoFont = fontStack(mono, '"Geist Mono", ui-monospace, monospace');
   const main = palette[0]?.hex || "#F58255";
-  const logoUri = b.logoSvg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(b.logoSvg)}` : null;
+  // The client's own logo wins over a drawn one; both are shown as images (nothing in them can run).
+  const logoUri = b.clientLogo || (b.logoSvg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(b.logoSvg)}` : null);
   const missing = custom ? b.missing.map((m) => BOARD_MISSING_TR.find(([re]) => re.test(m))?.[1] || "Marka temeli") : [];
   const signature = brand.signature && typeof brand.signature === "object" ? brand.signature : null;
   const others = (Array.isArray(brand.animations) ? brand.animations : []).filter((a) => a && a.id !== signature?.id);
@@ -979,7 +980,7 @@ async function tabBrand(body, d) {
     custom && h("p", { class: "board-note", text: "Hareket azaltma açık olan ziyaretçiler sakin hâlini görür." }),
   );
 
-  const download = logoUri && h("a", { class: "btn board-btn", href: logoUri, download: `${slug}-logo.svg` }, "Logoyu indir (SVG)");
+  const download = logoUri && h("a", { class: "btn board-btn", href: logoUri, download: `${slug}-logo${b.clientLogo ? "" : ".svg"}` }, b.clientLogo ? "Logoyu indir" : "Logoyu indir (SVG)");
   const type = h("article", { class: "board-card board-type" },
     boardLabel("Tipografi"),
     h("div", { class: "type-head" },

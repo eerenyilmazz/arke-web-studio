@@ -190,3 +190,23 @@ describe("design depth", () => {
     expect(r.status).toBe("pass");
   });
 });
+
+describe("client's own logo", () => {
+  it("builds the brand from an uploaded logo: no drawn logo needed, the file must be used on the pages", async () => {
+    const { checkBrand } = await import("../src/lib/custom-site.js");
+    const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const dir = mkdtempSync(path.join(os.tmpdir(), "own-logo-"));
+    mkdirSync(path.join(dir, "brand")); mkdirSync(path.join(dir, "assets"));
+    writeFileSync(path.join(dir, "brand", "brand.json"), JSON.stringify(BRAND));
+    writeFileSync(path.join(dir, "assets", "logo.png"), "png");
+    writeFileSync(path.join(dir, "index.html"), `<style>${CSS}</style><h1 class="jar-fill"></h1><div data-anim="brine-bubbles"></div>`);
+    expect(checkBrand(dir)[0]!.status).toBe("fail");
+    let r = checkBrand(dir, "assets/logo.png");
+    expect(r[0]!.detail).toMatch(/client's logo/);
+    writeFileSync(path.join(dir, "index.html"), `<img src="/assets/logo.png" alt="x"><style>${CSS}</style><h1 class="jar-fill"></h1><div data-anim="brine-bubbles"></div>`);
+    r = checkBrand(dir, "assets/logo.png");
+    expect(r[0]!.status).toBe("pass");
+  });
+});
