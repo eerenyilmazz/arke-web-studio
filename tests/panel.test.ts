@@ -355,6 +355,28 @@ describe("research first", () => {
   });
 });
 
+describe("client logo from the panel", () => {
+  it("shows uploads as thumbnails and sets the logo without the agent", async () => {
+    const { base, auth } = await start();
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "logo-co", businessName: "Logo Co", industry: "agency", hostingModel: "managed" }) });
+    const png = Buffer.from("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fea7a9a0b70000000049454e44ae426082", "hex");
+    expect((await fetch(`${base}/api/clients/logo-co/inbox/My%20Logo.png`, { method: "PUT", headers: { ...auth, "Content-Type": "application/octet-stream" }, body: png })).status).toBe(201);
+    const img = await fetch(`${base}/api/clients/logo-co/inbox/My-Logo.png`, { headers: auth });
+    expect(img.headers.get("content-type")).toBe("image/png");
+    expect(img.headers.get("content-security-policy")).toMatch(/sandbox/);
+    expect((await fetch(`${base}/api/clients/logo-co/inbox/My-Logo.png`)).status).toBe(401);
+    const r = await fetch(`${base}/api/clients/logo-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "My-Logo.png", from: "inbox" }) });
+    expect(r.status).toBe(200);
+    const { logo } = (await r.json()) as { logo: string };
+    expect(logo).toMatch(/^assets\//);
+    const detail = (await (await fetch(`${base}/api/clients/logo-co`, { headers: auth })).json()) as { logo: string; assets: { name: string }[] };
+    expect(detail.logo).toBe(logo);
+    expect(detail.assets.map((a) => `assets/${a.name}`)).toContain(logo);
+    expect((await fetch(`${base}/api/clients/logo-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "../x.png", from: "assets" }) })).status).toBe(404);
+  });
+});
+
 describe("earlier inputs are kept between agent jobs", () => {
   it("gives the next job everything pasted before, as client data", async () => {
     const calls: SpawnCall[] = [];

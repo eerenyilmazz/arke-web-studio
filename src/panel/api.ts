@@ -53,6 +53,8 @@ const routes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: writeQuestionnaire },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/(inbox|assets)/([^/]{1,120})$`), handler: serveClientImage },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/logo$`), handler: setLogo },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(answers|autopilot|design-content|fix-build|revise|upgrade-template|concepts|choose-concept|brand-board|redesign)$`), handler: startAgent },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/build$`), handler: startBuild },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/deploy$`), handler: startDeploy },
@@ -332,6 +334,8 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     businessTracking: readBusiness(deps.factory, s),
     latestTemplate: deps.factory.defaultTemplate,
     inbox: inboxFiles(deps.factory, s),
+    assets: assetFiles(paths.assetsDir),
+    logo: (draft as { brand?: { logo?: string | null } }).brand?.logo ?? null,
     questionnaires: existingQuestionnaires(paths.questionnaireDir),
     qualityReport: existsSync(paths.qualityReport) ? readFileSync(paths.qualityReport, "utf8") : null,
     distReady: Boolean(build?.passed && build.distHash && dirHash(paths.distDir) === build.distHash),
@@ -554,6 +558,52 @@ export function safeFileName(name: string): string {
   const base = path.basename(name).normalize("NFKD").replace(/[^\w.-]+/g, "-").replace(/^[-.]+/, "").slice(0, 80);
   if (!base || base === "." || base === "..") throw new HttpError(400, "Geçersiz dosya adı.");
   return base;
+}
+
+const IMAGE_TYPES: Readonly<Record<string, string>> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".avif": "image/avif", ".svg": "image/svg+xml" };
+
+function assetFiles(dir: string): Array<{ name: string; bytes: number }> {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isFile() && IMAGE_TYPES[path.extname(e.name).toLowerCase()])
+    .map((e) => ({ name: e.name, bytes: statSync(path.join(dir, e.name)).size }));
+}
+
+/**
+ * Thumbnails for the panel. Shown only with <img>; the headers stop anything in a file (an SVG script) from
+ * running even if it were opened directly.
+ */
+function serveClientImage(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug, where, rawName]: string[]): void {
+  const s = assertSlug(slug!);
+  const name = safeFileName(decodeURIComponent(rawName!));
+  const type = IMAGE_TYPES[path.extname(name).toLowerCase()];
+  const dir = where === "inbox" ? safeJoin(deps.factory.inboxDir, s) : clientPaths(deps.factory.clientsRoot, s).assetsDir;
+  const file = safeJoin(dir, name);
+  if (!type || !existsSync(file)) throw new HttpError(404, "Dosya yok.");
+  res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox" });
+  res.end(readFileSync(file));
+}
+
+/** Eren marks a file as the client's logo: saved (checked like save_asset) and set as brand.logo. No agent needed. */
+async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  if (deps.jobs.running()?.slug === s) throw new HttpError(409, "Agent bu müşteride çalışıyor; bitince tekrar dene.");
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const name = safeFileName(str(body, "name", { max: 120 })!);
+  const from = str(body, "from", { max: 10 });
+  let relPath: string;
+  if (from === "inbox") {
+    relPath = tools.saveAssetTool(deps.factory, { slug: s, inboxFile: `${s}/${name}`, kind: "logo" }).relPath;
+  } else if (from === "assets") {
+    if (!existsSync(safeJoin(clientPaths(deps.factory.clientsRoot, s).assetsDir, name))) throw new HttpError(404, "Dosya yok.");
+    relPath = `assets/${name}`;
+  } else {
+    throw new HttpError(400, "Kaynak inbox ya da assets olmalı.");
+  }
+  tools.updateClientConfig(deps.factory, { slug: s, patch: { brand: { logo: relPath } } });
+  appendInput(deps.factory, s, "logo", `Eren set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom-site.md); never draw a replacement.`);
+  sendJson(res, 200, { logo: relPath });
 }
 
 function inboxFiles(factory: FactoryConfig, slug: string): Array<{ name: string; bytes: number }> {

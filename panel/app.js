@@ -1023,7 +1023,10 @@ async function tabBrand(body, d) {
   const notice = custom && missing.length > 0
     ? h("p", { class: "notice small", text: `Eksik: ${[...new Set(missing)].join(", ")}. Agent mevcut markayı bozmadan tamamlar.` })
     : !custom ? h("p", { class: "muted small", text: "Bu site şablonla yapıldı: kartta şablonun renkleri ve yazı tipleri var. Özel logo, slogan ve imza hareketi için 'Serbest tasarıma geç'." }) : null;
-  body.replaceChildren(h("div", { class: "stack" }, h("div", { class: "row", style: "justify-content:space-between;align-items:center" }, h("p", { class: "muted small", text: "Müşteriye göstermek için: ekran görüntüsü al ya da PDF olarak kaydet." }), actions), notice, board));
+  const logoNote = custom && !b.clientLogo
+    ? h("p", { class: "muted small" }, "Logo agent'ın çizimi. Müşterinin kendi logosu varsa ", h("a", { href: `#/c/${slug}/bilgiler`, text: "Bilgiler" }), " sekmesinden yükle ve \"Logo olarak kullan\"a bas, sonra \"Markayla yeniden tasarla\".")
+    : null;
+  body.replaceChildren(h("div", { class: "stack" }, h("div", { class: "row", style: "justify-content:space-between;align-items:center" }, h("p", { class: "muted small", text: "Müşteriye göstermek için: ekran görüntüsü al ya da PDF olarak kaydet." }), actions), notice, logoNote, board));
 }
 
 /** Phone, email, address, hours and WhatsApp, fixed straight from the panel. */
@@ -1111,7 +1114,7 @@ async function tabInfo(body, d) {
     miss.append(h("ul", { class: "missing" }, ...d.status.openQuestions.map((q) => h("li", { title: q.text, text: MISSING_TR[q.id] || q.text }))));
   }
   tabContent(section("Sitedeki metinler", "Agent'ın yazdığı metinler. Değiştirmek için Sohbet'e yaz."), d);
-  section("Logo ve fotoğraflar", "Yüklediklerini agent siteye ekler.").append(uploadCard(d.status.slug, d.inbox));
+  section("Logo ve fotoğraflar", "Yüklediklerini agent siteye ekler.").append(uploadCard(d.status.slug, d.inbox, d.assets, d.logo));
   const more = h("details", { class: "card advanced" }, h("summary", { text: "Müşteriye soru formu göndermek ya da formu soru soru girmek (isteğe bağlı)" }));
   body.append(more);
   tabQuestions(more, d, { compact: true });
@@ -1183,7 +1186,7 @@ async function tabAnswers(body, d, { compact = false } = {}) {
       h("label", { for: "free", class: "sr-only" }, "Müşteri bilgileri"),
       free,
     ),
-    compact ? null : uploadCard(slug, d.inbox),
+    compact ? null : uploadCard(slug, d.inbox, d.assets, d.logo),
     h("details", { class: "card" },
       h("summary", { style: "cursor:pointer;font-weight:600" }, `Soru soru gir (isteğe bağlı) · ${round}. tur, ${q.questions.length} soru`),
       h("p", { class: "muted small", style: "margin-top:0.6rem", text: "Müşteri formu soru soru cevapladıysa kullan. Boş bıraktıkların atlanır; 'please suggest' dediyse aynen yaz." }),
@@ -1203,17 +1206,42 @@ async function tabAnswers(body, d, { compact = false } = {}) {
   );
 }
 
-function uploadCard(slug, inbox) {
-  const list = h("ul", { class: "files" });
-  const draw = (files) => list.replaceChildren(...files.map((f) => h("li", {}, h("span", { text: f.name }), h("span", { class: "muted", text: `${Math.ceil(f.bytes / 1024)} KB` }))));
-  draw(inbox);
+function uploadCard(slug, inbox, assets = [], logo = null) {
+  const list = h("ul", { class: "files thumbs" });
+  let current = { inbox, assets, logo };
+  // Every uploaded (inbox) and saved (assets) image, with "Logo olarak kullan": Eren decides, not the agent.
+  const draw = () => {
+    const rows = [
+      ...current.assets.map((f) => ({ ...f, from: "assets", state: "Sitede" })),
+      ...current.inbox.filter((f) => !current.assets.some((a) => a.name === f.name || a.name.endsWith(`-${f.name}`))).map((f) => ({ ...f, from: "inbox", state: "Yüklendi, agent kaydedecek" })),
+    ];
+    if (!rows.length) { list.replaceChildren(h("li", { class: "muted small", text: "Henüz dosya yok." })); return; }
+    list.replaceChildren(...rows.map((f) => {
+      const isLogo = current.logo === `assets/${f.name}`;
+      return h("li", { class: isLogo ? "is-logo" : "" },
+        h("img", { src: `/api/clients/${slug}/${f.from}/${encodeURIComponent(f.name)}`, alt: "", loading: "lazy" }),
+        h("div", { class: "meta" }, h("span", { text: f.name }), h("span", { class: "muted small", text: `${Math.ceil(f.bytes / 1024)} KB · ${f.state}` })),
+        isLogo
+          ? h("span", { class: "badge ok", text: "Müşteri logosu" })
+          : h("button", { class: "btn btn-sm", type: "button", disabled: isBusy(), onclick: async () => {
+              const r = await guarded(() => api("POST", `/api/clients/${slug}/logo`, { name: f.name, from: f.from }));
+              if (!r) return;
+              current = { ...current, logo: r.logo, assets: current.assets.some((a) => a.name === r.logo.slice(7)) ? current.assets : [...current.assets, { name: r.logo.slice(7), bytes: f.bytes }] };
+              draw();
+              toast("Logo kaydedildi. Siteye uygulamak için Marka sekmesinden 'Markayla yeniden tasarla'.");
+            } }, "Logo olarak kullan"));
+    }));
+  };
+  draw();
   const input = h("input", { type: "file", multiple: true, accept: "image/png,image/jpeg,image/webp,image/avif,image/svg+xml", id: "files", class: "sr-only" });
   const upload = async (files) => {
+    let ok = 0;
     for (const file of files) {
       const res = await guarded(() => api("PUT", `/api/clients/${slug}/inbox/${encodeURIComponent(file.name)}`, file, true));
-      if (res) draw(res.inbox);
+      if (res) { ok++; current = { ...current, inbox: res.inbox }; draw(); }
     }
-    if (files.length) toast("Dosyalar yüklendi. Agent cevapları işlerken bunları da kaydeder.");
+    // Only report what really arrived; failures already showed their own error.
+    if (ok) toast(`${ok} dosya yüklendi. Logoysa yanındaki "Logo olarak kullan"a bas.`);
   };
   input.addEventListener("change", () => upload([...input.files]));
   const drop = h("div", { class: "drop" }, "Logo ve fotoğrafları buraya sürükleyin ya da ", h("label", { for: "files", style: "display:inline;text-decoration:underline;cursor:pointer" }, "dosya seçin"), input);

@@ -6,7 +6,7 @@
   "uupmScript": "vendor/ui-ux-pro-max/src/ui-ux-pro-max/scripts/search.py",
   "limits": {
     "maxImageBytes": 5242880,
-    "maxLogoBytes": 1048576,
+    "maxLogoBytes": 5242880,
     "buildTimeoutMs": 300000,
     "deployTimeoutMs": 300000
   }
