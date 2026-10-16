@@ -533,8 +533,10 @@ function prepareCard(d) {
     fileCount.textContent = `${total} dosya eklendi`;
   });
 
+  // Eren's rule: research and questions before design. Unticked = the agent decides open design choices itself.
+  const askFirst = h("input", { type: "checkbox", id: "prep-ask", checked: draft.askFirst !== false, disabled: working, onchange: (e) => (draft.askFirst = e.target.checked) });
   const go = async () => {
-    const ok = await runAgent(slug, "autopilot", { freeText: draft.freeText || "" });
+    const ok = await runAgent(slug, "autopilot", { freeText: draft.freeText || "", askFirst: askFirst.checked });
     if (ok) draft.freeText = "";
   };
   return h("section", { class: "now-card prep", "aria-label": "Siteyi hazırla" },
@@ -548,6 +550,7 @@ function prepareCard(d) {
     h("label", { for: "prep-text", class: "sr-only" }, "Müşteri bilgileri"),
     box,
     working ? null : infoGuide(box, (v) => (draft.freeText = v)),
+    working ? null : h("label", { for: "prep-ask", class: "check small" }, askFirst, " Önce araştırsın ve bana sorsun (önerilen). Kapalıysa açık kalan tasarım kararlarını kendisi verir; bilgi yine uydurmaz."),
     h("div", { class: "row" },
       h("button", { class: "btn btn-primary btn-lg", type: "button", disabled: busy, onclick: go }, ranBefore ? "Tekrar hazırla" : "Siteyi hazırla"),
       h("label", { for: "prep-files", class: "btn btn-lg", style: working ? "pointer-events:none;opacity:.5" : "" }, "Logo / fotoğraf ekle"), fileInput,
@@ -1417,6 +1420,7 @@ async function renderSettings() {
       h("h2", { text: "Onay kodu" }),
       h("p", { class: "muted small", text: "Panelden onay verirken sorulan 6 haneli kod, paneli başlattığın terminalde \"Onay kodu\" satırında yazar. Her başlatmada değişir; 5 yanlış denemede onay kilitlenir (paneli yeniden başlat)." }),
     ),
+    webResearchCard(),
     h("section", { class: "card stack" },
       h("h2", { text: "Bildirimler" }),
       h("p", { class: "muted small", text: "Uzun işler bitince ses çalar; panel arka plandaysa bilgisayar bildirimi gelir." }),
@@ -1425,6 +1429,25 @@ async function renderSettings() {
         h("button", { class: "btn btn-sm", type: "button", onclick: () => chime(true) }, "Sesi dene"),
       ),
     ),
+  );
+}
+
+/** The agent's web access (search and page reading), on by default; applies from the next job. */
+function webResearchCard() {
+  const box = h("input", { type: "checkbox", id: "web-research", disabled: true });
+  const note = h("p", { class: "small muted", role: "status" });
+  api("GET", "/api/settings").then((s) => { box.checked = s.webResearch; box.disabled = false; }).catch(() => (note.textContent = "Ayar okunamadı."));
+  box.addEventListener("change", async () => {
+    box.disabled = true;
+    const s = await guarded(() => api("PUT", "/api/settings", { webResearch: box.checked }));
+    box.disabled = false;
+    if (s) { box.checked = s.webResearch; note.textContent = s.webResearch ? "Açık: bir sonraki işten itibaren agent araştırma yapabilir." : "Kapalı: agent sadece senin verdiğin bilgilerle çalışır."; }
+  });
+  return h("section", { class: "card stack" },
+    h("h2", { text: "İnternet araştırması" }),
+    h("p", { class: "muted small", text: "Agent işletmeyi internette ve haritalarda arar, sektördeki iyi siteleri inceler; bulduklarını kaynaklarıyla gösterir, emin olmadığını sana sorar. Okuduğu sayfalardaki yazılar sadece bilgi sayılır; yayın yapamaz, onay veremez, anahtarları göremez." }),
+    h("label", { for: "web-research", class: "check" }, box, " Agent internette araştırma yapabilsin"),
+    note,
   );
 }
 

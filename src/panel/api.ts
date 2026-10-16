@@ -8,6 +8,7 @@ import { clientStatus } from "../lib/client.js";
 import type { ApprovalGate } from "./approval-gate.js";
 import { listVersions, restoreVersion, snapshot } from "../lib/versions.js";
 import { readBusiness, writeBusiness } from "./business.js";
+import { readSettings, writeSettings } from "./settings.js";
 import { ZodError } from "zod";
 import { archiveClient } from "../lib/archive.js";
 import { readDraftConfig } from "../lib/client.js";
@@ -66,6 +67,8 @@ const routes: Route[] = [
   { method: "GET", pattern: /^\/api\/jobs\/([0-9a-f-]{36})$/, handler: getJob },
   { method: "POST", pattern: /^\/api\/jobs\/([0-9a-f-]{36})\/cancel$/, handler: cancelJob },
   { method: "GET", pattern: /^\/api\/meta$/, handler: meta },
+  { method: "GET", pattern: /^\/api\/settings$/, handler: (d, _r, res) => sendJson(res, 200, readSettings(d.factory)) },
+  { method: "PUT", pattern: /^\/api\/settings$/, handler: putSettings },
   { method: "GET", pattern: /^\/api\/cloudflare$/, handler: (_d, _r, res) => sendJson(res, 200, tools.cloudflareStatus()) },
   { method: "POST", pattern: /^\/api\/cloudflare\/test$/, handler: async (d, _r, res) => sendJson(res, 200, await tools.cloudflareTest(d.factory)) },
 ];
@@ -80,6 +83,16 @@ export async function handleApi(deps: ApiDeps, req: IncomingMessage, res: Server
 }
 
 // ---------------------------------------------------------------- handlers
+
+async function putSettings(deps: ApiDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const body = await readJsonBody(req, JSON_LIMIT);
+  try {
+    sendJson(res, 200, writeSettings(deps.factory, body));
+  } catch (error) {
+    if (error instanceof ZodError) throw new HttpError(400, "Geçersiz ayar.");
+    throw error;
+  }
+}
 
 function concepts(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
   const s = assertSlug(slug!);
@@ -411,7 +424,7 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
         files: inboxFiles(deps.factory, s).map((f) => f.name),
       };
       const hasInput = pasted.freeText.trim() !== "" || Object.values(pasted.answers).some((a) => a.trim()) || pasted.files.length > 0;
-      prompt = autopilotPrompt(s, hasInput ? pasted : null);
+      prompt = autopilotPrompt(s, hasInput ? pasted : null, { web: readSettings(deps.factory).webResearch, askFirst: body.askFirst !== false });
       input = pasted.freeText;
       title = "Siteyi hazırla";
       request = pasted.freeText.trim() ? pasted.freeText.trim() : pasted.files.length ? `Siteyi hazırla (${pasted.files.length} dosya)` : "Siteyi hazırla.";

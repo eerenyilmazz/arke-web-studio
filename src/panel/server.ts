@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { createServer, type Server } from "node:http";
+import { readSettings } from "./settings.js";
 import path from "node:path";
 import { FACTORY_ROOT, loadFactoryConfig, type FactoryConfig } from "../config.js";
 import { handleApi } from "./api.js";
@@ -43,7 +44,7 @@ export function createPanel(opts: PanelOptions): Panel {
     appendHistory(opts.factory, slug, record);
     // Every finished job leaves a version the operator can go back to (no-op when nothing changed).
     void snapshot(clientPaths(opts.factory.clientsRoot, slug).root, record.title).catch(() => {});
-  });
+  }, () => readSettings(opts.factory).webResearch);
   const preview = new PreviewServer(opts.previewPort);
   const gate = new ApprovalGate(opts.approvalCode);
   const deps = { factory: opts.factory, jobs, preview, gate };

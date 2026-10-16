@@ -210,3 +210,11 @@ describe("client's own logo", () => {
     expect(r[0]!.status).toBe("pass");
   });
 });
+
+describe("failure messages", () => {
+  it("explains the usage limit in Turkish", async () => {
+    const { failureText } = await import("../src/panel/jobs.js");
+    expect(failureText("You've hit your session limit · resets 6:50pm (Europe/Istanbul)", "success")).toMatch(/kullanım limitin doldu \(sıfırlanma: 6:50pm/);
+    expect(failureText(undefined, "error_max_turns")).toMatch(/adım sınırı/);
+  });
+});

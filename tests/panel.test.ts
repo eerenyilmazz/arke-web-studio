@@ -325,6 +325,32 @@ describe("brand board", () => {
   });
 });
 
+describe("research first", () => {
+  it("lets the agent search the web only while the setting is on, and asks before designing", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    expect(((await (await fetch(`${base}/api/settings`, { headers: auth })).json()) as { webResearch: boolean }).webResearch).toBe(true);
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "web-on", businessName: "Web", industry: "barber shop", hostingModel: "managed" }) });
+    expect((await fetch(`${base}/api/clients/web-on/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Berber, Ankara" }) })).status).toBe(202);
+    const on = calls[0]!;
+    expect(on.args[on.args.indexOf("--allowedTools") + 1]).toMatch(/WebSearch,WebFetch/);
+    expect(on.args[on.args.indexOf("--disallowedTools") + 1]).not.toMatch(/WebFetch/);
+    expect(on.stdin).toMatch(/STOP before design/);
+    expect(on.stdin).toMatch(/do not make it up/);
+    await waitFor(async () => !((await (await fetch(`${base}/api/meta`, { headers: auth })).json()) as { running: unknown }).running);
+
+    expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ webResearch: false }) })).status).toBe(200);
+    expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ webResearch: "yes" }) })).status).toBe(400);
+    await fetch(`${base}/api/clients/web-on/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "x", askFirst: false }) });
+    const off = calls[1]!;
+    expect(off.args[off.args.indexOf("--allowedTools") + 1]).not.toMatch(/WebSearch/);
+    expect(off.args[off.args.indexOf("--disallowedTools") + 1]).toMatch(/WebSearch,WebFetch/);
+    expect(off.stdin).toMatch(/Web research is turned off/);
+    expect(off.stdin).not.toMatch(/STOP before design/);
+  });
+});
+
 describe("earlier inputs are kept between agent jobs", () => {
   it("gives the next job everything pasted before, as client data", async () => {
     const calls: SpawnCall[] = [];

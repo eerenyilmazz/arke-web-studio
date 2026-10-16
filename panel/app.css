@@ -472,3 +472,6 @@ body.agent-busy .brand-mark .f3 { animation-delay: .4s; }
   .board-card { break-inside: avoid; }
   .board-btn { display: none; }
 }
+
+.check { display: flex; align-items: flex-start; gap: .55rem; cursor: pointer; }
+.check input { margin-top: .25rem; width: 1.05rem; height: 1.05rem; accent-color: var(--accent); flex: none; }

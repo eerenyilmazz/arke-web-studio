@@ -57,7 +57,9 @@ export const AGENT_ALLOWED_TOOLS = [
   // would need Bash, which stays denied below.
   "Skill",
 ] as const;
-export const AGENT_DENIED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "WebFetch", "WebSearch", "Task", "mcp__site-factory__deploy", "mcp__site-factory__create_client"] as const;
+export const AGENT_DENIED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "Task", "mcp__site-factory__deploy", "mcp__site-factory__create_client"] as const;
+/** Web research tools: allowed only while the "İnternet araştırması" setting is on, denied otherwise. */
+export const WEB_TOOLS = ["WebSearch", "WebFetch"] as const;
 /** Change requests on a custom site may touch several files and rebuild. */
 const MAX_AGENT_TURNS = 120;
 /** "Prepare site" runs answers, design, content and build in one job, so it needs more turns. */
@@ -70,7 +72,7 @@ const MAX_TEXT = 4000;
 
 export type SpawnFn = (command: string, args: readonly string[], options: SpawnOptions) => ChildProcess;
 
-export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS): string[] {
+export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false): string[] {
   return [
     "-p",
     "--output-format", "stream-json",
@@ -78,8 +80,8 @@ export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS): string[] {
     "--max-turns", String(maxTurns),
     "--mcp-config", ".mcp.json",
     "--strict-mcp-config",
-    "--allowedTools", AGENT_ALLOWED_TOOLS.join(","),
-    "--disallowedTools", AGENT_DENIED_TOOLS.join(","),
+    "--allowedTools", [...AGENT_ALLOWED_TOOLS, ...(web ? WEB_TOOLS : [])].join(","),
+    "--disallowedTools", [...AGENT_DENIED_TOOLS, ...(web ? [] : WEB_TOOLS)].join(","),
   ];
 }
 
@@ -130,6 +132,8 @@ export class JobRunner {
     private readonly claudeBin: string = process.env.SF_CLAUDE_BIN ?? "claude",
     /** Called once when a job ends (used to keep the conversation history in the client folder). */
     private readonly onFinish: (slug: string, record: JobRecord) => void = () => {},
+    /** Read at the start of every job, so the setting applies from the next job on. */
+    private readonly webResearch: () => boolean = () => false,
   ) {}
 
   running(): Job | undefined {
@@ -193,7 +197,7 @@ export class JobRunner {
     this.push(job, "info", "Agent başlatıldı (sadece site-factory araçları; shell ve dosya düzenleme kapalı).");
     let child: ChildProcess;
     try {
-      child = this.spawn(this.claudeBin, claudeArgs(LONG_JOBS.has(kind) ? MAX_AUTOPILOT_TURNS : undefined), { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
+      child = this.spawn(this.claudeBin, claudeArgs(LONG_JOBS.has(kind) ? MAX_AUTOPILOT_TURNS : undefined, this.webResearch()), { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
     } catch (error) {
       this.push(job, "error", `Claude Code başlatılamadı: ${(error as Error).message}`);
       this.finish(job, "failed");
@@ -274,7 +278,7 @@ export class JobRunner {
       job.summary = typeof event.result === "string" ? event.result : undefined;
       if (job.summary) this.push(job, "result", job.summary);
       if (event.is_error || event.subtype !== "success") {
-        this.push(job, "error", `Agent tamamlanamadı (${event.subtype ?? "error"}).`);
+        this.push(job, "error", failureText(job.summary, event.subtype));
         this.finish(job, "failed");
       }
     }
@@ -282,6 +286,17 @@ export class JobRunner {
 }
 
 /** What the operator sees while an agent works. Order matters: it is the usual sequence. */
+/** A plain Turkish reason for a failed agent run; the usage limit is the common one and needs no fixing. */
+export function failureText(summary: string | undefined, subtype: unknown): string {
+  const text = summary ?? "";
+  if (/session limit|usage limit|rate limit|limit reached/i.test(text)) {
+    const reset = text.match(/resets\s+([^·\n]+)/i)?.[1]?.trim();
+    return `Claude kullanım limitin doldu${reset ? ` (sıfırlanma: ${reset})` : ""}. Sitede bir sorun yok; yazılan dosyalar duruyor. Limit açılınca aynı düğmeye tekrar bas, agent kaldığı yerden devam eder.`;
+  }
+  if (subtype === "error_max_turns") return "Agent adım sınırına ulaştı. Tekrar başlatırsan yazdıklarının üstüne devam eder.";
+  return `Agent tamamlanamadı (${typeof subtype === "string" ? subtype : "hata"}).`;
+}
+
 export const PHASES = ["reading", "saving", "design", "brand", "pages", "checking"] as const;
 export type Phase = (typeof PHASES)[number];
 
