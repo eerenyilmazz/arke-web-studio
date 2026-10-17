@@ -12,28 +12,28 @@ const STAGES = [
   { id: "ready-to-deploy", label: "Yayın onayı", long: "Yayına hazır" },
   { id: "live", label: "Yayında", long: "Yayında" },
 ];
-const TABS = [["sohbet", "Sohbet"], ["duzenle", "Düzenle"], ["site", "Site ve yayın"], ["marka", "Marka"], ["bilgiler", "Bilgiler"]];
+const TABS = [["duzenle", "Düzenleme"], ["marka", "Marka Kimliği"], ["teklif", "Teklif"], ["bilgiler", "Müşteri Bilgileri"]];
 /** Old tab links (bookmarks, earlier versions) land on the tab that now holds that content. */
-const OLD_TABS = { akis: "sohbet", build: "site", yayin: "site", sorular: "bilgiler", cevaplar: "bilgiler", metinler: "bilgiler" };
+const OLD_TABS = { sohbet: "duzenle", akis: "duzenle", site: "duzenle", build: "duzenle", yayin: "bilgiler", sorular: "bilgiler", cevaplar: "bilgiler", metinler: "bilgiler" };
 /** Four steps the operator thinks in; the nine internal stages map onto them. */
 const STEPS = [
-  { label: "Bilgiler", stages: ["collecting-answers"] },
-  { label: "Site hazırlanıyor", stages: ["design", "content", "build"] },
-  { label: "Senin onayın", stages: ["awaiting-content-approval", "awaiting-visual-approval", "awaiting-production-approval", "ready-to-deploy"] },
+  { label: "Müşteri Bilgileri", stages: ["collecting-answers"] },
+  { label: "Site Oluşturuluyor", stages: ["design", "content", "build"] },
+  { label: "Onay Bekleniyor", stages: ["awaiting-content-approval", "awaiting-visual-approval", "awaiting-production-approval", "ready-to-deploy"] },
   { label: "Yayında", stages: ["live"] },
 ];
 /** Plain status per stage for lists and cards. tone: who acts next (you / client / agent / done). */
 const PLAIN = {
   "collecting-answers": { text: "Bilgi bekleniyor", tone: "client" },
-  design: { text: "Hazırlanıyor", tone: "you" },
-  content: { text: "Hazırlanıyor", tone: "you" },
+  design: { text: "Oluşturuluyor", tone: "you" },
+  content: { text: "Oluşturuluyor", tone: "you" },
   build: { text: "Oluşturulmayı bekliyor", tone: "you" },
-  "awaiting-content-approval": { text: "Siteye bakıp onayla", tone: "you" },
-  "awaiting-visual-approval": { text: "Siteye bakıp onayla", tone: "you" },
-  "awaiting-production-approval": { text: "Önizleme / müşteri onayı", tone: "you" },
-  "ready-to-deploy": { text: "Canlıya almaya hazır", tone: "you" },
+  "awaiting-content-approval": { text: "Onay bekleniyor", tone: "you" },
+  "awaiting-visual-approval": { text: "Onay bekleniyor", tone: "you" },
+  "awaiting-production-approval": { text: "Müşteri onayı bekleniyor", tone: "you" },
+  "ready-to-deploy": { text: "Yayına hazır", tone: "you" },
   live: { text: "Yayında", tone: "done" },
-  unreadable: { text: "Dosyası okunamadı", tone: "bad" },
+  unreadable: { text: "Dosya okunamadı", tone: "bad" },
 };
 function plainOf(stage) { return PLAIN[stage] || { text: stage, tone: "you" }; }
 function stepIndex(stage) { const i = STEPS.findIndex((s) => s.stages.includes(stage)); return i < 0 ? 0 : i; }
@@ -146,7 +146,7 @@ function setStatus(job) {
   pill.className = job ? "status-pill busy" : "status-pill idle";
   // The mark's signature motion ("Katlar oturur") loops while the agent works.
   document.body.classList.toggle("agent-busy", Boolean(job));
-  pill.querySelector(".label").textContent = job ? `${job.title} · ${job.slug}` : "Agent boşta";
+  pill.querySelector(".label").textContent = job ? `${job.title} · ${job.slug}` : "Sistem hazır";
 }
 
 async function refreshStatus() {
@@ -184,6 +184,15 @@ async function render() {
   await loadClients();
   const r = route();
   const view = $("#view");
+  for (const a of document.querySelectorAll(".main-nav a")) {
+    const on = (a.dataset.nav === "home" && (r.view === "home" || r.view === "client" || r.view === "new")) || (a.dataset.nav === "library" && r.view === "library") || (a.dataset.nav === "settings" && r.view === "settings");
+    a.toggleAttribute("aria-current", on);
+    if (on) a.setAttribute("aria-current", "page");
+  }
+  // Entrance motion only when the page changes, not when the same page refreshes after a job.
+  const key = `${r.view}/${r.slug || ""}/${r.tab || ""}`;
+  view.classList.toggle("entering", key !== state.lastPage);
+  state.lastPage = key;
   if (r.view === "new") view.replaceChildren(renderNew());
   else if (r.view === "settings") view.replaceChildren(await renderSettings());
   else if (r.view === "library") view.replaceChildren(await renderLibrary());
@@ -201,10 +210,10 @@ async function loadClients() {
 }
 
 function groupOf(stage) {
-  if (stage === "collecting-answers") return "Müşteride";
+  if (stage === "collecting-answers") return "Bilgi Bekleyen";
   if (stage === "live") return "Yayında";
   if (stage === "unreadable") return "Okunamadı";
-  return "Senin sıran";
+  return "Onay Bekleyen";
 }
 
 function renderSidebar() {
@@ -216,7 +225,7 @@ function renderSidebar() {
     return;
   }
   nav.replaceChildren(
-    ...["Senin sıran", "Müşteride", "Yayında", "Okunamadı"].flatMap((g) => {
+    ...["Onay Bekleyen", "Bilgi Bekleyen", "Yayında", "Okunamadı"].flatMap((g) => {
       const items = list.filter((c) => groupOf(c.stage) === g);
       if (!items.length) return [];
       return [
@@ -224,7 +233,7 @@ function renderSidebar() {
         ...items.map((c) =>
           h("a", { class: "client-link", href: `#/c/${c.slug}`, "aria-current": r.slug === c.slug ? "page" : null },
             avatar(c.slug, c.name || c.slug, false, isBusy() && state.running.slug === c.slug),
-            h("span", { class: "meta" }, h("span", { class: "name", text: c.name || c.slug }), h("span", { class: "sub", text: isBusy() && state.running.slug === c.slug ? "Agent çalışıyor…" : plainOf(c.stage).text })),
+            h("span", { class: "meta" }, h("span", { class: "name", text: c.name || c.slug }), h("span", { class: "sub", text: isBusy() && state.running.slug === c.slug ? "İşlem sürüyor…" : plainOf(c.stage).text })),
           )),
       ];
     }),
@@ -239,12 +248,12 @@ function renderHome() {
     return h("section", { class: "empty" },
       h("h1", { text: "İlk müşteriyi ekleyin" }),
       h("p", { class: "muted", text: "Adını ve sektörünü yaz, bildiklerini yapıştır; agent markayı tasarlar ve siteyi hazırlar." }),
-      h("p", { style: "margin-top:1.2rem" }, h("a", { class: "btn btn-primary btn-lg", href: "#/new" }, "Yeni müşteri")),
+      h("p", { style: "margin-top:1.2rem" }, h("a", { class: "btn btn-primary btn-lg", href: "#/new" }, "Yeni Müşteri")),
     );
   }
   const running = isBusy() ? state.running.slug : null;
   const bucket = (c) => (c.slug === running ? "agent" : plainOf(c.stage).tone);
-  const COUNTS = [["you", "Senin sıran", "Bir adım seni bekliyor"], ["agent", "Agent çalışıyor", "Şu an hazırlanıyor"], ["client", "Müşteride", "Bilgi bekleniyor"], ["done", "Yayında", "Canlı siteler"]];
+  const COUNTS = [["you", "Onay Bekleyen", "İşleminizi bekliyor"], ["agent", "İşlem Sürüyor", "Şu an hazırlanıyor"], ["client", "Bilgi Bekleyen", "Müşteriden bilgi bekleniyor"], ["done", "Yayında", "Canlı siteler"]];
   const order = { agent: 0, you: 1, bad: 2, client: 3, done: 4 };
   // Grouping and filters (kept per browser): by step, by sector or by Eren's own tags.
   const pref = (() => { try { return JSON.parse(localStorage.getItem("sf-dash") || "{}"); } catch { return {}; } })();
@@ -262,7 +271,7 @@ function renderHome() {
     const b = bucket(c);
     const step = stepIndex(c.stage);
     return h("a", { class: `client-card tone-${b}`, href: `#/c/${c.slug}` },
-      h("div", { class: "top" }, avatar(c.slug, c.name || c.slug, false, b === "agent"), h("span", { class: `pill tone-${b}`, text: b === "agent" ? "Agent çalışıyor" : plainOf(c.stage).text })),
+      h("div", { class: "top" }, avatar(c.slug, c.name || c.slug, false, b === "agent"), h("span", { class: `pill tone-${b}`, text: b === "agent" ? "İşlem sürüyor" : plainOf(c.stage).text })),
       h("strong", { class: "name", text: c.name || c.slug }),
       h("span", { class: "sub", text: [c.industry, ...(c.business?.tags || [])].filter(Boolean).join(" · ") }),
       h("div", { class: "mini-steps", "aria-label": `Adım ${step + 1} / ${STEPS.length}: ${STEPS[step].label}` }, ...STEPS.map((s, i) => h("span", { class: i < step ? "done" : i === step ? "now" : "" }))),
@@ -279,8 +288,8 @@ function renderHome() {
   );
   return h("section", { class: "dash" },
     h("div", { class: "dash-head" },
-      h("div", {}, h("h1", { text: "Müşteriler" }), h("p", { class: "muted", text: "Sıradaki işi olan müşteriler en üstte." })),
-      h("a", { class: "btn btn-primary btn-lg", href: "#/new" }, svg(ICON.plus, 18, 2.4), "Yeni müşteri"),
+      h("div", {}, h("h1", { text: "Müşteriler" }), h("p", { class: "muted", text: "İşlem bekleyen müşteriler üstte listelenir." })),
+      h("a", { class: "btn btn-primary btn-lg", href: "#/new" }, svg(ICON.plus, 18, 2.4), "Yeni Müşteri"),
     ),
     h("div", { class: "counts" }, ...COUNTS.map(([key, label, sub]) => {
       const n = state.clients.filter((c) => bucket(c) === key).length;
@@ -296,15 +305,15 @@ function renderHome() {
 
 /** One-line next step shown on a client card. */
 function nextHint(c, tone) {
-  if (tone === "agent") return "Bitince bildirim düşer";
+  if (tone === "agent") return "Tamamlandığında bildirim alacaksınız";
   switch (c.stage) {
-    case "collecting-answers": return "Bilgileri yapıştır → Siteyi hazırla";
-    case "design": case "content": case "build": return "Siteyi hazırla'ya bas";
-    case "awaiting-content-approval": case "awaiting-visual-approval": return "Siteye bak, beğenirsen onayla";
-    case "awaiting-production-approval": return "Önizlemeyi müşteriye gönder";
-    case "ready-to-deploy": return "Canlıya al";
-    case "live": return "Değişiklik için yaz";
-    default: return "Aç";
+    case "collecting-answers": return "Müşteri bilgilerini giriniz";
+    case "design": case "content": case "build": return "Siteyi oluşturunuz";
+    case "awaiting-content-approval": case "awaiting-visual-approval": return "Siteyi inceleyip onaylayınız";
+    case "awaiting-production-approval": return "Önizlemeyi müşteriye iletiniz";
+    case "ready-to-deploy": return "Yayına alınız";
+    case "live": return "Revizyon için talep oluşturunuz";
+    default: return "Açınız";
   }
 }
 
@@ -341,7 +350,7 @@ function renderNew() {
     if (!text) return;
     await runAgent(res.slug, "autopilot", { freeText: text });
   } },
-    h("h1", { text: "Yeni müşteri" }),
+    h("h1", { text: "Yeni Müşteri" }),
     h("p", { class: "muted", text: "Adını ve sektörünü yaz. Bildiklerini alttaki kutuya yapıştırırsan site hemen hazırlanmaya başlar." }),
     h("label", { for: "nc-name" }, "İşletme adı", name),
     h("label", { for: "nc-slug" }, "Kısa ad (slug)", h("span", { class: "help", text: "Klasör ve web adresi için kullanılır, sonradan değişmez. Otomatik doldurulur." }), slug),
@@ -424,22 +433,24 @@ async function renderClient(view, slug, tab) {
   state.detail = d;
   if (d.running) { state.running = d.running; setStatus(d.running); }
   const stage = d.status.stage;
-  const step = stepIndex(stage);
   const name = d.business.name || slug;
-  if (!TABS.some(([id]) => id === tab) && tab !== "teklif") tab = "sohbet";
+  tab = OLD_TABS[tab] || tab;
+  if (!TABS.some(([id]) => id === tab)) tab = "duzenle";
 
   const menu = h("details", { class: "menu" },
     h("summary", { class: "icon-btn", "aria-label": "Diğer işlemler" }, svg(ICON.more, 20, 3)),
     h("div", { class: "menu-items" },
       h("button", { type: "button", disabled: isBusy(), onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
-      h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları agent düzeltsin"),
+      h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları otomatik düzelt"),
+      d.template === "custom" ? h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "concepts", {}) }, "3 tasarım önerisi hazırla") : null,
       h("button", { type: "button", class: "danger", onclick: () => archiveClient(slug, stage) }, "Müşteriyi arşivle"),
     ),
   );
+  const usage = d.budget ? `${PACKAGE_TR[d.budget.mode] || ""} paket${d.budget.usage.tokens ? ` · kaynak kullanımı ${fmtTokens(d.budget.usage.tokens)}` : ""}` : "";
 
-  const body = h("div");
+  const body = h("div", { class: "tab-body" });
   view.replaceChildren(
-    h("div", { class: "client-head" },
+    h("div", { class: "client-head", "data-enter": "0" },
       h("div", { class: "client-id" },
         avatar(slug, name, true),
         h("div", {},
@@ -447,83 +458,163 @@ async function renderClient(view, slug, tab) {
           h("div", { class: "facts" },
             h("span", { text: d.business.industry || "" }),
             h("span", { text: d.locales.map((l) => LANG_NAMES[l] || l).join(", ") }),
-            h("span", { text: d.hosting === "client" ? "Müşteri hesabı" : "Bizim hesap" }),
+            h("span", { text: d.hosting === "client" ? "Müşteri hesabı" : "Ajans hesabı" }),
             d.domain && h("span", { text: d.domain }),
+            usage && h("span", { text: usage }),
           ),
         ),
       ),
       h("div", { class: "row" },
-        h("button", { class: d.distReady ? "btn btn-primary" : "btn", type: "button", disabled: !d.distReady, title: d.distReady ? "" : "Site henüz oluşturulmadı", onclick: () => openPreview(slug) }, svg(ICON.eye, 18, 2), "Siteye bak"),
         // Windows "Animation effects" off = reduced motion: the sites calm their animations, which looks like a bug.
-        matchMedia("(prefers-reduced-motion: reduce)").matches ? h("span", { class: "badge warn", title: "Windows Ayarlar → Erişilebilirlik → Görsel efektler → Animasyon efektleri: Açık", text: "Animasyonlar bilgisayarında kapalı" }) : null,
+        matchMedia("(prefers-reduced-motion: reduce)").matches ? h("span", { class: "badge warn", title: "Windows Ayarlar → Erişilebilirlik → Görsel efektler → Animasyon efektleri: Açık", text: "Bu bilgisayarda animasyonlar kapalı" }) : null,
         menu,
       ),
     ),
-    h("ol", { class: "steps4", "aria-label": `Adım ${step + 1} / ${STEPS.length}: ${STEPS[step].label}` },
-      ...STEPS.map((s, i) => h("li", { class: i < step ? "done" : i === step ? "now" : "", "aria-current": i === step ? "step" : null },
-        h("span", { class: "dot", text: i < step ? "✓" : String(i + 1) }), h("span", { class: "label", text: s.label })))),
-    ...[nowCard(d), upgradeBanner(d)].filter(Boolean),
-    h("nav", { class: "tabs", "aria-label": "Bölümler" }, ...TABS.map(([id, label]) => h("a", { href: `#/c/${slug}/${id}`, "aria-current": id === tab ? "page" : null, text: label }))),
-    body,
+    statusStrip(d),
+    upgradeBanner(d) || "",
+    h("div", { class: tab === "marka" || tab === "teklif" ? "work wide" : "work" },
+      tab === "marka" || tab === "teklif" ? null : previewPane(d),
+      h("section", { class: "work-panel", "data-enter": "2" },
+        h("nav", { class: "seg-tabs", "aria-label": "Bölümler" }, ...TABS.map(([id, label]) => h("a", { href: `#/c/${slug}/${id}`, "aria-current": id === tab ? "page" : null, text: label }))),
+        body,
+      ),
+    ),
   );
 
-  if (tab === "site") tabSite(body, d);
-  else if (tab === "marka") await tabBrand(body, d);
-  else if (tab === "duzenle") await tabEdit(body, d);
+  if (tab === "marka") await tabBrand(body, d);
   else if (tab === "teklif") await tabProposal(body, d);
   else if (tab === "bilgiler") await tabInfo(body, d);
-  else tabFlow(body, d);
+  else await tabWork(body, d);
 
   if (isBusy() && state.running.slug === slug) startPolling();
 }
 
-/** The single most useful next step for the current stage, with its button. */
-function nowCard(d) {
+/**
+ * One line under the client's name: where the site is (four steps) and the one thing to do now. Replaces the
+ * large cards; the long forms (pasting information) live in the Düzenleme tab.
+ */
+function statusStrip(d) {
+  const slug = d.status.slug;
+  const step = stepIndex(d.status.stage);
+  const a = nextAction(d);
+  return h("section", { class: "strip", "aria-label": "Durum", "data-enter": "1" },
+    h("ol", { class: "strip-steps", "aria-label": `Adım ${step + 1} / ${STEPS.length}: ${STEPS[step].label}` },
+      ...STEPS.map((s, i) => h("li", { class: i < step ? "done" : i === step ? "now" : "", "aria-current": i === step ? "step" : null },
+        h("span", { class: "dot", text: i < step ? "✓" : String(i + 1) }), h("span", { class: "label", text: s.label })))),
+    h("div", { class: "strip-next" }, h("p", { text: a.text }), ...a.actions.filter(Boolean)),
+  );
+  void slug;
+}
+
+/** The next step in one sentence, with at most three buttons. */
+function nextAction(d) {
   const slug = d.status.slug;
   const stage = d.status.stage;
   const busy = isBusy();
-  const go = (tab) => () => (location.hash = `#/c/${slug}/${tab}`);
-  const cmd = (kind) => d.approvals.find((a) => a.kind === kind)?.command || "";
-  const preview = d.lastDeploy && d.lastDeploy.target === "preview" && d.lastDeploy.hash === d.status.contentHash ? d.lastDeploy : null;
-  const primary = (label, onclick, disabled = false) => h("button", { class: "btn btn-primary btn-lg", type: "button", disabled, onclick }, label);
-  const secondary = (label, onclick, disabled = false) => h("button", { class: "btn btn-lg", type: "button", disabled, onclick }, label);
-
-  // Until the operator has approved the built site, everything is one step: "Prepare site".
-  const PREPARE_STAGES = ["collecting-answers", "design", "content", "awaiting-content-approval", "build", "awaiting-visual-approval"];
-  if (PREPARE_STAGES.includes(stage)) {
-    const approved = (k) => d.approvals.find((a) => a.kind === k)?.valid;
-    return d.distReady && !(approved("content") && approved("visual")) ? readyCard(d) : prepareCard(d);
-  }
-
-  let title;
-  let text;
-  let actions = [];
-  switch (stage) {
-    case "awaiting-production-approval":
-      if (!preview) {
-        title = "Önizlemeyi yayınla ve linki müşteriye gönder";
-        text = "Site Cloudflare'de geçici bir adreste açılır. Müşteri onaylayınca yayın onayını verirsin.";
-        actions = [primary("Önizleme yayınla", () => runTask(slug, "deploy", { target: "preview", dryRun: false }), busy), secondary("Önce dene", () => runTask(slug, "deploy", { target: "preview", dryRun: true }), busy)];
-      } else {
-        title = "Müşterinin onayını bekle";
-        text = "Önizleme yayında. Linki müşteriye gönder; o onaylayınca yayın onayını ver.";
-        actions = [preview.url && h("a", { class: "btn btn-lg", href: preview.url, target: "_blank", rel: "noopener" }, "Önizleme linki"), preview.url && copyButton(preview.url, "Linki kopyala"), h("button", { class: "btn btn-ok btn-lg", type: "button", disabled: busy, onclick: () => approveDialog(d, "production") }, "Müşteri onayladı: yayın onayı ver")];
-      }
-      break;
-    case "ready-to-deploy":
-      title = "Siteyi canlıya al";
-      text = d.domain ? `Site ${d.domain} adresinde yayınlanacak.` : "Alan adı yok; site workers.dev adresinde yayınlanır.";
-      actions = [primary("Canlıya al", () => deployProduction(slug, false), busy), secondary("Önce dene", () => deployProduction(slug, true), busy)];
-      break;
-    default:
-      title = "Site yayında";
-      text = "Değişiklik için Akış'tan agent'a yaz. Her değişiklik onayları sıfırlar; build ve onaylardan sonra yeniden yayınlanır.";
-      actions = [primary("Değişiklik iste", () => { location.hash = `#/c/${slug}/akis`; setTimeout(() => $("#composer")?.focus(), 80); })];
-  }
   const working = busy && state.running.slug === slug;
-  return h("section", { class: "now-card", "aria-label": "Şimdi yapılacak" },
-    h("div", { class: "text" }, h("p", { class: "eyebrow", text: working ? "Agent çalışıyor, bitince devam" : "Şimdi yapılacak" }), h("h2", { text: title }), h("p", { text })),
-    h("div", { class: "row" }, ...actions),
+  const btn = (label, onclick, cls = "btn", disabled = false) => h("button", { class: cls, type: "button", disabled, onclick }, label);
+  const revise = () => { location.hash = `#/c/${slug}/duzenle`; setTimeout(() => $("#composer")?.focus(), 120); };
+  if (working) return { text: "İşlem sürüyor. Tamamlandığında bildirim alacaksınız.", actions: [] };
+  const PREPARE = ["collecting-answers", "design", "content", "awaiting-content-approval", "build", "awaiting-visual-approval"];
+  if (PREPARE.includes(stage)) {
+    const approved = (k) => d.approvals.find((x) => x.kind === k)?.valid;
+    if (d.distReady && !(approved("content") && approved("visual"))) {
+      return { text: "Siteyi inceleyip onaylayınız.", actions: [btn("Onayla", () => approveDialog(d, "site"), "btn btn-ok", busy), btn("Revizyon Talep Et", revise)] };
+    }
+    return { text: "Müşteri bilgilerini girip siteyi oluşturunuz.", actions: [btn("Bilgileri Gir", () => { location.hash = `#/c/${slug}/duzenle`; setTimeout(() => $("#prep-text")?.focus(), 120); }, "btn btn-primary")] };
+  }
+  const preview = d.lastDeploy && d.lastDeploy.target === "preview" && d.lastDeploy.hash === d.status.contentHash ? d.lastDeploy : null;
+  if (stage === "awaiting-production-approval") {
+    if (!preview) return { text: "Önizleme bağlantısını oluşturup müşteriye iletiniz.", actions: [btn("Önizleme Oluştur", () => runTask(slug, "deploy", { target: "preview", dryRun: false }), "btn btn-primary", busy)] };
+    return { text: "Müşteri onayı bekleniyor.", actions: [preview.url && copyButton(preview.url, "Bağlantıyı Kopyala"), btn("Müşteri Onayladı", () => approveDialog(d, "production"), "btn btn-ok", busy)] };
+  }
+  if (stage === "ready-to-deploy") return { text: d.domain ? `Site ${d.domain} adresinde yayına alınacak.` : "Site yayına alınmaya hazır.", actions: [btn("Yayına Al", () => deployProduction(slug, false), "btn btn-primary", busy)] };
+  return { text: "Site yayında.", actions: [btn("Revizyon Talep Et", revise)] };
+}
+
+/** The site itself, always next to the work: phone or desktop, versions and checks underneath. */
+function previewPane(d) {
+  const slug = d.status.slug;
+  const pane = h("section", { class: "preview-pane", "aria-label": "Canlı önizleme", "data-enter": "2" });
+  if (!d.distReady) {
+    pane.append(h("div", { class: "preview-empty" },
+      h("p", { class: "title", text: "Henüz önizleme yok" }),
+      h("p", { class: "muted small", text: "Site oluşturulduğunda burada görünecek." })));
+    return pane;
+  }
+  const device = state.device || (window.innerWidth < 700 ? "phone" : "desktop");
+  const screen = h("div", { class: `pv-screen ${device}` }, h("p", { class: "muted small", text: "Yükleniyor…" }));
+  const seg = h("div", { class: "seg", role: "group", "aria-label": "Görünüm" }, ...[["phone", "Telefon"], ["desktop", "Masaüstü"]].map(([k, l]) =>
+    h("button", { type: "button", "aria-pressed": String(device === k), onclick: () => { state.device = k; pane.replaceWith(previewPane(d)); } }, l)));
+  const checks = d.status.lastBuild;
+  pane.append(
+    h("div", { class: "pv-bar" }, h("strong", { text: "Canlı Önizleme" }), seg, h("button", { class: "btn btn-sm", type: "button", onclick: () => openPreview(slug) }, "Yeni Sekmede Aç")),
+    screen,
+    h("div", { class: "pv-foot" },
+      h("span", { class: `badge ${checks?.passed ? "ok" : "warn"}`, text: checks ? (checks.passed ? "Kontroller geçti" : "Kontrollerde sorun var") : "Kontrol yok" }),
+      h("span", { class: "muted small", text: checks ? `Son oluşturma ${time(checks.at)}` : "" })),
+    d.qualityReport ? h("details", { class: "pv-more" }, h("summary", { text: "Kontrol ayrıntıları" }), qualityTable(d.qualityReport)) : null,
+    versionsCard(d),
+  );
+  api("POST", `/api/clients/${slug}/preview`).then((r) => {
+    const frame = h("iframe", { src: r.url, title: device === "phone" ? "Telefon görünümü" : "Masaüstü görünümü", tabindex: "-1" });
+    screen.replaceChildren(frame);
+    // The desktop page is laid out at 1280px and scaled to the pane, like a thumbnail of the real thing.
+    if (device === "desktop") {
+      const fit = () => { const w = screen.clientWidth; if (w) frame.style.transform = `scale(${w / 1280})`; screen.style.height = `${Math.round((w / 1280) * 820)}px`; };
+      new ResizeObserver(fit).observe(screen);
+      fit();
+    }
+  }).catch(() => screen.replaceChildren(h("p", { class: "err", text: "Önizleme açılamadı." })));
+  return pane;
+}
+
+/** Düzenleme: the information box until the site exists, quick forms, then free requests (Özel Talep). */
+async function tabWork(body, d) {
+  const slug = d.status.slug;
+  const PREPARE = ["collecting-answers", "design", "content", "build"];
+  const approvedSite = ["content", "visual"].every((k) => d.approvals.find((x) => x.kind === k)?.valid);
+  if (!d.distReady || (PREPARE.includes(d.status.stage) && !approvedSite && !d.distReady)) body.append(prepareCard(d));
+  if (d.distReady) {
+    const forms = [["colors", "Renk Paleti"], ["pages", "Sayfalar"], ["services", "Hizmetler ve Fiyatlar"], ["text", "Metin"], ["contact", "İletişim Bilgileri"], ["form", "İletişim Formu"], ["files", "Logo ve Görseller"]];
+    const open = state.editForm?.[slug] || null;
+    const holder = h("div", { class: "edit-holder" });
+    const chips = h("div", { class: "quick-chips", role: "group", "aria-label": "Hızlı düzenleme" }, ...forms.map(([id, label]) =>
+      h("button", { type: "button", class: "qchip", "aria-pressed": String(open === id), onclick: async () => {
+        state.editForm = { ...(state.editForm || {}), [slug]: open === id ? null : id };
+        const next = h("div", { class: "tab-body" });
+        await tabWork(next, d);
+        body.replaceWith(next);
+      } }, label)));
+    body.append(h("section", { class: "card quick" }, h("div", { class: "card-head" }, h("h3", { text: "Hızlı Düzenleme" }), h("span", { class: "muted small", text: "Talimat yazmanıza gerek yoktur" })), chips, holder));
+    if (open) holder.append(await editForm(open, d));
+  }
+  body.append(requestCard(d));
+}
+
+/** Free requests to the assistant and the record of past work (the former chat), kept below the forms. */
+function requestCard(d) {
+  const slug = d.status.slug;
+  const feed = h("div", { class: "feed", id: "feed" });
+  drawFeed(feed, d);
+  const busy = isBusy();
+  const composer = h("textarea", { id: "composer", rows: 2, placeholder: "Talebinizi yazınız (ör. menüye mantı ekleyiniz, başlığı kısaltınız)." });
+  const hadFocus = document.activeElement?.id === "composer";
+  composer.value = state.composer[slug] || "";
+  composer.addEventListener("input", () => { state.composer[slug] = composer.value; composer.style.height = "auto"; composer.style.height = `${composer.scrollHeight}px`; });
+  if (hadFocus) queueMicrotask(() => composer.focus());
+  const send = async () => {
+    const text = composer.value.trim();
+    if (!text) { composer.focus(); return; }
+    if (await runAgent(slug, "revise", { request: text })) { state.composer[slug] = ""; composer.value = ""; }
+  };
+  composer.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(); } });
+  return h("section", { class: "card request" },
+    h("div", { class: "card-head" }, h("h3", { text: "Özel Talep" }), h("span", { class: "muted small", text: "Formlarda bulunmayan değişiklikler için" })),
+    h("div", { class: "feed-wrap" }, feed),
+    h("form", { class: "composer", onsubmit: (e) => { e.preventDefault(); send(); } },
+      h("label", { for: "composer", class: "sr-only" }, "Talep"),
+      h("div", { class: "box" }, composer, h("button", { class: "send", type: "submit", "aria-label": "Gönder (Ctrl+Enter)", disabled: busy }, svg(ICON.send, 18, 2.4)))),
   );
 }
 
@@ -546,8 +637,8 @@ function prepareCard(d) {
   const ranBefore = d.history.some((j) => j.kind === "autopilot");
   const box = h("textarea", { id: "prep-text", class: "field big-paste", rows: 8, maxlength: 20000, disabled: working,
     placeholder: ranBefore
-      ? "Agent'ın sorduğu eksikleri ya da yeni bilgileri yaz. Sonra tekrar 'Siteyi hazırla'ya bas."
-      : "Müşteri hakkında ne biliyorsan yapıştır: ne iş yaptığı, hizmetler, fiyatlar, iletişim, renk isteği… Sıra, dil ve biçim önemli değil." });
+      ? "Sorulan eksik bilgileri ya da yeni bilgileri yazınız, ardından \"Siteyi Oluştur\"a tekrar basınız."
+      : "Müşteriye ait bilgileri yapıştırınız: faaliyet alanı, hizmetler, fiyatlar, iletişim, renk tercihleri… Sıra ve biçim önemli değildir." });
   box.value = draft.freeText || "";
   box.addEventListener("input", () => (draft.freeText = box.value));
 
@@ -565,92 +656,29 @@ function prepareCard(d) {
   // Eren's rule: research and questions before design. Unticked = the agent decides open design choices itself.
   const askFirst = h("input", { type: "checkbox", id: "prep-ask", checked: draft.askFirst !== false, disabled: working, onchange: (e) => (draft.askFirst = e.target.checked) });
   // Optional starting point from the design library (custom sites); used once, on this run.
-  const startFrom = h("select", { id: "prep-lib", disabled: working }, h("option", { value: "" }, "Başlangıç tasarımı: sıfırdan"));
+  const startFrom = h("select", { id: "prep-lib", disabled: working }, h("option", { value: "" }, "Başlangıç tasarımı: yeni tasarım"));
   if (d.template === "custom") api("GET", "/api/library").then(({ designs }) => { for (const x of rankedDesigns(designs, slug, d.business.industry)) startFrom.append(h("option", { value: x.id }, `${x.score > 0 ? "★ Önerilen: " : "Kütüphaneden: "}${x.name}${x.sector ? ` · ${x.sector}` : ""}`)); }).catch(() => {});
   const go = async () => {
     const ok = await runAgent(slug, "autopilot", { freeText: draft.freeText || "", askFirst: askFirst.checked, ...(startFrom.value ? { libraryId: startFrom.value } : {}) });
     if (ok) draft.freeText = "";
   };
-  return h("section", { class: "now-card prep", "aria-label": "Siteyi hazırla" },
-    h("div", { class: "text" },
-      h("p", { class: "eyebrow", text: working ? "Agent çalışıyor" : ranBefore ? "Devam" : "Başla" }),
-      h("h2", { text: working ? "Site hazırlanıyor…" : "Siteyi hazırla" }),
-      h("p", { text: working
-        ? "Agent bilgileri kaydediyor, tasarımı seçiyor, metinleri yazıyor ve siteyi oluşturuyor. Birkaç dakika sürer; aşağıdan izleyebilirsin."
-        : "Bilgileri yapıştır, logo ya da fotoğraf varsa ekle, düğmeye bas. Agent gerisini yapar; eksik bilgi olursa sana sorar." }),
-    ),
+  return h("section", { class: "card prep", "aria-label": "Siteyi oluştur" },
+    h("div", { class: "card-head" }, h("h3", { text: working ? "Site oluşturuluyor" : ranBefore ? "Bilgileri Tamamla" : "Müşteri Bilgileri ve Site Oluşturma" })),
+    h("p", { class: "muted small", text: working
+      ? "Bilgiler kaydediliyor, tasarım hazırlanıyor ve sayfalar oluşturuluyor. İşlem birkaç dakika sürer; ilerlemeyi aşağıdan takip edebilirsiniz."
+      : "Bilgileri yapıştırınız, varsa logo ve görselleri ekleyiniz. Eksik bilgi olursa size sorulur." }),
     h("label", { for: "prep-text", class: "sr-only" }, "Müşteri bilgileri"),
     box,
     working ? null : infoGuide(box, (v) => (draft.freeText = v)),
     working || d.template !== "custom" ? null : h("label", { for: "prep-lib", class: "small row nowrap" }, startFrom),
-    working ? null : h("label", { for: "prep-ask", class: "check small" }, askFirst, " Önce araştırsın ve bana sorsun (önerilen). Kapalıysa açık kalan tasarım kararlarını kendisi verir; bilgi yine uydurmaz."),
+    working ? null : h("label", { for: "prep-ask", class: "check small" }, askFirst, " Önce araştırma yapılsın ve sorular bana iletilsin (önerilir). Kapalıysa açık tasarım kararları otomatik verilir; bilgi yine uydurulmaz."),
     h("div", { class: "row" },
-      h("button", { class: "btn btn-primary btn-lg", type: "button", disabled: busy, onclick: go }, ranBefore ? "Tekrar hazırla" : "Siteyi hazırla"),
-      h("label", { for: "prep-files", class: "btn btn-lg", style: working ? "pointer-events:none;opacity:.5" : "" }, "Logo / fotoğraf ekle"), fileInput,
+      h("button", { class: "btn btn-primary", type: "button", disabled: busy, onclick: go }, ranBefore ? "Devam Et" : "Siteyi Oluştur"),
+      h("label", { for: "prep-files", class: "btn", style: working ? "pointer-events:none;opacity:.5" : "" }, "Logo ve Görsel Ekle"), fileInput,
       fileCount,
-      h("a", { href: `#/c/${slug}/sorular`, class: "small", style: "margin-inline-start:auto" }, "Müşteriye soru formu göndermek istersen"),
+      h("a", { href: `#/c/${slug}/bilgiler`, class: "small", style: "margin-inline-start:auto" }, "Müşteriye soru formu gönder"),
     ),
   );
-}
-
-/** The site is built: look at it, then approve with one command (content + visuals). */
-function readyCard(d) {
-  const slug = d.status.slug;
-  return h("section", { class: "now-card prep", "aria-label": "Site hazır" },
-    h("div", { class: "text" },
-      h("p", { class: "eyebrow", text: "Site hazır" }),
-      h("h2", { text: "Siteye bak, beğenirsen onayla" }),
-      h("p", { text: "Telefonda ve bilgisayarda göz at. Değişiklik istersen Sohbet'e yaz, agent düzeltir. Beğendiysen onayla." }),
-    ),
-    h("div", { class: "row" },
-      h("button", { class: "btn btn-primary btn-lg", type: "button", onclick: () => openPreview(slug) }, svg(ICON.eye, 18, 2), "Siteye bak"),
-      h("button", { class: "btn btn-ok btn-lg", type: "button", disabled: isBusy(), onclick: () => approveDialog(d, "site") }, svg(ICON.check, 18, 2.4), "Onayla"),
-      h("button", { class: "btn btn-lg", type: "button", onclick: () => { location.hash = `#/c/${slug}/sohbet`; setTimeout(() => $("#composer")?.focus(), 80); } }, "Değişiklik iste"),
-    ),
-    terminalFold(d.siteApproveCommand),
-  );
-}
-
-// ---------------------------------------------------------------- tab: flow (agent conversation)
-
-function tabFlow(body, d) {
-  const slug = d.status.slug;
-  const feed = h("div", { class: "feed", id: "feed" });
-  drawFeed(feed, d);
-  const busy = isBusy();
-  const composer = h("textarea", { id: "composer", rows: 2, placeholder: "Agent'a yaz: ör. Başlığı kısalt, menüye mantı ekle, renkleri biraz koyulaştır." });
-  // The page re-renders when a job ends; the draft lives in state so typing is never lost.
-  const hadFocus = document.activeElement?.id === "composer";
-  composer.value = state.composer[slug] || "";
-  composer.addEventListener("input", () => {
-    state.composer[slug] = composer.value;
-    composer.style.height = "auto";
-    composer.style.height = `${composer.scrollHeight}px`;
-  });
-  if (hadFocus) queueMicrotask(() => composer.focus());
-  const send = async () => {
-    const text = composer.value.trim();
-    if (!text) { composer.focus(); return; }
-    if (await runAgent(slug, "revise", { request: text })) { state.composer[slug] = ""; composer.value = ""; }
-  };
-  composer.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(); } });
-
-  body.append(h("div", { class: "flow" },
-    h("div", { class: "feed-wrap" },
-      feed,
-      h("form", { class: "composer", onsubmit: (e) => { e.preventDefault(); send(); } },
-        h("div", { class: "chips" },
-          h("span", { class: "chips-label", text: "Hızlı:" }),
-          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "autopilot", {}) }, "Eksikleri tamamla ve hazırla"),
-          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
-          h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları düzelt"),
-          d.template === "custom" ? h("button", { class: "chip", type: "button", disabled: busy, onclick: () => runAgent(slug, "concepts", {}) }, "3 tasarım önerisi") : null,
-        ),
-        h("label", { for: "composer", class: "sr-only" }, "Agent'a talimat"),
-        h("div", { class: "box" }, composer, h("button", { class: "send", type: "submit", "aria-label": "Gönder (Ctrl+Enter)", disabled: busy }, svg(ICON.send, 18, 2.4))),
-      ),
-    ),
-  ));
 }
 
 function toolChips(names) {
@@ -756,77 +784,8 @@ function drawFeed(feed, d) {
     state.logSince = running.logTotal ?? (running.log || []).length;
   }
   // The approval step itself is shown once, in the "now" card above the tabs.
-  if (!items.length) items.push(h("div", { class: "feed-empty" }, h("p", { text: "Henüz agent ile konuşma yok." }), h("p", { class: "small", text: "Yukarıdaki kutuya bildiklerini yapıştırıp 'Siteyi hazırla'ya bas ya da aşağıya yaz." })));
+  if (!items.length) items.push(h("div", { class: "feed-empty" }, h("p", { text: "Henüz talep bulunmuyor." }), h("p", { class: "small", text: "Formlarda bulunmayan bir değişikliği aşağıya yazabilirsiniz." })));
   feed.replaceChildren(...items);
-}
-
-/** A card at the end of the conversation when the next step is the operator's approval. */
-function stageCard(d) {
-  const kind = { "awaiting-content-approval": "content", "awaiting-visual-approval": "visual", "awaiting-production-approval": "production" }[d.status.stage];
-  if (!kind) return null;
-  if (kind !== "production") {
-    if (!d.distReady) return null; // the "Prepare site" card covers it
-    return h("section", { class: "feed-card warn", "aria-label": "Site onayı senden" },
-      h("p", { class: "title", text: "Site onayı senden" }),
-      h("p", { class: "small", text: "Siteye bak. Beğendiysen bu komutu terminalde çalıştır (metin ve görünüm birlikte onaylanır). Agent onay veremez." }),
-      h("div", { class: "cmd" }, h("code", { text: d.siteApproveCommand }), copyButton(d.siteApproveCommand)),
-    );
-  }
-  const a = d.approvals.find((x) => x.kind === kind);
-  const what = { content: "İçerik onayı senden", visual: "Görsel onay senden", production: "Yayın onayı senden" }[kind];
-  const why = {
-    content: "Metinleri 'Metinler' sekmesinde oku. Uygunsa bu komutu terminalde çalıştır.",
-    visual: "Önizlemeyi aç, kontrol listesine göre bak. Uygunsa bu komutu terminalde çalıştır.",
-    production: "Müşteri önizlemeyi onaylayınca bu komutu terminalde çalıştır.",
-  }[kind];
-  return h("section", { class: "feed-card warn", "aria-label": what },
-    h("p", { class: "title", text: what }),
-    h("p", { class: "small", text: `${why} Agent onay veremez.` }),
-    h("div", { class: "cmd" }, h("code", { text: a.command }), copyButton(a.command)),
-  );
-}
-
-function rail(d) {
-  const p = d.design?.palette;
-  const b = d.status.lastBuild;
-  return h("aside", { class: "rail", "aria-label": "Müşteri özeti" },
-    h("section", { class: "card" },
-      h("h3", { text: "Tasarım" }),
-      p ? h("div", { class: "swatches" }, ...["primary", "secondary", "accent", "background", "text"].map((k) => h("span", { title: `${k} ${p[k]}`, style: `background:${/^#[0-9a-f]{6}$/i.test(p[k] || "") ? p[k] : "transparent"}` })))
-        : h("p", { class: "small muted", text: "Henüz seçilmedi." }),
-      d.design && h("p", { class: "small", style: "margin-top:0.6rem", text: `${d.design.fonts?.heading || ""} / ${d.design.fonts?.body || ""}` }),
-      d.design && h("p", { class: "small muted", text: d.design.style || "" }),
-    ),
-    h("section", { class: "card" },
-      h("h3", { text: "Durum" }),
-      h("dl", { class: "kv" },
-        h("div", {}, h("dt", { text: "Kontroller" }), h("dd", { text: b ? (b.passed ? "Geçti" : "Kaldı") : "Site yok" })),
-        h("div", {}, h("dt", { text: "Eksik alan" }), h("dd", { text: String(d.status.config.missing.length) })),
-        h("div", {}, h("dt", { text: "Gelen dosya" }), h("dd", { text: String(d.inbox.length) })),
-        h("div", {}, h("dt", { text: "Eşleşmeyen cevap" }), h("dd", { text: String(d.unmapped.length) })),
-        d.lastDeploy && h("div", {}, h("dt", { text: "Son yayın" }), h("dd", { text: `${d.lastDeploy.target === "production" ? "Canlı" : "Önizleme"} · ${time(d.lastDeploy.at)}` })),
-      ),
-    ),
-    d.unmapped.length > 0 && h("section", { class: "card" }, h("h3", { text: "Hiçbir alana uymayan" }),
-      h("ul", { class: "small", style: "margin:0;padding-inline-start:1.1rem" }, ...d.unmapped.map((u) => h("li", { text: `${u.question}: ${u.answer}` })))),
-  );
-}
-
-// ---------------------------------------------------------------- tab: site and publish
-
-/** Everything about the built site in one place: look, checks, approvals, publishing. */
-function tabSite(body, d) {
-  if (d.template === "custom") body.append(conceptsCard(d));
-  if (d.distReady) body.append(devicePreview(d));
-  const look = h("div", { class: "site-grid" });
-  body.append(look);
-  const left = h("div", { class: "stack" }, rail(d), quickEditCard(d));
-  look.append(left);
-  const right = h("div");
-  look.append(right);
-  tabPublish(right, d);
-  tabBuild(right, d);
-  right.append(versionsCard(d));
 }
 
 const PAYMENT_LABELS = { none: "Teklif verilmedi", quoted: "Teklif verildi", deposit: "Kapora alındı", paid: "Ödendi" };
@@ -857,7 +816,7 @@ function businessForm(d) {
   const note = h("textarea", { id: "biz-note", rows: 2, maxlength: 2000 });
   note.value = b.note || "";
   const tags = h("input", { id: "biz-tags", placeholder: "ör. abim, acil, Ankara", value: (b.tags || []).join(", ") });
-  const bmode = h("select", { id: "biz-mode" }, h("option", { value: "" }, "Genel ayar"), ...Object.entries(MODE_TR).map(([k, v]) => h("option", { value: k, selected: b.budgetMode === k }, v)));
+  const bmode = h("select", { id: "biz-mode" }, h("option", { value: "" }, "Varsayılan paket"), ...Object.entries(MODE_TR).map(([k, v]) => h("option", { value: k, selected: b.budgetMode === k }, v)));
   const form = h("form", { class: "card biz-form", onsubmit: async (e) => {
     e.preventDefault();
     const r = await guarded(() => api("PUT", `/api/clients/${slug}/business`, {
@@ -874,8 +833,7 @@ function businessForm(d) {
     ),
     h("label", { for: "biz-note" }, "Not", note),
     h("label", { for: "biz-tags" }, "Etiketler (virgülle)", tags),
-    h("label", { for: "biz-mode" }, `Token modu${d.budget ? ` (bu müşteri şimdiye kadar ${fmtTokens(d.budget.usage.tokens)} token, ${d.budget.usage.jobs} iş)` : ""}`, bmode),
-    h("div", { class: "row" }, h("a", { class: "btn", href: `#/c/${slug}/teklif` }, "Teklif hazırla")),
+    h("label", { for: "biz-mode" }, `Paket${d.budget ? ` (şimdiye kadar ${fmtTokens(d.budget.usage.tokens)} birim, ${d.budget.usage.jobs} işlem)` : ""}`, bmode),
     h("div", {}, h("button", { class: "btn btn-primary", type: "submit" }, "Kaydet")),
   );
   return form;
@@ -1060,16 +1018,17 @@ async function tabBrand(body, d) {
     custom && missing.length > 0 && h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runAgent(slug, "brand-board", {}) }, "Marka kartını tamamlat"),
     custom && h("button", { class: "btn btn-primary", type: "button", disabled: busy, title: "Bilgiler ve metinler aynı kalır; sayfalar markanın imza tasarımıyla baştan yazılır.", onclick: () => {
       if (confirm("Site markanın imza tasarımıyla baştan yazılacak (bilgiler ve fiyatlar aynı kalır; önceki hâl Sürümler'de durur). Devam?")) runAgent(slug, "redesign", {});
-    } }, "Markayla yeniden tasarla"),
+    } }, "Marka Kimliğiyle Yeniden Tasarla"),
   );
   const notice = custom && missing.length > 0
     ? h("p", { class: "notice small", text: `Eksik: ${[...new Set(missing)].join(", ")}. Agent mevcut markayı bozmadan tamamlar.` })
     : !custom ? h("p", { class: "muted small", text: "Bu site şablonla yapıldı: kartta şablonun renkleri ve yazı tipleri var. Özel logo, slogan ve imza hareketi için 'Serbest tasarıma geç'." }) : null;
   const logoNote = custom && !b.clientLogo
-    ? h("p", { class: "muted small" }, "Logo agent'ın çizimi. Müşterinin kendi logosu varsa ", h("a", { href: `#/c/${slug}/bilgiler`, text: "Bilgiler" }), " sekmesinden yükle ve \"Logo olarak kullan\"a bas, sonra \"Markayla yeniden tasarla\".")
+    ? h("p", { class: "muted small" }, "Bu logo sistem tarafından tasarlandı. Müşterinin kendi logosu varsa ", h("a", { href: `#/c/${slug}/bilgiler`, text: "Müşteri Bilgileri" }), " sekmesinden yükleyip \"Logo olarak kullan\"ı seçiniz, ardından \"Marka Kimliğiyle Yeniden Tasarla\"yı kullanınız.")
     : null;
-  body.replaceChildren(h("div", { class: "stack" }, h("div", { class: "row", style: "justify-content:space-between;align-items:center" }, h("p", { class: "muted small", text: "Müşteriye göstermek için: ekran görüntüsü al ya da PDF olarak kaydet." }), actions), notice, logoNote, board,
-    custom ? libraryControls(slug, Boolean(b.brand)) : null));
+  body.replaceChildren(h("div", { class: "stack" }, h("div", { class: "row", style: "justify-content:space-between;align-items:center" }, h("p", { class: "muted small", text: "Müşteriye sunmak için ekran görüntüsü alabilir ya da PDF olarak kaydedebilirsiniz." }), actions), notice, logoNote, board,
+    custom ? libraryControls(slug, Boolean(b.brand)) : null,
+    custom ? conceptsCard(d) : null));
 }
 
 // ---------------------------------------------------------------- design library
@@ -1172,67 +1131,63 @@ async function submitEdit(slug, type, payload, button) {
   if (job) { toast("Değişiklik başladı; bitince ses ve bildirim gelir."); await jobStarted(job); }
 }
 
-async function tabEdit(body, d) {
+/** One quick-edit form, chosen with the chips in Düzenleme. Each sends a narrow, exact change. */
+async function editForm(id, d) {
   const slug = d.status.slug;
   const busy = isBusy();
   const custom = d.template === "custom";
-  body.replaceChildren(h("p", { class: "muted small", text: "Sık yapılan değişiklikler için formlar. Yazmana gerek yok; agent sadece burada değiştirdiğini değiştirir. Özel bir istek için Sohbet sekmesini kullan." }));
-  const grid = h("div", { class: "edit-grid" });
-  body.append(grid);
-
-  // Colours: current palette with colour pickers.
-  const brand = custom ? await api("GET", `/api/clients/${slug}/brand`).catch(() => null) : null;
-  const palette = custom ? (brand?.brand?.palette || {}) : (d.design?.palette || {});
-  const pickers = Object.entries(palette).filter(([, v]) => /^#[0-9a-f]{6}$/i.test(String(v))).map(([name, hex]) => {
-    const input = h("input", { type: "color", id: `col-${name}`, value: hex.toLowerCase() });
-    const code = h("code", { text: hex.toUpperCase() });
-    input.addEventListener("input", () => (code.textContent = input.value.toUpperCase()));
-    return { name, input, el: h("label", { for: `col-${name}`, class: "colour-row" }, input, h("span", { text: PALETTE_TR[name] || name.replace(/[-_]/g, " ") }), code) };
-  });
-  const colourBtn = h("button", { class: "btn btn-primary", type: "button", disabled: busy || !pickers.length }, "Renkleri uygula");
-  colourBtn.onclick = () => submitEdit(slug, "colors", { colors: Object.fromEntries(pickers.map((p) => [p.name, p.input.value])) }, colourBtn);
-  grid.append(h("section", { class: "card stack" }, h("h3", { text: "Renkler" }),
-    pickers.length ? h("div", { class: "stack-sm" }, ...pickers.map((p) => p.el)) : h("p", { class: "muted small", text: "Henüz renk paleti yok." }),
-    colourBtn));
-
-  // Pages: tick the pages the site should have.
-  const boxes = Object.entries(PAGE_TR).map(([id, label]) => {
-    const box = h("input", { type: "checkbox", id: `pg-${id}`, value: id, checked: d.pages.includes(id), disabled: id === "home" });
-    return { id, box, el: h("label", { for: `pg-${id}`, class: "check" }, box, ` ${label}`) };
-  });
-  const pageBtn = h("button", { class: "btn btn-primary", type: "button", disabled: busy }, "Sayfaları uygula");
-  pageBtn.onclick = () => submitEdit(slug, "pages", { pages: boxes.filter((b) => b.box.checked || b.id === "home").map((b) => b.id) }, pageBtn);
-  grid.append(h("section", { class: "card stack" }, h("h3", { text: "Sayfalar" }),
-    h("p", { class: "muted small", text: "Kaldırılan sayfa menüden de çıkar. Eklenen sayfa markaya uygun tasarlanır; doldurmak için bilgi yoksa agent sana sorar." }),
-    ...boxes.map((b) => b.el), pageBtn));
-
-  // Services and prices: a small table.
-  const current = (d.content?.[d.defaultLocale]?.services || []).map((x) => ({ ...x }));
-  const rows = h("div", { class: "svc-rows" });
-  const addRow = (x = { title: "", description: "", price: "" }) => {
-    const row = h("div", { class: "svc-row" },
-      h("input", { placeholder: "Hizmet", value: x.title || "", maxlength: 60, "aria-label": "Hizmet adı" }),
-      h("input", { placeholder: "Fiyat (ör. 400 TL)", value: x.price || "", maxlength: 40, "aria-label": "Fiyat" }),
-      h("input", { placeholder: "Kısa açıklama", value: x.description || "", maxlength: 300, "aria-label": "Açıklama" }),
-      h("button", { class: "icon-btn", type: "button", "aria-label": "Satırı sil", onclick: () => row.remove() }, "✕"));
-    rows.append(row);
-  };
-  (current.length ? current : [undefined]).forEach((x) => addRow(x));
-  const svcBtn = h("button", { class: "btn btn-primary", type: "button", disabled: busy }, "Hizmetleri uygula");
-  svcBtn.onclick = () => submitEdit(slug, "services", { services: [...rows.children].map((r) => { const [t, p, ds] = r.querySelectorAll("input"); return { title: t.value, price: p.value, description: ds.value }; }) }, svcBtn);
-  grid.append(h("section", { class: "card stack wide" }, h("h3", { text: "Hizmetler ve fiyatlar" }), rows,
-    h("div", { class: "row" }, h("button", { class: "btn btn-sm", type: "button", onclick: () => addRow() }, "+ Satır ekle"), svcBtn)));
-
-  // One text change: page, current text, new text.
-  const page = h("select", { id: "tx-page" }, ...d.pages.map((p) => h("option", { value: p }, PAGE_TR[p] || p)));
-  const oldT = h("textarea", { id: "tx-old", rows: 2, placeholder: "Sitedeki metni kopyala yapıştır", maxlength: 2000 });
-  const newT = h("textarea", { id: "tx-new", rows: 2, placeholder: "Yerine ne yazsın?", maxlength: 2000 });
-  const txBtn = h("button", { class: "btn btn-primary", type: "button", disabled: busy }, "Metni değiştir");
-  txBtn.onclick = () => submitEdit(slug, "text", { page: page.value, oldText: oldT.value, newText: newT.value }, txBtn);
-  grid.append(h("section", { class: "card stack wide" }, h("h3", { text: "Metin değiştir" }),
-    h("label", { for: "tx-page" }, "Sayfa", page), h("label", { for: "tx-old" }, "Şu an yazan", oldT), h("label", { for: "tx-new" }, "Yeni metin", newT), txBtn));
-
-  grid.append(formCard(d), quickEditCard(d));
+  const card = (title, note, ...children) => h("div", { class: "edit-form", "data-enter": "0" }, h("h4", { text: title }), note && h("p", { class: "muted small", text: note }), ...children);
+  switch (id) {
+    case "colors": {
+      const brand = custom ? await api("GET", `/api/clients/${slug}/brand`).catch(() => null) : null;
+      const palette = custom ? (brand?.brand?.palette || {}) : (d.design?.palette || {});
+      const pickers = Object.entries(palette).filter(([, v]) => /^#[0-9a-f]{6}$/i.test(String(v))).map(([name, hex]) => {
+        const input = h("input", { type: "color", id: `col-${name}`, value: hex.toLowerCase() });
+        const code = h("code", { text: hex.toUpperCase() });
+        input.addEventListener("input", () => (code.textContent = input.value.toUpperCase()));
+        return { name, input, el: h("label", { for: `col-${name}`, class: "colour-row" }, input, h("span", { text: PALETTE_TR[name] || name.replace(/[-_]/g, " ") }), code) };
+      });
+      const btn = h("button", { class: "btn btn-primary", type: "button", disabled: busy || !pickers.length }, "Renkleri Uygula");
+      btn.onclick = () => submitEdit(slug, "colors", { colors: Object.fromEntries(pickers.map((p) => [p.name, p.input.value])) }, btn);
+      return card("Renk Paleti", "Değiştirmek istediğiniz renge tıklayınız. Okunurluk korunur.", pickers.length ? h("div", { class: "stack-sm" }, ...pickers.map((p) => p.el)) : h("p", { class: "muted small", text: "Renk paleti henüz oluşturulmadı." }), btn);
+    }
+    case "pages": {
+      const boxes = Object.entries(PAGE_TR).map(([pid, label]) => {
+        const box = h("input", { type: "checkbox", id: `pg-${pid}`, value: pid, checked: d.pages.includes(pid), disabled: pid === "home" });
+        return { pid, box, el: h("label", { for: `pg-${pid}`, class: "check" }, box, ` ${label}`) };
+      });
+      const btn = h("button", { class: "btn btn-primary", type: "button", disabled: busy }, "Sayfaları Uygula");
+      btn.onclick = () => submitEdit(slug, "pages", { pages: boxes.filter((b) => b.box.checked || b.pid === "home").map((b) => b.pid) }, btn);
+      return card("Sayfalar", "Kaldırılan sayfa menüden de çıkarılır. Eklenen sayfa marka kimliğine uygun tasarlanır; bilgi eksikse size sorulur.", h("div", { class: "page-checks" }, ...boxes.map((b) => b.el)), btn);
+    }
+    case "services": {
+      const current = (d.content?.[d.defaultLocale]?.services || []).map((x) => ({ ...x }));
+      const rows = h("div", { class: "svc-rows" });
+      const addRow = (x = { title: "", description: "", price: "" }) => {
+        const row = h("div", { class: "svc-row" },
+          h("input", { placeholder: "Hizmet", value: x.title || "", maxlength: 60, "aria-label": "Hizmet adı" }),
+          h("input", { placeholder: "Fiyat (ör. 400 TL)", value: x.price || "", maxlength: 40, "aria-label": "Fiyat" }),
+          h("input", { placeholder: "Kısa açıklama", value: x.description || "", maxlength: 300, "aria-label": "Açıklama" }),
+          h("button", { class: "icon-btn", type: "button", "aria-label": "Satırı sil", onclick: () => row.remove() }, "✕"));
+        rows.append(row);
+      };
+      (current.length ? current : [undefined]).forEach((x) => addRow(x));
+      const btn = h("button", { class: "btn btn-primary", type: "button", disabled: busy }, "Hizmetleri Uygula");
+      btn.onclick = () => submitEdit(slug, "services", { services: [...rows.children].map((r) => { const [t, pr, ds] = r.querySelectorAll("input"); return { title: t.value, price: pr.value, description: ds.value }; }) }, btn);
+      return card("Hizmetler ve Fiyatlar", "Liste sitede bu sırayla gösterilir.", rows, h("div", { class: "row" }, h("button", { class: "btn btn-sm", type: "button", onclick: () => addRow() }, "+ Satır Ekle"), btn));
+    }
+    case "text": {
+      const page = h("select", { id: "tx-page" }, ...d.pages.map((pg) => h("option", { value: pg }, PAGE_TR[pg] || pg)));
+      const oldT = h("textarea", { id: "tx-old", rows: 2, placeholder: "Sitedeki metni kopyalayıp yapıştırınız", maxlength: 2000 });
+      const newT = h("textarea", { id: "tx-new", rows: 2, placeholder: "Yeni metni yazınız", maxlength: 2000 });
+      const btn = h("button", { class: "btn btn-primary", type: "button", disabled: busy }, "Metni Değiştir");
+      btn.onclick = () => submitEdit(slug, "text", { page: page.value, oldText: oldT.value, newText: newT.value }, btn);
+      return card("Metin", null, h("label", { for: "tx-page" }, "Sayfa", page), h("label", { for: "tx-old" }, "Mevcut metin", oldT), h("label", { for: "tx-new" }, "Yeni metin", newT), btn);
+    }
+    case "contact": return h("div", { class: "edit-form", "data-enter": "0" }, quickEditCard(d));
+    case "form": return h("div", { class: "edit-form", "data-enter": "0" }, formCard(d));
+    default: return h("div", { class: "edit-form", "data-enter": "0" }, uploadCard(slug, d.inbox, d.assets, d.logo));
+  }
 }
 
 /** Contact form: Eren pastes the endpoint of a free form service; only he can set it, the agent only uses it. */
@@ -1336,8 +1291,8 @@ function quickEditCard(d) {
 function versionsCard(d) {
   const slug = d.status.slug;
   const list = h("ul", { class: "versions" }, h("li", { class: "muted small", text: "Yükleniyor…" }));
-  const card = h("details", { class: "card advanced", open: false }, h("summary", { text: "Önceki sürümler (geri al)" }),
-    h("p", { class: "muted small", text: "Her işten önce ve sonra site kaydedilir. Bir sürüme dönünce metinler, görseller ve site kodu o hâline gelir; onayı yeniden vermen gerekir." }), list);
+  const card = h("details", { class: "card advanced", open: false }, h("summary", { text: "Sürüm Geçmişi" }),
+    h("p", { class: "muted small", text: "Her işlemden önce ve sonra site kaydedilir. Bir sürüme dönüldüğünde metinler, görseller ve site kodu o hâline gelir; onayın yeniden verilmesi gerekir." }), list);
   card.addEventListener("toggle", async () => {
     if (!card.open || card.dataset.loaded) return;
     card.dataset.loaded = "1";
@@ -1348,32 +1303,13 @@ function versionsCard(d) {
       h("span", { class: "when", text: time(v.at) }),
       h("span", { class: "what", text: i === 0 ? `${v.message} (şu anki)` : v.message }),
       i === 0 ? null : h("button", { class: "btn btn-sm", type: "button", disabled: isBusy(), onclick: async () => {
-        if (!confirm(`Site "${v.message}" sonrasındaki hâline dönecek. Sonraki değişiklikler kaybolmaz, yine listede kalır. Devam?`)) return;
+        if (!confirm(`Site "${v.message}" sonrasındaki hâline döndürülecek. Sonraki değişiklikler kaybolmaz, listede kalır. Devam edilsin mi?`)) return;
         const res = await guarded(() => api("POST", `/api/clients/${slug}/versions/restore`, { id: v.id }));
         if (res) { toast("Geri alındı. Siteyi yeniden oluşturup bak."); render(); }
-      } }, "Bu hâline dön"),
+      } }, "Bu Sürüme Dön"),
     )));
   });
   return card;
-}
-
-/** The built site in a phone frame and a desktop frame, side by side, without leaving the panel. */
-function devicePreview(d) {
-  const slug = d.status.slug;
-  const wrap = h("section", { class: "card devices" });
-  const head = h("div", { class: "row", style: "justify-content:space-between" },
-    h("h2", { text: "Görünüm" }),
-    h("div", { class: "row" },
-      h("button", { class: "btn btn-sm", type: "button", onclick: () => openPreview(slug) }, "Yeni sekmede aç"),
-    ),
-  );
-  const stage = h("div", { class: "device-stage" }, h("p", { class: "muted small", text: "Yükleniyor…" }));
-  wrap.append(head, stage, h("p", { class: "muted small", text: "Müşteriye göstermek için: Windows'ta Win+Shift+S ile ekran görüntüsü al ve WhatsApp'tan gönder. Kalıcı link için Ayarlar'dan Cloudflare'i kur." }));
-  api("POST", `/api/clients/${slug}/preview`).then((r) => {
-    const frame = (cls, label) => h("figure", { class: `device ${cls}` }, h("div", { class: "screen" }, h("iframe", { src: r.url, title: `${label} görünümü`, tabindex: "-1" })), h("figcaption", { text: label }));
-    stage.replaceChildren(frame("phone", "Telefon"), frame("desktop", "Masaüstü"));
-  }).catch(() => stage.replaceChildren(h("p", { class: "err", text: "Önizleme açılamadı." })));
-  return wrap;
 }
 
 // ---------------------------------------------------------------- tab: information
@@ -1385,13 +1321,16 @@ async function tabInfo(body, d) {
     body.append(el);
     return el;
   };
-  section("İş takibi", "Teklif, ödeme ve teslim tarihi. Sadece panelde durur, siteye ve agent'a gitmez.").append(businessForm(d));
+  section("İş Takibi", "Teklif, ödeme ve teslim tarihi. Yalnızca panelde tutulur; siteye ve asistana iletilmez.").append(businessForm(d));
   if (d.status.openQuestions.length) {
-    const miss = section("Eksik bilgiler", "Cevapları yukarıdaki kutuya yapıştırıp 'Siteyi hazırla'ya bas.");
+    const miss = section("Eksik Bilgiler", "Yanıtları Düzenleme sekmesindeki bilgi alanına yapıştırınız.");
     miss.append(h("ul", { class: "missing" }, ...d.status.openQuestions.map((q) => h("li", { title: q.text, text: MISSING_TR[q.id] || q.text }))));
   }
-  tabContent(section("Sitedeki metinler", "Agent'ın yazdığı metinler. Değiştirmek için Sohbet'e yaz."), d);
-  section("Logo ve fotoğraflar", "Yüklediklerini agent siteye ekler.").append(uploadCard(d.status.slug, d.inbox, d.assets, d.logo));
+  tabContent(section("Sitedeki Metinler", "Değiştirmek için Düzenleme → Metin formunu kullanınız."), d);
+  section("Logo ve Görseller", "Yüklenen dosyalar siteye eklenir; logoyu seçmek için \"Logo olarak kullan\"ı kullanınız.").append(uploadCard(d.status.slug, d.inbox, d.assets, d.logo));
+  const pub = section("Onay ve Yayın", "Onay kodu yalnızca paneli başlattığınız terminalde görünür.");
+  tabPublish(pub, d);
+  tabBuild(pub, d);
   const more = h("details", { class: "card advanced" }, h("summary", { text: "Müşteriye soru formu göndermek ya da formu soru soru girmek (isteğe bağlı)" }));
   body.append(more);
   tabQuestions(more, d, { compact: true });
@@ -1700,10 +1639,11 @@ async function renderSettings() {
   };
   const lines = 'export SF_CF_MANAGED_API_TOKEN="buraya-token"\nexport SF_CF_MANAGED_ACCOUNT_ID="buraya-hesap-kimligi"';
   const ready = st && st.managed.token && st.managed.accountId;
-  return h("section", { class: "settings stack", style: "max-width:46rem" },
-    h("h1", { text: "Ayarlar" }),
-    h("section", { class: "card stack" },
-      h("div", { class: "row", style: "justify-content:space-between" }, h("h2", { text: "Yayın: Cloudflare bağlantısı" }), ready ? h("span", { class: "badge ok", text: "hazır" }) : h("span", { class: "badge warn", text: "kurulmadı" })),
+  const group = (id, title, ...cards) => h("section", { class: "settings-group", id: `ayar-${id}`, "data-enter": "1" }, h("h2", { class: "settings-title", text: title }), ...cards);
+  const nav = h("nav", { class: "settings-nav", "aria-label": "Ayar bölümleri" }, ...[["genel", "Genel"], ["kullanim", "Kaynak Kullanımı"], ["yayin", "Yayın"], ["yedek", "Yedek"]].map(([id, label]) =>
+    h("a", { href: `#ayar-${id}`, onclick: (e) => { e.preventDefault(); $(`#ayar-${id}`)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); } }, label)));
+  const cloudflare = h("section", { class: "card stack" },
+      h("div", { class: "row", style: "justify-content:space-between" }, h("h2", { text: "Cloudflare Bağlantısı" }), ready ? h("span", { class: "badge ok", text: "hazır" }) : h("span", { class: "badge warn", text: "kurulmadı" })),
       h("p", { class: "muted small", text: "Önizleme linki ve canlı yayın için bir kez yapılır. Token panelde ya da dosyada saklanmaz; sadece terminal ortamında durur ve agent'a hiç verilmez." }),
       st && h("ul", { class: "checks" },
         h("li", {}, ok(st.managed.token), " API token (SF_CF_MANAGED_API_TOKEN)"),
@@ -1720,31 +1660,33 @@ async function renderSettings() {
         h("li", {}, h("strong", { text: "Dene: " }), h("button", { class: "btn btn-sm", type: "button", onclick: (e) => test(e.currentTarget) }, "Bağlantıyı test et"), " ", result),
       ),
       h("p", { class: "muted small", text: "Token'ı kimseyle, bana da gönderme. Sızdığını düşünürsen Cloudflare'de silip yenisini oluştur." }),
-    ),
-    h("section", { class: "card stack" },
-      h("h2", { text: "Onay kodu" }),
-      h("p", { class: "muted small", text: "Panelden onay verirken sorulan 6 haneli kod, paneli başlattığın terminalde \"Onay kodu\" satırında yazar. Her başlatmada değişir; 5 yanlış denemede onay kilitlenir (paneli yeniden başlat)." }),
-    ),
-    budgetCard(),
-    webResearchCard(),
-    senderCard(),
-    backupCard(),
-    h("section", { class: "card stack" },
-      h("h2", { text: "Bildirimler" }),
-      h("p", { class: "muted small", text: "Uzun işler bitince ses çalar; panel arka plandaysa bilgisayar bildirimi gelir." }),
-      h("div", { class: "row" },
-        h("button", { class: "btn btn-sm", type: "button", onclick: () => { askNotifyPermission(); toast("Tarayıcı izin sorabilir; izin ver."); } }, "Bildirime izin ver"),
-        h("button", { class: "btn btn-sm", type: "button", onclick: () => chime(true) }, "Sesi dene"),
-      ),
-    ),
-  );
+    );
+  const approvalCode = h("section", { class: "card stack" },
+    h("h2", { text: "Onay Kodu" }),
+    h("p", { class: "muted small", text: "Onay sırasında istenen 6 haneli kod, paneli başlattığınız terminalde \"Onay kodu\" satırında yer alır. Her başlatmada değişir; 5 hatalı denemede onay kilitlenir (paneli yeniden başlatınız)." }));
+  const notifications = h("section", { class: "card stack" },
+    h("h2", { text: "Bildirimler" }),
+    h("p", { class: "muted small", text: "Uzun işlemler tamamlandığında sesli uyarı verilir; panel arka plandaysa sistem bildirimi gönderilir." }),
+    h("div", { class: "row" },
+      h("button", { class: "btn btn-sm", type: "button", onclick: () => { askNotifyPermission(); toast("Tarayıcı izin isteyebilir; lütfen izin veriniz."); } }, "Bildirimlere İzin Ver"),
+      h("button", { class: "btn btn-sm", type: "button", onclick: () => chime(true) }, "Sesi Dene")));
+  return h("div", { class: "settings-page" },
+    h("div", { class: "settings-head", "data-enter": "0" }, h("h1", { text: "Ayarlar" }), nav),
+    h("div", { class: "settings stack" },
+      group("genel", "Genel", senderCard(), notifications, approvalCode),
+      group("kullanim", "Kaynak Kullanımı", budgetCard(), webResearchCard()),
+      group("yayin", "Yayın", cloudflare),
+      group("yedek", "Yedek", backupCard())));
 }
 
 // ---------------------------------------------------------------- budget
 
-const MODE_TR = { economy: "Ekonomik", balanced: "Dengeli", premium: "Premium" };
+const MODE_TR = { economy: "Temel", balanced: "Standart", premium: "Premium" };
+const PACKAGE_TR = MODE_TR;
 const fmtTokens = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n || 0));
-const usageLine = (job) => job.tokens ? h("span", { class: "usage", title: "Ağırlıklı token: önbellekten okunan 1/10 sayılır" }, `${fmtTokens(job.tokens)} token${job.model ? ` · ${job.model}` : ""}${job.usage?.costUsd ? ` · ~$${job.usage.costUsd.toFixed(2)}` : ""}`) : null;
+const MODEL_TR = { opus: "en güçlü model", sonnet: "dengeli model", haiku: "hızlı model" };
+const usageLevel = (n) => (n < 150_000 ? "düşük" : n < 1_000_000 ? "orta" : "yüksek");
+const usageLine = (job) => job.tokens ? h("span", { class: "usage", title: `${fmtTokens(job.tokens)} birim (önbellekten okunan 1/10 sayılır)${job.usage?.costUsd ? ` · tahmini ~$${job.usage.costUsd.toFixed(2)}` : ""}` }, `Kaynak: ${usageLevel(job.tokens)}${job.model ? ` · ${MODEL_TR[job.model] || job.model}` : ""}`) : null;
 
 /** Budget mode, monthly budget and this month's use. */
 function budgetCard() {
@@ -1757,11 +1699,11 @@ function budgetCard() {
   const showProfile = () => {
     const m = modes.find((x) => x.id === mode.value);
     if (!m) return;
-    const skills = { full: "skill'ler tam yüklenir", search: "skill'lerde sadece arama", none: "skill yok" }[m.skills];
+    const skills = { full: "tasarım rehberleri tamamen kullanılır", search: "tasarım rehberlerinde yalnızca arama yapılır", none: "tasarım rehberi kullanılmaz" }[m.skills];
     profile.replaceChildren(
-      h("li", { text: `Tasarım işleri: ${m.design.model}, en fazla ${m.design.maxTurns} adım, iş başına ${fmtTokens(m.design.tokenCap)} token` }),
-      h("li", { text: `Düzenlemeler: ${m.edit.model}, en fazla ${m.edit.maxTurns} adım, iş başına ${fmtTokens(m.edit.tokenCap)} token` }),
-      h("li", { text: `${skills} · internet araştırması ${m.research ? "açık" : "kapalı"} · ekran görüntüsüne ${m.screenshots ? "bakar" : "bakmaz"}` }));
+      h("li", { text: `Tasarım işlemleri: ${MODEL_TR[m.design.model] || m.design.model}, en fazla ${m.design.maxTurns} adım, işlem başına ${fmtTokens(m.design.tokenCap)} birim` }),
+      h("li", { text: `Düzenlemeler: ${MODEL_TR[m.edit.model] || m.edit.model}, en fazla ${m.edit.maxTurns} adım, işlem başına ${fmtTokens(m.edit.tokenCap)} birim` }),
+      h("li", { text: `${skills} · internet araştırması ${m.research ? "açık" : "kapalı"} · ekran görüntüsü ${m.screenshots ? "incelenir" : "incelenmez"}` }));
   };
   mode.addEventListener("change", showProfile);
   const load = () => api("GET", "/api/usage").then((u) => {
@@ -1771,19 +1713,19 @@ function budgetCard() {
     const pct = u.monthlyBudget ? Math.min(100, Math.round((u.monthTokens / u.monthlyBudget) * 100)) : 0;
     meter.firstChild.style.width = `${pct}%`;
     meter.className = `meter ${pct >= 90 ? "bad" : pct >= 70 ? "warn" : ""}`;
-    stats.textContent = `Bu ay: ${fmtTokens(u.monthTokens)} token, ${u.monthJobs} iş${u.monthCostUsd ? `, tahmini ~$${u.monthCostUsd.toFixed(2)}` : ""}${u.monthlyBudget ? ` · bütçe ${fmtTokens(u.monthlyBudget)} (%${pct})` : ""}`;
+    stats.textContent = `Bu ay: ${fmtTokens(u.monthTokens)} birim, ${u.monthJobs} işlem${u.monthCostUsd ? `, tahmini ~$${u.monthCostUsd.toFixed(2)}` : ""}${u.monthlyBudget ? ` · sınır ${fmtTokens(u.monthlyBudget)} (%${pct})` : ""}`;
     showProfile();
   }).catch(() => {});
   load();
   return h("form", { class: "card stack", onsubmit: async (e) => {
     e.preventDefault();
     const r = await guarded(() => api("PUT", "/api/settings", { budget: { mode: mode.value, monthlyTokens: Math.max(0, Math.round(Number(monthly.value || 0) * 1e6)) } }));
-    if (r) { toast("Bütçe kaydedildi; bir sonraki işten itibaren geçerli."); load(); }
+    if (r) { toast("Kaydedildi; bir sonraki işlemden itibaren geçerlidir."); load(); }
   } },
-    h("h2", { text: "Token bütçesi" }),
-    h("p", { class: "muted small", text: "Mod, her işte hangi modelin, kaç adımın ve en fazla kaç token'ın kullanılacağını belirler. Tavanı aşan iş durdurulur (yazdıkları kalır). Müşteri bazında farklı mod Bilgiler → iş bilgilerinden seçilir." }),
-    h("label", { for: "bd-mode" }, "Varsayılan mod", mode), profile,
-    h("label", { for: "bd-month" }, "Aylık bütçe (milyon token; 0 = sınırsız)", monthly),
+    h("h2", { text: "Paket ve Bütçe" }),
+    h("p", { class: "muted small", text: "Paket; her işlemde kullanılacak modeli, adım sınırını ve en fazla kaynak miktarını belirler. Sınırı aşan işlem durdurulur, yapılan değişiklikler korunur. Müşteri bazında paket, Müşteri Bilgileri → İş Takibi bölümünden seçilir." }),
+    h("label", { for: "bd-mode" }, "Varsayılan paket", mode), profile,
+    h("label", { for: "bd-month" }, "Aylık sınır (milyon birim; 0 = sınırsız)", monthly),
     meter, stats,
     h("div", {}, h("button", { class: "btn btn-primary", type: "submit" }, "Kaydet")));
 }
@@ -1996,7 +1938,7 @@ async function runAgent(slug, kind, payload) {
   askNotifyPermission();
   const job = await guarded(() => api("POST", `/api/clients/${slug}/agent/${kind}`, payload));
   if (!job) return false;
-  toast("Agent çalışıyor. Bitince ses ve bildirim gelir.");
+  toast("İşlem başlatıldı. Tamamlandığında bildirim alacaksınız.");
   await jobStarted(job);
   return true;
 }
