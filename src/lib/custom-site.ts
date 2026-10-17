@@ -74,6 +74,70 @@ export function writeSiteFile(paths: ClientPaths, rel: string, content: string):
   return { path: rel, bytes, totalFiles: files.length + (existing ? 0 : 1) };
 }
 
+/** A part of a file around the first match of `around` (the line numbers say where it is). Saves reading whole files. */
+export function readSiteFileAround(paths: ClientPaths, rel: string, around: string, lines = 30): { path: string; from: number; to: number; totalLines: number; content: string } {
+  const all = readSiteFile(paths, rel).content.split("\n");
+  const hit = all.findIndex((l) => l.includes(around));
+  if (hit < 0) throw new FactoryError(`"${around.slice(0, 60)}" is not in site/${rel}.`, "Use site_map to find which file has it, or read the whole file.");
+  const from = Math.max(0, hit - Math.floor(lines / 2));
+  const to = Math.min(all.length, from + lines);
+  return { path: rel, from: from + 1, to, totalLines: all.length, content: all.slice(from, to).join("\n") };
+}
+
+/**
+ * Replaces exact text in one site file: the cheap way to change a few lines without rewriting the file.
+ * `oldText` must occur exactly once (or pass all=true to replace every occurrence).
+ */
+export function editSiteFile(paths: ClientPaths, rel: string, oldText: string, newText: string, all = false): { path: string; replaced: number; bytes: number } {
+  if (!oldText) throw new FactoryError("oldText is empty.");
+  const content = readSiteFile(paths, rel).content;
+  const count = content.split(oldText).length - 1;
+  if (count === 0) throw new FactoryError(`The text to replace is not in site/${rel}.`, "Copy it exactly (spaces and line breaks included) from read_site_file, or use site_map to find the right file.");
+  if (count > 1 && !all) throw new FactoryError(`The text occurs ${count} times in site/${rel}.`, "Add surrounding text so it is unique, or pass all: true to replace every occurrence.");
+  const next = all ? content.split(oldText).join(newText) : content.replace(oldText, () => newText);
+  const r = writeSiteFile(paths, rel, next);
+  return { path: rel, replaced: all ? count : 1, bytes: r.bytes };
+}
+
+/**
+ * A compact map of the site so the agent knows where things are without reading every file: per page its
+ * title, h1 and sections (id/class and first heading), per stylesheet its colour and size variables and
+ * keyframes, and for every file its size.
+ */
+export function siteMap(paths: ClientPaths): string {
+  const root = siteDir(paths);
+  const { files, totalBytes } = listSiteFiles(paths);
+  const out: string[] = [`site/ — ${files.length} files, ${Math.round(totalBytes / 1024)} KB`];
+  const clean = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 70);
+  for (const f of files) {
+    const abs = path.join(root, f.path);
+    const kb = `${Math.max(1, Math.round(f.bytes / 1024))} KB`;
+    if (f.path.endsWith(".html")) {
+      const html = readFileSync(abs, "utf8");
+      const title = clean(/<title>([\s\S]*?)<\/title>/i.exec(html)?.[1] ?? "");
+      const h1 = clean(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i.exec(html)?.[1] ?? "");
+      out.push(`\n${f.path} (${kb}) title: "${title}" h1: "${h1}"`);
+      for (const m of html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/gi)) {
+        const attrs = m[1] ?? "";
+        const id = /\bid=["']([^"']+)/.exec(attrs)?.[1];
+        const cls = /\bclass=["']([^"']+)/.exec(attrs)?.[1];
+        const heading = clean(/<h[2-3]\b[^>]*>([\s\S]*?)<\/h[2-3]>/i.exec(m[2] ?? "")?.[1] ?? "");
+        const anims = [...new Set([...(m[2] ?? "").matchAll(/data-anim=["']([^"']+)/g)].map((a) => a[1]))];
+        out.push(`  section${id ? ` #${id}` : ""}${cls ? ` .${cls.split(/\s+/).join(".")}` : ""}${heading ? ` "${heading}"` : ""}${anims.length ? ` anim: ${anims.join(", ")}` : ""}`);
+      }
+    } else if (f.path.endsWith(".css")) {
+      const css = readFileSync(abs, "utf8");
+      const vars = [...new Set([...css.matchAll(/(--[\w-]+)\s*:\s*([^;}]{1,40})/g)].map((m) => `${m[1]}: ${m[2]!.trim()}`))].slice(0, 40);
+      const frames = [...new Set([...css.matchAll(/@keyframes\s+([\w-]+)/g)].map((m) => m[1]))];
+      out.push(`\n${f.path} (${kb})${frames.length ? ` keyframes: ${frames.join(", ")}` : ""}`);
+      if (vars.length) out.push(`  vars: ${vars.join("; ")}`);
+    } else {
+      out.push(`${f.path} (${kb})`);
+    }
+  }
+  return out.join("\n");
+}
+
 export function deleteSiteFile(paths: ClientPaths, rel: string): { deleted: string } {
   const abs = sitePath(paths, rel);
   if (!existsSync(abs)) throw new FactoryError(`site/${rel} does not exist.`);

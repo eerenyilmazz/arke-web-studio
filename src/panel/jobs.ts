@@ -1,5 +1,6 @@
 import { spawn as nodeSpawn, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { emptyUsage, MODE_LABELS, usageFrom, weighted, type AgentPolicy, type Usage } from "./budget.js";
 
 /*
  * Jobs are long-running work started from the panel: agent runs (Claude Code in headless mode) and
@@ -33,6 +34,12 @@ export interface Job {
   filesWritten?: number;
   /** Design skills the agent loaded (Skill tool), shown in the panel. */
   skillsUsed?: string[];
+  /** Budget used so far (agent jobs): Claude's own token counts, plus the model and the cap that applied. */
+  usage?: Usage;
+  tokens?: number;
+  model?: string;
+  mode?: string;
+  tokenCap?: number;
   /** Not serialised. */
   child?: ChildProcess;
 }
@@ -50,6 +57,10 @@ export const AGENT_ALLOWED_TOOLS = [
   "mcp__site-factory__read_site_file",
   "mcp__site-factory__write_site_file",
   "mcp__site-factory__delete_site_file",
+  "mcp__site-factory__edit_site_file",
+  "mcp__site-factory__site_map",
+  "mcp__site-factory__read_site_file_part",
+  "mcp__site-factory__search_design_knowledge",
   "Read",
   "Grep",
   "Glob",
@@ -106,6 +117,10 @@ export interface JobRecord {
   readonly summary?: string;
   readonly tools: string[];
   readonly errors: string[];
+  readonly usage?: Usage;
+  readonly tokens?: number;
+  readonly model?: string;
+  readonly mode?: string;
 }
 
 const MAX_RECORD_ERRORS = 5;
@@ -122,6 +137,7 @@ export function toRecord(job: Job): JobRecord {
     ...(job.summary ? { summary: job.summary } : {}),
     tools: job.log.filter((l) => l.kind === "tool").map((l) => l.text.split("(")[0] ?? l.text),
     errors: job.log.filter((l) => l.kind === "error").map((l) => l.text).slice(-MAX_RECORD_ERRORS),
+    ...(job.usage ? { usage: job.usage, tokens: job.tokens ?? weighted(job.usage), model: job.model, mode: job.mode } : {}),
   };
 }
 
@@ -195,12 +211,22 @@ export class JobRunner {
   }
 
   /** Runs Claude Code headless in the factory folder with the restricted tool set. */
-  startAgent(slug: string, kind: string, title: string, prompt: string, request?: string): Job {
+  startAgent(slug: string, kind: string, title: string, prompt: string, request?: string, policy?: AgentPolicy): Job {
     const job = this.create(slug, kind, title, request);
-    this.push(job, "info", "Agent başlatıldı (sadece site-factory araçları; shell ve dosya düzenleme kapalı).");
+    job.usage = emptyUsage();
+    job.tokens = 0;
+    if (policy) {
+      job.model = policy.model;
+      job.mode = policy.mode;
+      job.tokenCap = policy.tokenCap;
+    }
+    this.push(job, "info", `Agent başlatıldı (sadece site-factory araçları; shell ve dosya düzenleme kapalı)${policy ? ` · ${MODE_LABELS[policy.mode]} mod, ${policy.model}, en fazla ${Math.round(policy.tokenCap / 1000)}K token` : ""}.`);
     let child: ChildProcess;
     try {
-      child = this.spawn(this.claudeBin, claudeArgs(LONG_JOBS.has(kind) ? MAX_AUTOPILOT_TURNS : undefined, this.webResearch(), this.readDirs), { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
+      const turns = policy?.maxTurns ?? (LONG_JOBS.has(kind) ? MAX_AUTOPILOT_TURNS : undefined);
+      const web = policy ? policy.research : this.webResearch();
+      const args = [...claudeArgs(turns, web, this.readDirs), ...(policy ? ["--model", policy.model] : [])];
+      child = this.spawn(this.claudeBin, args, { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
     } catch (error) {
       this.push(job, "error", `Claude Code başlatılamadı: ${(error as Error).message}`);
       this.finish(job, "failed");
@@ -250,8 +276,30 @@ export class JobRunner {
   }
 
   /** Turns one stream-json event from Claude Code into readable log lines. */
+  /** Adds one assistant message's usage (counted once per message id) and stops the job past its cap. */
+  private countUsage(job: Job, messageId: string | undefined, raw: unknown): void {
+    const u = usageFrom(raw);
+    if (!u || !job.usage) return;
+    const seen = (job as Job & { _seen?: Set<string> })._seen ?? new Set<string>();
+    (job as Job & { _seen?: Set<string> })._seen = seen;
+    if (messageId) {
+      if (seen.has(messageId)) return;
+      seen.add(messageId);
+    }
+    job.usage.input += u.input;
+    job.usage.output += u.output;
+    job.usage.cacheRead += u.cacheRead;
+    job.usage.cacheWrite += u.cacheWrite;
+    job.tokens = weighted(job.usage);
+    if (job.tokenCap && job.tokens > job.tokenCap && job.status === "running" && job.child) {
+      job.child.kill("SIGTERM");
+      this.push(job, "error", `Bu işin token tavanı aşıldı (${Math.round(job.tokens / 1000)}K / ${Math.round(job.tokenCap / 1000)}K), iş durduruldu. Yazılanlar duruyor; devam için tekrar başlat ya da Ayarlar → Bütçe'den modu yükselt.`);
+      this.finish(job, "failed");
+    }
+  }
+
   private handleEvent(job: Job, line: string): void {
-    let event: { type?: string; subtype?: string; message?: { content?: unknown }; result?: string; is_error?: boolean; num_turns?: number };
+    let event: { type?: string; subtype?: string; message?: { id?: string; content?: unknown; usage?: unknown }; result?: string; is_error?: boolean; num_turns?: number; usage?: unknown; total_cost_usd?: number };
     try {
       event = JSON.parse(line) as typeof event;
     } catch {
@@ -260,6 +308,7 @@ export class JobRunner {
     }
     const blocks = Array.isArray(event.message?.content) ? (event.message.content as Array<Record<string, unknown>>) : [];
     if (event.type === "assistant") {
+      this.countUsage(job, event.message?.id, event.message?.usage);
       for (const b of blocks) {
         if (b.type === "text" && typeof b.text === "string" && b.text.trim()) this.push(job, "agent", b.text.trim());
         if (b.type === "tool_use") {
@@ -278,6 +327,12 @@ export class JobRunner {
         if (b.type === "tool_result" && b.is_error === true) this.push(job, "error", toolResultText(b.content));
       }
     } else if (event.type === "result") {
+      // The final totals from Claude replace the running count (they include everything, e.g. retries).
+      const total = usageFrom(event.usage);
+      if (total && job.usage) {
+        job.usage = { ...total, ...(typeof event.total_cost_usd === "number" ? { costUsd: Math.round(event.total_cost_usd * 10000) / 10000 } : {}) };
+        job.tokens = weighted(job.usage);
+      }
       job.summary = typeof event.result === "string" ? event.result : undefined;
       if (job.summary) this.push(job, "result", job.summary);
       if (event.is_error || event.subtype !== "success") {
@@ -306,13 +361,13 @@ export type Phase = (typeof PHASES)[number];
 export function phaseOf(tool: string, input: unknown): Phase | null {
   const path = typeof input === "object" && input !== null ? String((input as { path?: unknown }).path ?? "") : "";
   switch (tool) {
-    case "get_client_status": case "list_clients": case "read_site_file": case "list_site_files": case "Read": case "Glob": case "Grep":
+    case "get_client_status": case "list_clients": case "read_site_file": case "list_site_files": case "Read": case "Glob": case "Grep": case "site_map": case "read_site_file_part":
       return "reading";
     case "update_client_config": case "save_content": case "save_asset":
       return "saving";
-    case "generate_design_system": case "Skill":
+    case "generate_design_system": case "Skill": case "search_design_knowledge":
       return "design";
-    case "write_site_file": case "delete_site_file":
+    case "write_site_file": case "delete_site_file": case "edit_site_file":
       return path.startsWith("brand/") ? "brand" : "pages";
     case "build_site":
       return "checking";

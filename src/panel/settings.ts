@@ -21,6 +21,11 @@ export const SettingsSchema = z.object({
   }).default({ name: "", email: "", phone: "", web: "" }),
   /** Folder for automatic backups (a path on this computer, e.g. a OneDrive folder under /mnt/c). Empty = off. */
   backupDir: z.string().trim().max(400).default(""),
+  /** Token budget: the mode decides models, step limits and caps per job (panel/budget.ts). 0 = no monthly budget. */
+  budget: z.object({
+    mode: z.enum(["economy", "balanced", "premium"]).default("balanced"),
+    monthlyTokens: z.number().int().min(0).max(10_000_000_000).default(0),
+  }).default({ mode: "balanced", monthlyTokens: 0 }),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 

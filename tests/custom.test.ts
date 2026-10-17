@@ -283,3 +283,22 @@ describe("contact form per client", () => {
     expect(tools.getClientStatus(f, { slug: SLUG }).contactForm).toBeNull();
   });
 });
+
+describe("cheap edits: site map, part reads and exact replacements", () => {
+  it("maps the site, reads a part and replaces exact text once", async () => {
+    const { f } = await customClient();
+    writeGoodSite(f);
+    const map = tools.siteMapTool(f, { slug: SLUG }).map;
+    expect(map).toMatch(/index\.html .*h1: "Willow & Thread"/);
+    expect(map).toMatch(/css\/site\.css .*keyframes: jar-fill/);
+    expect(map).toMatch(/--brine: #2F4A2A/);
+    const part = tools.readSiteFileAroundTool(f, { slug: SLUG, path: "index.html", around: "Contact", lines: 6 });
+    expect(part.content).toContain("Contact");
+    expect(() => tools.editSiteFileTool(f, { slug: SLUG, path: "index.html", oldText: "nope-not-here", newText: "x" })).toThrow(/not in/);
+    expect(() => tools.editSiteFileTool(f, { slug: SLUG, path: "index.html", oldText: "<", newText: "x" })).toThrow(/occurs/);
+    const r = tools.editSiteFileTool(f, { slug: SLUG, path: "index.html", oldText: '<a href="/contact/">Contact</a>', newText: '<a href="/contact/">Get in touch</a>' });
+    expect(r.replaced).toBe(1);
+    expect(tools.readSiteFileTool(f, { slug: SLUG, path: "index.html" }).content).toContain("Get in touch");
+    expect(() => tools.editSiteFileTool(f, { slug: SLUG, path: "../site.config.json", oldText: "a", newText: "b" })).toThrow(/not allowed/);
+  });
+});

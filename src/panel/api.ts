@@ -10,6 +10,7 @@ import { listVersions, restoreVersion, snapshot } from "../lib/versions.js";
 import { readBusiness, writeBusiness } from "./business.js";
 import { readSettings, writeSettings } from "./settings.js";
 import { backupNow, checkBackupDir, listBackups } from "./backup.js";
+import { BUDGET_MODES, MODE_LABELS, PROFILES, monthlyBlock, modeFor, resolvePolicy, summarise } from "./budget.js";
 import { FORM_ACTION, FORM_FILE, WEB3FORMS_KEY, readClientForm } from "../lib/form.js";
 import { applyLibraryDesign, deleteFromLibrary, libraryPreview, listLibrary, saveToLibrary } from "./library.js";
 import { ZodError } from "zod";
@@ -24,7 +25,7 @@ import * as tools from "../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "./http.js";
 import { appendInput, readHistory, readInputs } from "./history.js";
 import { serialiseJob, type JobRunner } from "./jobs.js";
-import { TOOLS_NOTE, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
+import { TOOLS_NOTE, finalPrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
 import { OPTION_IDS, readBrandBoard, readBrandOptions } from "../lib/custom-site.js";
 import type { PreviewServer } from "./preview.js";
 
@@ -53,6 +54,7 @@ const routes: Route[] = [
   { method: "POST", pattern: /^\/api\/clients$/, handler: createClient },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: clientDetail },
   { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: archive },
+  { method: "GET", pattern: /^\/api\/usage$/, handler: (d, _r, res) => sendJson(res, 200, { ...summarise(d.factory), mode: readSettings(d.factory).budget.mode, modes: BUDGET_MODES.map((m) => ({ id: m, label: MODE_LABELS[m], ...PROFILES[m] })) }) },
   { method: "GET", pattern: /^\/api\/backups$/, handler: (d, _r, res) => { const dir = readSettings(d.factory).backupDir; sendJson(res, 200, { dir, backups: listBackups(dir) }); } },
   { method: "POST", pattern: /^\/api\/backups$/, handler: async (d, _r, res) => { try { sendJson(res, 201, await backupNow(d.factory)); } catch (e) { throw new HttpError(400, (e as Error).message); } } },
   { method: "GET", pattern: /^\/api\/library\/([a-z0-9-]{2,41})\/preview\.png$/, handler: (d, _r, res, [id]) => {
@@ -227,7 +229,7 @@ async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRespons
       "Update every place in the site files where the old values appear: header, footer, contact page, buttons (tel:, mailto:, wa.me links) and the JSON-LD. Show phone numbers in the usual local format. Change nothing else. Then build_site; if a check fails, fix it and build again.",
       "Finish with one or two sentences in Turkish saying what you changed.",
     ].join("\n");
-    job = runOrConflict(() => deps.jobs.startAgent(s, "quick-edit", "Hızlı düzenleme", prompt, `Hızlı düzenleme: ${changes.join("; ")}`));
+    job = launchAgent(deps, s, "quick-edit", "Hızlı düzenleme", prompt, `Hızlı düzenleme: ${changes.join("; ")}`);
   } else {
     job = runOrConflict(() =>
       deps.jobs.startTask(s, "build", "Hızlı düzenleme", async (log) => {
@@ -373,7 +375,7 @@ async function structuredEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRe
   if (needsAgent) {
     const prompt = [`Site Factory, client "${s}".`, ...lines, EDIT_TAIL].join("\n");
     await snapshot(paths.root, `Önce: ${title}`).catch(() => null);
-    job = runOrConflict(() => deps.jobs.startAgent(s, `edit-${type}`, title, `${TOOLS_NOTE}\n${prompt}`, `${title}: ${summary}`));
+    job = launchAgent(deps, s, `edit-${type}`, title, prompt, `${title}: ${summary}`);
   } else {
     job = runOrConflict(() =>
       deps.jobs.startTask(s, "build", title, async (log) => {
@@ -523,6 +525,7 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     whatsapp: draft.whatsapp?.number ?? null,
     country: (draft as { business?: { country?: string } }).business?.country ?? "GB",
     businessTracking: readBusiness(deps.factory, s),
+    budget: { mode: modeFor(deps.factory, s), usage: summarise(deps.factory).byClient[s] ?? { tokens: 0, costUsd: 0, jobs: 0 } },
     latestTemplate: deps.factory.defaultTemplate,
     inbox: inboxFiles(deps.factory, s),
     assets: assetFiles(paths.assetsDir),
@@ -628,7 +631,7 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
         await snapshot(clientPaths(deps.factory.clientsRoot, s).root, "Önce: kütüphaneden tasarım").catch(() => null);
         libraryName = asHttp(() => applyLibraryDesign(deps.factory, s, libraryId)).name;
       }
-      prompt = autopilotPrompt(s, hasInput ? pasted : null, { web: readSettings(deps.factory).webResearch, askFirst: body.askFirst !== false, libraryName });
+      prompt = autopilotPrompt(s, hasInput ? pasted : null, { web: resolvePolicy(deps.factory, s, "autopilot").research, askFirst: body.askFirst !== false, libraryName });
       input = pasted.freeText;
       title = "Siteyi hazırla";
       request = pasted.freeText.trim() ? pasted.freeText.trim() : pasted.files.length ? `Siteyi hazırla (${pasted.files.length} dosya)` : "Siteyi hazırla.";
@@ -704,7 +707,7 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   }
   // A version before the agent touches anything, so its changes can always be undone.
   if (!deps.jobs.running()) await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${title}`).catch(() => null);
-  const job = runOrConflict(() => deps.jobs.startAgent(s, kind!, title, `${TOOLS_NOTE}\n${prompt}${earlierInputsBlock(earlier)}`, request));
+  const job = launchAgent(deps, s, kind!, title, `${prompt}${earlierInputsBlock(earlier)}`, request);
   appendInput(deps.factory, s, kind!, input);
   sendJson(res, 202, serialiseJob(job));
 }
@@ -758,6 +761,18 @@ function cancelJob(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [i
 }
 
 // ---------------------------------------------------------------- helpers
+
+/**
+ * Every agent job starts here: the monthly budget is checked, the client's budget mode decides model, steps,
+ * cap, skills and research, and the prompt gets the mode-dependent parts.
+ */
+function launchAgent(deps: ApiDeps, slug: string, kind: string, title: string, prompt: string, request: string) {
+  const blocked = monthlyBlock(deps.factory);
+  if (blocked) throw new HttpError(409, blocked);
+  const policy = resolvePolicy(deps.factory, slug, kind);
+  const text = finalPrompt(prompt.startsWith(TOOLS_NOTE) ? prompt : `${TOOLS_NOTE}\n${prompt}`, policy);
+  return runOrConflict(() => deps.jobs.startAgent(slug, kind, title, text, request, policy));
+}
 
 function runOrConflict<T>(fn: () => T): T {
   try {

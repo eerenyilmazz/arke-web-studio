@@ -12,8 +12,9 @@ import { contentHash, dirHash, readJsonIfExists, writeJson, writeText } from "./
 import { deepMerge } from "./lib/merge.js";
 import { assertSlug, clientPaths, safeJoin } from "./lib/paths.js";
 import { checkInputs, checkOutput, renderReport, type CheckResult } from "./lib/quality.js";
-import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, deleteSiteFile, isCustom, listSiteFiles, readSiteFile, writeSiteFile } from "./lib/custom-site.js";
+import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, editSiteFile, readSiteFileAround, siteMap, deleteSiteFile, isCustom, listSiteFiles, readSiteFile, writeSiteFile } from "./lib/custom-site.js";
 import { takeScreenshots } from "./lib/screenshots.js";
+import { searchKnowledge } from "./lib/knowledge.js";
 import { effectiveFormAction } from "./lib/form.js";
 import { buildQuestionnaire } from "./lib/questionnaire.js";
 import { findUnknownKeys } from "./lib/unknown-keys.js";
@@ -558,6 +559,30 @@ export function writeSiteFileTool(factory: FactoryConfig, args: { slug: string; 
     throw new FactoryError(`Client "${args.slug}" uses the ${template} template, which you do not write code for.`, 'Only sites with template "custom" are written by hand. Change config and content instead.');
   }
   return writeSiteFile(paths, args.path, args.content);
+}
+
+export function editSiteFileTool(factory: FactoryConfig, args: { slug: string; path: string; oldText: string; newText: string; all?: boolean }) {
+  const paths = openClient(factory, assertSlug(args.slug));
+  const template = (readDraftConfig(paths) as { template?: string }).template ?? "";
+  if (!isCustom(template)) throw new FactoryError(`Client "${args.slug}" uses the ${template} template, which you do not write code for.`);
+  return editSiteFile(paths, args.path, args.oldText, args.newText, args.all ?? false);
+}
+
+/** A few passages of design knowledge (rules and skills) for one question; see lib/knowledge.ts. */
+export function searchDesignKnowledge(args: { query: string; k?: number }) {
+  const hits = searchKnowledge(FACTORY_ROOT, args.query, args.k ?? 4);
+  return {
+    results: hits.map((h) => ({ source: h.source, heading: h.heading, text: h.text })),
+    note: hits.length ? "Rules (rules/…) win over skills when they disagree." : "Nothing found; try other words (sector, section, colour, type, motion).",
+  };
+}
+
+export function siteMapTool(factory: FactoryConfig, args: { slug: string }) {
+  return { map: siteMap(openClient(factory, assertSlug(args.slug))) };
+}
+
+export function readSiteFileAroundTool(factory: FactoryConfig, args: { slug: string; path: string; around: string; lines?: number }) {
+  return readSiteFileAround(openClient(factory, assertSlug(args.slug)), args.path, args.around, args.lines);
 }
 
 export function deleteSiteFileTool(factory: FactoryConfig, args: { slug: string; path: string }) {

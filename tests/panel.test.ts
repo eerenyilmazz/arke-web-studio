@@ -262,7 +262,9 @@ describe("prepare site (autopilot)", () => {
     expect(first.status).toBe(202);
     await waitFor(async () => ((await (await fetch(`${base}/api/clients/reinware`, { headers: auth })).json()) as { running: unknown }).running === null);
     const call = calls[0]!;
-    expect(call.args[call.args.indexOf("--max-turns") + 1]).toBe("300");
+    // Balanced mode (default): design jobs get 250 steps and the design model.
+    expect(call.args[call.args.indexOf("--max-turns") + 1]).toBe("250");
+    expect(call.args[call.args.indexOf("--model") + 1]).toBe("opus");
     expect(call.stdin).toMatch(/\n<client_data>\n/);
     expect(call.stdin).toContain("eerenyilmazz1@gmail.com");
     expect(call.stdin).toMatch(/Never deploy and never touch approvals/);
@@ -321,7 +323,9 @@ describe("brand board", () => {
     expect(args).toMatch(/--disallowedTools Bash/);
     expect(calls[0]!.stdin).toMatch(/signature\.html/);
     expect(calls[0]!.stdin).toMatch(/mcp__site-factory__get_client_status/);
-    expect(calls[0]!.stdin).toMatch(/Skill tool.*impeccable.*design-taste-frontend/);
+    // Balanced mode searches the design knowledge instead of loading whole skills.
+    expect(calls[0]!.stdin).toMatch(/search_design_knowledge/);
+    expect(calls[0]!.stdin).not.toMatch(/\[\[DESIGN_SKILLS\]\]/);
   });
 });
 
@@ -422,6 +426,56 @@ describe("backups", () => {
     expect(listed.backups[0]!.file).toBe(file);
     const { execFileSync } = await import("node:child_process");
     expect(execFileSync("tar", ["-tzf", path.join(dir, file)]).toString()).toMatch(/keep-me\/site\.config\.json/);
+  });
+});
+
+describe("token budget", () => {
+  const usage = (input: number, output: number, cacheRead = 0) => ({ input_tokens: input, output_tokens: output, cache_read_input_tokens: cacheRead, cache_creation_input_tokens: 0 });
+  it("counts each message once, records the job in the ledger, and uses the client's mode", async () => {
+    const calls: SpawnCall[] = [];
+    const events = [
+      { type: "assistant", message: { id: "m1", usage: usage(1000, 200, 5000), content: [{ type: "text", text: "a" }] } },
+      { type: "assistant", message: { id: "m1", usage: usage(1000, 200, 5000), content: [{ type: "tool_use", name: "mcp__site-factory__get_client_status", input: {} }] } },
+      { type: "result", subtype: "success", result: "ok", usage: usage(1000, 300, 5000), total_cost_usd: 0.0123 },
+    ];
+    const { base, auth, factory } = await start(fakeSpawn(calls, events));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "cheap-co", businessName: "Cheap", industry: "bakery", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients/cheap-co/business`, { method: "PUT", headers: json, body: JSON.stringify({ budgetMode: "economy" }) });
+    const res = await fetch(`${base}/api/clients/cheap-co/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "Başlığı kısalt" }) });
+    expect(res.status).toBe(202);
+    const call = calls[0]!;
+    expect(call.args[call.args.indexOf("--model") + 1]).toBe("haiku");
+    expect(call.args[call.args.indexOf("--max-turns") + 1]).toBe("30");
+    await waitFor(async () => !((await (await fetch(`${base}/api/meta`, { headers: auth })).json()) as { running: unknown }).running);
+    const u = (await (await fetch(`${base}/api/usage`, { headers: auth })).json()) as { monthTokens: number; monthJobs: number; byClient: Record<string, { tokens: number; costUsd: number }> };
+    // 1000 + 300 + 5000/10 = 1800 weighted tokens, from Claude's final totals.
+    expect(u.monthTokens).toBe(1800);
+    expect(u.byClient["cheap-co"]!.costUsd).toBeCloseTo(0.0123);
+    const detail = (await (await fetch(`${base}/api/clients/cheap-co`, { headers: auth })).json()) as { history: Array<{ tokens: number; model: string }>; budget: { mode: string } };
+    expect(detail.history.at(-1)!.tokens).toBe(1800);
+    expect(detail.history.at(-1)!.model).toBe("haiku");
+    expect(detail.budget.mode).toBe("economy");
+
+    // Monthly budget used up: new agent jobs are refused with a plain message.
+    await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ budget: { mode: "balanced", monthlyTokens: 1000 } }) });
+    const blocked = await fetch(`${base}/api/clients/cheap-co/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "x" }) });
+    expect(blocked.status).toBe(409);
+    expect(((await blocked.json()) as { error: string }).error).toMatch(/bütçesi doldu/);
+    void factory;
+  });
+
+  it("stops a job that passes its token cap", async () => {
+    const calls: SpawnCall[] = [];
+    const big = [{ type: "assistant", message: { id: "big", usage: usage(500_000, 1000), content: [{ type: "text", text: "çok" }] } }];
+    const { base, auth } = await start(fakeSpawn(calls, big));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "cap-co", businessName: "Cap", industry: "bakery", hostingModel: "managed" }) });
+    const job = (await (await fetch(`${base}/api/clients/cap-co/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "x" }) })).json()) as { id: string };
+    await waitFor(async () => ((await (await fetch(`${base}/api/jobs/${job.id}`, { headers: auth })).json()) as { status: string }).status !== "running");
+    const done = (await (await fetch(`${base}/api/jobs/${job.id}`, { headers: auth })).json()) as { status: string; log: Array<{ text: string }> };
+    expect(done.status).toBe("failed");
+    expect(done.log.map((l) => l.text).join("\n")).toMatch(/token tavanı aşıldı/);
   });
 });
 

@@ -188,6 +188,46 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     handler(factory, "write_site_file", (a: { slug: string; path: string; content: string }) => tools.writeSiteFileTool(factory, a)),
   );
   server.registerTool(
+    "edit_site_file",
+    {
+      title: "Edit site file",
+      description:
+        "Replaces exact text in one site file (custom sites). Use this for changes to existing files instead of rewriting them with write_site_file: it is much cheaper. oldText must appear exactly once (add surrounding text to make it unique) unless all is true.",
+      inputSchema: { slug, path: sitePath, oldText: z.string().min(1).max(100_000), newText: z.string().max(100_000), all: z.boolean().optional() },
+    },
+    handler(factory, "edit_site_file", (a: { slug: string; path: string; oldText: string; newText: string; all?: boolean }) => tools.editSiteFileTool(factory, a)),
+  );
+  server.registerTool(
+    "search_design_knowledge",
+    {
+      title: "Search design knowledge",
+      description: "Searches the factory's design rules and the design skills (Impeccable, taste-skill, UI UX Pro Max) and returns the few most relevant passages. Ask short, specific questions (e.g. 'barber hero composition', 'dark palette contrast', 'signature motion bakery'). Much cheaper than loading whole skills.",
+      inputSchema: { query: z.string().min(2).max(200), k: z.number().int().min(1).max(8).optional() },
+      annotations: { readOnlyHint: true },
+    },
+    handler(factory, "search_design_knowledge", (a: { query: string; k?: number }) => tools.searchDesignKnowledge(a)),
+  );
+  server.registerTool(
+    "site_map",
+    {
+      title: "Site map",
+      description: "A compact map of a custom site: every file with its size; per page the title, h1 and sections (id, class, heading, animations); per stylesheet the CSS variables and keyframes. Read this first to find where to change something, then read only that part.",
+      inputSchema: { slug },
+      annotations: { readOnlyHint: true },
+    },
+    handler(factory, "site_map", (a: { slug: string }) => tools.siteMapTool(factory, a)),
+  );
+  server.registerTool(
+    "read_site_file_part",
+    {
+      title: "Read part of a site file",
+      description: "Returns about `lines` lines (default 30) of a site file around the first line containing `around`, with line numbers. Cheaper than reading the whole file for a small change.",
+      inputSchema: { slug, path: sitePath, around: z.string().min(1).max(200), lines: z.number().int().min(5).max(200).optional() },
+      annotations: { readOnlyHint: true },
+    },
+    handler(factory, "read_site_file_part", (a: { slug: string; path: string; around: string; lines?: number }) => tools.readSiteFileAroundTool(factory, a)),
+  );
+  server.registerTool(
     "delete_site_file",
     { title: "Delete site file", description: "Deletes one file from the client's site/ folder.", inputSchema: { slug, path: sitePath } },
     handler(factory, "delete_site_file", (a: { slug: string; path: string }) => tools.deleteSiteFileTool(factory, a)),

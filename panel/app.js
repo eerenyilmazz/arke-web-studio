@@ -566,7 +566,7 @@ function prepareCard(d) {
   const askFirst = h("input", { type: "checkbox", id: "prep-ask", checked: draft.askFirst !== false, disabled: working, onchange: (e) => (draft.askFirst = e.target.checked) });
   // Optional starting point from the design library (custom sites); used once, on this run.
   const startFrom = h("select", { id: "prep-lib", disabled: working }, h("option", { value: "" }, "Başlangıç tasarımı: sıfırdan"));
-  if (d.template === "custom") api("GET", "/api/library").then(({ designs }) => { for (const x of designs.filter((y) => y.sourceSlug !== slug)) startFrom.append(h("option", { value: x.id }, `Kütüphaneden: ${x.name}${x.sector ? ` · ${x.sector}` : ""}`)); }).catch(() => {});
+  if (d.template === "custom") api("GET", "/api/library").then(({ designs }) => { for (const x of rankedDesigns(designs, slug, d.business.industry)) startFrom.append(h("option", { value: x.id }, `${x.score > 0 ? "★ Önerilen: " : "Kütüphaneden: "}${x.name}${x.sector ? ` · ${x.sector}` : ""}`)); }).catch(() => {});
   const go = async () => {
     const ok = await runAgent(slug, "autopilot", { freeText: draft.freeText || "", askFirst: askFirst.checked, ...(startFrom.value ? { libraryId: startFrom.value } : {}) });
     if (ok) draft.freeText = "";
@@ -673,6 +673,8 @@ function agentBlock(job, live) {
     parts.push(h("div", { class: "row" }, h("span", { class: "typing", role: "img", "aria-label": "çalışıyor" }, h("span"), h("span"), h("span")), isAgent && h("button", { class: "btn btn-sm", type: "button", onclick: () => cancelJob(job.id) }, "Durdur")));
   } else {
     if (job.tools?.length) parts.push(toolChips(job.tools));
+    const used = usageLine(job);
+    if (used) parts.push(used);
     if (job.summary) parts.push(richText(job.summary));
     for (const e of job.errors || []) parts.push(h("p", { class: "err", text: e }));
   }
@@ -855,11 +857,13 @@ function businessForm(d) {
   const note = h("textarea", { id: "biz-note", rows: 2, maxlength: 2000 });
   note.value = b.note || "";
   const tags = h("input", { id: "biz-tags", placeholder: "ör. abim, acil, Ankara", value: (b.tags || []).join(", ") });
+  const bmode = h("select", { id: "biz-mode" }, h("option", { value: "" }, "Genel ayar"), ...Object.entries(MODE_TR).map(([k, v]) => h("option", { value: k, selected: b.budgetMode === k }, v)));
   const form = h("form", { class: "card biz-form", onsubmit: async (e) => {
     e.preventDefault();
     const r = await guarded(() => api("PUT", `/api/clients/${slug}/business`, {
       price: price.value === "" ? null : Number(price.value), currency: currency.value, payment: payment.value, deadline: deadline.value || null, note: note.value,
       tags: tags.value.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 8),
+      budgetMode: bmode.value,
     }));
     if (r) { toast("İş bilgileri kaydedildi."); loadClients(); }
   } },
@@ -870,6 +874,7 @@ function businessForm(d) {
     ),
     h("label", { for: "biz-note" }, "Not", note),
     h("label", { for: "biz-tags" }, "Etiketler (virgülle)", tags),
+    h("label", { for: "biz-mode" }, `Token modu${d.budget ? ` (bu müşteri şimdiye kadar ${fmtTokens(d.budget.usage.tokens)} token, ${d.budget.usage.jobs} iş)` : ""}`, bmode),
     h("div", { class: "row" }, h("a", { class: "btn", href: `#/c/${slug}/teklif` }, "Teklif hazırla")),
     h("div", {}, h("button", { class: "btn btn-primary", type: "submit" }, "Kaydet")),
   );
@@ -1069,6 +1074,24 @@ async function tabBrand(body, d) {
 
 // ---------------------------------------------------------------- design library
 
+/** Words of a text, lowercased, Turkish letters folded (for library search and suggestions). */
+function words(text) {
+  return String(text || "").toLowerCase().replace(/[çğıöşü]/g, (c) => ({ ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" })[c]).split(/[^a-z0-9]+/).filter((w) => w.length > 2);
+}
+/** How well a saved design fits a client: shared words in sector (counts double), tags, name and concept. */
+function libraryScore(design, industry) {
+  const want = new Set(words(industry));
+  if (!want.size) return 0;
+  let score = 0;
+  for (const w of words(design.sector)) if (want.has(w)) score += 2;
+  for (const w of words([design.name, ...(design.tags || []), design.concept].join(" "))) if (want.has(w)) score += 1;
+  return score;
+}
+/** Library designs for a client, best fit first, with "önerilen" on those that match its sector. */
+function rankedDesigns(designs, slug, industry) {
+  return designs.filter((x) => x.sourceSlug !== slug).map((x) => ({ ...x, score: libraryScore(x, industry) })).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+}
+
 function swatchRow(palette) {
   return h("div", { class: "swatches" }, ...Object.entries(palette || {}).filter(([, v]) => /^#[0-9a-f]{6}$/i.test(String(v))).slice(0, 6).map(([n, v]) => h("span", { title: `${n} ${v}`, style: `background:${v}` })));
 }
@@ -1085,11 +1108,17 @@ async function renderLibrary() {
       h("p", { text: "Kütüphane boş." }),
       h("p", { class: "muted small", text: "Bir müşterinin Marka sekmesinde 'Kütüphaneye kaydet' ile ilk tasarımı ekle." })));
   }
-  const sectors = [...new Set(designs.map((d) => d.sector || "Diğer"))];
+  const q = (state.libQuery || "").trim();
+  const shown = q ? designs.filter((d) => { const ws = new Set(words([d.name, d.sector, ...(d.tags || []), d.concept].join(" "))); return words(q).every((w) => [...ws].some((x) => x.startsWith(w))); }) : designs;
+  const search = h("input", { type: "search", id: "lib-q", placeholder: "Ara: berber, koyu, premium…", value: q, class: "lib-search" });
+  search.addEventListener("input", () => { state.libQuery = search.value; clearTimeout(search._t); search._t = setTimeout(async () => { $("#view").replaceChildren(await renderLibrary()); const el = $("#lib-q"); el.focus(); el.setSelectionRange(el.value.length, el.value.length); }, 250); });
+  const sectors = [...new Set(shown.map((d) => d.sector || "Diğer"))];
   return h("section", { class: "dash" }, head,
+    h("label", { for: "lib-q", class: "sr-only" }, "Kütüphanede ara"), search,
+    shown.length === 0 ? h("p", { class: "muted", text: "Bu aramaya uyan tasarım yok." }) : null,
     ...sectors.map((sec) => h("div", { class: "group" },
       h("h2", { class: "group-title", text: sec }),
-      h("div", { class: "lib-cards" }, ...designs.filter((d) => (d.sector || "Diğer") === sec).map((d) => h("article", { class: "card lib-card" },
+      h("div", { class: "lib-cards" }, ...shown.filter((d) => (d.sector || "Diğer") === sec).map((d) => h("article", { class: "card lib-card" },
         d.hasPreview ? h("img", { class: "lib-shot", src: `/api/library/${d.id}/preview.png`, alt: `${d.name} önizleme`, loading: "lazy" }) : null,
         h("strong", { text: d.name }),
         swatchRow(d.palette),
@@ -1120,7 +1149,8 @@ function libraryControls(slug, hasSite) {
   }
   const pick = h("select", { id: "lib-pick" }, h("option", { value: "" }, "Kütüphaneden tasarım seç…"));
   api("GET", "/api/library").then(({ designs }) => {
-    for (const d of designs.filter((x) => x.sourceSlug !== slug)) pick.append(h("option", { value: d.id }, `${d.name}${d.sector ? ` · ${d.sector}` : ""}`));
+    const industry = state.detail?.business?.industry || "";
+    for (const d of rankedDesigns(designs, slug, industry)) pick.append(h("option", { value: d.id }, `${d.score > 0 ? "★ " : ""}${d.name}${d.sector ? ` · ${d.sector}` : ""}`));
   }).catch(() => {});
   box.append(h("div", { class: "row" }, h("label", { for: "lib-pick", class: "sr-only" }, "Kütüphane tasarımı"), pick,
     h("button", { class: "btn", type: "button", disabled: isBusy(), onclick: () => {
@@ -1695,6 +1725,7 @@ async function renderSettings() {
       h("h2", { text: "Onay kodu" }),
       h("p", { class: "muted small", text: "Panelden onay verirken sorulan 6 haneli kod, paneli başlattığın terminalde \"Onay kodu\" satırında yazar. Her başlatmada değişir; 5 yanlış denemede onay kilitlenir (paneli yeniden başlat)." }),
     ),
+    budgetCard(),
     webResearchCard(),
     senderCard(),
     backupCard(),
@@ -1707,6 +1738,54 @@ async function renderSettings() {
       ),
     ),
   );
+}
+
+// ---------------------------------------------------------------- budget
+
+const MODE_TR = { economy: "Ekonomik", balanced: "Dengeli", premium: "Premium" };
+const fmtTokens = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n || 0));
+const usageLine = (job) => job.tokens ? h("span", { class: "usage", title: "Ağırlıklı token: önbellekten okunan 1/10 sayılır" }, `${fmtTokens(job.tokens)} token${job.model ? ` · ${job.model}` : ""}${job.usage?.costUsd ? ` · ~$${job.usage.costUsd.toFixed(2)}` : ""}`) : null;
+
+/** Budget mode, monthly budget and this month's use. */
+function budgetCard() {
+  const mode = h("select", { id: "bd-mode" }, ...Object.entries(MODE_TR).map(([k, v]) => h("option", { value: k }, v)));
+  const monthly = h("input", { id: "bd-month", type: "number", min: 0, step: 1, placeholder: "0 = sınırsız" });
+  const meter = h("div", { class: "meter" }, h("span"));
+  const stats = h("p", { class: "small", role: "status" });
+  const profile = h("ul", { class: "small muted profile" });
+  let modes = [];
+  const showProfile = () => {
+    const m = modes.find((x) => x.id === mode.value);
+    if (!m) return;
+    const skills = { full: "skill'ler tam yüklenir", search: "skill'lerde sadece arama", none: "skill yok" }[m.skills];
+    profile.replaceChildren(
+      h("li", { text: `Tasarım işleri: ${m.design.model}, en fazla ${m.design.maxTurns} adım, iş başına ${fmtTokens(m.design.tokenCap)} token` }),
+      h("li", { text: `Düzenlemeler: ${m.edit.model}, en fazla ${m.edit.maxTurns} adım, iş başına ${fmtTokens(m.edit.tokenCap)} token` }),
+      h("li", { text: `${skills} · internet araştırması ${m.research ? "açık" : "kapalı"} · ekran görüntüsüne ${m.screenshots ? "bakar" : "bakmaz"}` }));
+  };
+  mode.addEventListener("change", showProfile);
+  const load = () => api("GET", "/api/usage").then((u) => {
+    modes = u.modes;
+    mode.value = u.mode;
+    monthly.value = u.monthlyBudget ? String(Math.round(u.monthlyBudget / 1e6)) : "";
+    const pct = u.monthlyBudget ? Math.min(100, Math.round((u.monthTokens / u.monthlyBudget) * 100)) : 0;
+    meter.firstChild.style.width = `${pct}%`;
+    meter.className = `meter ${pct >= 90 ? "bad" : pct >= 70 ? "warn" : ""}`;
+    stats.textContent = `Bu ay: ${fmtTokens(u.monthTokens)} token, ${u.monthJobs} iş${u.monthCostUsd ? `, tahmini ~$${u.monthCostUsd.toFixed(2)}` : ""}${u.monthlyBudget ? ` · bütçe ${fmtTokens(u.monthlyBudget)} (%${pct})` : ""}`;
+    showProfile();
+  }).catch(() => {});
+  load();
+  return h("form", { class: "card stack", onsubmit: async (e) => {
+    e.preventDefault();
+    const r = await guarded(() => api("PUT", "/api/settings", { budget: { mode: mode.value, monthlyTokens: Math.max(0, Math.round(Number(monthly.value || 0) * 1e6)) } }));
+    if (r) { toast("Bütçe kaydedildi; bir sonraki işten itibaren geçerli."); load(); }
+  } },
+    h("h2", { text: "Token bütçesi" }),
+    h("p", { class: "muted small", text: "Mod, her işte hangi modelin, kaç adımın ve en fazla kaç token'ın kullanılacağını belirler. Tavanı aşan iş durdurulur (yazdıkları kalır). Müşteri bazında farklı mod Bilgiler → iş bilgilerinden seçilir." }),
+    h("label", { for: "bd-mode" }, "Varsayılan mod", mode), profile,
+    h("label", { for: "bd-month" }, "Aylık bütçe (milyon token; 0 = sınırsız)", monthly),
+    meter, stats,
+    h("div", {}, h("button", { class: "btn btn-primary", type: "submit" }, "Kaydet")));
 }
 
 /** Who proposals are from. */

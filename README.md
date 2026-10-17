@@ -23,6 +23,13 @@ Agent her müşteri için önce **marka kimliğini** tasarlar (konsept, logo, re
 
 **Marka kartı (Marka Atölyesi):** her markanın bir sloganı, bir **imza hareketi** (adı, fikri ve kendi canlı demosu `site/brand/signature.html`) ve tipografi örneği olur. Panelde müşterinin **Marka** sekmesi bunu koyu bir kart olarak gösterir: logo ve slogan, adlandırılmış renkler, canlı imza hareketi, yazı tipleri, logonun koyu zeminde hâli, "Logoyu indir" ve "Yazdır / PDF". Eksikse kart "Marka kartını tamamlat" düğmesi gösterir; build durmaz, uyarı verir (eski siteler bozulmaz). İmza demosu panelde kum havuzunda çalışır: panele, çereze ve internete erişemez.
 
+**1.7.0 — token bütçesi:**
+- **Modlar** (Ayarlar → Token bütçesi; müşteri bazında Bilgiler → iş bilgileri): *Ekonomik* (tasarım sonnet, düzenleme haiku, araştırma kapalı, ekran görüntüsüne bakmaz), *Dengeli* (varsayılan: tasarım opus, düzenleme sonnet), *Premium* (her şey opus, skill'ler tam yüklenir). Mod; modeli, adım sınırını ve iş başına token tavanını belirler; tavanı aşan iş durdurulur, yazdıkları kalır.
+- **Ölçüm:** her işin token'ı, modeli ve tahmini maliyeti sohbette; müşteri toplamı iş bilgilerinde; aylık toplam ve bütçe çubuğu Ayarlar'da. Aylık bütçe dolunca yeni iş başlamaz (0 = sınırsız). "Token" ağırlıklıdır: önbellekten okunan 1/10 sayılır.
+- **Ucuz düzenleme araçları:** agent önce `site_map` ile sitenin haritasına bakar, sadece gereken parçayı okur (`read_site_file_part`) ve sadece değişen satırları değiştirir (`edit_site_file`); dosyaları baştan yazmaz.
+- **Tasarım bilgisi araması:** `search_design_knowledge` kurallar ve skill'ler içinde arar, birkaç ilgili parça döner; Ekonomik ve Dengeli modda skill'ler bütünüyle yüklenmez.
+- **Kütüphane araması:** kütüphanede arama kutusu; yeni müşteride sektörüne uyan tasarımlar ★ ile önce gelir.
+
 **1.6.0 ile gelenler:**
 - **Düzenle sekmesi:** sohbet yerine formlar. Renkler (renk seçici), sayfalar (işaretle), hizmetler ve fiyatlar (tablo), metin değiştir, iletişim formu, hızlı düzenleme. Agent'a sadece o değişikliği yapan net bir talimat gider; basit olanları panel kendisi kaydeder.
 - **Tasarım kütüphanesi** (üstteki kitap simgesi): Marka sekmesinden "Kütüphaneye kaydet"; yeni müşteride "Başlangıç tasarımı" olarak seç ya da "Bu tasarımla yeniden kur". Logo ve müşterinin bilgileri taşınmaz; eski müşterinin adı, telefonu, e-postası sitede kalırsa build durur.

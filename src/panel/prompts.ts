@@ -22,11 +22,26 @@ const SUMMARY_RULE =
 
 /** Prepended to every agent prompt: the factory tools are MCP tools, so their full names must be used. */
 export const TOOLS_NOTE =
-  "The factory tools are MCP tools: call them by their full names, e.g. mcp__site-factory__get_client_status, mcp__site-factory__write_site_file, mcp__site-factory__build_site.";
+  "The factory tools are MCP tools: call them by their full names, e.g. mcp__site-factory__get_client_status, mcp__site-factory__write_site_file, mcp__site-factory__build_site. " +
+  "Save tokens: to change an existing site, call site_map first, read only the part you need (read_site_file_part) and change it with edit_site_file; use write_site_file only for new files or a real rewrite. Never read a file you are not going to change.";
 
-/** Design jobs load the design skills first (instructions only; their scripts need a shell, which the agent has not). */
-const SKILLS_STEP =
-  "Before designing, load the design skills with the Skill tool, one call each: impeccable, design-taste-frontend, and ui-ux-pro-max and brand when they are listed. Use their judgement on direction, composition, type and motion; skip their scripts and image generation. Where they disagree with rules/custom-site.md, the rules win.";
+/**
+ * Where a design job uses the design skills. The text depends on the budget mode, so prompts carry this
+ * placeholder and finalPrompt() fills it in (full skill loading only in Premium; otherwise targeted search).
+ */
+const SKILLS_STEP = "[[DESIGN_SKILLS]]";
+const SKILLS_TEXT: Readonly<Record<"none" | "search" | "full", string>> = {
+  full: "Before designing, load the design skills with the Skill tool, one call each: impeccable, design-taste-frontend, and ui-ux-pro-max and brand when they are listed. Use their judgement on direction, composition, type and motion; skip their scripts and image generation. Where they disagree with rules/custom-site.md, the rules win.",
+  search: "For design judgement, do not load whole skills: ask search_design_knowledge short, specific questions (e.g. \"barber hero composition\", \"dark palette contrast\", \"signature motion ideas for a bakery\") and use the passages it returns; 3–6 searches are usually enough. Where they disagree with rules/custom-site.md, the rules win.",
+  none: "Work from rules/custom-site.md; do not load design skills.",
+};
+
+/** Fills in the parts of a prompt that depend on the budget mode. */
+export function finalPrompt(prompt: string, opts: { skills: "none" | "search" | "full"; screenshots: boolean }): string {
+  let out = prompt.split(SKILLS_STEP).join(SKILLS_TEXT[opts.skills]);
+  if (!opts.screenshots) out += "\nBudget: do not open the screenshot images that build_site lists (Economy mode); judge the layout from the code.";
+  return out;
+}
 
 /** Eren's standing rule: unsure means ask, never invent (rules/research.md). */
 export const UNSURE_RULE =
@@ -78,7 +93,7 @@ function clientDataLines(slug: string, input: AnswersInput): string[] {
 
 /** Custom sites (template "custom"): the agent designs the brand and writes the site itself. */
 const CUSTOM_STEP =
-  '4b. If the config template is "custom": read rules/custom-site.md completely, load the design skills (' + "impeccable, design-taste-frontend, ui-ux-pro-max, brand" + ') with the Skill tool, then design the brand identity first (site/brand/brand.json and site/brand/logo.svg; if the client sent a logo (an inbox file named or looking like a logo; Read shows images), save it with save_asset kind logo, set brand.logo, and build the brand from that logo as rules/custom-site.md says instead of drawing one; if saving it fails, stop and ask Eren, never draw a replacement, with signature animations that come from what this business makes, plus the brand board: tagline, signature motion with brand/signature.html, typeSample), then write every page with write_site_file. After build_site, Read the screenshots it lists (phone and desktop) and fix what looks wrong. If the site already exists, update only what the new information changes.';
+  '4b. If the config template is "custom": read rules/custom-site.md completely, ' + SKILLS_STEP + ' Then design the brand identity first (site/brand/brand.json and site/brand/logo.svg; if the client sent a logo (an inbox file named or looking like a logo; Read shows images), save it with save_asset kind logo, set brand.logo, and build the brand from that logo as rules/custom-site.md says instead of drawing one; if saving it fails, stop and ask Eren, never draw a replacement, with signature animations that come from what this business makes, plus the brand board: tagline, signature motion with brand/signature.html, typeSample), then write every page with write_site_file. After build_site, Read the screenshots it lists (phone and desktop) and fix what looks wrong. If the site already exists, update only what the new information changes.';
 
 /** Colours named anywhere in the client's text (any language) are their brand colours, not a suggestion. */
 const COLOUR_RULE =

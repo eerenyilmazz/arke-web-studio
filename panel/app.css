@@ -539,3 +539,12 @@ span.chip { cursor: default; }
 .edit-grid textarea { min-height: 4.5rem; resize: vertical; }
 .lib-cards > .card { margin: 0; }
 .lib-shot { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); }
+
+/* Budget */
+.usage { display: inline-block; font-family: "Geist Mono", ui-monospace, monospace; font-size: .74rem; color: var(--ink-3); }
+.meter { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--line); }
+.meter > span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .3s; }
+.meter.warn > span { background: #d9a400; }
+.meter.bad > span { background: var(--bad); }
+.profile { margin: 0; padding-left: 1.1rem; display: grid; gap: .2rem; }
+.lib-search { display: block; width: 100%; max-width: 420px; margin: 0 0 1rem; padding: .55rem .75rem; border: 1px solid var(--line-strong); border-radius: 9px; font: inherit; background: var(--surface); color: var(--ink); }
