@@ -510,15 +510,7 @@ body.agent-busy .brand-mark .f3 { animation-delay: .4s; }
   .brand-mark .floor, body.agent-busy .brand-mark .floor { animation: none; }
 }
 
-@media print {
-  /* Only the brand board or the proposal is printed (Yazdır / PDF), in its own colours. */
-  body * { visibility: hidden; }
-  .board, .board *, .proposal, .proposal * { visibility: visible; }
-  .proposal { position: absolute; inset: 0 0 auto 0; box-shadow: none !important; border: 0 !important; }
-  .board { position: absolute; inset: 0 0 auto 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .board-card { break-inside: avoid; }
-  .board-btn { display: none; }
-}
+/* Printing: see printDoc() in panel/js/core.js and the "print" block at the end of this file. */
 
 .check { display: flex; align-items: flex-start; gap: .55rem; cursor: pointer; }
 .check input { margin-top: .25rem; width: 1.05rem; height: 1.05rem; accent-color: var(--accent); flex: none; }
@@ -831,4 +823,49 @@ span.chip { cursor: default; }
 .report-table td { vertical-align: top; padding: .55rem .5rem; border-bottom: 1px solid var(--p-line); }
 .report-table td:first-child { white-space: nowrap; color: var(--p-mute); }
 .report.hide-cost .cost { display: none; }
-@media print { .doc-switch { display: none; } }
+
+/* ---------- print: one document, alone, on A4 ---------- */
+.p-hint { margin: 0; font-size: .8rem; color: var(--p-mute); border-top: 1px dashed var(--p-line); padding-top: .6rem; }
+#print-root { display: none; }
+@page { size: A4; margin: 14mm 14mm 16mm; }
+@page brand { size: A4 landscape; margin: 9mm; }
+@media print {
+  html.printing body > *:not(#print-root) { display: none !important; }
+  html.printing, html.printing body { background: #fff !important; color: #151719; min-height: 0; }
+  #print-root { display: block; }
+  #print-root.landscape { page: brand; }
+  #print-root .p-hint { display: none; }
+  /* Proposal and report: a sheet of paper, no card around it. */
+  #print-root .proposal { max-width: none; border: 0; border-radius: 0; padding: 0; gap: 7mm; font-size: 10.5pt; box-shadow: none; }
+  #print-root .proposal h1 { font-size: 22pt; }
+  #print-root .proposal section, #print-root .p-head, #print-root .p-price tr, #print-root .report-table tr, #print-root .p-foot { break-inside: avoid; }
+  #print-root .proposal h2 { break-after: avoid; }
+  #print-root .report-table thead { display: table-header-group; }
+  #print-root .report-table { font-size: 9.5pt; }
+  #print-root .p-foot { margin-top: 4mm; }
+  /* Brand board: one landscape page where it fits, its own dark colours kept. */
+  #print-root .board { -webkit-print-color-adjust: exact; print-color-adjust: exact; border-radius: 10px; padding: 7mm; gap: 5mm; }
+  #print-root .board-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4mm; }
+  /* Three columns on top (mark, colours, type), signature and motion underneath: fits one landscape page. */
+  #print-root .board-hero, #print-root .board-concept, #print-root .board-type { grid-column: span 4; min-height: 0; }
+  #print-root .board-hero { order: 1; }
+  #print-root .board-concept { order: 2; }
+  #print-root .board-type { order: 3; }
+  #print-root .board-sig { grid-column: span 5; order: 4; }
+  #print-root .board-anims { grid-column: span 7; order: 5; }
+  #print-root .board-grid:not(:has(.board-anims)) .board-sig { grid-column: span 12; }
+  #print-root .hero-logo { padding: 6mm; }
+  #print-root .hero-logo img { max-height: 30mm; }
+  #print-root .hero-word { font-size: 20pt; }
+  #print-root .concept-text { font-size: 10pt; }
+  #print-root .swatch-list { gap: 1.5mm; }
+  #print-root .swatch-list .chip { width: 7mm; height: 7mm; border-radius: 2mm; }
+  #print-root .type-aa { font-size: 26pt; }
+  #print-root .type-sample { font-size: 13pt; }
+  #print-root .logo-dark { padding: 3mm 4mm; }
+  #print-root .logo-dark img { max-height: 12mm; }
+  #print-root .board-anims ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #print-root .board-card { break-inside: avoid; padding: 4.5mm; border-radius: 9px; gap: 2.5mm; }
+  #print-root .board-btn, #print-root .sig-empty { display: none; }
+  #print-root .sig-name { margin-bottom: 0; }
+}

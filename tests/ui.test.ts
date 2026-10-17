@@ -177,6 +177,24 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     await page.close();
   });
 
+  ui()("prints one clean A4 document: proposal alone, landscape brand board on one page", async (ctx) => {
+    needBrowser(ctx);
+    const { page, errors } = await open("#/c/ui-bakery/teklif");
+    await page.evaluate("window.print = () => { window.__printed = true; }");
+    await page.getByRole("button", { name: "Yazdır / PDF" }).click();
+    await expect.poll(() => page.evaluate("window.__printed === true")).toBe(true);
+    await page.emulateMedia({ media: "print" });
+    // Only the document is in the layout; the panel is out of it (not just invisible).
+    expect(await page.evaluate("[...document.body.children].filter((e) => getComputedStyle(e).display !== 'none').map((e) => e.id)")).toEqual(["print-root"]);
+    const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
+    expect((pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []).length).toBe(1);
+    await page.emulateMedia({ media: "screen" });
+    await page.evaluate("window.dispatchEvent(new Event('afterprint'))");
+    expect(await page.evaluate("document.getElementById('print-root')")).toBeNull();
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
   ui()("works at phone width", async (ctx) => {
     needBrowser(ctx);
     const { page, errors } = await open("#/c/ui-bakery/duzenle", { width: 390, height: 844 });

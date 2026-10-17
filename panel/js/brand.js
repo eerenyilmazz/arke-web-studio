@@ -1,5 +1,5 @@
 // Brand board (Marka Kimliği).
-import { api, ask, guarded, h, isBusy, toast } from "./core.js";
+import { api, ask, guarded, h, isBusy, printDoc, toast } from "./core.js";
 import { conceptsCard } from "./info.js";
 import { libraryControls } from "./library.js";
 import { runAgent } from "./shell.js";
@@ -159,7 +159,7 @@ function boardSection(v, b, slug) {
 function boardActions(v, slug) {
   const busy = isBusy();
   return h("div", { class: "row board-actions" },
-    h("button", { class: "btn", type: "button", onclick: () => window.print() }, "Yazdır / PDF"),
+    h("button", { class: "btn", type: "button", onclick: (e) => printDoc(e.currentTarget.closest(".stack").querySelector(".board"), { landscape: true, title: `${slug} marka kimligi` }) }, "Yazdır / PDF"),
     v.custom && v.missing.length > 0 && h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runAgent(slug, "brand-board", {}) }, "Marka kartını tamamlat"),
     v.custom && h("button", { class: "btn btn-primary", type: "button", disabled: busy, title: "Bilgiler ve metinler aynı kalır; sayfalar markanın imza tasarımıyla baştan yazılır.", onclick: async () => {
       if (await ask({ title: "Markayla yeniden tasarla", body: "Site markanın imza tasarımıyla baştan yazılır. Bilgiler ve fiyatlar aynı kalır; önceki hâl Sürümler'de durur.", confirm: "Yeniden tasarla" })) runAgent(slug, "redesign", {});

@@ -183,3 +183,33 @@ export function ask({ title, body = "", confirm = "Devam", cancel = "Vazgeç", d
     (typed || ok).focus();
   });
 }
+
+/**
+ * Prints one document (proposal, work report, brand board) as a clean A4 PDF: a copy of it is placed alone at the
+ * top of the page and everything else is taken out of the layout (not just hidden), so nothing pushes it down or
+ * splits it. Text edited on screen (contenteditable) is kept, because the copy is made at the moment of printing.
+ */
+export function printDoc(el, { landscape = false, title = "" } = {}) {
+  const root = document.createElement("div");
+  root.id = "print-root";
+  if (landscape) root.classList.add("landscape");
+  const copy = el.cloneNode(true);
+  // Live demos (iframes) would print blank: the copy keeps the description instead.
+  for (const f of copy.querySelectorAll("iframe")) f.remove();
+  for (const n of copy.querySelectorAll("[contenteditable]")) n.removeAttribute("contenteditable");
+  root.append(copy);
+  document.body.append(root);
+  document.documentElement.classList.add("printing");
+  const before = document.title;
+  if (title) document.title = title; // the browser suggests it as the PDF file name
+  const done = () => {
+    root.remove();
+    document.documentElement.classList.remove("printing");
+    document.title = before;
+    window.removeEventListener("afterprint", done);
+  };
+  window.addEventListener("afterprint", done);
+  // Logos are images: print once they are loaded, so they are not missing from the PDF.
+  const images = [...root.querySelectorAll("img")].filter((i) => !i.complete);
+  Promise.all(images.map((i) => new Promise((r) => { i.onload = r; i.onerror = r; }))).then(() => window.print());
+}

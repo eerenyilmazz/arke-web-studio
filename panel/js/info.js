@@ -1,6 +1,6 @@
 // Sales tracking, concepts, proposal, versions and the information tabs.
 import { approveDialog } from "./client.js";
-import { api, APPROVAL_NAMES, ask, copyButton, fmtTokens, guarded, h, isBusy, LANG_NAMES, MODE_TR, state, time, toast } from "./core.js";
+import { api, APPROVAL_NAMES, ask, copyButton, fmtTokens, guarded, h, isBusy, LANG_NAMES, MODE_TR, printDoc, state, time, toast } from "./core.js";
 import { PAGE_TR } from "./edit.js";
 import { deployProduction, jobStarted, loadClients, render, runAgent, runTask, unpublish } from "./shell.js";
 
@@ -164,12 +164,12 @@ export function workReport(d) {
       : null,
     h("section", { class: "cost" }, h("h2", { text: "Kaynak" }),
       h("p", { text: `${records.length} iş, toplam ${fmtTokens(totalTokens)} birim${d.profit ? ` · agent maliyeti $${d.profit.agentUsd.toFixed(2)}` : ""}` })),
-    h("footer", { class: "p-foot" }, "Metinlere tıklayıp düzeltebilirsiniz (kaydedilmez), sonra PDF olarak kaydedin."));
+    h("p", { class: "p-hint", text: "Metinlere tıklayıp düzeltebilirsiniz (kaydedilmez), sonra PDF olarak kaydedin." }));
   showCost.addEventListener("change", () => sheet.classList.toggle("hide-cost", !showCost.checked));
   return h("div", { class: "stack" },
     h("div", { class: "row", style: "justify-content:space-between;align-items:center" },
       h("label", { class: "check", for: "wr-cost" }, showCost, " Kaynak kullanımını göster (sadece kendi kopyanız için)"),
-      h("button", { class: "btn btn-primary", type: "button", onclick: () => window.print() }, "Yazdır / PDF")),
+      h("button", { class: "btn btn-primary", type: "button", onclick: () => printDoc(sheet, { title: `${slug} is raporu` }) }, "Yazdır / PDF")),
     sheet);
 }
 
@@ -204,13 +204,15 @@ async function proposalSheet(body, d, switcher) {
         h("tr", {}, h("th", { text: "Ödeme" }), editable("td", "%50 başlangıçta, %50 yayına alırken.")),
         h("tr", {}, h("th", { text: "Barındırma" }), editable("td", d.hosting === "client" ? "Sizin hesabınızda (Cloudflare)." : "Bizim tarafımızdan; yıllık bakım ayrıca konuşulur.")))),
     h("section", {}, h("h2", { text: "Notlar" }), editable("p", "Bu teklif 15 gün geçerlidir. Sitede yer alacak bilgiler ve fotoğraflar işletme tarafından sağlanır; uydurma bilgi ya da yorum kullanılmaz.")),
-    h("footer", { class: "p-foot" }, [s.name, s.email, s.phone, s.web].filter(Boolean).join(" · ") || "Gönderen bilgilerini Ayarlar → Teklif bölümünden ekle."),
+    [s.name, s.email, s.phone, s.web].some(Boolean)
+      ? h("footer", { class: "p-foot" }, [s.name, s.email, s.phone, s.web].filter(Boolean).join(" · "))
+      : h("p", { class: "p-hint", text: "Gönderen bilgilerini Ayarlar → Teklif bölümünden ekleyiniz; PDF'in altında görünür." }),
   );
   body.replaceChildren(h("div", { class: "stack" },
     switcher,
     h("div", { class: "row", style: "justify-content:space-between;align-items:center" },
       h("p", { class: "muted small", text: "Fiyat ve teslim tarihi Bilgiler sekmesindeki iş bilgilerinden gelir. Metinlere tıklayıp düzeltebilirsin (kaydedilmez), sonra PDF olarak kaydet." }),
-      h("button", { class: "btn btn-primary", type: "button", onclick: () => window.print() }, "Yazdır / PDF")),
+      h("button", { class: "btn btn-primary", type: "button", onclick: () => printDoc(sheet, { title: `${slug} teklif` }) }, "Yazdır / PDF")),
     sheet));
 }
 

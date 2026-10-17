@@ -17,6 +17,10 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Düzenli PDF'ler (1.14.1)
+
+"Yazdır / PDF" artık yalnızca belgenin kendisini A4'e basar: Teklif ve İş Raporu dikey, tek sayfada (uzunsa düzgün bölünür, tablo başlığı tekrar eder); Marka kartı yatay A4'te tek sayfa. Panel, menüler ve ipucu yazıları PDF'e girmez; ekranda düzelttiğin metinler korunur; PDF dosya adı müşteriye göre önerilir.
+
 ## Codex, kâr ve iş raporu (1.14.0)
 
 - **Agent ve Sınırlar** (Ayarlar → Kaynak Kullanımı): her iş türü (tasarım, düzenleme, çeviri, ek sayfa) için Claude Code ya da **Codex**, model, en fazla adım ve token tavanı. Boş = paket.
