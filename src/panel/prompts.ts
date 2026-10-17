@@ -138,7 +138,7 @@ export function answersPrompt(slug: string, input: AnswersInput): string {
  * "Prepare site": one job from whatever is known to a passing build. It never invents facts; anything
  * essential that is missing comes back as short questions for Eren, who pastes the answers and runs it again.
  */
-export function autopilotPrompt(slug: string, input: AnswersInput | null, opts: { web?: boolean; askFirst?: boolean; libraryName?: string } = {}): string {
+export function autopilotPrompt(slug: string, input: AnswersInput | null, opts: { web?: boolean; askFirst?: boolean; libraryName?: string; libraryFilled?: string } = {}): string {
   const data = input ? clientDataLines(slug, input).join("\n") : "";
   const askFirst = opts.askFirst ?? false;
   return [
@@ -147,7 +147,7 @@ export function autopilotPrompt(slug: string, input: AnswersInput | null, opts: 
     UNSURE_RULE,
     `0. ${researchStep(opts.web ?? false)}`,
     ...(opts.libraryName
-      ? [`   Eren chose to start from the library design "${opts.libraryName}": its files are already in site/ and were made for another business. When you design (step 4b), keep its layout, sections, components and motion system, and make everything else this client's: new brand.json, tagline and signature motion from this client's world, the client's logo or a new one, every text and fact from this client only, only this client's pages. The build fails while the other business's name, phone, e-mail or address is still there. These library files do not count as an existing site for the consult-first rule.`]
+      ? [`   Eren chose to start from the library design "${opts.libraryName}": its files are already in site/ and were made for another business. When you design (step 4b), keep its layout, sections, components and motion system, and make everything else this client's: new brand.json, tagline and signature motion from this client's world, the client's logo or a new one, every text and fact from this client only, only this client's pages. The build fails while the other business's name, phone, e-mail or address is still there. These library files do not count as an existing site for the consult-first rule.${opts.libraryFilled ? ` ${opts.libraryFilled} Those places already hold this client's values: keep them, do not rewrite them.` : ""}`]
       : []),
     ...(askFirst
       ? [
@@ -241,9 +241,9 @@ export function conceptsPrompt(slug: string): string {
 
 /** Completes the brand board (tagline, signature motion, type specimen) without redesigning the brand. */
 /** A library design was copied into site/: keep its craft, make everything else this client's. */
-export function fromLibraryPrompt(slug: string, designName: string): string {
+export function fromLibraryPrompt(slug: string, designName: string, filled = ""): string {
   return [
-    `Site Factory, client "${slug}". Eren chose the library design "${designName}" for this client; its files are now in site/. It was made for another business.`,
+    `Site Factory, client "${slug}". Eren chose the library design "${designName}" for this client; its files are now in site/. It was made for another business.${filled ? ` ${filled} Those places already hold this client's values: keep them.` : ""}`,
     "1. get_client_status and read this client's facts. Read rules/custom-site.md completely, then site_map; read the pages, css and js you will change.",
     SKILLS_STEP,
     "2. Keep what makes the design good: the layout, section structure, components, spacing, motion system and code quality.",

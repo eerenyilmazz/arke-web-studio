@@ -225,6 +225,18 @@ describe("failure messages", () => {
 });
 
 describe("design library", () => {
+  it("start design chosen for a new client is offered once", async () => {
+    const { f } = await customClient();
+    writeGoodSite(f);
+    const lib = await import("../src/panel/library.js");
+    const meta = lib.saveToLibrary(f, SLUG, { name: "Kavanoz" });
+    expect(() => lib.setStartDesign(f, SLUG, "nope")).toThrow();
+    lib.setStartDesign(f, SLUG, meta.id);
+    expect(lib.readStartDesign(f, SLUG)).toBe(meta.id);
+    lib.clearStartDesign(f, SLUG);
+    expect(lib.readStartDesign(f, SLUG)).toBeNull();
+  });
+
   it("saves a design without the client's logo, starts another client from it, and fails while the source's facts remain", async () => {
     const { f } = await customClient();
     writeGoodSite(f);
@@ -243,17 +255,33 @@ describe("design library", () => {
     tools.updateClientConfig(f, { slug: "other-shop", patch: COMPLETE_PATCH });
     tools.saveContent(f, { slug: "other-shop", locale: "en", content: COMPLETE_CONTENT });
     expect(() => lib.applyLibraryDesign(f, SLUG, meta.id)).toThrow(/zaten/);
-    lib.applyLibraryDesign(f, "other-shop", meta.id);
+    expect(meta.slots).toContainEqual({ text: "Willow & Thread", field: "name" });
+    // Eren marks one more fixed place, for a fact the new client does not have yet.
     const w = (p: string, c: string) => tools.writeSiteFileTool(f, { slug: "other-shop", path: p, content: c });
+    const designHome = path.join(f.clientsRoot, "_library", meta.id, "site", "index.html");
+    const { readFileSync, writeFileSync } = await import("node:fs");
+    writeFileSync(designHome, readFileSync(designHome, "utf8").replace("</h1>", "</h1><p>12 Kings Road, Bath</p>"));
+    lib.updateLibraryEntry(f, meta.id, { slots: [...meta.slots, { text: "12 Kings Road, Bath", field: "address" }] });
+    expect(lib.slotCounts(f, meta.id).at(-1)).toBe(1);
+    // A place removed again is no longer forbidden; the source's own facts stay forbidden.
+    lib.updateLibraryEntry(f, meta.id, { slots: [...meta.slots, { text: "Ankara merkez", field: "address" }] });
+    expect(lib.updateLibraryEntry(f, meta.id, { slots: meta.slots }).forbidden).not.toContain("Ankara merkez");
+    lib.updateLibraryEntry(f, meta.id, { slots: [...meta.slots, { text: "12 Kings Road, Bath", field: "address" }] });
+    expect(lib.listLibrary(f)[0]!.forbidden).toContain("Willow & Thread");
+    expect(() => lib.updateLibraryEntry(f, meta.id, { slots: [{ text: "x", field: "name" }] })).toThrow(/Sabit alan/);
+
+    const applied = lib.applyLibraryDesign(f, "other-shop", meta.id);
+    expect(applied.filled.find((x) => x.field === "name")?.count).toBeGreaterThan(0);
+    expect(applied.missing).toEqual(["Adres"]);
+    // The panel put the new name in place itself (escaped in markup).
+    expect(tools.readSiteFileTool(f, { slug: "other-shop", path: "index.html" }).content).toContain("Other Shop");
+    expect(tools.readSiteFileTool(f, { slug: "other-shop", path: "index.html" }).content).not.toContain("Willow");
     w("brand/logo.svg", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#2F4A2A"/></svg>');
     let r = await tools.buildSite(f, { slug: "other-shop" });
     const left = () => r.checks.find((c) => c.name.startsWith("Library design"));
     expect(left()?.status).toBe("fail");
-    expect(left()?.detail).toMatch(/Willow/);
-    for (const p of ["index.html", "contact/index.html", "404.html"]) {
-      const content = tools.readSiteFileTool(f, { slug: "other-shop", path: p }).content.replaceAll("Willow &amp; Thread", "Other Shop").replaceAll("Willow & Thread", "Other Shop");
-      w(p, content);
-    }
+    expect(left()?.detail).toMatch(/Kings Road/);
+    w("index.html", tools.readSiteFileTool(f, { slug: "other-shop", path: "index.html" }).content.replace("<p>12 Kings Road, Bath</p>", ""));
     r = await tools.buildSite(f, { slug: "other-shop" });
     expect(left()?.status).toBe("pass");
     lib.deleteFromLibrary(f, meta.id);

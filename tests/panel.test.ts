@@ -512,6 +512,35 @@ describe("edits without the assistant", () => {
   });
 });
 
+describe("library fixed places from the panel", () => {
+  it("edits fixed places, preselects the start design and fills them without the agent", async () => {
+    const calls: SpawnCall[] = [];
+    const ctx = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...ctx.auth, "Content-Type": "application/json" };
+    await fetch(`${ctx.base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "src-co", businessName: "Source Bakery", industry: "bakery", hostingModel: "managed" }) });
+    tools.updateClientConfig(ctx.factory, { slug: "src-co", patch: { ...COMPLETE_PATCH, template: "custom" } });
+    tools.writeSiteFileTool(ctx.factory, { slug: "src-co", path: "index.html", content: '<!doctype html><html lang="en"><head><title>Source Bakery</title></head><body><h1>Source Bakery</h1><p>Call 07700 900123</p></body></html>' });
+    const saved = await (await fetch(`${ctx.base}/api/clients/src-co/library`, { method: "POST", headers: json, body: JSON.stringify({ name: "Fırın" }) })).json() as { id: string; slots: Array<{ text: string; field: string }> };
+    const put = await fetch(`${ctx.base}/api/library/${saved.id}`, { method: "PUT", headers: json, body: JSON.stringify({ slots: [...saved.slots, { text: "07700 900123", field: "phone" }] }) });
+    expect(put.status).toBe(200);
+    const detail = await put.json() as { counts: number[]; fields: Record<string, string> };
+    expect(detail.counts.at(-1)).toBe(1);
+    expect(detail.fields.phone).toBe("Telefon");
+    expect((await fetch(`${ctx.base}/api/library/${saved.id}`, { method: "PUT", headers: json, body: JSON.stringify({ slots: [{ text: "", field: "nope" }] }) })).status).toBe(400);
+
+    await fetch(`${ctx.base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "new-co", businessName: "New Bakery", industry: "bakery", hostingModel: "managed", startDesign: saved.id }) });
+    const nd = await (await fetch(`${ctx.base}/api/clients/new-co`, { headers: ctx.auth })).json() as { startDesign: string | null };
+    expect(nd.startDesign).toBe(saved.id);
+    tools.updateClientConfig(ctx.factory, { slug: "new-co", patch: { template: "custom" } });
+    const r = await fetch(`${ctx.base}/api/clients/new-co/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Phone +447700900999", libraryId: saved.id }) });
+    expect(r.status).toBe(202);
+    expect(tools.readSiteFileTool(ctx.factory, { slug: "new-co", path: "index.html" }).content).toContain("New Bakery");
+    expect(calls[0]!.stdin + calls[0]!.args.join(" ")).toMatch(/Panel filled: İşletme adı/);
+    const after = await (await fetch(`${ctx.base}/api/clients/new-co`, { headers: ctx.auth })).json() as { startDesign: string | null };
+    expect(after.startDesign).toBeNull();
+  });
+});
+
 describe("earlier inputs are kept between agent jobs", () => {
   it("gives the next job everything pasted before, as client data", async () => {
     const calls: SpawnCall[] = [];

@@ -718,3 +718,8 @@ span.chip { cursor: default; }
 .work.wide { grid-template-columns: 1fr; }
 .board { container-type: inline-size; }
 @container (max-width: 820px) { .board-grid > * { grid-column: span 12; } }
+
+/* Library fixed places */
+.slot-row { display: grid; grid-template-columns: minmax(0, 2fr) auto minmax(0, 1fr) auto auto; gap: .5rem; align-items: center; }
+.slot-row input, .slot-row select { min-width: 0; margin-top: 0; }
+@media (max-width: 640px) { .slot-row { grid-template-columns: 1fr auto; } .slot-row > span[aria-hidden] { display: none; } }

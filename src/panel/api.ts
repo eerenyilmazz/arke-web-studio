@@ -13,7 +13,7 @@ import { backupNow, checkBackupDir, listBackups } from "./backup.js";
 import { BUDGET_MODES, DESIGN_KINDS, MODE_LABELS, PROFILES, monthlyBlock, modeFor, resolvePolicy, summarise } from "./budget.js";
 import { FORM_ACTION, FORM_FILE, WEB3FORMS_KEY, readClientForm } from "../lib/form.js";
 import { findInSite, replaceInSite } from "../lib/site-replace.js";
-import { applyLibraryDesign, deleteFromLibrary, libraryPreview, listLibrary, saveToLibrary } from "./library.js";
+import { SLOT_FIELDS, applyLibraryDesign, clearStartDesign, deleteFromLibrary, libraryPreview, listLibrary, readStartDesign, saveToLibrary, setStartDesign, slotCounts, updateLibraryEntry, type ApplyResult } from "./library.js";
 import { ZodError } from "zod";
 import { archiveClient } from "../lib/archive.js";
 import { readDraftConfig } from "../lib/client.js";
@@ -66,6 +66,8 @@ const routes: Route[] = [
     res.end(readFileSync(f));
   } },
   { method: "GET", pattern: /^\/api\/library$/, handler: (d, _r, res) => sendJson(res, 200, { designs: listLibrary(d.factory) }) },
+  { method: "GET", pattern: /^\/api\/library\/([a-z0-9-]{2,41})$/, handler: (d, _r, res, [id]) => libraryDetail(d, res, id!) },
+  { method: "PUT", pattern: /^\/api\/library\/([a-z0-9-]{2,41})$/, handler: patchLibrary },
   { method: "DELETE", pattern: /^\/api\/library\/([a-z0-9-]{2,41})$/, handler: (d, _r, res, [id]) => { asHttp(() => deleteFromLibrary(d.factory, id!)); sendJson(res, 200, { designs: listLibrary(d.factory) }); } },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/library$`), handler: saveDesign },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
@@ -124,6 +126,26 @@ async function saveDesign(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   const tags = Array.isArray(body.tags) ? body.tags.filter((t): t is string => typeof t === "string").slice(0, 8).map((t) => t.slice(0, 30)) : [];
   const meta = asHttp(() => saveToLibrary(deps.factory, s, { name, tags }));
   sendJson(res, 201, meta);
+}
+
+function libraryDetail(deps: ApiDeps, res: ServerResponse, id: string): void {
+  const entry = listLibrary(deps.factory).find((e) => e.id === id);
+  if (!entry) throw new HttpError(404, "Kütüphanede böyle bir tasarım yok.");
+  sendJson(res, 200, { design: entry, counts: slotCounts(deps.factory, id), fields: SLOT_FIELDS });
+}
+
+async function patchLibrary(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [id]: string[]): Promise<void> {
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const name = str(body, "name", { optional: true, max: 60 });
+  const tags = Array.isArray(body.tags) ? body.tags.filter((t): t is string => typeof t === "string").slice(0, 8).map((t) => t.slice(0, 30)) : undefined;
+  asHttp(() => updateLibraryEntry(deps.factory, id!, { ...(name ? { name } : {}), ...(tags ? { tags } : {}), ...(body.slots !== undefined ? { slots: body.slots } : {}) }));
+  libraryDetail(deps, res, id!);
+}
+
+/** One line for the agent and for Eren: what the panel already filled from the design's fixed places. */
+function filledNote(r: ApplyResult): string {
+  const done = r.filled.map((f) => `${f.label} (${f.count})`).join(", ");
+  return [done ? `Panel filled: ${done}.` : "", r.missing.length ? `Not filled (client has no value yet): ${r.missing.join(", ")}.` : ""].filter(Boolean).join(" ");
 }
 
 async function putSettings(deps: ApiDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -521,6 +543,15 @@ async function createClient(deps: ApiDeps, req: IncomingMessage, res: ServerResp
     country: country as tools.Country,
     ...(extra ? { extraLocale: extra as (typeof LOCALES)[number] } : {}),
   });
+  // Optional start design from the library; used by the first "Siteyi Oluştur" run.
+  const startDesign = str(body, "startDesign", { optional: true, max: 41 });
+  if (startDesign) {
+    try {
+      setStartDesign(deps.factory, result.slug, startDesign);
+    } catch {
+      // The client is created either way; a deleted design is simply not preselected.
+    }
+  }
   sendJson(res, 201, result);
 }
 
@@ -568,6 +599,7 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     whatsapp: draft.whatsapp?.number ?? null,
     country: (draft as { business?: { country?: string } }).business?.country ?? "GB",
     businessTracking: readBusiness(deps.factory, s),
+    startDesign: readStartDesign(deps.factory, s),
     budget: { mode: modeFor(deps.factory, s), usage: summarise(deps.factory).byClient[s] ?? { tokens: 0, costUsd: 0, jobs: 0 } },
     latestTemplate: deps.factory.defaultTemplate,
     inbox: inboxFiles(deps.factory, s),
@@ -667,14 +699,18 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       const hasInput = pasted.freeText.trim() !== "" || Object.values(pasted.answers).some((a) => a.trim()) || pasted.files.length > 0;
       const libraryId = str(body, "libraryId", { optional: true, max: 41 });
       let libraryName: string | undefined;
+      let libraryFilled = "";
       if (libraryId) {
         const template = (readDraftConfig(clientPaths(deps.factory.clientsRoot, s)) as { template?: string }).template;
         if (template !== "custom") throw new HttpError(409, "Kütüphane tasarımları serbest tasarımlı sitelerde kullanılır.");
         if (deps.jobs.running()) throw new HttpError(409, "Agent başka bir işte; bitince tekrar dene.");
         await snapshot(clientPaths(deps.factory.clientsRoot, s).root, "Önce: kütüphaneden tasarım").catch(() => null);
-        libraryName = asHttp(() => applyLibraryDesign(deps.factory, s, libraryId)).name;
+        const applied = asHttp(() => applyLibraryDesign(deps.factory, s, libraryId));
+        libraryName = applied.entry.name;
+        libraryFilled = filledNote(applied);
+        clearStartDesign(deps.factory, s);
       }
-      prompt = autopilotPrompt(s, hasInput ? pasted : null, { web: resolvePolicy(deps.factory, s, "autopilot").research, askFirst: body.askFirst !== false, libraryName });
+      prompt = autopilotPrompt(s, hasInput ? pasted : null, { web: resolvePolicy(deps.factory, s, "autopilot").research, askFirst: body.askFirst !== false, libraryName, libraryFilled });
       input = pasted.freeText;
       title = "Siteyi hazırla";
       request = pasted.freeText.trim() ? pasted.freeText.trim() : pasted.files.length ? `Siteyi hazırla (${pasted.files.length} dosya)` : "Siteyi hazırla.";
@@ -729,8 +765,9 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
       const id = str(body, "id", { max: 41 })!;
       // The current site is kept as a version before it is replaced by the library design.
       await snapshot(clientPaths(deps.factory.clientsRoot, s).root, "Önce: kütüphaneden tasarım").catch(() => null);
-      const entry = asHttp(() => applyLibraryDesign(deps.factory, s, id));
-      prompt = fromLibraryPrompt(s, entry.name);
+      const applied = asHttp(() => applyLibraryDesign(deps.factory, s, id));
+      const entry = applied.entry;
+      prompt = fromLibraryPrompt(s, entry.name, filledNote(applied));
       title = `Kütüphaneden: ${entry.name}`;
       request = `"${entry.name}" tasarımını bu müşteriye uyarla.`;
       break;

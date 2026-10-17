@@ -17,6 +17,12 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Kütüphane: sabit alanlar ve başlangıç tasarımı (1.10.0)
+
+- **Sabit alanlar:** Tasarım Kütüphanesi → "Sabit alanları yönet". Tasarımda geçen müşteriye özel metni (ad, telefon, e-posta, adres, saatler, alan adı, harita, Instagram, Facebook) bir alana bağla. Kaydederken kaynak müşterinin bilgileri otomatik eklenir; her satırın yanında tasarımda kaç yerde geçtiği görünür.
+- **Kullanırken:** Panel bu metinleri yeni müşterinin bilgisiyle kendisi değiştirir (agent'sız). Müşterinin o bilgisi yoksa metin kalır, agent'a bırakılır ve derleme o metin değişene kadar başarısız olur.
+- **Yeni Müşteri formu:** "Başlangıç tasarımı" seçilebilir (sektöre uyanlar ★ ile önce). İlk "Siteyi Oluştur" çalışmasında bir kez uygulanır; sonraki çalışmalar siteyi tekrar değiştirmez.
+
 ## Kaynak tasarrufu (1.9.0)
 
 - **Doğrudan düzenleme:** Renk kodu, sayfada birebir geçen metin, e-posta / adres / çalışma saatleri değişiklikleri agent'sız yapılır, site yeniden derlenir ("Kaynak kullanılmadı"). Değer bulunamazsa iş agent'a gider; tahminle değiştirilmez.

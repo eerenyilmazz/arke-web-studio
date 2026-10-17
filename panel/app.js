@@ -199,7 +199,7 @@ async function render() {
   else if (r.view === "client") await renderClient(view, r.slug, r.tab);
   else view.replaceChildren(renderHome());
 }
-window.addEventListener("hashchange", render);
+window.addEventListener("hashchange", () => { state.libEdit = null; render(); });
 
 // ---------------------------------------------------------------- sidebar
 
@@ -338,17 +338,30 @@ function renderNew() {
   };
   country.addEventListener("change", fillLangs);
   fillLangs();
+  // Optional start design from the library; best fit for the typed sector first.
+  const startDesign = h("select", { id: "nc-design" }, h("option", { value: "" }, "Yeni tasarım (kütüphane kullanma)"));
+  let libDesigns = [];
+  const fillDesigns = () => {
+    const keep = startDesign.value;
+    startDesign.replaceChildren(h("option", { value: "" }, "Yeni tasarım (kütüphane kullanma)"),
+      ...rankedDesigns(libDesigns, "", industry.value).map((x) => h("option", { value: x.id }, `${x.score > 0 ? "★ " : ""}${x.name}${x.sector ? ` · ${x.sector}` : ""}`)));
+    startDesign.value = keep;
+  };
+  api("GET", "/api/library").then(({ designs }) => { libDesigns = designs; fillDesigns(); designRow.hidden = designs.length === 0; }).catch(() => {});
+  industry.addEventListener("change", fillDesigns);
+  const designRow = h("label", { for: "nc-design", hidden: true }, "Başlangıç tasarımı (isteğe bağlı)",
+    h("span", { class: "help", text: "Kütüphanedeki bir tasarımdan başlanır. Sabit alanlar (ad, telefon, e-posta…) panel tarafından doldurulur; agent yalnızca kalan metinleri ve markayı uyarlar." }), startDesign);
 
   const form = h("form", { class: "card stack", style: "max-width:40rem", onsubmit: async (e) => {
     e.preventDefault();
     const hosting = form.querySelector("input[name=hosting]:checked")?.value;
-    const res = await guarded(() => api("POST", "/api/clients", { businessName: name.value.trim(), slug: slug.value.trim(), industry: industry.value.trim(), hostingModel: hosting, country: country.value, extraLocale: lang.value || undefined }));
+    const res = await guarded(() => api("POST", "/api/clients", { businessName: name.value.trim(), slug: slug.value.trim(), industry: industry.value.trim(), hostingModel: hosting, country: country.value, extraLocale: lang.value || undefined, ...(startDesign.value ? { startDesign: startDesign.value } : {}) }));
     if (!res) return;
     toast("Müşteri oluşturuldu.");
     const text = info.value.trim();
     location.hash = `#/c/${res.slug}/sohbet`;
     if (!text) return;
-    await runAgent(res.slug, "autopilot", { freeText: text });
+    await runAgent(res.slug, "autopilot", { freeText: text, ...(startDesign.value ? { libraryId: startDesign.value } : {}) });
   } },
     h("h1", { text: "Yeni Müşteri" }),
     h("p", { class: "muted", text: "Adını ve sektörünü yaz. Bildiklerini alttaki kutuya yapıştırırsan site hemen hazırlanmaya başlar." }),
@@ -360,6 +373,7 @@ function renderNew() {
       h("label", { class: "choice" }, h("input", { type: "radio", name: "hosting", value: "client" }), "Müşterinin kendi hesabı"),
     ),
     h("div", { class: "two" }, h("label", { for: "nc-country" }, "Ülke", country), h("label", { for: "nc-lang" }, "Site dili", lang)),
+    designRow,
     h("label", { for: "nc-info" }, "Elindeki bilgiler (isteğe bağlı)",
       h("span", { class: "help", text: "Müşteriden ne biliyorsan yapıştır. Doldurursan site hemen hazırlanmaya başlar; eksik bilgi olursa agent sorar." }),
       info),
@@ -657,7 +671,7 @@ function prepareCard(d) {
   const askFirst = h("input", { type: "checkbox", id: "prep-ask", checked: draft.askFirst !== false, disabled: working, onchange: (e) => (draft.askFirst = e.target.checked) });
   // Optional starting point from the design library (custom sites); used once, on this run.
   const startFrom = h("select", { id: "prep-lib", disabled: working }, h("option", { value: "" }, "Başlangıç tasarımı: yeni tasarım"));
-  if (d.template === "custom") api("GET", "/api/library").then(({ designs }) => { for (const x of rankedDesigns(designs, slug, d.business.industry)) startFrom.append(h("option", { value: x.id }, `${x.score > 0 ? "★ Önerilen: " : "Kütüphaneden: "}${x.name}${x.sector ? ` · ${x.sector}` : ""}`)); }).catch(() => {});
+  if (d.template === "custom") api("GET", "/api/library").then(({ designs }) => { for (const x of rankedDesigns(designs, slug, d.business.industry)) startFrom.append(h("option", { value: x.id }, `${x.score > 0 ? "★ Önerilen: " : "Kütüphaneden: "}${x.name}${x.sector ? ` · ${x.sector}` : ""}`)); if (d.startDesign) startFrom.value = d.startDesign; }).catch(() => {});
   const go = async () => {
     const ok = await runAgent(slug, "autopilot", { freeText: draft.freeText || "", askFirst: askFirst.checked, ...(startFrom.value ? { libraryId: startFrom.value } : {}) });
     if (ok) draft.freeText = "";
@@ -1057,6 +1071,11 @@ function swatchRow(palette) {
 
 /** Saved designs, grouped by sector. A design starts a new site faster and keeps the quality of a good one. */
 async function renderLibrary() {
+  if (state.libEdit) {
+    const editor = await slotEditor(state.libEdit);
+    if (editor) return editor;
+    state.libEdit = null;
+  }
   const data = await guarded(() => api("GET", "/api/library"));
   const designs = data?.designs || [];
   const head = h("div", { class: "dash-head" },
@@ -1085,12 +1104,60 @@ async function renderLibrary() {
         d.concept && h("p", { class: "small", text: d.concept.length > 180 ? `${d.concept.slice(0, 180)}…` : d.concept }),
         d.tags.length > 0 && h("div", { class: "chips" }, ...d.tags.map((t) => h("span", { class: "chip", text: t }))),
         h("p", { class: "small muted" }, "Kaynak: ", h("a", { href: `#/c/${d.sourceSlug}/marka`, text: d.sourceSlug }), ` · ${new Date(d.createdAt).toLocaleDateString("tr-TR")}`),
+        h("p", { class: "small muted", text: d.slots?.length ? `${d.slots.length} sabit alan` : "Sabit alan tanımlı değil" }),
+        h("button", { class: "btn btn-sm", type: "button", onclick: async () => { state.libEdit = d.id; render(); } }, "Sabit alanları yönet"),
         h("button", { class: "btn btn-sm danger", type: "button", onclick: async () => {
           if (!confirm(`"${d.name}" kütüphaneden silinsin mi? Kaynak müşterinin sitesi etkilenmez.`)) return;
           if (await guarded(() => api("DELETE", `/api/library/${d.id}`))) render();
         } }, "Kütüphaneden sil"),
       )))),
     ));
+}
+
+/**
+ * Fixed places of a saved design: texts in the design that stand for a client fact. When the design is used,
+ * the panel puts the new client's value there itself; the agent only adapts the rest.
+ */
+async function slotEditor(id) {
+  const data = await guarded(() => api("GET", `/api/library/${id}`));
+  if (!data) return null;
+  const { design, fields } = data;
+  let counts = data.counts;
+  const rows = h("div", { class: "stack slot-rows" });
+  const fieldSelect = (value) => h("select", { "aria-label": "Alan" }, ...Object.entries(fields).map(([k, v]) => h("option", { value: k, selected: k === value }, v)));
+  const addRow = (slot, count) => {
+    const text = h("input", { type: "text", value: slot?.text || "", maxlength: 300, placeholder: "Tasarımda geçen metin (ör. 0534 985 63 19)", "aria-label": "Tasarımdaki metin" });
+    const field = fieldSelect(slot?.field || "name");
+    const found = h("span", { class: `badge ${count === 0 ? "warn" : count ? "ok" : ""}`, text: count === undefined ? "yeni" : count === 0 ? "bulunamadı" : `${count} yerde` });
+    const row = h("div", { class: "slot-row" }, text, h("span", { class: "muted", "aria-hidden": "true", text: "→" }), field, found,
+      h("button", { class: "btn btn-sm", type: "button", "aria-label": "Satırı sil", onclick: () => row.remove() }, "Sil"));
+    rows.append(row);
+  };
+  design.slots.forEach((x, i) => addRow(x, counts[i]));
+  const name = h("input", { type: "text", id: "slot-name", value: design.name, maxlength: 60 });
+  const tags = h("input", { type: "text", id: "slot-tags", value: design.tags.join(", "), maxlength: 120 });
+  const save = async () => {
+    const slots = [...rows.querySelectorAll(".slot-row")].map((r) => ({ text: r.querySelector("input").value.trim(), field: r.querySelector("select").value })).filter((x) => x.text);
+    const r = await guarded(() => api("PUT", `/api/library/${id}`, { name: name.value.trim(), tags: tags.value.split(",").map((t) => t.trim()).filter(Boolean), slots }));
+    if (!r) return;
+    counts = r.counts;
+    const missing = counts.filter((c) => c === 0).length;
+    toast(missing ? `Kaydedildi. ${missing} metin tasarımda bulunamadı; yazımı kontrol ediniz.` : "Sabit alanlar kaydedildi.");
+    $("#view").replaceChildren(await renderLibrary());
+  };
+  return h("section", { class: "dash" },
+    h("div", { class: "dash-head" }, h("div", {},
+      h("h1", { text: `Sabit alanlar: ${design.name}` }),
+      h("p", { class: "muted", text: "Tasarımda müşteriye özel olan metinleri ve karşılık gelen alanı belirleyiniz. Bu tasarım yeni bir müşteride kullanıldığında bu metinler panel tarafından o müşterinin bilgisiyle değiştirilir (agent kullanılmaz). Müşterinin bu bilgisi henüz yoksa metin agent'a bırakılır ve derleme, metin değişene kadar başarısız olur." }))),
+    h("div", { class: "card stack" },
+      h("div", { class: "two" }, h("label", { for: "slot-name" }, "Tasarım adı", name), h("label", { for: "slot-tags" }, "Etiketler", tags)),
+      h("h3", { text: "Metin → alan" }),
+      h("p", { class: "small muted", text: "Aynı bilgi sitede farklı yazılmışsa (ör. '+905349856319' ve '0534 985 63 19') her yazılışı ayrı satır olarak ekleyiniz. Büyük-küçük harf önemlidir." }),
+      rows,
+      h("div", { class: "row" },
+        h("button", { class: "btn", type: "button", onclick: () => addRow(null, undefined) }, "+ Satır ekle"),
+        h("button", { class: "btn", style: "margin-inline-start:auto", type: "button", onclick: async () => { state.libEdit = null; render(); } }, "Kütüphaneye dön"),
+        h("button", { class: "btn btn-primary", type: "button", onclick: save }, "Kaydet"))));
 }
 
 /** Library controls on a custom site: save this design, or start over from a saved one. */
