@@ -45,7 +45,9 @@ export const fontStack = (name, fallback) => (typeof name === "string" && FONT_N
  */
 export function signatureFrame(html, title) {
   const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:">`;
-  const doc = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => `${m}${csp}`) : `${csp}${html}`;
+  // The policy goes first, before anything in the file (a script placed before <head> would otherwise run
+  // without it); the browser moves the meta into <head> itself.
+  const doc = `<!doctype html>${csp}${html.replace(/^\s*<!doctype[^>]*>/i, "")}`;
   return h("iframe", { class: "sig-frame", title, sandbox: "allow-scripts", referrerpolicy: "no-referrer", srcdoc: doc });
 }
 

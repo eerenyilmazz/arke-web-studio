@@ -71,6 +71,8 @@ beforeAll(async () => {
   tools.updateClientConfig(factory, { slug: "ui-bakery", patch: COMPLETE_PATCH });
   tools.saveContent(factory, { slug: "ui-bakery", locale: "en", content: COMPLETE_CONTENT });
   writePassingCustomSite(factory, "ui-bakery", "UI Bakery");
+  // A signature demo with a script placed before <head>: the panel's policy must still come first.
+  tools.writeSiteFileTool(factory, { slug: "ui-bakery", path: "brand/signature.html", content: '<!doctype html><script>document.title="early"</script><html lang="en"><head><meta name="viewport" content="width=device-width"><title>Sig</title></head><body><div class="dough-rise">Loaf</div></body></html>' });
   installStubTemplate(factory.templatesDir);
   const built = await tools.buildSite(factory, { slug: "ui-bakery" });
   if (!built.passed) throw new Error(`UI fixture build failed: ${JSON.stringify(built.checks.filter((c) => c.status === "fail"))}`);
@@ -138,6 +140,16 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
       expect(errors, tab).toEqual([]);
       await page.close();
     }
+  });
+
+  ui()("puts the content policy before anything in the signature demo", async (ctx) => {
+    needBrowser(ctx);
+    const { page, errors } = await open("#/c/ui-bakery/marka");
+    const srcdoc = await page.locator("iframe.sig-frame").getAttribute("srcdoc", { timeout: 10_000 });
+    expect(srcdoc).toMatch(/^<!doctype html><meta http-equiv="Content-Security-Policy"/);
+    expect(srcdoc!.indexOf("Content-Security-Policy")).toBeLessThan(srcdoc!.indexOf("<script>"));
+    expect(errors).toEqual([]);
+    await page.close();
   });
 
   ui()("edits the fixed places of a library design", async (ctx) => {

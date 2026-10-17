@@ -60,13 +60,21 @@ function serve(distDir: string): Promise<Server> {
     const url = decodeURIComponent((req.url ?? "/").split("?")[0]!);
     if (url === "/__phone__") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }).end(PHONE_FRAME); return; }
     let file = path.resolve(root, `.${url}`);
-    if (!file.startsWith(root)) { res.writeHead(403).end(); return; }
+    // Inside dist/ only: a plain prefix test would also accept a sibling such as dist2/.
+    const rel = path.relative(root, file);
+    if (rel.startsWith("..") || path.isAbsolute(rel)) { res.writeHead(403).end(); return; }
     if (existsSync(file) && statSync(file).isDirectory()) file = path.join(file, "index.html");
     if (!existsSync(file)) { res.writeHead(404).end(); return; }
     res.writeHead(200, { "Content-Type": TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream" });
     res.end(readFileSync(file));
   });
   return new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server)));
+}
+
+/** The same server for tests: its address and a way to close it. */
+export async function serveDistForTest(distDir: string): Promise<{ url: string; close: () => void }> {
+  const server = await serve(distDir);
+  return { url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, close: () => server.close() };
 }
 
 async function toWindowsPath(p: string): Promise<string> {

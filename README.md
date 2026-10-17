@@ -17,6 +17,12 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Güvenlik düzeltmeleri (1.11.1)
+
+- Agent yalnızca fabrika, müşteri ve inbox klasörlerini okuyabilir (önce her dosyayı okuyabiliyordu). `/proc`, `~/.ssh`, `~/.claude`, `~/.config`, kabuk profilleri (`~/.bashrc` vb.), `.env` dosyaları ayrıca açıkça yasak: müşteri metnine ya da bir web sayfasına gizlenmiş talimat, Cloudflare token'ını ya da anahtarları okutamaz.
+- Ekran görüntüsü sunucusu yalnızca `dist/` içinden dosya verir (adı "dist" ile başlayan komşu klasör artık açılamaz).
+- Marka kartındaki imza önizlemesinde güvenlik politikası (CSP) belgenin en başında.
+
 ## Kod kalitesi (1.11.0)
 
 - `npm run lint`: Biome, sadece uyarı verir (boş blok, kullanılmayan import, 80 satırı aşan fonksiyon). Derlemeyi ve testleri durdurmaz.

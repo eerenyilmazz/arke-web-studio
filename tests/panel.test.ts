@@ -6,7 +6,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import type { ChildProcess, SpawnOptions } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
-import { AGENT_DENIED_TOOLS } from "../src/panel/jobs.js";
+import { AGENT_DENIED_READS, AGENT_DENIED_TOOLS } from "../src/panel/jobs.js";
 import { createPanel, type Panel } from "../src/panel/server.js";
 import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } from "./helpers.js";
@@ -149,6 +149,13 @@ describe("panel flow", () => {
       const denied = call.args[call.args.indexOf("--disallowedTools") + 1];
       for (const tool of AGENT_DENIED_TOOLS) expect(denied).toContain(tool);
       expect(call.args[call.args.indexOf("--allowedTools") + 1]).not.toMatch(/Bash|deploy/);
+      // Reading is limited to the factory and the --add-dir folders: no bare Read/Grep/Glob that would allow any
+      // file, and secrets (process environments with the Cloudflare tokens, keys, profiles) are denied outright.
+      const allowedList = call.args[call.args.indexOf("--allowedTools") + 1]!.split(",");
+      for (const bare of ["Read", "Grep", "Glob"]) expect(allowedList).not.toContain(bare);
+      for (const rule of AGENT_DENIED_READS) expect(denied).toContain(rule);
+      expect(denied).toContain("Read(//proc/**)");
+      expect(denied).toContain("Read(~/.ssh/**)");
       expect(Object.keys(call.options.env ?? {}).some((k) => k.startsWith("SF_CF_"))).toBe(false);
       // Client text is fenced as data and cannot close the fence.
       expect(call.stdin.match(/<\/client_data>/g)).toHaveLength(1);

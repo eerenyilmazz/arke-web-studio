@@ -30,3 +30,31 @@ describe("screenshots for the agent", () => {
     }
   }, 60_000);
 });
+
+describe("screenshot server stays inside dist/", () => {
+  it("refuses a sibling folder whose name starts like dist", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const { serveDistForTest } = await import("../src/lib/screenshots.js");
+    const base = mkdtempSync(path.join(os.tmpdir(), "sf-shot-"));
+    mkdirSync(path.join(base, "dist"));
+    mkdirSync(path.join(base, "dist2"));
+    writeFileSync(path.join(base, "dist", "index.html"), "<p>ok</p>");
+    writeFileSync(path.join(base, "dist2", "secret.txt"), "nope");
+    const { url, close } = await serveDistForTest(path.join(base, "dist"));
+    try {
+      expect((await fetch(`${url}/`)).status).toBe(200);
+      // fetch() would normalise "..", so the raw path goes out through node:http, as a local process could send it.
+      const { request } = await import("node:http");
+      const status = await new Promise<number>((resolve, reject) => {
+        const req = request(`${url}/`, { path: "/../dist2/secret.txt" }, (res) => { res.resume(); resolve(res.statusCode ?? 0); });
+        req.on("error", reject);
+        req.end();
+      });
+      expect(status).toBe(403);
+    } finally {
+      close();
+    }
+  });
+});

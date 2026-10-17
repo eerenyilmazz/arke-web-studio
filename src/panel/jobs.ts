@@ -62,14 +62,27 @@ export const AGENT_ALLOWED_TOOLS = [
   "mcp__site-factory__read_site_file_part",
   "mcp__site-factory__search_design_knowledge",
   "mcp__site-factory__save_research_notes",
-  "Read",
-  "Grep",
-  "Glob",
+  // No bare "Read", "Grep" or "Glob" here: a bare name allows reading ANY file on the machine. Without it, Claude
+  // Code lets these read-only tools work without a prompt only in the working directory (the factory) and the
+  // --add-dir folders (clients, inbox); anything else is refused in a headless run.
   // Design skills in .claude/skills (impeccable, taste-skill, UI UX Pro Max): instructions only. Their scripts
   // would need Bash, which stays denied below.
   "Skill",
 ] as const;
 export const AGENT_DENIED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "Task", "mcp__site-factory__deploy", "mcp__site-factory__create_client"] as const;
+/**
+ * Secrets the agent must never read, even if a client text or a web page tells it to (prompt injection): process
+ * environments (the panel's holds the Cloudflare tokens), keys, shell profiles where tokens may be exported,
+ * tool credentials and .env files. Explicit denies, on top of the folder limit above.
+ */
+export const AGENT_DENIED_READS = [
+  "Read(//proc/**)", "Read(//sys/**)",
+  "Read(~/.ssh/**)", "Read(~/.gnupg/**)", "Read(~/.aws/**)", "Read(~/.docker/**)",
+  "Read(~/.claude/**)", "Read(~/.config/**)", "Read(~/.wrangler/**)",
+  "Read(~/.bashrc)", "Read(~/.bash_profile)", "Read(~/.profile)", "Read(~/.zshrc)", "Read(~/.zprofile)",
+  "Read(~/.netrc)", "Read(~/.npmrc)", "Read(~/.git-credentials)", "Read(~/.gitconfig)",
+  "Read(**/.env)", "Read(**/.env.*)", "Read(**/.dev.vars)",
+] as const;
 /** Web research tools: allowed only while the "İnternet araştırması" setting is on, denied otherwise. */
 export const WEB_TOOLS = ["WebSearch", "WebFetch"] as const;
 /** Change requests on a custom site may touch several files and rebuild. */
@@ -93,7 +106,7 @@ export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false, read
     "--mcp-config", ".mcp.json",
     "--strict-mcp-config",
     "--allowedTools", [...AGENT_ALLOWED_TOOLS, ...(web ? WEB_TOOLS : [])].join(","),
-    "--disallowedTools", [...AGENT_DENIED_TOOLS, ...(web ? [] : WEB_TOOLS)].join(","),
+    "--disallowedTools", [...AGENT_DENIED_TOOLS, ...AGENT_DENIED_READS, ...(web ? [] : WEB_TOOLS)].join(","),
     // Client folders and the inbox, so Read can open logos, uploads and screenshots (writing stays denied).
     ...readDirs.flatMap((d) => ["--add-dir", d]),
   ];
