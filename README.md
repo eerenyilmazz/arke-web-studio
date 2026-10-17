@@ -17,6 +17,15 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Codex, kâr ve iş raporu (1.14.0)
+
+- **Agent ve Sınırlar** (Ayarlar → Kaynak Kullanımı): her iş türü (tasarım, düzenleme, çeviri, ek sayfa) için Claude Code ya da **Codex**, model, en fazla adım ve token tavanı. Boş = paket.
+  - Codex için: WSL'de `npm i -g @openai/codex`, sonra `codex login` (ChatGPT hesabı ya da API anahtarı).
+  - Codex işleri salt okunur kum havuzunda, **shell, tarayıcı, bilgisayar kontrolü, eklentiler ve hook'lar kapalı**, sadece site-factory araçlarıyla, boş bir çalışma klasöründe çalışır; kullanıcı ayarları (`~/.codex/config.toml`) yok sayılır.
+- **Kâr hesabı:** İş Takibi'ne müşteri giderleri (alan adı vb.) eklenir; fiyat − gider − agent maliyeti = kâr. Müşteriler sayfasında "Kazanç" özeti. Kurlar ve Codex birim fiyatı Ayarlar → Kâr Hesabı'nda.
+- **İş Raporu** (Teklif sekmesi): ne istendi, ne yapıldı, tarihleriyle; yazdırılabilir, kaynak kullanımı isteğe bağlı gösterilir.
+- **Diğer dilleri güncelle:** Metin formunda ve "⋯" menüsünde; varsayılan dildeki son hâle göre ucuz modelle çeviri.
+
 ## Panel düzenlemeleri (1.13.0)
 
 - **Arşiv** (sol menü): arşivlenen müşterileri görme, **Geri getir**, **Kalıcı sil** (kısa adı yeniden yazarak; yalnızca arşivdekiler silinebilir).

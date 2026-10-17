@@ -59,6 +59,7 @@ export function renderHome() {
       const n = state.clients.filter((c) => bucket(c) === key).length;
       return h("div", { class: `count tone-${key}` }, h("strong", { text: String(n) }), h("span", { class: "label", text: label }), h("span", { class: "sub", text: sub }));
     })),
+    profitSummaryCard(),
     toolbar,
     ...groups.map(([k, list]) => h("div", { class: "group" },
       k && h("h2", { class: "group-title", text: `${k} (${list.length})` }),
@@ -208,4 +209,31 @@ export function infoGuide(textarea, onChange) {
     ),
     h("button", { class: "btn", type: "button", onclick: fill }, "Boş şablonu kutuya ekle"),
   );
+}
+
+const SIGN = { TRY: "₺", GBP: "£", EUR: "€", USD: "$" };
+const fmtMoney = (n, cur) => `${SIGN[cur] || ""}${Number(n).toLocaleString("tr-TR", { maximumFractionDigits: 0 })}`;
+
+/** Price, own costs, agent cost and profit across clients, per currency (folded; loads after the page). */
+function profitSummaryCard() {
+  const body = h("div", { class: "profit-body" }, h("p", { class: "muted small", text: "Hesaplanıyor…" }));
+  const box = h("details", { class: "card profit-card" }, h("summary", {}, h("strong", { text: "Kazanç" }), h("span", { class: "muted small", text: " fiyat − gider − agent maliyeti" })), body);
+  api("GET", "/api/profit").then((r) => {
+    const cur = Object.entries(r.totals);
+    const rows = r.clients.filter((c) => c.price !== null || c.agentUsd > 0).sort((a, b) => (b.profit ?? -1e12) - (a.profit ?? -1e12));
+    body.replaceChildren(
+      cur.length ? h("div", { class: "profit-totals" }, ...cur.map(([c, t]) => h("div", { class: "count" },
+        h("strong", { text: fmtMoney(t.profit, c) }), h("span", { class: "label", text: `Toplam kâr (${c})` }),
+        h("span", { class: "sub", text: `${fmtMoney(t.price, c)} fiyat · ${fmtMoney(t.extraCosts, c)} gider · ${fmtMoney(t.agentCost, c)} agent${t.missingRate ? " · kur eksik" : ""}` })))) : h("p", { class: "muted small", text: "Henüz fiyatı girilmiş müşteri yok (Müşteri Bilgileri → İş Takibi)." }),
+      h("p", { class: "muted small", text: `Bu ay agent maliyeti: $${r.monthAgentUsd.toFixed(2)}` }),
+      rows.length ? h("div", { style: "overflow-x:auto" }, h("table", { class: "profit-table" },
+        h("thead", {}, h("tr", {}, ...["Müşteri", "Fiyat", "Gider", "Agent", "Kâr"].map((t) => h("th", { text: t })))),
+        h("tbody", {}, ...rows.map((c) => h("tr", {},
+          h("td", {}, h("a", { href: `#/c/${c.slug}/bilgiler`, text: c.name })),
+          h("td", { text: c.price === null ? "—" : fmtMoney(c.price, c.currency) }),
+          h("td", { text: c.extraCosts ? fmtMoney(c.extraCosts, c.currency) : "—" }),
+          h("td", { text: c.agentCost === null ? `$${c.agentUsd.toFixed(2)}` : fmtMoney(c.agentCost, c.currency) }),
+          h("td", { class: c.profit !== null && c.profit < 0 ? "loss" : "", text: c.profit === null ? "—" : fmtMoney(c.profit, c.currency) })))))) : null);
+  }).catch(() => body.replaceChildren(h("p", { class: "muted small", text: "Kazanç bilgisi okunamadı." })));
+  return box;
 }

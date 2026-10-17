@@ -22,6 +22,19 @@ export function businessLine(b) {
   return h("span", { class: `biz ${late ? "late" : ""} pay-${b.payment}`, text: parts.join(" · ") });
 }
 
+const money = (n, cur) => `${CURRENCY_SIGNS[cur] || ""}${Number(n).toLocaleString("tr-TR", { maximumFractionDigits: 2 })}`;
+
+/** Price − own costs − agent cost, with what is missing for the calculation. */
+export function profitLine(p) {
+  if (!p) return null;
+  const agent = p.agentCost !== null ? money(p.agentCost, p.currency) : `$${p.agentUsd.toFixed(2)}`;
+  if (p.price === null) return h("p", { class: "profit muted small", text: `Agent maliyeti şimdiye kadar ${agent} (${p.jobs} işlem). Fiyat girilince kâr hesaplanır.` });
+  if (p.agentCost === null) return h("p", { class: "profit muted small", text: `Agent maliyeti $${p.agentUsd.toFixed(2)}. Kâr için Ayarlar → Kâr Hesabı'ndan 1 USD = ? ${p.currency} kurunu giriniz.` });
+  return h("p", { class: `profit ${p.profit < 0 ? "loss" : ""}` },
+    h("span", { class: "muted small", text: `${money(p.price, p.currency)} fiyat − ${money(p.extraCosts, p.currency)} gider − ${agent} agent = ` }),
+    h("strong", { text: `${money(p.profit, p.currency)} kâr` }));
+}
+
 export function businessForm(d) {
   const slug = d.status.slug;
   const b = d.businessTracking || { price: null, currency: d.country === "TR" ? "TRY" : "GBP", payment: "none", deadline: null, note: "" };
@@ -33,12 +46,23 @@ export function businessForm(d) {
   note.value = b.note || "";
   const tags = h("input", { id: "biz-tags", placeholder: "ör. abim, acil, Ankara", value: (b.tags || []).join(", ") });
   const bmode = h("select", { id: "biz-mode" }, h("option", { value: "" }, "Varsayılan paket"), ...Object.entries(MODE_TR).map(([k, v]) => h("option", { value: k, selected: b.budgetMode === k }, v)));
+  // Eren's own costs for this client (same currency as the price): domain, stock photos, a form plan…
+  const costRows = h("div", { class: "cost-rows" });
+  const addCost = (c = { label: "", amount: "" }) => {
+    const row = h("div", { class: "cost-row" },
+      h("input", { type: "text", placeholder: "Gider (ör. alan adı)", value: c.label, maxlength: 60, "aria-label": "Gider adı" }),
+      h("input", { type: "number", min: 0, step: "any", placeholder: "Tutar", value: c.amount, "aria-label": "Tutar" }),
+      h("button", { class: "icon-btn", type: "button", "aria-label": "Gideri sil", onclick: () => row.remove() }, "✕"));
+    costRows.append(row);
+  };
+  (b.costs || []).forEach((c) => addCost(c));
   const form = h("form", { class: "card biz-form", onsubmit: async (e) => {
     e.preventDefault();
     const r = await guarded(() => api("PUT", `/api/clients/${slug}/business`, {
       price: price.value === "" ? null : Number(price.value), currency: currency.value, payment: payment.value, deadline: deadline.value || null, note: note.value,
       tags: tags.value.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 8),
       budgetMode: bmode.value,
+      costs: [...costRows.children].map((r) => { const [l, a] = r.querySelectorAll("input"); return { label: l.value.trim(), amount: Number(a.value || 0) }; }).filter((c) => c.label && c.amount > 0),
     }));
     if (r) { toast("İş bilgileri kaydedildi."); loadClients(); }
   } },
@@ -50,6 +74,8 @@ export function businessForm(d) {
     h("label", { for: "biz-note" }, "Not", note),
     h("label", { for: "biz-tags" }, "Etiketler (virgülle)", tags),
     h("label", { for: "biz-mode" }, `Paket${d.budget ? ` (şimdiye kadar ${fmtTokens(d.budget.usage.tokens)} birim, ${d.budget.usage.jobs} işlem)` : ""}`, bmode),
+    h("div", { class: "stack-sm" }, h("span", { class: "nc-label", text: "Giderler" }), costRows, h("button", { class: "btn btn-sm", type: "button", onclick: () => addCost() }, "+ Gider ekle")),
+    profitLine(d.profit),
     h("div", {}, h("button", { class: "btn btn-primary", type: "submit" }, "Kaydet")),
   );
   return form;
@@ -103,7 +129,51 @@ export const FEATURE_TR = [
   "Yayına alma ve SSL (https)",
 ];
 
+/** Teklif tab: the proposal, or the work report ("ne istendi, ne yapıldı"), both printable. */
 export async function tabProposal(body, d) {
+  const which = state.docView?.[d.status.slug] || "teklif";
+  const switcher = h("div", { class: "seg doc-switch", role: "group", "aria-label": "Belge" }, ...[["teklif", "Teklif"], ["rapor", "İş Raporu"]].map(([k, l]) =>
+    h("button", { type: "button", "aria-pressed": String(which === k), onclick: () => { state.docView = { ...(state.docView || {}), [d.status.slug]: k }; tabProposal(body, d); } }, l)));
+  if (which === "rapor") { body.replaceChildren(h("div", { class: "stack" }, switcher, workReport(d))); return; }
+  await proposalSheet(body, d, switcher);
+}
+
+const KIND_LABEL = { autopilot: "Site hazırlama", redesign: "Markayla yeniden tasarım", "brand-board": "Marka kartı", concepts: "Tasarım önerileri", "choose-concept": "Seçilen tasarımla kurulum", "from-library": "Kütüphaneden tasarım", "upgrade-template": "Serbest tasarıma geçiş", revise: "Değişiklik isteği", "fix-build": "Hata düzeltme", answers: "Bilgilerin işlenmesi", translate: "Çeviri", "add-page": "Yeni sayfa", build: "Siteyi oluşturma", deploy: "Yayın", unpublish: "Yayından kaldırma", "quick-edit": "İletişim bilgileri" };
+
+/**
+ * What the client asked for and what was done, from the job history: date, request, result, and for Eren the
+ * resources used. Editable before printing; "Kaynak" columns can be hidden for the client's copy.
+ */
+export function workReport(d) {
+  const slug = d.status.slug;
+  const records = [...(d.history || [])].filter((r) => r.status === "succeeded" && r.kind !== "build").sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  const showCost = h("input", { type: "checkbox", id: "wr-cost" });
+  const totalTokens = records.reduce((n, r) => n + (r.tokens || 0), 0);
+  const label = (r) => (r.kind.startsWith("edit-") ? "Düzenleme" : KIND_LABEL[r.kind] || r.title);
+  const sheet = h("article", { class: "proposal report hide-cost" },
+    h("header", { class: "p-head" },
+      h("div", {}, h("span", { class: "p-kicker", text: "İş raporu" }), h("h1", { text: d.business.name || slug }),
+        h("p", { class: "p-meta", text: records.length ? `${new Date(records[0].startedAt).toLocaleDateString("tr-TR")} – ${new Date(records[records.length - 1].endedAt).toLocaleDateString("tr-TR")} · ${records.length} iş` : "Henüz tamamlanmış iş yok." }))),
+    records.length ? h("table", { class: "report-table" },
+      h("thead", {}, h("tr", {}, h("th", { text: "Tarih" }), h("th", { text: "İstenen" }), h("th", { text: "Yapılan" }), h("th", { class: "cost", text: "Kaynak" }))),
+      h("tbody", {}, ...records.map((r) => h("tr", {},
+        h("td", { text: new Date(r.endedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" }) }),
+        h("td", {}, h("strong", { text: label(r) }), r.request ? h("div", { class: "small", contenteditable: "true", text: r.request.length > 240 ? `${r.request.slice(0, 240)}…` : r.request }) : null),
+        h("td", { contenteditable: "true", text: (r.summary || r.title || "").slice(0, 600) }),
+        h("td", { class: "cost small", text: r.tokens ? `${fmtTokens(r.tokens)}${r.provider === "codex" ? " · Codex" : ""}${r.model ? ` · ${r.model}` : ""}` : "—" })))))
+      : null,
+    h("section", { class: "cost" }, h("h2", { text: "Kaynak" }),
+      h("p", { text: `${records.length} iş, toplam ${fmtTokens(totalTokens)} birim${d.profit ? ` · agent maliyeti $${d.profit.agentUsd.toFixed(2)}` : ""}` })),
+    h("footer", { class: "p-foot" }, "Metinlere tıklayıp düzeltebilirsiniz (kaydedilmez), sonra PDF olarak kaydedin."));
+  showCost.addEventListener("change", () => sheet.classList.toggle("hide-cost", !showCost.checked));
+  return h("div", { class: "stack" },
+    h("div", { class: "row", style: "justify-content:space-between;align-items:center" },
+      h("label", { class: "check", for: "wr-cost" }, showCost, " Kaynak kullanımını göster (sadece kendi kopyanız için)"),
+      h("button", { class: "btn btn-primary", type: "button", onclick: () => window.print() }, "Yazdır / PDF")),
+    sheet);
+}
+
+async function proposalSheet(body, d, switcher) {
   const slug = d.status.slug;
   const [settings, brand] = await Promise.all([api("GET", "/api/settings").catch(() => ({ sender: {} })), api("GET", `/api/clients/${slug}/brand`).catch(() => null)]);
   const s = settings.sender || {};
@@ -137,6 +207,7 @@ export async function tabProposal(body, d) {
     h("footer", { class: "p-foot" }, [s.name, s.email, s.phone, s.web].filter(Boolean).join(" · ") || "Gönderen bilgilerini Ayarlar → Teklif bölümünden ekle."),
   );
   body.replaceChildren(h("div", { class: "stack" },
+    switcher,
     h("div", { class: "row", style: "justify-content:space-between;align-items:center" },
       h("p", { class: "muted small", text: "Fiyat ve teslim tarihi Bilgiler sekmesindeki iş bilgilerinden gelir. Metinlere tıklayıp düzeltebilirsin (kaydedilmez), sonra PDF olarak kaydet." }),
       h("button", { class: "btn btn-primary", type: "button", onclick: () => window.print() }, "Yazdır / PDF")),

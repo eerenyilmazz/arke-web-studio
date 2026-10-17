@@ -609,6 +609,27 @@ describe("1.13: archive, texts by id, extra page, logo checks", () => {
   });
 });
 
+describe("1.14: profit, translation job, agent settings", () => {
+  it("saves own costs, reports profit, starts a translation job and refuses a bad model name", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth, factory } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "two-lang", businessName: "Two Lang", industry: "barber shop", hostingModel: "managed", country: "TR", extraLocale: "en" }) });
+    tools.updateClientConfig(factory, { slug: "two-lang", patch: { template: "custom" } });
+    const saved = await fetch(`${base}/api/clients/two-lang/business`, { method: "PUT", headers: json, body: JSON.stringify({ price: 8000, currency: "TRY", payment: "quoted", costs: [{ label: "Alan adı", amount: 450 }] }) });
+    expect(saved.status).toBe(200);
+    const profit = (await (await fetch(`${base}/api/profit`, { headers: auth })).json()) as { clients: Array<{ slug: string; profit: number | null; extraCosts: number }>; totals: Record<string, { price: number }> };
+    expect(profit.clients.find((c) => c.slug === "two-lang")).toMatchObject({ extraCosts: 450, profit: 7550 });
+    expect(profit.totals.TRY?.price).toBe(8000);
+    const detail = (await (await fetch(`${base}/api/clients/two-lang`, { headers: auth })).json()) as { profit: { price: number } };
+    expect(detail.profit.price).toBe(8000);
+    const tr = await fetch(`${base}/api/clients/two-lang/agent/translate`, { method: "POST", headers: json, body: "{}" });
+    expect(tr.status).toBe(202);
+    expect(calls[0]!.stdin).toMatch(/Add these languages: en/);
+    expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ agents: { edit: { provider: "codex", model: "a b", maxTurns: 0, tokenCap: 0 } } }) })).status).toBe(400);
+  });
+});
+
 describe("unpublish from the panel", () => {
   it("needs the short name typed again for the live site", async () => {
     const { base, auth } = await start();

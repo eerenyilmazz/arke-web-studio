@@ -9,6 +9,19 @@ import { readJsonIfExists, writeJson } from "../lib/files.js";
  */
 const FILE = ".panel-settings.json";
 
+export const AGENT_PROVIDERS = ["claude", "codex"] as const;
+export type AgentProvider = (typeof AGENT_PROVIDERS)[number];
+export const JOB_GROUPS = ["design", "edit", "translate", "page"] as const;
+export type JobGroup = (typeof JOB_GROUPS)[number];
+
+const AgentRouteSchema = z.object({
+  provider: z.enum(["", ...AGENT_PROVIDERS]).default(""),
+  /** A model name the provider understands (Claude: opus, sonnet, haiku…; Codex: its model names). Letters, digits, . _ : - only. */
+  model: z.string().trim().max(60).regex(/^[A-Za-z0-9._:-]*$/).default(""),
+  maxTurns: z.number().int().min(0).max(500).default(0),
+  tokenCap: z.number().int().min(0).max(50_000_000).default(0),
+}).default({ provider: "", model: "", maxTurns: 0, tokenCap: 0 });
+
 export const SettingsSchema = z.object({
   /** The agent may search the web and read pages (business research, sector examples). */
   webResearch: z.boolean().default(true),
@@ -26,6 +39,21 @@ export const SettingsSchema = z.object({
     mode: z.enum(["economy", "balanced", "premium"]).default("balanced"),
     monthlyTokens: z.number().int().min(0).max(10_000_000_000).default(0),
   }).default({ mode: "balanced", monthlyTokens: 0 }),
+  /**
+   * Per kind of job: which agent (Claude Code or Codex), which model, step limit and token cap. Empty or 0 = the
+   * package's value (budget.mode). Lets Eren send cheap work to a cheaper model or to another provider.
+   */
+  agents: z.object({
+    design: AgentRouteSchema,
+    edit: AgentRouteSchema,
+    translate: AgentRouteSchema,
+    page: AgentRouteSchema,
+  }).partial().default({}),
+  /** Profit: how to turn the agent's USD cost into the client's currency, and a price per million units for jobs without a reported cost (Codex). */
+  profit: z.object({
+    usdRates: z.object({ TRY: z.number().min(0).max(1_000_000).default(0), GBP: z.number().min(0).max(1000).default(0), EUR: z.number().min(0).max(1000).default(0) }).default({ TRY: 0, GBP: 0, EUR: 0 }),
+    usdPerMillionUnits: z.number().min(0).max(1000).default(0),
+  }).default({ usdRates: { TRY: 0, GBP: 0, EUR: 0 }, usdPerMillionUnits: 0 }),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 

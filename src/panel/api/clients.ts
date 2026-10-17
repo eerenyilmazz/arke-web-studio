@@ -1,3 +1,4 @@
+import { clientProfit } from "../profit.js";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
@@ -188,6 +189,7 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     businessTracking: readBusiness(deps.factory, s),
     startDesign: readStartDesign(deps.factory, s),
     brandStale: readBrandStale(deps.factory, s),
+    profit: clientProfit(deps.factory, s, draft.business?.name ?? s),
     sharedLogo: sharedLogo(deps.factory, s),
     budget: { mode: modeFor(deps.factory, s), usage: summarise(deps.factory).byClient[s] ?? { tokens: 0, costUsd: 0, jobs: 0 } },
     latestTemplate: deps.factory.defaultTemplate,

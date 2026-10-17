@@ -1,3 +1,4 @@
+import { profitSummary } from "../profit.js";
 import { existsSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
@@ -18,6 +19,7 @@ import { type ApiDeps, type Route, SLUG, JSON_LIMIT, runOrConflict } from "./com
 
 /** Jobs, build, deploy, preview, approvals, settings and other panel-wide endpoints. */
 export const opsRoutes: Route[] = [
+  { method: "GET", pattern: /^\/api\/profit$/, handler: (d, _r, res) => sendJson(res, 200, profitSummary(d.factory)) },
   { method: "GET", pattern: /^\/api\/usage$/, handler: (d, _r, res) => sendJson(res, 200, { ...summarise(d.factory), mode: readSettings(d.factory).budget.mode, modes: BUDGET_MODES.map((m) => ({ id: m, label: MODE_LABELS[m], ...PROFILES[m] })) }) },
   { method: "GET", pattern: /^\/api\/backups$/, handler: (d, _r, res) => { const dir = readSettings(d.factory).backupDir; sendJson(res, 200, { dir, backups: listBackups(dir) }); } },
   { method: "POST", pattern: /^\/api\/backups$/, handler: async (d, _r, res) => { try { sendJson(res, 201, await backupNow(d.factory)); } catch (e) { throw new HttpError(400, (e as Error).message); } } },

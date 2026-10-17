@@ -801,3 +801,34 @@ span.chip { cursor: default; }
 .notice-bar.bad { background: var(--bad-soft); border-color: var(--bad); color: var(--ink); }
 .notice-bar.bad strong { color: var(--bad); }
 .new-client > .card { margin: 0; }
+
+/* ---------- 1.14: agents per job type ---------- */
+.agent-head, .agent-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 1fr) 6rem 6rem; gap: .5rem; align-items: center; }
+.agent-row { padding: .5rem 0; border-top: 1px solid var(--line); }
+.agent-row select, .agent-row input { margin-top: 0; }
+.agent-row input[type="number"] { width: 100%; padding: .55rem .6rem; border: 1px solid var(--line-strong); border-radius: 9px; font: inherit; background: var(--surface); color: var(--ink); }
+.agent-name { display: grid; gap: .1rem; min-width: 0; }
+@media (max-width: 760px) { .agent-head { display: none; } .agent-row { grid-template-columns: 1fr 1fr; } .agent-name { grid-column: 1 / -1; } }
+
+/* ---------- 1.14: costs and profit ---------- */
+.cost-rows { display: grid; gap: .4rem; }
+.cost-row { display: grid; grid-template-columns: minmax(0, 1fr) 8rem auto; gap: .4rem; align-items: center; }
+.cost-row input { margin: 0; width: 100%; padding: .5rem .6rem; border: 1px solid var(--line-strong); border-radius: 9px; font: inherit; background: var(--surface); color: var(--ink); }
+.profit { margin: 0; display: flex; flex-wrap: wrap; gap: .3rem; align-items: baseline; }
+.profit strong { color: var(--ok); }
+.profit.loss strong { color: var(--bad); }
+.profit-card summary { cursor: pointer; display: flex; gap: .4rem; align-items: baseline; }
+.profit-body { display: grid; gap: .75rem; margin-top: .75rem; }
+.profit-totals { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .75rem; }
+.profit-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.profit-table th, .profit-table td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--line); }
+.profit-table td.loss { color: var(--bad); font-weight: 600; }
+
+/* ---------- 1.14: work report ---------- */
+.doc-switch { justify-self: start; }
+.report-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.report-table th { text-align: left; font-weight: 500; color: var(--p-mute); border-bottom: 2px solid var(--p-ink); padding: .4rem .5rem; }
+.report-table td { vertical-align: top; padding: .55rem .5rem; border-bottom: 1px solid var(--p-line); }
+.report-table td:first-child { white-space: nowrap; color: var(--p-mute); }
+.report.hide-cost .cost { display: none; }
+@media print { .doc-switch { display: none; } }

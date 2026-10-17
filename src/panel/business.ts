@@ -21,6 +21,8 @@ export const BusinessSchema = z.object({
   note: z.string().max(2000).default(""),
   /** Eren's own labels for grouping clients (e.g. "abim", "acil", "Ankara"). */
   tags: z.array(z.string().trim().min(1).max(24)).max(8).default([]),
+  /** Eren's own costs for this client, in the same currency as the price (domain, stock photos, a form plan…). */
+  costs: z.array(z.object({ label: z.string().trim().min(1).max(60), amount: z.number().nonnegative().max(10_000_000) })).max(20).default([]),
   /** This client's budget mode; empty = the panel-wide one. */
   budgetMode: z.enum(["", "economy", "balanced", "premium"]).default(""),
 });

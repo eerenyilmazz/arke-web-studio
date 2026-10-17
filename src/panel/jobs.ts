@@ -1,5 +1,8 @@
 import { spawn as nodeSpawn, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { emptyUsage, MODE_LABELS, usageFrom, weighted, type AgentPolicy, type Usage } from "./budget.js";
 
 /*
@@ -17,6 +20,8 @@ export interface LogLine {
 }
 
 export interface Job {
+  /** Which agent ran it (agent jobs only). */
+  provider?: "claude" | "codex";
   readonly id: string;
   readonly slug: string;
   readonly kind: string;
@@ -112,6 +117,55 @@ export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false, read
   ];
 }
 
+/**
+ * Codex features that would widen what the agent can do beyond the site-factory tools: a shell (reading any file),
+ * browsers and computer use (network, the desktop), apps, plugins, hooks, sub-agents, image generation. All off.
+ * The list is kept explicit (not "everything but"), so a new Codex version cannot silently turn on less.
+ */
+export const CODEX_DISABLED_FEATURES = [
+  "shell_tool", "unified_exec", "unified_exec_tty", "shell_snapshot", "write_stdin_approval",
+  "browser_use", "browser_use_external", "browser_use_full_cdp_access", "browser_annotation_api", "in_app_browser",
+  "computer_use", "in_app_local_automation", "apps", "plugins", "remote_plugin", "plugin_sharing", "hooks",
+  "multi_agent", "image_generation", "realtime_conversation", "skill_mcp_dependency_install", "tool_suggest",
+  "workspace_dependencies", "worktrees", "goals",
+] as const;
+
+/** TOML string for a -c override (JSON strings are valid TOML basic strings). */
+const toml = (v: string) => JSON.stringify(v);
+
+/**
+ * `codex exec` with the same boundaries as the Claude jobs: read-only sandbox, never asks, no shell or browser
+ * features, only the site-factory MCP server (given here, user config ignored), no web search unless asked.
+ * It runs in an empty working folder, so even its read-only workspace holds nothing.
+ */
+export function codexArgs(opts: { factoryRoot: string; workDir: string; model?: string; web?: boolean; serverEnv?: Record<string, string> }): string[] {
+  const server = path.join(opts.factoryRoot, "dist", "server.js");
+  const envPairs = Object.entries(opts.serverEnv ?? {}).flatMap(([k, v]) => ["-c", `mcp_servers.site-factory.env.${k}=${toml(v)}`]);
+  return [
+    "exec", "--json", "--skip-git-repo-check", "--ephemeral", "--ignore-user-config", "--ignore-rules",
+    "-s", "read-only",
+    "-c", `approval_policy=${toml("never")}`,
+    "-C", opts.workDir,
+    ...CODEX_DISABLED_FEATURES.flatMap((f) => ["--disable", f]),
+    "-c", `mcp_servers.site-factory.command=${toml(process.execPath)}`,
+    "-c", `mcp_servers.site-factory.args=[${toml(server)}]`,
+    ...envPairs,
+    ...(opts.web ? ["--search"] : []),
+    ...(opts.model ? ["-m", opts.model] : []),
+    "-",
+  ];
+}
+
+/** Factory paths the MCP server needs, when the panel was started with overrides (SF_CLIENTS_ROOT…). */
+function serverEnvFrom(parent: NodeJS.ProcessEnv): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const k of ["SF_CLIENTS_ROOT", "SF_INBOX_DIR", "SF_TEMPLATES_DIR", "SF_FORM_ACTION", "SF_BROWSER", "SF_SCREENSHOTS"]) {
+    const v = parent[k];
+    if (v) out[k] = v;
+  }
+  return out;
+}
+
 /** The agent never needs Cloudflare credentials (it cannot deploy), so they are removed from its environment. */
 export function agentEnv(parent: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
@@ -135,6 +189,7 @@ export interface JobRecord {
   readonly tokens?: number;
   readonly model?: string;
   readonly mode?: string;
+  readonly provider?: "claude" | "codex";
 }
 
 const MAX_RECORD_ERRORS = 5;
@@ -152,6 +207,7 @@ export function toRecord(job: Job): JobRecord {
     tools: job.log.filter((l) => l.kind === "tool").map((l) => l.text.split("(")[0] ?? l.text),
     errors: job.log.filter((l) => l.kind === "error").map((l) => l.text).slice(-MAX_RECORD_ERRORS),
     ...(job.usage ? { usage: job.usage, tokens: job.tokens ?? weighted(job.usage), model: job.model, mode: job.mode } : {}),
+    ...(job.provider ? { provider: job.provider } : {}),
   };
 }
 
@@ -167,6 +223,7 @@ export class JobRunner {
     /** Read at the start of every job, so the setting applies from the next job on. */
     private readonly webResearch: () => boolean = () => false,
     private readonly readDirs: readonly string[] = [],
+    private readonly codexBin: string = process.env.SF_CODEX_BIN ?? "codex",
   ) {}
 
   running(): Job | undefined {
@@ -234,18 +291,30 @@ export class JobRunner {
       job.mode = policy.mode;
       job.tokenCap = policy.tokenCap;
     }
-    this.push(job, "info", `Agent başlatıldı (sadece site-factory araçları; shell ve dosya düzenleme kapalı)${policy ? ` · ${MODE_LABELS[policy.mode]} mod, ${policy.model}, en fazla ${Math.round(policy.tokenCap / 1000)}K token` : ""}.`);
+    const codex = policy?.provider === "codex";
+    job.provider = codex ? "codex" : "claude";
+    const engine = codex ? "Codex" : "Claude Code";
+    this.push(job, "info", `Agent başlatıldı: ${engine} (sadece site-factory araçları; shell ve dosya düzenleme kapalı)${policy ? ` · ${MODE_LABELS[policy.mode]} mod, ${policy.model || "varsayılan model"}, en fazla ${Math.round(policy.tokenCap / 1000)}K token` : ""}.`);
     let child: ChildProcess;
+    let workDir: string | null = null;
     try {
-      const turns = policy?.maxTurns ?? (LONG_JOBS.has(kind) ? MAX_AUTOPILOT_TURNS : undefined);
       const web = policy ? policy.research : this.webResearch();
-      const args = [...claudeArgs(turns, web, this.readDirs), ...(policy ? ["--model", policy.model] : [])];
-      child = this.spawn(this.claudeBin, args, { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
+      if (codex) {
+        // An empty folder as Codex's workspace: nothing to read there, nothing it may write.
+        workDir = mkdtempSync(path.join(os.tmpdir(), "sf-codex-"));
+        const args = codexArgs({ factoryRoot: this.factoryRoot, workDir, model: policy?.model || undefined, web, serverEnv: serverEnvFrom(process.env) });
+        child = this.spawn(this.codexBin, args, { cwd: workDir, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
+      } else {
+        const turns = policy?.maxTurns ?? (LONG_JOBS.has(kind) ? MAX_AUTOPILOT_TURNS : undefined);
+        const args = [...claudeArgs(turns, web, this.readDirs), ...(policy ? ["--model", policy.model] : [])];
+        child = this.spawn(this.claudeBin, args, { cwd: this.factoryRoot, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
+      }
     } catch (error) {
-      this.push(job, "error", `Claude Code başlatılamadı: ${(error as Error).message}`);
+      this.push(job, "error", `${engine} başlatılamadı: ${(error as Error).message}`);
       this.finish(job, "failed");
       return job;
     }
+    const cleanup = () => { if (workDir) rmSync(workDir, { recursive: true, force: true }); };
     job.child = child;
 
     let buffer = "";
@@ -256,7 +325,7 @@ export class JobRunner {
       while ((nl = buffer.indexOf("\n")) >= 0) {
         const line = buffer.slice(0, nl).trim();
         buffer = buffer.slice(nl + 1);
-        if (line) this.handleEvent(job, line);
+        if (line) (codex ? this.handleCodexEvent(job, line) : this.handleEvent(job, line));
       }
     });
     let stderr = "";
@@ -265,10 +334,14 @@ export class JobRunner {
       stderr = (stderr + chunk).slice(-2000);
     });
     child.on("error", (error) => {
-      this.push(job, "error", `Claude Code çalıştırılamadı (${error.message}). WSL içinde "claude" kurulu mu?`);
+      cleanup();
+      this.push(job, "error", codex
+        ? `Codex çalıştırılamadı (${error.message}). WSL içinde "codex" kurulu ve giriş yapılmış mı? (npm i -g @openai/codex, sonra codex login)`
+        : `Claude Code çalıştırılamadı (${error.message}). WSL içinde "claude" kurulu mu?`);
       this.finish(job, "failed");
     });
     child.on("close", (code) => {
+      cleanup();
       if (job.status !== "running") return;
       if (code === 0) this.finish(job, "succeeded");
       else {
@@ -309,6 +382,56 @@ export class JobRunner {
       job.child.kill("SIGTERM");
       this.push(job, "error", `Bu işin token tavanı aşıldı (${Math.round(job.tokens / 1000)}K / ${Math.round(job.tokenCap / 1000)}K), iş durduruldu. Yazılanlar duruyor; devam için tekrar başlat ya da Ayarlar → Bütçe'den modu yükselt.`);
       this.finish(job, "failed");
+    }
+  }
+
+  /**
+   * One JSONL event from `codex exec --json`: messages, MCP tool calls, usage at the end of a turn, failures.
+   * Codex reports no price, so cost is left to the profit settings (USD per million units).
+   */
+  private handleCodexEvent(job: Job, line: string): void {
+    let event: { type?: string; message?: string; item?: Record<string, unknown>; usage?: Record<string, unknown>; error?: { message?: string } };
+    try {
+      event = JSON.parse(line) as typeof event;
+    } catch {
+      return; // log lines on stdout that are not events
+    }
+    const item = event.item ?? {};
+    if (event.type === "item.completed" || event.type === "item.started") {
+      const kind = String(item.type ?? "");
+      if (event.type === "item.completed" && kind === "agent_message" && typeof item.text === "string" && item.text.trim()) {
+        job.summary = item.text.trim();
+        this.push(job, "agent", job.summary);
+      }
+      if (kind === "mcp_tool_call") {
+        const tool = String(item.tool ?? item.name ?? "");
+        if (event.type === "item.started") {
+          this.push(job, "tool", `${tool}(${summariseInput(item.arguments)})`);
+          const phase = phaseOf(tool, item.arguments);
+          if (phase) job.phase = phase;
+          if (phase === "pages" || phase === "brand") job.filesWritten = (job.filesWritten ?? 0) + 1;
+        } else if (item.status === "failed" || item.error) {
+          const err = item.error as { message?: string } | string | undefined;
+          this.push(job, "error", typeof err === "string" ? err : err?.message ?? `${tool} başarısız`);
+        }
+      }
+    } else if (event.type === "turn.completed" && event.usage && job.usage) {
+      const n = (k: string) => (typeof event.usage?.[k] === "number" ? (event.usage[k] as number) : 0);
+      const cached = n("cached_input_tokens");
+      // OpenAI counts cached tokens inside input_tokens.
+      job.usage.input += Math.max(0, n("input_tokens") - cached);
+      job.usage.cacheRead += cached;
+      job.usage.output += n("output_tokens");
+      job.tokens = weighted(job.usage);
+      if (job.tokenCap && job.tokens > job.tokenCap && job.status === "running" && job.child) {
+        job.child.kill("SIGTERM");
+        this.push(job, "error", `Bu işin token tavanı aşıldı (${Math.round(job.tokens / 1000)}K / ${Math.round(job.tokenCap / 1000)}K), iş durduruldu.`);
+        this.finish(job, "failed");
+      }
+    } else if (event.type === "turn.failed" || (event.type === "error" && !/^Reconnecting/i.test(event.message ?? ""))) {
+      const text = event.error?.message ?? event.message ?? "Codex hatası";
+      this.push(job, "error", /usage limit|rate limit|quota/i.test(text) ? `Codex kullanım limiti doldu. Yazılan dosyalar duruyor; limit açılınca tekrar deneyin. (${text.slice(0, 200)})` : text);
+      if (event.type === "turn.failed") this.finish(job, "failed");
     }
   }
 

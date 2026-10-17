@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { FactoryConfig } from "../config.js";
 import { readBusiness } from "./business.js";
-import { readSettings } from "./settings.js";
+import { readSettings, type AgentProvider, type JobGroup } from "./settings.js";
 
 /**
  * Token budget: how much each agent job may spend, decided by a mode (Ekonomik / Dengeli / Premium).
@@ -20,6 +20,8 @@ export type SkillUse = "none" | "search" | "full";
 
 export interface AgentPolicy {
   readonly mode: BudgetMode;
+  /** Claude Code (default) or Codex. */
+  readonly provider: AgentProvider;
   readonly model: string;
   readonly maxTurns: number;
   readonly tokenCap: number;
@@ -73,12 +75,42 @@ export function modeFor(factory: FactoryConfig, slug: string): BudgetMode {
   return own && (BUDGET_MODES as readonly string[]).includes(own) ? (own as BudgetMode) : readSettings(factory).budget.mode;
 }
 
+/** Which settings row (Ayarlar → Agent ve sınırlar) a job kind follows. */
+export function jobGroup(kind: string): JobGroup {
+  if (kind === "translate") return "translate";
+  if (kind === "add-page") return "page";
+  return DESIGN_KINDS.has(kind) ? "design" : "edit";
+}
+
+const CLAUDE_ALIASES = /^(opus|sonnet|haiku|claude-)/i;
+
 export function resolvePolicy(factory: FactoryConfig, slug: string, kind: string): AgentPolicy {
   const mode = modeFor(factory, slug);
   const p = PROFILES[mode];
+  const settings = readSettings(factory);
   // Translation is long but simple: the edit (cheaper) model with design-sized limits, half the design cap.
-  const job = kind === "translate" ? { model: p.edit.model, maxTurns: p.design.maxTurns, tokenCap: Math.round(p.design.tokenCap / 2) } : DESIGN_KINDS.has(kind) ? p.design : p.edit;
-  return { mode, ...job, skills: p.skills, research: p.research && readSettings(factory).webResearch, screenshots: p.screenshots };
+  // An extra page is one page: the edit model with a little more room.
+  const group = jobGroup(kind);
+  const base = group === "translate"
+    ? { model: p.edit.model, maxTurns: p.design.maxTurns, tokenCap: Math.round(p.design.tokenCap / 2) }
+    : group === "page" ? { model: p.edit.model, maxTurns: p.edit.maxTurns + 20, tokenCap: Math.round(p.edit.tokenCap * 1.5) }
+    : group === "design" ? p.design : p.edit;
+  // Eren's per-kind choices (provider, model, limits) win over the package; 0 / empty keep the package's value.
+  const route = settings.agents[group];
+  const provider: AgentProvider = route?.provider || "claude";
+  // A Claude model name means nothing to Codex: then Codex uses its own default model.
+  const model = route?.model || (provider === "codex" ? "" : base.model);
+  return {
+    mode,
+    provider,
+    model: provider === "codex" && CLAUDE_ALIASES.test(model) ? "" : model,
+    maxTurns: route?.maxTurns || base.maxTurns,
+    tokenCap: route?.tokenCap || base.tokenCap,
+    // Codex has no Skill tool: it always reads the design knowledge through search.
+    skills: provider === "codex" && p.skills === "full" ? "search" : p.skills,
+    research: p.research && settings.webResearch,
+    screenshots: p.screenshots,
+  };
 }
 
 // ---------------------------------------------------------------- usage
@@ -113,6 +145,8 @@ export interface LedgerEntry {
   readonly model: string;
   readonly usage: Usage;
   readonly tokens: number;
+  /** Which agent ran the job (missing in entries written before 1.14 = Claude). */
+  readonly provider?: "claude" | "codex";
 }
 
 const LEDGER = ".usage.jsonl";

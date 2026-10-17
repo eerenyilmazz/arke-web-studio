@@ -165,6 +165,18 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     await page.close();
   });
 
+  ui()("shows the work report and the agent settings", async (ctx) => {
+    needBrowser(ctx);
+    const { page, errors } = await open("#/c/ui-bakery/teklif");
+    await page.getByRole("button", { name: "İş Raporu" }).click({ timeout: 5000 });
+    await expect.poll(() => page.locator(".report").count()).toBe(1);
+    await page.goto(`${base}/#/ayarlar`);
+    await page.waitForSelector("#view h1");
+    await expect.poll(() => page.locator(".agent-row").count()).toBe(4);
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
   ui()("works at phone width", async (ctx) => {
     needBrowser(ctx);
     const { page, errors } = await open("#/c/ui-bakery/duzenle", { width: 390, height: 844 });

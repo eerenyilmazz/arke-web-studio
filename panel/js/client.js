@@ -26,6 +26,7 @@ export async function renderClient(view, slug, tab) {
       h("button", { type: "button", disabled: isBusy(), onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
       h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları otomatik düzelt"),
       d.template === "custom" ? h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "concepts", {}) }, "3 tasarım önerisi hazırla") : null,
+      d.template === "custom" && d.locales.length > 1 ? h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "translate", {}) }, "Diğer dilleri güncelle") : null,
       h("button", { type: "button", class: "danger", onclick: () => archiveClient(slug, stage) }, "Müşteriyi arşivle"),
     ),
   );

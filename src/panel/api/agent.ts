@@ -9,7 +9,7 @@ import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
 import { appendInput, readInputs } from "../history.js";
 import { serialiseJob } from "../jobs.js";
-import { addPagePrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "../prompts.js";
+import { addPagePrompt, translatePrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "../prompts.js";
 import { OPTION_IDS } from "../../lib/custom-site.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, MAX_TEXT, asHttp, launchAgent, inboxFiles, stringRecord, isQa } from "./common.js";
 import { filledNote } from "./library.js";
@@ -157,6 +157,16 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     title: deps.factory.defaultTemplate === "custom" ? "Serbest tasarıma geç" : "Yeni şablona geç",
     request: `Siteyi yeni şablona (${deps.factory.defaultTemplate}) taşı.`,
   }),
+
+  translate: (ctx) => {
+    requireCustom(ctx, "Diğer diller serbest tasarımlı sitelerde ayrı iş olarak çevrilir.");
+    const draft = readDraftConfig(clientPaths(ctx.deps.factory.clientsRoot, ctx.slug)) as { i18n?: { defaultLocale?: string; locales?: string[] } };
+    const locales = draft.i18n?.locales ?? [];
+    const def = draft.i18n?.defaultLocale ?? locales[0] ?? "en";
+    if (locales.length < 2) throw new HttpError(400, "Bu sitede tek dil var.");
+    const others = locales.filter((l) => l !== def);
+    return { prompt: translatePrompt(ctx.slug, def, locales), title: "Diğer diller", request: `Diğer dilleri (${others.join(", ")}) varsayılan dile göre güncelle.` };
+  },
 
   revise: ({ slug, body }) => {
     const change = str(body, "request", { max: 4000 })!;

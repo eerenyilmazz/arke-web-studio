@@ -156,7 +156,12 @@ async function textEditor(d) {
         : "Sitenin bütün metin alanları, kimlikleriyle (ör. seo.home.description). Değiştirdikleriniz kaydedilir ve site yeniden oluşturulur." }),
       h("div", { class: "row tx-tools" }, pageSel && h("label", { for: "tx-page", class: "sr-only" }, "Sayfa"), pageSel, h("label", { for: "tx-q", class: "sr-only" }, "Ara"), search),
       rows.length ? h("div", { class: "tx-list" }, ...rows.map((r) => r.row)) : h("p", { class: "muted small", text: "Bu sayfada metin bulunamadı." }),
-      h("div", { class: "row tx-foot" }, status, btn));
+      h("div", { class: "row tx-foot" }, status,
+        h("div", { class: "row" },
+          data.otherLocales?.length ? h("button", { class: "btn", type: "button", disabled: isBusy(), onclick: async () => {
+            if (await ask({ title: "Diğer dilleri güncelle", body: `${data.otherLocales.join(", ")} sayfaları, varsayılan dildeki son hâle göre yeniden çevrilir (daha ucuz modelle). Tasarım değişmez.`, confirm: "Güncelle" })) runAgent(slug, "translate", {});
+          } }, "Diğer dilleri güncelle") : null,
+          btn)));
   };
   holder.append(h("p", { class: "muted small", text: "Metinler yükleniyor…" }));
   load(null);

@@ -54,7 +54,7 @@ export function createPanel(opts: PanelOptions): Panel {
     if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) {
       setTimeout(() => { try { startTranslation(deps, slug); } catch { /* the operator can start it again */ } }, 300);
     }
-    if (record.usage) recordUsage(opts.factory, { at: record.endedAt, slug, kind: record.kind, mode: (record.mode ?? "balanced") as BudgetMode, model: record.model ?? "", usage: record.usage, tokens: record.tokens ?? 0 });
+    if (record.usage) recordUsage(opts.factory, { at: record.endedAt, slug, kind: record.kind, mode: (record.mode ?? "balanced") as BudgetMode, model: record.model ?? "", usage: record.usage, tokens: record.tokens ?? 0, ...(record.provider ? { provider: record.provider } : {}) });
   }, () => readSettings(opts.factory).webResearch, [opts.factory.clientsRoot, opts.factory.inboxDir]);
   const preview = new PreviewServer(opts.previewPort);
   const gate = new ApprovalGate(opts.approvalCode);
