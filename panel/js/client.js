@@ -54,6 +54,7 @@ export async function renderClient(view, slug, tab) {
       ),
     ),
     statusStrip(d),
+    logoBanner(d) || "",
     upgradeBanner(d) || "",
     h("div", { class: tab === "marka" || tab === "teklif" ? "work wide" : "work" },
       tab === "marka" || tab === "teklif" ? null : previewPane(d),
@@ -310,4 +311,20 @@ export function approveDialog(d, kind) {
   document.body.append(dialog);
   dialog.showModal();
   code.focus();
+}
+
+/** The logo changed after the brand was made, or it is another client's logo: say so before any design job. */
+export function logoBanner(d) {
+  const slug = d.status.slug;
+  if (d.sharedLogo) {
+    return h("div", { class: "notice-bar bad", role: "alert" },
+      h("p", {}, h("strong", { text: "Logo başka bir müşteriye ait. " }), h("span", { text: `Bu müşterinin logosu "${d.sharedLogo.name}" müşterisinin logosuyla aynı dosya. Tasarım işleri bu yüzden durdurulur.` })),
+      h("a", { class: "btn btn-sm", href: `#/c/${slug}/bilgiler` }, "Logoyu değiştir"));
+  }
+  if (d.brandStale && d.template === "custom") {
+    return h("div", { class: "notice-bar warn" },
+      h("p", {}, h("strong", { text: "Logo değişti, marka eski logoya göre. " }), h("span", { text: "Renkler, slogan ve imza hareketi önceki logodan geliyor. Yeni logoya göre yenileyiniz; bilgiler ve fiyatlar aynı kalır." })),
+      h("button", { class: "btn btn-sm btn-primary", type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "redesign", {}) }, "Markayı yeni logoya göre yenile"));
+  }
+  return null;
 }

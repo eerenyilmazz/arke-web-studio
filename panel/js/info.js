@@ -1,6 +1,6 @@
 // Sales tracking, concepts, proposal, versions and the information tabs.
 import { approveDialog } from "./client.js";
-import { api, APPROVAL_NAMES, copyButton, fmtTokens, guarded, h, isBusy, LANG_NAMES, MODE_TR, state, time, toast } from "./core.js";
+import { api, APPROVAL_NAMES, ask, copyButton, fmtTokens, guarded, h, isBusy, LANG_NAMES, MODE_TR, state, time, toast } from "./core.js";
 import { PAGE_TR } from "./edit.js";
 import { deployProduction, jobStarted, loadClients, render, runAgent, runTask, unpublish } from "./shell.js";
 
@@ -82,8 +82,8 @@ export function conceptsCard(d) {
         b.concept && h("p", { class: "small", text: b.concept }),
         Array.isArray(b.animations) && h("ul", { class: "small anims" }, ...b.animations.map((a) => h("li", { text: a.idea || a.id }))),
         o.problems.length ? h("p", { class: "err small", text: `Eksik: ${o.problems.join("; ")}` }) : null,
-        h("button", { class: "btn btn-primary", type: "button", disabled: busy || o.problems.length > 0, onclick: () => {
-          if (confirm(`Öneri ${o.id.toUpperCase()} ile site kurulacak (mevcut sayfalar yeniden yazılır; önceki hâl Sürümler'de kalır). Devam?`)) runAgent(slug, "choose-concept", { option: o.id });
+        h("button", { class: "btn btn-primary", type: "button", disabled: busy || o.problems.length > 0, onclick: async () => {
+          if (await ask({ title: `Öneri ${o.id.toUpperCase()} ile siteyi kur`, body: "Mevcut sayfalar bu öneriye göre yeniden yazılır. Önceki hâl Sürümler'de kalır.", confirm: "Siteyi kur" })) runAgent(slug, "choose-concept", { option: o.id });
         } }, "Bunu seç ve siteyi kur"),
       );
     }));
@@ -185,7 +185,7 @@ export function versionsCard(d) {
       h("span", { class: "when", text: time(v.at) }),
       h("span", { class: "what", text: i === 0 ? `${v.message} (şu anki)` : v.message }),
       i === 0 ? null : h("button", { class: "btn btn-sm", type: "button", disabled: isBusy(), onclick: async () => {
-        if (!confirm(`Site "${v.message}" sonrasındaki hâline döndürülecek. Sonraki değişiklikler kaybolmaz, listede kalır. Devam edilsin mi?`)) return;
+        if (!(await ask({ title: "Bu sürüme dön", body: `Site "${v.message}" sonrasındaki hâline döndürülecek.\n\nSonraki değişiklikler kaybolmaz, listede kalır.`, confirm: "Geri al" }))) return;
         const res = await guarded(() => api("POST", `/api/clients/${slug}/versions/restore`, { id: v.id }));
         if (res) { toast("Geri alındı. Siteyi yeniden oluşturup bak."); render(); }
       } }, "Bu Sürüme Dön"),
@@ -322,11 +322,19 @@ export function uploadCard(slug, inbox, assets = [], logo = null) {
         isLogo
           ? h("span", { class: "badge ok", text: "Müşteri logosu" })
           : h("button", { class: "btn btn-sm", type: "button", disabled: isBusy(), onclick: async () => {
-              const r = await guarded(() => api("POST", `/api/clients/${slug}/logo`, { name: f.name, from: f.from }));
+              let r;
+              try {
+                r = await api("POST", `/api/clients/${slug}/logo`, { name: f.name, from: f.from });
+              } catch (e) {
+                if (e.data?.code !== "shared-logo") { toast(e.message, true); return; }
+                const go = await ask({ title: "Bu logo başka bir müşteride", image: `/api/clients/${slug}/${f.from}/${encodeURIComponent(f.name)}`, body: `${e.message}\n\nBilerek aynı logoyu kullanıyorsanız devam edebilirsiniz.`, confirm: "Yine de kullan", danger: true });
+                if (!go) return;
+                r = await guarded(() => api("POST", `/api/clients/${slug}/logo`, { name: f.name, from: f.from, force: true }));
+              }
               if (!r) return;
               current = { ...current, logo: r.logo, assets: current.assets.some((a) => a.name === r.logo.slice(7)) ? current.assets : [...current.assets, { name: r.logo.slice(7), bytes: f.bytes }] };
               draw();
-              toast("Logo kaydedildi. Siteye uygulamak için Marka sekmesinden 'Markayla yeniden tasarla'.");
+              toast("Logo kaydedildi. Marka eski logoya göre; Marka Kimliği sekmesinden 'Marka Kimliğiyle Yeniden Tasarla' ile yeni logoya göre yenileyiniz.");
             } }, "Logo olarak kullan"));
     }));
   };

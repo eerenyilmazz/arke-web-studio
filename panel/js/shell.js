@@ -1,6 +1,7 @@
 // Status pill, routing, sidebar, job progress, notifications and job actions.
+import { renderArchive } from "./archive.js";
 import { renderClient } from "./client.js";
-import { $, api, avatar, guarded, h, ignoreOptional, isBusy, OLD_TABS, plainOf, POLL_MS, state, toast } from "./core.js";
+import { $, api, ask, avatar, guarded, h, ignoreOptional, isBusy, OLD_TABS, plainOf, POLL_MS, state, toast } from "./core.js";
 import { appendLiveLines, STATUS_BADGE } from "./feed.js";
 import { renderHome, renderNew } from "./home.js";
 import { renderLibrary } from "./library.js";
@@ -38,6 +39,7 @@ export function route() {
   if (parts[0] === "new") return { view: "new" };
   if (parts[0] === "ayarlar") return { view: "settings" };
   if (parts[0] === "kutuphane") return { view: "library" };
+  if (parts[0] === "arsiv") return { view: "archive" };
   if (parts[0] === "c" && parts[1]) return { view: "client", slug: parts[1], tab: OLD_TABS[parts[2]] || parts[2] || "sohbet" };
   return { view: "home" };
 }
@@ -47,7 +49,7 @@ export async function render() {
   const r = route();
   const view = $("#view");
   for (const a of document.querySelectorAll(".main-nav a")) {
-    const on = (a.dataset.nav === "home" && (r.view === "home" || r.view === "client" || r.view === "new")) || (a.dataset.nav === "library" && r.view === "library") || (a.dataset.nav === "settings" && r.view === "settings");
+    const on = (a.dataset.nav === "home" && (r.view === "home" || r.view === "client" || r.view === "new")) || (a.dataset.nav === "library" && r.view === "library") || (a.dataset.nav === "archive" && r.view === "archive") || (a.dataset.nav === "settings" && r.view === "settings");
     a.toggleAttribute("aria-current", on);
     if (on) a.setAttribute("aria-current", "page");
   }
@@ -58,6 +60,7 @@ export async function render() {
   if (r.view === "new") view.replaceChildren(renderNew());
   else if (r.view === "settings") view.replaceChildren(await renderSettings());
   else if (r.view === "library") view.replaceChildren(await renderLibrary());
+  else if (r.view === "archive") view.replaceChildren(await renderArchive());
   else if (r.view === "client") await renderClient(view, r.slug, r.tab);
   else view.replaceChildren(renderHome());
 }
@@ -171,35 +174,56 @@ export async function openPreview(slug) {
   if (r) window.open(r.url, "_blank", "noopener");
 }
 
-export function deployProduction(slug, dryRun) {
-  if (!dryRun && !confirm(`${slug} canlıya alınacak. Emin misiniz?`)) return;
+export async function deployProduction(slug, dryRun) {
+  if (!dryRun && !(await ask({ title: "Canlıya al", body: `${slug} gerçek adresinde yayına alınacak. Ziyaretçiler bu hâli görür.`, confirm: "Canlıya al", danger: true }))) return;
   runTask(slug, "deploy", { target: "production", dryRun });
 }
 
 /** Takes the preview or the live site off Cloudflare; the live one needs the short name typed again. */
-export function unpublish(slug, target) {
+export async function unpublish(slug, target) {
   if (target === "production") {
-    const typed = prompt(`Canlı site Cloudflare'den kaldırılacak; ziyaretçiler siteye ulaşamaz. Müşterinin dosyaları ve sürümleri durur, istediğinizde yeniden yayınlayabilirsiniz.\n\nOnaylamak için kısa adı yazın: ${slug}`);
-    if (typed === null) return;
-    if (typed.trim() !== slug) { toast("Kısa ad eşleşmedi, hiçbir şey yapılmadı.", true); return; }
-    runTask(slug, "unpublish", { target, confirm: slug });
+    const yes = await ask({ title: "Canlı siteyi kaldır", body: "Canlı site Cloudflare'den kaldırılacak; ziyaretçiler siteye ulaşamaz.\n\nMüşterinin dosyaları ve sürümleri durur, istediğinizde yeniden yayınlayabilirsiniz.", confirm: "Kaldır", danger: true, typeToConfirm: slug });
+    if (yes) runTask(slug, "unpublish", { target, confirm: slug });
     return;
   }
-  if (confirm("Önizleme adresi kapatılacak; müşteriye gönderdiğiniz link çalışmaz. Devam edilsin mi?")) runTask(slug, "unpublish", { target });
+  if (await ask({ title: "Önizlemeyi kaldır", body: "Önizleme adresi kapatılacak; müşteriye gönderdiğiniz link çalışmaz.", confirm: "Kaldır", danger: true })) runTask(slug, "unpublish", { target });
 }
 
 export async function archiveClient(slug, stage) {
-  const liveNote = stage === "live" ? "\n\nDikkat: site yayında. Arşivlemek siteyi kapatmaz; önce Müşteri Bilgileri → Yayın → Yayından kaldır → Canlı siteyi kaldır." : "";
-  const typed = prompt(`"${slug}" arşivlenecek: listeden kalkar, klasörü sf-clients/_archive altına taşınır (silinmez, geri alınabilir).${liveNote}\n\nOnaylamak için kısa adı yazın: ${slug}`);
-  if (typed === null) return;
-  if (typed.trim() !== slug) { toast("Kısa ad eşleşmedi, hiçbir şey yapılmadı.", true); return; }
+  const liveNote = stage === "live" ? "\n\nDikkat: site yayında. Arşivlemek siteyi kapatmaz; önce Müşteri Bilgileri → Yayın → Yayından kaldır." : "";
+  const yes = await ask({ title: "Müşteriyi arşivle", body: `"${slug}" listeden kalkar ve Arşiv'e taşınır. Silinmez; Arşiv'den geri getirilebilir.${liveNote}`, confirm: "Arşivle", danger: true, typeToConfirm: slug });
+  if (!yes) return;
   const r = await guarded(() => api("DELETE", `/api/clients/${slug}`, { confirm: slug }));
   if (r) { toast(`${slug} arşivlendi (${r.folder}).`); location.hash = "#/"; }
 }
 
+/** Jobs that design with the client's logo: worth one look at the logo before paying for them. */
+const LOGO_JOBS = new Set(["autopilot", "redesign", "from-library", "choose-concept", "brand-board", "concepts", "upgrade-template", "design-content"]);
+
 export async function runAgent(slug, kind, payload) {
   askNotifyPermission();
-  const job = await guarded(() => api("POST", `/api/clients/${slug}/agent/${kind}`, payload));
+  const d = state.detail?.status?.slug === slug ? state.detail : null;
+  if (LOGO_JOBS.has(kind) && d?.logo && !payload?.allowSharedLogo) {
+    const ok = await ask({
+      title: "Bu logoyla tasarlanacak",
+      image: `/api/clients/${slug}/assets/${encodeURIComponent(d.logo.replace(/^assets\//, ""))}`,
+      body: `${d.business?.name || slug} için doğru logo bu mu? Yanlışsa Müşteri Bilgileri → Logo ve Görseller'den değiştiriniz; yanlış logoyla yapılan tasarım boşa kaynak harcar.`,
+      confirm: "Doğru, devam et",
+    });
+    if (!ok) return false;
+  }
+  let job;
+  try {
+    job = await api("POST", `/api/clients/${slug}/agent/${kind}`, payload);
+  } catch (e) {
+    if (e.data?.code === "shared-logo") {
+      const go = await ask({ title: "Logo başka bir müşteriye ait", body: `${e.message}\n\nBilerek aynı logoyu kullanıyorsanız devam edebilirsiniz.`, confirm: "Yine de devam et", danger: true });
+      if (go) return runAgent(slug, kind, { ...payload, allowSharedLogo: true });
+      return false;
+    }
+    toast(e.message, true);
+    return false;
+  }
   if (!job) return false;
   toast("İşlem başlatıldı. Tamamlandığında bildirim alacaksınız.");
   await jobStarted(job);
@@ -220,7 +244,7 @@ export async function jobStarted(job) {
 }
 
 export async function cancelJob(id) {
-  if (!confirm("Çalışan agent işi durdurulsun mu? O ana kadar kaydedilenler kalır.")) return;
+  if (!(await ask({ title: "İşi durdur", body: "Çalışan agent işi durdurulacak. O ana kadar kaydedilenler kalır.", confirm: "Durdur", danger: true }))) return;
   await guarded(() => api("POST", `/api/jobs/${id}/cancel`));
 }
 

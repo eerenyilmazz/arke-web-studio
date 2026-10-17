@@ -2,13 +2,14 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { snapshot } from "../../lib/versions.js";
 import { DESIGN_KINDS, resolvePolicy } from "../budget.js";
 import { applyLibraryDesign, clearStartDesign } from "../library.js";
+import { readBrandStale, sharedLogo } from "../logo-check.js";
 import { readDraftConfig } from "../../lib/client.js";
 import { assertSlug, clientPaths } from "../../lib/paths.js";
 import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
 import { appendInput, readInputs } from "../history.js";
 import { serialiseJob } from "../jobs.js";
-import { fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "../prompts.js";
+import { addPagePrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "../prompts.js";
 import { OPTION_IDS } from "../../lib/custom-site.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, MAX_TEXT, asHttp, launchAgent, inboxFiles, stringRecord, isQa } from "./common.js";
 import { filledNote } from "./library.js";
@@ -46,6 +47,14 @@ async function applyFromLibrary(ctx: JobContext, id: string) {
   if (ctx.deps.jobs.running()) throw new HttpError(409, "Agent başka bir işte; bitince tekrar dene.");
   await snapshot(clientPaths(ctx.deps.factory.clientsRoot, ctx.slug).root, "Önce: kütüphaneden tasarım").catch(() => null);
   return asHttp(() => applyLibraryDesign(ctx.deps.factory, ctx.slug, id));
+}
+
+/** "Sıkça Sorulan Sorular" → "sikca-sorulan-sorular" (the page's folder). */
+function pageSlug(name: string): string {
+  const s = name.toLocaleLowerCase("tr").replace(/[çğıöşü]/g, (c) => ({ ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" })[c] ?? c)
+    .normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  if (s.length < 2) throw new HttpError(400, "Sayfa adı en az iki harf ya da rakam içermeli.");
+  return s;
 }
 
 const JOBS: Readonly<Record<string, JobBuilder>> = {
@@ -133,6 +142,16 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     return { prompt: fromLibraryPrompt(ctx.slug, name, filledNote(applied)), title: `Kütüphaneden: ${name}`, request: `"${name}" tasarımını bu müşteriye uyarla.` };
   },
 
+  "add-page": (ctx) => {
+    requireCustom(ctx, "Ek sayfa yalnızca serbest tasarımlı sitelere eklenir.");
+    const name = (str(ctx.body, "name", { max: 40 }) ?? "").trim();
+    if (name.length < 2) throw new HttpError(400, "Sayfa adı yazınız.");
+    const purpose = (str(ctx.body, "purpose", { optional: true, max: 1200 }) ?? "").trim();
+    const path = pageSlug(name);
+    if (["index", "brand", "css", "js", "assets", "img", "fonts"].includes(path)) throw new HttpError(400, "Bu sayfa adı kullanılamaz; başka bir ad yazınız.");
+    return { prompt: addPagePrompt(ctx.slug, name, path, purpose), input: purpose ? `Ek sayfa "${name}": ${purpose}` : "", title: `Sayfa ekle: ${name}`, request: `"${name}" sayfasını ekle.` };
+  },
+
   "upgrade-template": ({ deps, slug }) => ({
     prompt: upgradeTemplatePrompt(slug, deps.factory.defaultTemplate),
     title: deps.factory.defaultTemplate === "custom" ? "Serbest tasarıma geç" : "Yeni şablona geç",
@@ -158,12 +177,20 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   const build = JOBS[kind!];
   if (!build) throw new HttpError(404, "Bilinmeyen iş türü.");
   const body = await readJsonBody(req, JSON_LIMIT);
+  // A design job with another client's logo wastes the whole job: stop before spending anything.
+  const owner = DESIGN_KINDS.has(kind!) ? sharedLogo(deps.factory, s) : null;
+  if (owner && body.allowSharedLogo !== true) {
+    sendJson(res, 409, { error: `Bu müşterinin logosu "${owner.name}" müşterisinin logosuyla aynı. Müşteri Bilgileri → Logo ve Görseller'den doğru logoyu seçiniz.`, code: "shared-logo", owner });
+    return;
+  }
   const earlier = readInputs(deps.factory, s);
   const spec = await build({ deps, slug: s, body });
   // A version before the agent touches anything, so its changes can always be undone.
   if (!deps.jobs.running()) await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${spec.title}`).catch(() => null);
   const history = DESIGN_KINDS.has(kind!) || kind === "answers" ? earlierInputsBlock(earlier) : earlierInputsBlock(earlier, SMALL_JOB_HISTORY);
-  const job = launchAgent(deps, s, kind!, spec.title, `${spec.prompt}${history}`, spec.request);
+  const stale = DESIGN_KINDS.has(kind!) ? readBrandStale(deps.factory, s) : null;
+  const staleNote = stale ? `\nThe client's logo changed after the brand was made (now ${stale.logo}). First rebuild brand/brand.json from this logo (palette, concept, tagline if it no longer fits, signature motion and brand/signature.html), then the pages; never keep colours that came from the old logo.` : "";
+  const job = launchAgent(deps, s, kind!, spec.title, `${spec.prompt}${staleNote}${history}`, spec.request);
   appendInput(deps.factory, s, kind!, spec.input ?? "");
   sendJson(res, 202, serialiseJob(job));
 }

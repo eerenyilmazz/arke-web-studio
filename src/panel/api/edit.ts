@@ -4,6 +4,8 @@ import path from "node:path";
 import { snapshot } from "../../lib/versions.js";
 import { FORM_ACTION, FORM_FILE, WEB3FORMS_KEY, readClientForm } from "../../lib/form.js";
 import { findInSite, replaceInSite } from "../../lib/site-replace.js";
+import { applyHtmlChanges, contentTexts, htmlTexts, setContentText, type TextChange } from "../../lib/site-texts.js";
+import { listSiteFiles, readSiteFile, writeSiteFile } from "../../lib/custom-site.js";
 import { readDraftConfig } from "../../lib/client.js";
 import { readJsonIfExists, writeJson } from "../../lib/files.js";
 import { assertSlug, clientPaths, type ClientPaths } from "../../lib/paths.js";
@@ -17,6 +19,7 @@ export const editRoutes: Route[] = [
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/quick-edit$`), handler: quickEdit },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/edit/(colors|pages|services|text|form)$`), handler: structuredEdit },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/form$`), handler: saveForm },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/texts$`), handler: pageTexts },
 ];
 
 /** "0534 985 63 19" → "+905349856319" (country decides the prefix for numbers starting with 0). */
@@ -71,8 +74,9 @@ async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRespons
     ? Object.entries(contact).filter(([k, v]) => k !== "phone" && v && typeof before.contact?.[k] === "string" && (before.contact[k] as string).length >= 4 && findInSite(paths2, before.contact[k] as string, { html: true }) > 0)
     : [];
   if (before.template === "custom" && direct.length === changes.length) {
-    replaceInSite(paths2, direct.map(([k, v]) => [before.contact![k] as string, v as string] as const), { html: true });
-    job = await rebuildAfterDirectEdit(deps, s, "Hızlı düzenleme", changes.join("; "), "İletişim bilgileri güncellendi.");
+    job = await rebuildAfterDirectEdit(deps, s, "Hızlı düzenleme", changes.join("; "), "İletişim bilgileri güncellendi.", () => {
+      replaceInSite(paths2, direct.map(([k, v]) => [before.contact![k] as string, v as string] as const), { html: true });
+    });
   } else if (before.template === "custom") {
     const prompt = [
       `Site Factory, client "${s}". Eren changed these contact details in the panel (already saved in site.config.json):`,
@@ -159,8 +163,9 @@ async function editColors({ deps, slug, paths, draft, custom, body }: EditContex
     tools.updateClientConfig(deps.factory, { slug, patch: { design: { palette: Object.fromEntries(changes.map((c) => [c.name, c.to])) } } });
   } else if (changes.every((c) => findInSite(paths, c.from, { caseInsensitive: true }) > 0)) {
     // Every colour code is in the files: swap them directly (brand.json, CSS, SVG, signature demo).
-    replaceInSite(paths, changes.map((c) => [c.from, c.to] as const), { caseInsensitive: true });
-    return { kind: "direct", job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.colors, summary, "Renkler güncellendi.") };
+    return { kind: "direct", job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.colors, summary, "Renkler güncellendi.", () => {
+      replaceInSite(paths, changes.map((c) => [c.from, c.to] as const), { caseInsensitive: true });
+    }) };
   }
   return {
     kind: "plan",
@@ -255,7 +260,89 @@ function replaceInContentFiles(paths: ClientPaths, locales: readonly string[], o
   }
 }
 
-async function editText({ deps, slug, paths, draft, custom, body }: EditContext): Promise<EditResult> {
+/** The page's own file in the default language: home is index.html, any other page <page>/index.html. */
+function pageFile(page: string): string {
+  if (!/^[a-z0-9][a-z0-9-]{0,39}$/.test(page)) throw new HttpError(400, "Geçersiz sayfa.");
+  return page === "home" ? "index.html" : `${page}/index.html`;
+}
+
+/** Pages of a custom site in its default language (other languages live under <locale>/ and are translated). */
+function customPages(paths: ClientPaths, locales: readonly string[]): string[] {
+  const pages: string[] = [];
+  for (const f of listSiteFiles(paths).files) {
+    const m = /^(?:([a-z0-9][a-z0-9-]*)\/)?index\.html$/.exec(f.path);
+    if (!m) continue;
+    if (m[1] && locales.includes(m[1])) continue;
+    pages.push(m[1] ?? "home");
+  }
+  return pages.sort((a, b) => (a === "home" ? -1 : b === "home" ? 1 : a.localeCompare(b)));
+}
+
+/**
+ * Every text of a page with its id (custom sites: from the HTML; template sites: the content fields), so Eren
+ * edits them in place instead of copying text from the site.
+ */
+function pageTexts(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const paths = clientPaths(deps.factory.clientsRoot, s);
+  const draft = readDraftConfig(paths) as Draft;
+  const locale = draft.i18n?.defaultLocale ?? "en";
+  if (draft.template !== "custom") {
+    sendJson(res, 200, { source: "content", pages: [], page: null, items: contentTexts(readJsonIfExists(paths.content(locale)) ?? {}) });
+    return;
+  }
+  const pages = customPages(paths, draft.i18n?.locales ?? []);
+  const asked = new URL(req.url ?? "/", "http://x").searchParams.get("page") ?? "home";
+  const page = pages.includes(asked) ? asked : pages[0] ?? "home";
+  const html = pages.length ? readSiteFile(paths, pageFile(page)).content : "";
+  sendJson(res, 200, { source: "site", pages, page, items: htmlTexts(html), otherLocales: (draft.i18n?.locales ?? []).filter((l) => l !== locale) });
+}
+
+function parseChanges(body: Record<string, unknown>): TextChange[] {
+  const list = Array.isArray(body.changes) ? body.changes : [];
+  const changes = list.slice(0, 200).map((x) => {
+    const o = (x ?? {}) as Record<string, unknown>;
+    return { id: String(o.id ?? "").slice(0, 120), oldText: String(o.oldText ?? "").slice(0, 4000), newText: String(o.newText ?? "").slice(0, 4000) };
+  }).filter((c) => c.id && c.newText.trim() && c.newText.trim() !== c.oldText.trim());
+  if (changes.length === 0) throw new HttpError(400, "Değişen metin yok.");
+  return changes;
+}
+
+/** Edits by id: written directly (no agent), then the site is rebuilt. Other languages are re-translated by a job. */
+async function editTextsById({ deps, slug, paths, draft, custom, body }: EditContext): Promise<EditResult> {
+  const changes = parseChanges(body);
+  const locale = draft.i18n?.defaultLocale ?? "en";
+  const summary = `${changes.length} metin`;
+  // Everything is checked and computed first; files are written only after the version is saved.
+  let write: () => void;
+  try {
+    if (custom) {
+      const page = str(body, "page", { max: 40 })!;
+      const file = pageFile(page);
+      const next = applyHtmlChanges(readSiteFile(paths, file).content, changes);
+      write = () => {
+        writeSiteFile(paths, file, next);
+        // The same sentences in content/*.json, so a later template build or translation keeps them.
+        for (const c of changes) replaceInContentFiles(paths, [locale], c.oldText, c.newText);
+      };
+    } else {
+      let content: unknown = readJsonIfExists(paths.content(locale)) ?? {};
+      for (const c of changes) content = setContentText(content, c.id, c.oldText, c.newText);
+      write = () => { tools.saveContent(deps.factory, { slug, locale: locale as Parameters<typeof tools.saveContent>[1]["locale"], content: content as Record<string, unknown>, replace: true }); };
+    }
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    throw new HttpError(409, (error as Error).message);
+  }
+  const others = (draft.i18n?.locales ?? []).filter((l) => l !== locale);
+  const note = others.length ? `Metinler güncellendi. Diğer dillerdeki (${others.join(", ")}) karşılıkları değişmedi; gerekirse Özel Talep'ten "diğer dilleri güncelle" yazabilirsiniz.` : "Metinler güncellendi.";
+  return { kind: "direct", job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.text, summary, note, write) };
+}
+
+async function editText(ctx: EditContext): Promise<EditResult> {
+  if (Array.isArray(ctx.body.changes)) return editTextsById(ctx);
+  const { deps, slug, paths, draft, custom, body } = ctx;
   const page = str(body, "page", { max: 20 })!;
   const oldText = str(body, "oldText", { max: 2000 })!.trim();
   const newText = str(body, "newText", { max: 2000 })!.trim();
@@ -263,9 +350,10 @@ async function editText({ deps, slug, paths, draft, custom, body }: EditContext)
   const summary = `${page}: "${oldText.slice(0, 40)}" → "${newText.slice(0, 40)}"`;
   // The exact text is on that page: replace it directly (and in the content file, if it is there too).
   if (custom && findInSite(paths, oldText, { html: true, files: pageFiles(page) }) > 0) {
-    replaceInSite(paths, [[oldText, newText]], { html: true, files: pageFiles(page) });
-    replaceInContentFiles(paths, draft.i18n?.locales ?? [], oldText, newText);
-    return { kind: "direct", job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.text, summary, "Metin güncellendi.") };
+    return { kind: "direct", job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.text, summary, "Metin güncellendi.", () => {
+      replaceInSite(paths, [[oldText, newText]], { html: true, files: pageFiles(page) });
+      replaceInContentFiles(paths, draft.i18n?.locales ?? [], oldText, newText);
+    }) };
   }
   return {
     kind: "plan",

@@ -3,6 +3,7 @@ import { createServer, type Server } from "node:http";
 import { readSettings } from "./settings.js";
 import { autoBackup } from "./backup.js";
 import { DESIGN_KINDS, recordUsage, type BudgetMode } from "./budget.js";
+import { clearBrandStale } from "./logo-check.js";
 import path from "node:path";
 import { FACTORY_ROOT, loadFactoryConfig, type FactoryConfig } from "../config.js";
 import { handleApi, startTranslation } from "./api.js";
@@ -48,6 +49,8 @@ export function createPanel(opts: PanelOptions): Panel {
     void snapshot(clientPaths(opts.factory.clientsRoot, slug).root, record.title).catch((error) => console.error(`[panel] version not saved for ${slug}:`, (error as Error).message));
     autoBackup(opts.factory, (msg) => console.log(msg));
     // A finished design job on a multilingual custom site continues with the cheaper translation job.
+    // A finished design job rebuilt the brand from the current logo.
+    if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) clearBrandStale(opts.factory, slug);
     if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) {
       setTimeout(() => { try { startTranslation(deps, slug); } catch { /* the operator can start it again */ } }, 300);
     }

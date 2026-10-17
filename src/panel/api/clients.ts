@@ -7,7 +7,8 @@ import { readBusiness, writeBusiness } from "../business.js";
 import { modeFor, summarise } from "../budget.js";
 import { readStartDesign, setStartDesign } from "../library.js";
 import { ZodError } from "zod";
-import { archiveClient } from "../../lib/archive.js";
+import { logoUsedElsewhere, markBrandStale, readBrandStale, sharedLogo } from "../logo-check.js";
+import { archiveClient, deleteArchived, listArchived, restoreArchived } from "../../lib/archive.js";
 import { readDraftConfig } from "../../lib/client.js";
 import { dirHash, readJsonIfExists } from "../../lib/files.js";
 import { assertSlug, clientPaths, safeJoin } from "../../lib/paths.js";
@@ -19,7 +20,7 @@ import { HttpError, readBody, readJsonBody, sendJson, str } from "../http.js";
 import { appendInput, readHistory } from "../history.js";
 import { serialiseJob } from "../jobs.js";
 import { readBrandBoard, readBrandOptions } from "../../lib/custom-site.js";
-import { type ApiDeps, type Route, SLUG, JSON_LIMIT, UPLOAD_LIMIT, safeFileName, IMAGE_TYPES, assetFiles, inboxFiles } from "./common.js";
+import { type ApiDeps, type Route, SLUG, JSON_LIMIT, UPLOAD_LIMIT, safeFileName, BUSY, asHttp, IMAGE_TYPES, assetFiles, inboxFiles } from "./common.js";
 
 /** Clients: list, create, archive, detail, questionnaires, uploads, logo, business, versions. */
 export const clientRoutes: Route[] = [
@@ -27,6 +28,9 @@ export const clientRoutes: Route[] = [
   { method: "POST", pattern: /^\/api\/clients$/, handler: createClient },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: clientDetail },
   { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: archive },
+  { method: "GET", pattern: /^\/api\/archive$/, handler: (d, _r, res) => sendJson(res, 200, { archived: listArchived(d.factory) }) },
+  { method: "POST", pattern: /^\/api\/archive\/([a-z0-9-]{3,60})\/restore$/, handler: restoreFromArchive },
+  { method: "DELETE", pattern: /^\/api\/archive\/([a-z0-9-]{3,60})$/, handler: deleteFromArchive },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: writeQuestionnaire },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
@@ -133,6 +137,22 @@ async function archive(deps: ApiDeps, req: IncomingMessage, res: ServerResponse,
   sendJson(res, 200, { archived: true, slug: s, folder: path.basename(r.archivedTo) });
 }
 
+async function restoreFromArchive(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [id]: string[]): Promise<void> {
+  if (deps.jobs.running()) throw new HttpError(409, BUSY);
+  const r = asHttp(() => restoreArchived(deps.factory, id!));
+  sendJson(res, 200, { ...r, archived: listArchived(deps.factory) });
+}
+
+/** Permanent: the operator types the client's short name again; only archived clients can be deleted. */
+async function deleteFromArchive(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [id]: string[]): Promise<void> {
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const entry = listArchived(deps.factory).find((e) => e.id === id);
+  if (!entry) throw new HttpError(404, "Arşivde böyle bir kayıt yok.");
+  if (body.confirm !== entry.slug) throw new HttpError(400, "Kalıcı silmek için müşterinin kısa adını (slug) aynen yazın.");
+  asHttp(() => deleteArchived(deps.factory, id!));
+  sendJson(res, 200, { archived: listArchived(deps.factory) });
+}
+
 function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
   const s = assertSlug(slug!);
   const status = tools.getClientStatus(deps.factory, { slug: s });
@@ -167,6 +187,8 @@ function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
     country: (draft as { business?: { country?: string } }).business?.country ?? "GB",
     businessTracking: readBusiness(deps.factory, s),
     startDesign: readStartDesign(deps.factory, s),
+    brandStale: readBrandStale(deps.factory, s),
+    sharedLogo: sharedLogo(deps.factory, s),
     budget: { mode: modeFor(deps.factory, s), usage: summarise(deps.factory).byClient[s] ?? { tokens: 0, costUsd: 0, jobs: 0 } },
     latestTemplate: deps.factory.defaultTemplate,
     inbox: inboxFiles(deps.factory, s),
@@ -247,6 +269,14 @@ async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse,
   const body = await readJsonBody(req, JSON_LIMIT);
   const name = safeFileName(str(body, "name", { max: 120 })!);
   const from = str(body, "from", { max: 10 });
+  // The same file as another client's logo is almost always a mix-up (a pickle shop's logo for a barber):
+  // refused unless Eren confirms it, before anything is saved or any job is paid for.
+  const candidate = from === "inbox" ? safeJoin(deps.factory.inboxDir, s, name) : from === "assets" ? safeJoin(clientPaths(deps.factory.clientsRoot, s).assetsDir, name) : null;
+  const owner = candidate && existsSync(candidate) ? logoUsedElsewhere(deps.factory, s, candidate) : null;
+  if (owner && body.force !== true) {
+    sendJson(res, 409, { error: `Bu dosya "${owner.name}" müşterisinin logosuyla aynı. Yanlış müşteriye mi ekliyorsunuz?`, code: "shared-logo", owner });
+    return;
+  }
   let relPath: string;
   if (from === "inbox") {
     relPath = tools.saveAssetTool(deps.factory, { slug: s, inboxFile: `${s}/${name}`, kind: "logo" }).relPath;
@@ -256,7 +286,10 @@ async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse,
   } else {
     throw new HttpError(400, "Kaynak inbox ya da assets olmalı.");
   }
+  const previous = (readDraftConfig(clientPaths(deps.factory.clientsRoot, s)) as { brand?: { logo?: string | null } }).brand?.logo ?? null;
   tools.updateClientConfig(deps.factory, { slug: s, patch: { brand: { logo: relPath } } });
+  // A new logo on an existing brand: colours, tagline and signature still follow the old one until redesigned.
+  if (previous !== relPath) markBrandStale(deps.factory, s, relPath);
   appendInput(deps.factory, s, "logo", `Eren set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom-site.md); never draw a replacement.`);
   sendJson(res, 200, { logo: relPath });
 }

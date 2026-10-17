@@ -1,5 +1,5 @@
 // Design library, fixed places and library controls.
-import { $, api, guarded, h, ignoreOptional, isBusy, state, toast } from "./core.js";
+import { $, api, ask, guarded, h, ignoreOptional, isBusy, state, toast } from "./core.js";
 import { render, runAgent } from "./shell.js";
 
 // ---------------------------------------------------------------- design library
@@ -64,7 +64,7 @@ export async function renderLibrary() {
         h("p", { class: "small muted", text: d.slots?.length ? `${d.slots.length} sabit alan` : "Sabit alan tanımlı değil" }),
         h("button", { class: "btn btn-sm", type: "button", onclick: async () => { state.libEdit = d.id; render(); } }, "Sabit alanları yönet"),
         h("button", { class: "btn btn-sm danger", type: "button", onclick: async () => {
-          if (!confirm(`"${d.name}" kütüphaneden silinsin mi? Kaynak müşterinin sitesi etkilenmez.`)) return;
+          if (!(await ask({ title: "Kütüphaneden sil", body: `"${d.name}" kütüphaneden silinecek. Kaynak müşterinin sitesi etkilenmez.`, confirm: "Sil", danger: true }))) return;
           if (await guarded(() => api("DELETE", `/api/library/${d.id}`))) render();
         } }, "Kütüphaneden sil"),
       )))),
@@ -136,9 +136,9 @@ export function libraryControls(slug, hasSite) {
     for (const d of rankedDesigns(designs, slug, industry)) pick.append(h("option", { value: d.id }, `${d.score > 0 ? "★ " : ""}${d.name}${d.sector ? ` · ${d.sector}` : ""}`));
   }).catch(ignoreOptional);
   box.append(h("div", { class: "row" }, h("label", { for: "lib-pick", class: "sr-only" }, "Kütüphane tasarımı"), pick,
-    h("button", { class: "btn", type: "button", disabled: isBusy(), onclick: () => {
+    h("button", { class: "btn", type: "button", disabled: isBusy(), onclick: async () => {
       if (!pick.value) { pick.focus(); return; }
-      if (confirm("Mevcut sayfalar kütüphane tasarımıyla değişecek (önceki hâl Sürümler'de kalır). Agent tasarımı bu müşteriye uyarlayacak. Devam?")) runAgent(slug, "from-library", { id: pick.value });
+      if (await ask({ title: "Kütüphane tasarımıyla yeniden kur", body: "Mevcut sayfalar seçilen tasarımla değişir; önceki hâl Sürümler'de kalır.\n\nSabit alanlar panel tarafından doldurulur, kalan metinleri ve markayı agent uyarlar.", confirm: "Yeniden kur" })) runAgent(slug, "from-library", { id: pick.value });
     } }, "Bu tasarımla yeniden kur")));
   return box;
 }

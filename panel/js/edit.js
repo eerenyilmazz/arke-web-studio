@@ -1,8 +1,8 @@
 // Düzenle forms (colours, pages, services, text, contact, form, files).
 import { PALETTE_TR } from "./brand.js";
-import { api, guarded, h, isBusy, toast } from "./core.js";
+import { api, ask, guarded, h, isBusy, toast } from "./core.js";
 import { quickEditCard, uploadCard } from "./info.js";
-import { jobStarted } from "./shell.js";
+import { jobStarted, runAgent } from "./shell.js";
 
 // ---------------------------------------------------------------- Düzenle: forms instead of chat
 
@@ -43,7 +43,9 @@ export async function editForm(id, d) {
       });
       const btn = h("button", { class: "btn btn-primary", type: "button", disabled: busy }, "Sayfaları Uygula");
       btn.onclick = () => submitEdit(slug, "pages", { pages: boxes.filter((b) => b.box.checked || b.pid === "home").map((b) => b.pid) }, btn);
-      return card("Sayfalar", "Kaldırılan sayfa menüden de çıkarılır. Eklenen sayfa marka kimliğine uygun tasarlanır; bilgi eksikse size sorulur.", h("div", { class: "page-checks" }, ...boxes.map((b) => b.el)), btn);
+      const base = card("Sayfalar", "Kaldırılan sayfa menüden de çıkarılır. Eklenen sayfa marka kimliğine uygun tasarlanır; bilgi eksikse size sorulur.", h("div", { class: "page-checks" }, ...boxes.map((b) => b.el)), btn);
+      if (custom) base.append(extraPageForm(slug, busy));
+      return base;
     }
     case "services": {
       const current = (d.content?.[d.defaultLocale]?.services || []).map((x) => ({ ...x }));
@@ -61,14 +63,7 @@ export async function editForm(id, d) {
       btn.onclick = () => submitEdit(slug, "services", { services: [...rows.children].map((r) => { const [t, pr, ds] = r.querySelectorAll("input"); return { title: t.value, price: pr.value, description: ds.value }; }) }, btn);
       return card("Hizmetler ve Fiyatlar", "Liste sitede bu sırayla gösterilir.", rows, h("div", { class: "row" }, h("button", { class: "btn btn-sm", type: "button", onclick: () => addRow() }, "+ Satır Ekle"), btn));
     }
-    case "text": {
-      const page = h("select", { id: "tx-page" }, ...d.pages.map((pg) => h("option", { value: pg }, PAGE_TR[pg] || pg)));
-      const oldT = h("textarea", { id: "tx-old", rows: 2, placeholder: "Sitedeki metni kopyalayıp yapıştırınız", maxlength: 2000 });
-      const newT = h("textarea", { id: "tx-new", rows: 2, placeholder: "Yeni metni yazınız", maxlength: 2000 });
-      const btn = h("button", { class: "btn btn-primary", type: "button", disabled: busy }, "Metni Değiştir");
-      btn.onclick = () => submitEdit(slug, "text", { page: page.value, oldText: oldT.value, newText: newT.value }, btn);
-      return card("Metin", null, h("label", { for: "tx-page" }, "Sayfa", page), h("label", { for: "tx-old" }, "Mevcut metin", oldT), h("label", { for: "tx-new" }, "Yeni metin", newT), btn);
-    }
+    case "text": return textEditor(d);
     case "contact": return h("div", { class: "edit-form", "data-enter": "0" }, quickEditCard(d));
     case "form": return h("div", { class: "edit-form", "data-enter": "0" }, formCard(d));
     default: return h("div", { class: "edit-form", "data-enter": "0" }, uploadCard(slug, d.inbox, d.assets, d.logo));
@@ -93,4 +88,77 @@ export function formCard(d) {
     h("label", { for: "fm-action" }, "Form adresi", action),
     h("label", { for: "fm-key" }, "Erişim anahtarı (sadece Web3Forms)", key),
     h("div", { class: "row" }, h("button", { class: "btn", type: "submit" }, "Kaydet"), add));
+}
+
+// ---------------------------------------------------------------- extra pages (custom sites)
+
+/** A page outside the five standard ones (Randevu, SSS, Kampanyalar…): designed by the agent in the site's brand. */
+function extraPageForm(slug, busy) {
+  const name = h("input", { type: "text", id: "xp-name", maxlength: 40, placeholder: "ör. Sıkça Sorulan Sorular" });
+  const purpose = h("textarea", { id: "xp-purpose", rows: 3, maxlength: 1200, placeholder: "Sayfada ne olacak? Bildiğiniz bilgileri yazınız (ör. 6 soru-cevap: randevu, ödeme, iptal…). Bilgi yoksa agent size sorar, uydurmaz." });
+  const btn = h("button", { class: "btn", type: "button", disabled: busy }, "Sayfayı Ekle");
+  btn.onclick = async () => {
+    if (name.value.trim().length < 2) { name.focus(); return; }
+    if (!(await ask({ title: "Yeni sayfa ekle", body: `"${name.value.trim()}" sayfası sitenin tasarımıyla eklenecek ve menüye konacak. Önceki hâl Sürümler'de kalır.`, confirm: "Ekle" }))) return;
+    runAgent(slug, "add-page", { name: name.value.trim(), purpose: purpose.value.trim() });
+  };
+  return h("div", { class: "extra-page stack-sm" },
+    h("h5", { text: "Ek sayfa" }),
+    h("label", { for: "xp-name" }, "Sayfa adı", name),
+    h("label", { for: "xp-purpose" }, "İçerik", purpose),
+    btn);
+}
+
+// ---------------------------------------------------------------- texts by id
+
+const KIND_TR = { title: "Sekme başlığı", meta: "Arama açıklaması", alt: "Görsel açıklaması", h1: "Ana başlık", h2: "Başlık", h3: "Alt başlık", h4: "Alt başlık", h5: "Alt başlık", h6: "Alt başlık", p: "Paragraf", li: "Liste", a: "Bağlantı", button: "Buton", span: "Kısa metin", strong: "Vurgu", em: "Vurgu", small: "Küçük metin", label: "Form etiketi", figcaption: "Görsel yazısı", blockquote: "Alıntı", td: "Tablo", th: "Tablo başlığı", dt: "Terim", dd: "Açıklama", field: "Alan" };
+
+/**
+ * Every text of a page, each with its id (h1-1, p-3, meta-description…). Eren edits in place; the panel writes
+ * the changes itself and rebuilds (no agent, no tokens). Only changed texts are sent.
+ */
+async function textEditor(d) {
+  const slug = d.status.slug;
+  const holder = h("div", { class: "edit-form text-editor", "data-enter": "0" });
+  const load = async (page) => {
+    const data = await guarded(() => api("GET", `/api/clients/${slug}/texts${page ? `?page=${encodeURIComponent(page)}` : ""}`));
+    if (!data) return;
+    const pageSel = data.pages.length ? h("select", { id: "tx-page", onchange: () => load(pageSel.value) }, ...data.pages.map((pg) => h("option", { value: pg, selected: pg === data.page }, PAGE_TR[pg] || pg))) : null;
+    const search = h("input", { type: "search", id: "tx-q", placeholder: "Metinlerde ara…" });
+    const rows = data.items.map((it) => {
+      const area = h("textarea", { rows: it.text.length > 90 ? 3 : 1, maxlength: 4000, "aria-label": `${it.id} metni` });
+      area.value = it.text;
+      const row = h("div", { class: "tx-row" },
+        h("div", { class: "tx-meta" }, h("code", { text: it.id }), h("span", { class: "muted small", text: KIND_TR[it.kind] || it.kind })),
+        area);
+      area.addEventListener("input", () => { row.classList.toggle("changed", area.value.trim() !== it.text.trim()); count(); });
+      return { it, area, row };
+    });
+    const status = h("span", { class: "muted small" });
+    const btn = h("button", { class: "btn btn-primary", type: "button", disabled: true }, "Değişiklikleri Uygula");
+    const count = () => {
+      const n = rows.filter((r) => r.area.value.trim() !== r.it.text.trim()).length;
+      status.textContent = n ? `${n} metin değişti` : "";
+      btn.disabled = isBusy() || n === 0;
+    };
+    search.addEventListener("input", () => {
+      const q = search.value.toLocaleLowerCase("tr");
+      for (const r of rows) r.row.hidden = Boolean(q) && !`${r.it.id} ${r.it.text}`.toLocaleLowerCase("tr").includes(q);
+    });
+    btn.onclick = () => submitEdit(slug, "text", {
+      page: data.page,
+      changes: rows.filter((r) => r.area.value.trim() !== r.it.text.trim()).map((r) => ({ id: r.it.id, oldText: r.it.text, newText: r.area.value })),
+    }, btn);
+    holder.replaceChildren(
+      h("h4", { text: "Metinler" }),
+      h("p", { class: "muted small", text: data.source === "site"
+        ? `Sayfadaki bütün metinler, kimlikleriyle. Değiştirdikleriniz doğrudan yazılır, agent çalışmaz.${data.otherLocales?.length ? ` Diğer dillerdeki (${data.otherLocales.join(", ")}) karşılıkları değişmez.` : ""}`
+        : "Sitenin bütün metin alanları, kimlikleriyle (ör. seo.home.description). Değiştirdikleriniz kaydedilir ve site yeniden oluşturulur." }),
+      h("div", { class: "row tx-tools" }, pageSel && h("label", { for: "tx-page", class: "sr-only" }, "Sayfa"), pageSel, h("label", { for: "tx-q", class: "sr-only" }, "Ara"), search),
+      rows.length ? h("div", { class: "tx-list" }, ...rows.map((r) => r.row)) : h("p", { class: "muted small", text: "Bu sayfada metin bulunamadı." }),
+      h("div", { class: "row tx-foot" }, status, btn));
+  };
+  holder.append(h("p", { class: "muted small", text: "Metinler yükleniyor…" }));
+  load(null);
+  return holder;
 }

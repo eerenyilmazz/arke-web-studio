@@ -1,5 +1,5 @@
 // Brand board (Marka Kimliği).
-import { api, guarded, h, isBusy, toast } from "./core.js";
+import { api, ask, guarded, h, isBusy, toast } from "./core.js";
 import { conceptsCard } from "./info.js";
 import { libraryControls } from "./library.js";
 import { runAgent } from "./shell.js";
@@ -161,8 +161,8 @@ function boardActions(v, slug) {
   return h("div", { class: "row board-actions" },
     h("button", { class: "btn", type: "button", onclick: () => window.print() }, "Yazdır / PDF"),
     v.custom && v.missing.length > 0 && h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runAgent(slug, "brand-board", {}) }, "Marka kartını tamamlat"),
-    v.custom && h("button", { class: "btn btn-primary", type: "button", disabled: busy, title: "Bilgiler ve metinler aynı kalır; sayfalar markanın imza tasarımıyla baştan yazılır.", onclick: () => {
-      if (confirm("Site markanın imza tasarımıyla baştan yazılacak (bilgiler ve fiyatlar aynı kalır; önceki hâl Sürümler'de durur). Devam?")) runAgent(slug, "redesign", {});
+    v.custom && h("button", { class: "btn btn-primary", type: "button", disabled: busy, title: "Bilgiler ve metinler aynı kalır; sayfalar markanın imza tasarımıyla baştan yazılır.", onclick: async () => {
+      if (await ask({ title: "Markayla yeniden tasarla", body: "Site markanın imza tasarımıyla baştan yazılır. Bilgiler ve fiyatlar aynı kalır; önceki hâl Sürümler'de durur.", confirm: "Yeniden tasarla" })) runAgent(slug, "redesign", {});
     } }, "Marka Kimliğiyle Yeniden Tasarla"),
   );
 }

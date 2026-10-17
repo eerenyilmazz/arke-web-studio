@@ -52,9 +52,17 @@ export function asHttp<T>(fn: () => T): T {
   }
 }
 
-/** Saves a version, then rebuilds: used after the panel changed site files itself (no agent, no tokens). */
-export async function rebuildAfterDirectEdit(deps: ApiDeps, slug: string, title: string, summary: string, note: string) {
+/**
+ * The panel changes site files itself (no agent, no tokens): a version is saved first, so "Önce: …" really is
+ * the state before; then `apply` writes, then the site is rebuilt.
+ */
+export async function rebuildAfterDirectEdit(deps: ApiDeps, slug: string, title: string, summary: string, note: string, apply: () => void) {
   await snapshot(clientPaths(deps.factory.clientsRoot, slug).root, `Önce: ${title}`).catch(() => null);
+  try {
+    apply();
+  } catch (error) {
+    throw new HttpError(400, (error as Error).message);
+  }
   return runOrConflict(() =>
     deps.jobs.startTask(slug, "build", title, async (log) => {
       log("Değişiklik doğrudan uygulandı (asistan kullanılmadı); site yeniden oluşturuluyor…");

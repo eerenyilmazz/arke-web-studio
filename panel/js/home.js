@@ -92,7 +92,7 @@ export function renderNew() {
   name.addEventListener("input", () => { if (!slugTouched) slug.value = slugify(name.value); });
   slug.addEventListener("input", () => (slugTouched = true));
   const industry = h("input", { type: "text", id: "nc-industry", required: true, maxlength: 60, placeholder: "ör. hair salon, family law solicitor" });
-  const info = h("textarea", { id: "nc-info", rows: 7, class: "field", maxlength: 20000, placeholder: "Ör: Erkek kuaförü, Mono. Saç kesimi 500 TL, sakal 300 TL. Ankara Sincan, 0534 985 63 19. Siyah-beyaz renkler." });
+  const info = h("textarea", { id: "nc-info", rows: 12, class: "field", maxlength: 20000, placeholder: "Ör: Erkek kuaförü, Mono. Saç kesimi 500 TL, sakal 300 TL. Ankara Sincan, 0534 985 63 19. Siyah-beyaz renkler." });
   const MAIN = { GB: "en", TR: "tr" };
   const country = h("select", { id: "nc-country" }, h("option", { value: "TR" }, "Türkiye (Türkçe, ₺)"), h("option", { value: "GB" }, "İngiltere (İngilizce, £)"));
   const lang = h("select", { id: "nc-lang" });
@@ -116,7 +116,11 @@ export function renderNew() {
   const designRow = h("label", { for: "nc-design", hidden: true }, "Başlangıç tasarımı (isteğe bağlı)",
     h("span", { class: "help", text: "Kütüphanedeki bir tasarımdan başlanır. Sabit alanlar (ad, telefon, e-posta…) panel tarafından doldurulur; agent yalnızca kalan metinleri ve markayı uyarlar." }), startDesign);
 
-  const form = h("form", { class: "card stack", style: "max-width:40rem", onsubmit: async (e) => {
+  // Two columns on wide screens: who the business is on the left, what the client sent on the right.
+  const hostingChoice = h("div", { class: "seg-choice", role: "radiogroup", "aria-label": "Barındırma" },
+    h("label", {}, h("input", { type: "radio", name: "hosting", value: "managed", checked: true }), h("span", { text: "Bizim Cloudflare hesabımız" })),
+    h("label", {}, h("input", { type: "radio", name: "hosting", value: "client" }), h("span", { text: "Müşterinin kendi hesabı" })));
+  const form = h("form", { class: "new-client", onsubmit: async (e) => {
     e.preventDefault();
     const hosting = form.querySelector("input[name=hosting]:checked")?.value;
     const res = await guarded(() => api("POST", "/api/clients", { businessName: name.value.trim(), slug: slug.value.trim(), industry: industry.value.trim(), hostingModel: hosting, country: country.value, extraLocale: lang.value || undefined, ...(startDesign.value ? { startDesign: startDesign.value } : {}) }));
@@ -127,22 +131,25 @@ export function renderNew() {
     if (!text) return;
     await runAgent(res.slug, "autopilot", { freeText: text, ...(startDesign.value ? { libraryId: startDesign.value } : {}) });
   } },
-    h("h1", { text: "Yeni Müşteri" }),
-    h("p", { class: "muted", text: "Adını ve sektörünü yaz. Bildiklerini alttaki kutuya yapıştırırsan site hemen hazırlanmaya başlar." }),
-    h("label", { for: "nc-name" }, "İşletme adı", name),
-    h("label", { for: "nc-slug" }, "Kısa ad (slug)", h("span", { class: "help", text: "Klasör ve web adresi için kullanılır, sonradan değişmez. Otomatik doldurulur." }), slug),
-    h("label", { for: "nc-industry" }, "Sektör", h("span", { class: "help", text: "İngilizce kısa ad en iyi sonucu verir: barber shop, pickle shop, dentist. Tasarım ve sektör soruları buna göre seçilir." }), industry),
-    h("fieldset", {}, h("legend", { text: "Barındırma" }),
-      h("label", { class: "choice" }, h("input", { type: "radio", name: "hosting", value: "managed", checked: true }), "Bizim Cloudflare hesabımız"),
-      h("label", { class: "choice" }, h("input", { type: "radio", name: "hosting", value: "client" }), "Müşterinin kendi hesabı"),
-    ),
-    h("div", { class: "two" }, h("label", { for: "nc-country" }, "Ülke", country), h("label", { for: "nc-lang" }, "Site dili", lang)),
-    designRow,
-    h("label", { for: "nc-info" }, "Elindeki bilgiler (isteğe bağlı)",
-      h("span", { class: "help", text: "Müşteriden ne biliyorsan yapıştır. Doldurursan site hemen hazırlanmaya başlar; eksik bilgi olursa agent sorar." }),
-      info),
-    infoGuide(info),
-    h("div", { class: "row" }, h("button", { class: "btn btn-primary btn-lg", type: "submit" }, "Müşteriyi oluştur")),
+    h("header", { class: "nc-head" },
+      h("h1", { text: "Yeni Müşteri" }),
+      h("p", { class: "muted", text: "Adını ve sektörünü yazınız. Elinizdeki bilgileri sağdaki kutuya yapıştırırsanız site hemen hazırlanmaya başlar." })),
+    h("section", { class: "card stack nc-business" },
+      h("h2", { class: "nc-title", text: "İşletme" }),
+      h("div", { class: "two" },
+        h("label", { for: "nc-name" }, "İşletme adı", name),
+        h("label", { for: "nc-slug" }, "Kısa ad", h("span", { class: "help", text: "Klasör ve adres için; otomatik dolar, sonradan değişmez." }), slug)),
+      h("label", { for: "nc-industry" }, "Sektör", h("span", { class: "help", text: "İngilizce kısa ad en iyi sonucu verir: barber shop, pickle shop, dentist." }), industry),
+      h("div", { class: "two" }, h("label", { for: "nc-country" }, "Ülke", country), h("label", { for: "nc-lang" }, "Site dili", lang)),
+      h("div", { class: "nc-field" }, h("span", { class: "nc-label", text: "Barındırma" }), hostingChoice),
+      designRow),
+    h("section", { class: "card stack nc-info" },
+      h("h2", { class: "nc-title", text: "Müşteriden gelen bilgiler" }),
+      h("label", { for: "nc-info", class: "sr-only" }, "Elindeki bilgiler"),
+      h("p", { class: "help", text: "İsteğe bağlı. Doldurursanız site hemen hazırlanmaya başlar; eksik bilgi olursa size sorulur." }),
+      info,
+      infoGuide(info)),
+    h("footer", { class: "nc-foot" }, h("button", { class: "btn btn-primary btn-lg", type: "submit" }, "Müşteriyi oluştur")),
   );
   return form;
 }

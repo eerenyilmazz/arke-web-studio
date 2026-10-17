@@ -17,6 +17,17 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Panel düzenlemeleri (1.13.0)
+
+- **Arşiv** (sol menü): arşivlenen müşterileri görme, **Geri getir**, **Kalıcı sil** (kısa adı yeniden yazarak; yalnızca arşivdekiler silinebilir).
+- **Onay pencereleri** panelin kendi tasarımında (tarayıcının gri kutuları yerine); tehlikeli işlemlerde kısa ad yazılmadan buton açılmaz.
+- **Açık tema**: sol menü de açık renk; panel renkleri tamamen tema değişkenlerinden. "⋯" menüsü artık kartların arkasında kalmıyor.
+- **Yeni Müşteri** iki sütunlu: solda işletme, sağda müşteriden gelen bilgiler.
+- **Metin** formu: sayfadaki bütün metinler kimlikleriyle (`h1-1`, `p-3`, `meta-description`, şablon sitelerde `seo.home.description`); yerinde düzenlenir, agent çalışmaz.
+- **Ek sayfa** (Sayfalar formu, serbest tasarım): ad + içerik notu → sitenin tasarımıyla yeni sayfa ve menü bağlantısı.
+- **Logo kontrolleri** (token harcamadan): başka bir müşterinin logosuyla aynı dosya seçilirse uyarı; tasarım işinden önce logo gösterilip onay istenir; logo değişince "Marka eski logoya göre" uyarısı ve tek tıkla yenileme.
+- Doğrudan düzenlemelerde "Önce: …" sürümü artık gerçekten değişiklikten önce kaydediliyor.
+
 ## Yayından kaldırma (1.12.0)
 
 Müşteri Bilgileri → Yayın → **Yayından kaldır**: "Önizlemeyi kaldır" ya da "Canlı siteyi kaldır" (canlı için kısa adı yeniden yazmak gerekir). Cloudflare'deki Worker silinir; müşterinin dosyaları, sürümleri ve onayları durur, yeniden yayınlanabilir. Agent bunu yapamaz (MCP aracı değil, sadece panel).

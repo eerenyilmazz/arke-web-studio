@@ -96,7 +96,12 @@ export async function api(method, url, body, raw = false) {
     body: raw ? body : body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.hint ? `${data.error} — ${data.hint}` : data.error || `Hata ${res.status}`);
+  if (!res.ok) {
+    const err = new Error(data.hint ? `${data.error} — ${data.hint}` : data.error || `Hata ${res.status}`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
   return data;
 }
 
@@ -149,4 +154,32 @@ export const usageLine = (job) => job.tokens ? h("span", { class: "usage", title
  */
 export function ignoreOptional(error) {
   console.debug("[panel] optional data not loaded:", error);
+}
+
+/**
+ * The panel's own confirmation dialog (instead of the browser's confirm/prompt, which ignore the theme).
+ * Resolves true when confirmed. With `typeToConfirm`, the button stays disabled until that text is typed.
+ */
+export function ask({ title, body = "", confirm = "Devam", cancel = "Vazgeç", danger = false, typeToConfirm = null, image = null }) {
+  return new Promise((resolve) => {
+    const dialog = h("dialog", { class: "ask-dialog", "aria-labelledby": "ask-title" });
+    const typed = typeToConfirm ? h("input", { type: "text", id: "ask-typed", autocomplete: "off", spellcheck: "false", placeholder: typeToConfirm }) : null;
+    const ok = h("button", { class: `btn ${danger ? "btn-danger-solid" : "btn-primary"}`, type: "submit", disabled: Boolean(typeToConfirm) }, confirm);
+    if (typed) typed.addEventListener("input", () => { ok.disabled = typed.value.trim() !== typeToConfirm; });
+    let answered = false;
+    const done = (value) => { if (answered) return; answered = true; dialog.close(); dialog.remove(); resolve(value); };
+    dialog.addEventListener("cancel", (e) => { e.preventDefault(); done(false); });
+    dialog.append(h("form", { method: "dialog", onsubmit: (e) => { e.preventDefault(); if (!ok.disabled) done(true); } },
+      h("h2", { id: "ask-title", text: title }),
+      image && h("img", { class: "ask-image", src: image, alt: "" }),
+      ...String(body).split("\n\n").filter(Boolean).map((t) => h("p", { class: "muted", text: t })),
+      typed && h("label", { for: "ask-typed" }, "Onaylamak için yazın: ", h("code", { text: typeToConfirm }), typed),
+      h("div", { class: "row ask-actions" },
+        h("button", { class: "btn", type: "button", onclick: () => done(false) }, cancel),
+        ok),
+    ));
+    document.body.append(dialog);
+    dialog.showModal();
+    (typed || ok).focus();
+  });
 }

@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AGENT_DENIED_READS, AGENT_DENIED_TOOLS } from "../src/panel/jobs.js";
 import { createPanel, type Panel } from "../src/panel/server.js";
 import * as tools from "../src/tools.js";
-import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } from "./helpers.js";
+import { COMPLETE_CONTENT, COMPLETE_PATCH, PNG_1PX, installStubTemplate, tempFactory } from "./helpers.js";
 
 const KEY = "k".repeat(64);
 let panel: Panel | null = null;
@@ -516,6 +516,96 @@ describe("edits without the assistant", () => {
     const r3 = await fetch(`${base}/api/clients/direct-co/edit/text`, { method: "POST", headers: json, body: JSON.stringify({ page: "home", oldText: "Not on the page", newText: "x" }) });
     expect(((await r3.json()) as { kind: string }).kind).toBe("edit-text");
     expect(calls.length).toBe(1);
+  });
+});
+
+describe("1.13: archive, texts by id, extra page, logo checks", () => {
+  async function customCo(calls: SpawnCall[], slug = "text-co", name = "Text Co") {
+    const ctx = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...ctx.auth, "Content-Type": "application/json" };
+    await fetch(`${ctx.base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug, businessName: name, industry: "barber shop", hostingModel: "managed" }) });
+    tools.updateClientConfig(ctx.factory, { slug, patch: { ...COMPLETE_PATCH, template: "custom" } });
+    tools.saveContent(ctx.factory, { slug, locale: "en", content: COMPLETE_CONTENT });
+    const { writePassingCustomSite } = await import("./helpers.js");
+    writePassingCustomSite(ctx.factory, slug, name);
+    return { ...ctx, json };
+  }
+  const idle = async (base: string, auth: Record<string, string>) =>
+    waitFor(async () => !((await (await fetch(`${base}/api/meta`, { headers: auth })).json()) as { running: unknown }).running);
+
+  it("archives, lists, restores and deletes for good only with the short name", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, json, auth } = await customCo(calls, "arch-co", "Arch Co");
+    await fetch(`${base}/api/clients/arch-co`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "arch-co" }) });
+    let list = ((await (await fetch(`${base}/api/archive`, { headers: auth })).json()) as { archived: Array<{ id: string; slug: string; name: string }> }).archived;
+    expect(list[0]).toMatchObject({ slug: "arch-co", name: "Arch Co" });
+    const r = await fetch(`${base}/api/archive/${list[0]!.id}/restore`, { method: "POST", headers: json });
+    expect(r.status).toBe(200);
+    expect(((await (await fetch(`${base}/api/clients`, { headers: auth })).json()) as { clients: Array<{ slug: string }> }).clients.map((c) => c.slug)).toContain("arch-co");
+    await fetch(`${base}/api/clients/arch-co`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "arch-co" }) });
+    list = ((await (await fetch(`${base}/api/archive`, { headers: auth })).json()) as { archived: Array<{ id: string; slug: string; name: string }> }).archived;
+    expect((await fetch(`${base}/api/archive/${list[0]!.id}`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "wrong" }) })).status).toBe(400);
+    expect((await fetch(`${base}/api/archive/${list[0]!.id}`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "arch-co" }) })).status).toBe(200);
+    expect(((await (await fetch(`${base}/api/archive`, { headers: auth })).json()) as { archived: unknown[] }).archived).toEqual([]);
+    expect((await fetch(`${base}/api/archive/..%2F..%2Fetc/restore`, { method: "POST", headers: json })).status).toBe(404);
+  });
+
+  it("edits page texts by id without the agent, saving the version before the change", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, json, auth, factory } = await customCo(calls);
+    const t = (await (await fetch(`${base}/api/clients/text-co/texts?page=home`, { headers: auth })).json()) as { pages: string[]; page: string; items: Array<{ id: string; text: string }> };
+    expect(t.pages).toEqual(["home", "contact"]);
+    const h1 = t.items.find((i) => i.id === "h1-1")!;
+    expect(h1.text).toBe("Text Co");
+    const r = await fetch(`${base}/api/clients/text-co/edit/text`, { method: "POST", headers: json, body: JSON.stringify({ page: "home", changes: [{ id: "h1-1", oldText: "Text Co", newText: "Fresh cuts & shaves" }] }) });
+    expect(r.status).toBe(202);
+    await idle(base, auth);
+    expect(calls.length).toBe(0);
+    expect(tools.readSiteFileTool(factory, { slug: "text-co", path: "index.html" }).content).toContain("Fresh cuts &amp; shaves");
+    const { listVersions } = await import("../src/lib/versions.js");
+    const { clientPaths } = await import("../src/lib/paths.js");
+    const { execFileSync } = await import("node:child_process");
+    const before = (await listVersions(clientPaths(factory.clientsRoot, "text-co").root)).find((v) => v.message.startsWith("Önce: Metin"))!;
+    const old = execFileSync("git", ["show", `${before.id}:site/index.html`], { cwd: clientPaths(factory.clientsRoot, "text-co").root, encoding: "utf8" });
+    expect(old).toContain(">Text Co</h1>");
+    // Stale edit (the page changed since it was opened): nothing written.
+    expect((await fetch(`${base}/api/clients/text-co/edit/text`, { method: "POST", headers: json, body: JSON.stringify({ page: "home", changes: [{ id: "h1-1", oldText: "Text Co", newText: "x" }] }) })).status).toBe(409);
+  });
+
+  it("adds an extra page through a narrow agent job", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, json } = await customCo(calls);
+    const r = await fetch(`${base}/api/clients/text-co/agent/add-page`, { method: "POST", headers: json, body: JSON.stringify({ name: "Sıkça Sorulan Sorular", purpose: "Randevu ve ödeme soruları" }) });
+    expect(r.status).toBe(202);
+    expect(calls[0]!.stdin).toMatch(/at sikca-sorulan-sorular\/index\.html/);
+    expect(calls[0]!.stdin).toMatch(/<client_data>\nRandevu ve ödeme soruları/);
+    expect((await fetch(`${base}/api/clients/text-co/agent/add-page`, { method: "POST", headers: json, body: JSON.stringify({ name: "css" }) })).status).toBe(400);
+  });
+
+  it("stops another client's logo, and marks the brand stale when the logo changes", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, json, auth } = await customCo(calls, "barber-co", "Barber Co");
+    // A second client whose logo is the same file.
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "pickle-co", businessName: "Pickle Co", industry: "pickle shop", hostingModel: "managed" }) });
+    const png = PNG_1PX;
+    for (const slug of ["pickle-co", "barber-co"]) await fetch(`${base}/api/clients/${slug}/inbox/logo.png`, { method: "PUT", headers: { ...auth, "Content-Type": "application/octet-stream" }, body: png });
+    expect((await fetch(`${base}/api/clients/pickle-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "logo.png", from: "inbox" }) })).status).toBe(200);
+    const dup = await fetch(`${base}/api/clients/barber-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "logo.png", from: "inbox" }) });
+    expect(dup.status).toBe(409);
+    expect(((await dup.json()) as { code: string; owner: { name: string } })).toMatchObject({ code: "shared-logo", owner: { name: "Pickle Co" } });
+    expect((await fetch(`${base}/api/clients/barber-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "logo.png", from: "inbox", force: true }) })).status).toBe(200);
+    const detail = (await (await fetch(`${base}/api/clients/barber-co`, { headers: auth })).json()) as { brandStale: unknown; sharedLogo: { slug: string } | null };
+    expect(detail.brandStale).toBeTruthy();
+    expect(detail.sharedLogo?.slug).toBe("pickle-co");
+    // A design job is not started with another client's logo unless Eren confirms it.
+    const job = await fetch(`${base}/api/clients/barber-co/agent/redesign`, { method: "POST", headers: json, body: "{}" });
+    expect(job.status).toBe(409);
+    expect(calls.length).toBe(0);
+    const ok = await fetch(`${base}/api/clients/barber-co/agent/redesign`, { method: "POST", headers: json, body: JSON.stringify({ allowSharedLogo: true }) });
+    expect(ok.status).toBe(202);
+    expect(calls[0]!.stdin).toMatch(/logo changed after the brand was made/);
+    await idle(base, auth);
+    expect(((await (await fetch(`${base}/api/clients/barber-co`, { headers: auth })).json()) as { brandStale: unknown }).brandStale).toBeNull();
   });
 });
 
