@@ -76,7 +76,8 @@ export function modeFor(factory: FactoryConfig, slug: string): BudgetMode {
 export function resolvePolicy(factory: FactoryConfig, slug: string, kind: string): AgentPolicy {
   const mode = modeFor(factory, slug);
   const p = PROFILES[mode];
-  const job = DESIGN_KINDS.has(kind) ? p.design : p.edit;
+  // Translation is long but simple: the edit (cheaper) model with design-sized limits, half the design cap.
+  const job = kind === "translate" ? { model: p.edit.model, maxTurns: p.design.maxTurns, tokenCap: Math.round(p.design.tokenCap / 2) } : DESIGN_KINDS.has(kind) ? p.design : p.edit;
   return { mode, ...job, skills: p.skills, research: p.research && readSettings(factory).webResearch, screenshots: p.screenshots };
 }
 

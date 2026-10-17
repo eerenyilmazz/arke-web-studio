@@ -161,7 +161,11 @@ Files (paths inside `site/`):
 
 ```
 brand/brand.json   brand/logo.svg    brand/signature.html
-css/site.css       js/site.js          (shared by all pages; small, no frameworks)
+css/base.css       provided by the factory: reset, .wrap/.section/.grid/.stack/.cluster, skip link, focus,
+                   .btn, form fields, reduced motion. Link it first on every page; never rewrite it.
+css/site.css       the brand layer only: set --c-bg --c-surface --c-ink --c-muted --c-line --c-accent
+                   --c-accent-ink --font-heading --font-body (and --wrap), then the design itself
+js/site.js         (shared by all pages; small, no frameworks)
 index.html         about/index.html    services/index.html   gallery/index.html   contact/index.html
 404.html           robots.txt          sitemap.xml (only when site.domain is set)
 <locale>/…         the same pages for each extra locale (default locale at the root)

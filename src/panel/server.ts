@@ -2,10 +2,10 @@
 import { createServer, type Server } from "node:http";
 import { readSettings } from "./settings.js";
 import { autoBackup } from "./backup.js";
-import { recordUsage, type BudgetMode } from "./budget.js";
+import { DESIGN_KINDS, recordUsage, type BudgetMode } from "./budget.js";
 import path from "node:path";
 import { FACTORY_ROOT, loadFactoryConfig, type FactoryConfig } from "../config.js";
-import { handleApi } from "./api.js";
+import { handleApi, startTranslation } from "./api.js";
 import { ApprovalGate } from "./approval-gate.js";
 import { allowedHost, allowedOrigin, cookieHeader, hasSession, newSessionKey, safeEqual } from "./auth.js";
 import { HttpError, sendError } from "./http.js";
@@ -47,6 +47,10 @@ export function createPanel(opts: PanelOptions): Panel {
     // Every finished job leaves a version the operator can go back to (no-op when nothing changed).
     void snapshot(clientPaths(opts.factory.clientsRoot, slug).root, record.title).catch(() => {});
     autoBackup(opts.factory, (msg) => console.log(msg));
+    // A finished design job on a multilingual custom site continues with the cheaper translation job.
+    if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) {
+      setTimeout(() => { try { startTranslation(deps, slug); } catch { /* the operator can start it again */ } }, 300);
+    }
     if (record.usage) recordUsage(opts.factory, { at: record.endedAt, slug, kind: record.kind, mode: (record.mode ?? "balanced") as BudgetMode, model: record.model ?? "", usage: record.usage, tokens: record.tokens ?? 0 });
   }, () => readSettings(opts.factory).webResearch, [opts.factory.clientsRoot, opts.factory.inboxDir]);
   const preview = new PreviewServer(opts.previewPort);

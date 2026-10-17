@@ -1,4 +1,5 @@
-import { existsSync } from "node:fs";
+import path from "node:path";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { effectiveFormAction, readClientForm } from "./form.js";
 import type { FactoryConfig } from "../config.js";
 import { ContentSchema, type Content } from "../schema/content.js";
@@ -48,8 +49,20 @@ export interface ClientStatus {
   readonly lastBuild: BuildRecord | null;
   readonly lastDeploy: DeployRecord | null;
   readonly contentHash: string;
+  /** Research saved by an earlier job (save_research_notes): reuse it instead of searching the web again. */
+  readonly researchNotes: { savedAt: string; text: string } | null;
   /** Where a contact form may post (set by Eren in the panel), or null: then no <form>, only contact buttons. */
   readonly contactForm: { action: string; accessKey?: string } | null;
+}
+
+export const RESEARCH_FILE = "research.md";
+const MAX_RESEARCH_SHOWN = 6000;
+
+export function readResearchNotes(root: string): { savedAt: string; text: string } | null {
+  const f = path.join(root, RESEARCH_FILE);
+  if (!existsSync(f)) return null;
+  const text = readFileSync(f, "utf8");
+  return { savedAt: statSync(f).mtime.toISOString(), text: text.length > MAX_RESEARCH_SHOWN ? `${text.slice(0, MAX_RESEARCH_SHOWN)}…` : text };
 }
 
 export function openClient(factory: FactoryConfig, slug: string): ClientPaths {
@@ -160,6 +173,7 @@ export function clientStatus(factory: FactoryConfig, slug: string): ClientStatus
     lastBuild,
     lastDeploy,
     contentHash: hash,
+    researchNotes: readResearchNotes(paths.root),
     contactForm: readClientForm(paths.factoryDir) ?? (effectiveFormAction(paths.factoryDir) ? { action: effectiveFormAction(paths.factoryDir)! } : null),
   };
 }

@@ -302,3 +302,37 @@ describe("cheap edits: site map, part reads and exact replacements", () => {
     expect(() => tools.editSiteFileTool(f, { slug: SLUG, path: "../site.config.json", oldText: "a", newText: "b" })).toThrow(/not allowed/);
   });
 });
+
+describe("token savers in the factory", () => {
+  it("reports safety problems when a file is written, not only at build time", async () => {
+    const { f } = await customClient();
+    const bad = tools.writeSiteFileTool(f, { slug: SLUG, path: "js/x.js", content: 'fetch("https://x.example")' }) as { problems?: string[] };
+    expect(bad.problems?.[0]).toMatch(/network request/);
+    const good = tools.writeSiteFileTool(f, { slug: SLUG, path: "js/y.js", content: "console.log(1)" }) as { problems?: string[] };
+    expect(good.problems).toBeUndefined();
+  });
+
+  it("replaces exact text and colours across the site, escaping for HTML", async () => {
+    const { f, paths } = await customClient();
+    writeGoodSite(f);
+    const { findInSite, replaceInSite } = await import("../src/lib/site-replace.js");
+    expect(findInSite(paths, "Willow & Thread", { html: true })).toBeGreaterThan(0);
+    replaceInSite(paths, [["Willow & Thread", "Oak & Co"]], { html: true });
+    expect(tools.readSiteFileTool(f, { slug: SLUG, path: "index.html" }).content).toContain("Oak &amp; Co");
+    replaceInSite(paths, [["#2f4a2a", "#123456"]], { caseInsensitive: true });
+    expect(tools.readSiteFileTool(f, { slug: SLUG, path: "css/site.css" }).content).toContain("#123456");
+    expect(tools.readSiteFileTool(f, { slug: SLUG, path: "brand/brand.json" }).content).toContain("#123456");
+  });
+
+  it("keeps research notes for later jobs and gives the base stylesheet once", async () => {
+    const { f, paths } = await customClient();
+    tools.saveResearchNotes(f, { slug: SLUG, notes: "Verified: open since 1998 (source: https://example.org)." });
+    expect(tools.getClientStatus(f, { slug: SLUG }).researchNotes?.text).toMatch(/1998/);
+    const { ensureBaseKit } = await import("../src/lib/custom-site.js");
+    const { FACTORY_ROOT } = await import("../src/config.js");
+    const path = await import("node:path");
+    expect(ensureBaseKit(paths, path.join(FACTORY_ROOT, "rules", "site-kit", "base.css"))).toBe(true);
+    expect(ensureBaseKit(paths, path.join(FACTORY_ROOT, "rules", "site-kit", "base.css"))).toBe(false);
+    expect(tools.readSiteFileTool(f, { slug: SLUG, path: "css/base.css" }).content).toMatch(/prefers-reduced-motion/);
+  });
+});

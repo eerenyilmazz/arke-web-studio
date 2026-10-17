@@ -61,6 +61,7 @@ export const AGENT_ALLOWED_TOOLS = [
   "mcp__site-factory__site_map",
   "mcp__site-factory__read_site_file_part",
   "mcp__site-factory__search_design_knowledge",
+  "mcp__site-factory__save_research_notes",
   "Read",
   "Grep",
   "Glob",

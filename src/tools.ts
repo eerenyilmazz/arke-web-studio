@@ -1,18 +1,18 @@
-import { existsSync, mkdirSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { FACTORY_ROOT, type FactoryConfig } from "./config.js";
 import { ContentSchema } from "./schema/content.js";
 import { SCHEMA_VERSION, SiteConfigSchema, type Locale } from "./schema/site-config.js";
 import { approvalState } from "./lib/approvals.js";
 import { saveAsset, type AssetKind } from "./lib/assets.js";
-import { clientStatus, loadValidClient, openClient, readDraftConfig, type BuildRecord, type DeployRecord } from "./lib/client.js";
+import { RESEARCH_FILE, clientStatus, loadValidClient, openClient, readDraftConfig, type BuildRecord, type DeployRecord } from "./lib/client.js";
 import { FactoryError } from "./lib/errors.js";
 import { run } from "./lib/exec.js";
 import { contentHash, dirHash, readJsonIfExists, writeJson, writeText } from "./lib/files.js";
 import { deepMerge } from "./lib/merge.js";
 import { assertSlug, clientPaths, safeJoin } from "./lib/paths.js";
 import { checkInputs, checkOutput, renderReport, type CheckResult } from "./lib/quality.js";
-import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, editSiteFile, readSiteFileAround, siteMap, deleteSiteFile, isCustom, listSiteFiles, readSiteFile, writeSiteFile } from "./lib/custom-site.js";
+import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, editSiteFile, fileProblems, readSiteFileAround, siteMap, deleteSiteFile, isCustom, listSiteFiles, readSiteFile, writeSiteFile } from "./lib/custom-site.js";
 import { takeScreenshots } from "./lib/screenshots.js";
 import { searchKnowledge } from "./lib/knowledge.js";
 import { effectiveFormAction } from "./lib/form.js";
@@ -558,14 +558,22 @@ export function writeSiteFileTool(factory: FactoryConfig, args: { slug: string; 
   if (!isCustom(template)) {
     throw new FactoryError(`Client "${args.slug}" uses the ${template} template, which you do not write code for.`, 'Only sites with template "custom" are written by hand. Change config and content instead.');
   }
-  return writeSiteFile(paths, args.path, args.content);
+  const written = writeSiteFile(paths, args.path, args.content);
+  return withProblems(written, args.path, args.content, paths.factoryDir);
+}
+
+/** Write results carry the file's safety problems right away, so they are fixed before a build. */
+function withProblems<T extends object>(result: T, rel: string, content: string, factoryDir: string) {
+  const problems = fileProblems(rel, content, effectiveFormAction(factoryDir));
+  return problems.length ? { ...result, problems, fix: "The build will fail on these. Fix them now with edit_site_file." } : result;
 }
 
 export function editSiteFileTool(factory: FactoryConfig, args: { slug: string; path: string; oldText: string; newText: string; all?: boolean }) {
   const paths = openClient(factory, assertSlug(args.slug));
   const template = (readDraftConfig(paths) as { template?: string }).template ?? "";
   if (!isCustom(template)) throw new FactoryError(`Client "${args.slug}" uses the ${template} template, which you do not write code for.`);
-  return editSiteFile(paths, args.path, args.oldText, args.newText, args.all ?? false);
+  const r = editSiteFile(paths, args.path, args.oldText, args.newText, args.all ?? false);
+  return withProblems(r, args.path, readSiteFile(paths, args.path).content, paths.factoryDir);
 }
 
 /** A few passages of design knowledge (rules and skills) for one question; see lib/knowledge.ts. */
@@ -575,6 +583,13 @@ export function searchDesignKnowledge(args: { query: string; k?: number }) {
     results: hits.map((h) => ({ source: h.source, heading: h.heading, text: h.text })),
     note: hits.length ? "Rules (rules/…) win over skills when they disagree." : "Nothing found; try other words (sector, section, colour, type, motion).",
   };
+}
+
+/** Research notes for a client (verified facts with sources, sector examples), reused by later jobs. */
+export function saveResearchNotes(factory: FactoryConfig, args: { slug: string; notes: string }) {
+  const paths = openClient(factory, assertSlug(args.slug));
+  writeFileSync(path.join(paths.root, RESEARCH_FILE), `${args.notes.trim()}\n`);
+  return { saved: true, chars: args.notes.length };
 }
 
 export function siteMapTool(factory: FactoryConfig, args: { slug: string }) {

@@ -17,6 +17,16 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Kaynak tasarrufu (1.9.0)
+
+- **Doğrudan düzenleme:** Renk kodu, sayfada birebir geçen metin, e-posta / adres / çalışma saatleri değişiklikleri agent'sız yapılır, site yeniden derlenir ("Kaynak kullanılmadı"). Değer bulunamazsa iş agent'a gider; tahminle değiştirilmez.
+- **Kısa geçmiş:** Küçük işlere önceki girdilerin yalnızca en yenileri (~4.000 karakter) verilir; tasarım işleri tamamını alır.
+- **Kural arama:** Düzeltme ve derleme-onarım işleri kuralları baştan sona okumaz; `search_design_knowledge`, `site_map`, `read_site_file_part`, `edit_site_file` ile gerekeni alır.
+- **Yazarken kontrol:** `write_site_file` / `edit_site_file` güvenlik sorunlarını hemen bildirir; derleme sonunda tekrar tur atılmaz.
+- **Temel CSS:** Serbest tasarımlara `css/base.css` (reset, düzen, buton, form, azaltılmış hareket) bir kez kopyalanır; agent bunları tekrar yazmaz. Var olan dosyaya dokunulmaz.
+- **Araştırma notları:** Doğrulanan bilgiler `<müşteri>/research.md`'ye kaydedilir, sonraki işler web'i tekrar taramaz.
+- **İkinci dil ayrı iş:** Tasarım yalnızca varsayılan dilde yapılır; başarıyla bitince "Diğer diller" işi daha ucuz modelle otomatik başlar.
+
 ## Serbest tasarım (yeni müşterilerin varsayılanı)
 
 Agent her müşteri için önce **marka kimliğini** tasarlar (konsept, logo, renkler, yazı tipleri, görsel dil ve o işe özel 2–4 imza animasyonu: turşucuda kavanozun dolması, kabarcıklar, kapağın açılması gibi), sonra siteyi sıfırdan yazar. Kurallar `rules/custom-site.md`, örnek `rules/examples/uzunoglu/`.

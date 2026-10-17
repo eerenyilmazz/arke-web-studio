@@ -10,8 +10,9 @@ import { listVersions, restoreVersion, snapshot } from "../lib/versions.js";
 import { readBusiness, writeBusiness } from "./business.js";
 import { readSettings, writeSettings } from "./settings.js";
 import { backupNow, checkBackupDir, listBackups } from "./backup.js";
-import { BUDGET_MODES, MODE_LABELS, PROFILES, monthlyBlock, modeFor, resolvePolicy, summarise } from "./budget.js";
+import { BUDGET_MODES, DESIGN_KINDS, MODE_LABELS, PROFILES, monthlyBlock, modeFor, resolvePolicy, summarise } from "./budget.js";
 import { FORM_ACTION, FORM_FILE, WEB3FORMS_KEY, readClientForm } from "../lib/form.js";
+import { findInSite, replaceInSite } from "../lib/site-replace.js";
 import { applyLibraryDesign, deleteFromLibrary, libraryPreview, listLibrary, saveToLibrary } from "./library.js";
 import { ZodError } from "zod";
 import { archiveClient } from "../lib/archive.js";
@@ -25,8 +26,9 @@ import * as tools from "../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "./http.js";
 import { appendInput, readHistory, readInputs } from "./history.js";
 import { serialiseJob, type JobRunner } from "./jobs.js";
-import { TOOLS_NOTE, finalPrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
-import { OPTION_IDS, readBrandBoard, readBrandOptions } from "../lib/custom-site.js";
+import { TOOLS_NOTE, finalPrompt, translatePrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "./prompts.js";
+import { OPTION_IDS, ensureBaseKit, readBrandBoard, readBrandOptions } from "../lib/custom-site.js";
+import { FACTORY_ROOT } from "../config.js";
 import type { PreviewServer } from "./preview.js";
 
 const JSON_LIMIT = 256 * 1024;
@@ -196,6 +198,7 @@ const QUICK_FIELDS = ["phone", "email", "address", "hours"] as const;
  */
 async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
   const s = assertSlug(slug!);
+  if (deps.jobs.running()) throw new HttpError(409, "Başka bir işlem sürüyor; tamamlanınca tekrar deneyiniz.");
   const paths = clientPaths(deps.factory.clientsRoot, s);
   const before = readDraftConfig(paths) as { template?: string; business?: { country?: string }; contact?: Record<string, unknown>; whatsapp?: { number?: string | null } };
   const body = await readJsonBody(req, JSON_LIMIT);
@@ -222,7 +225,16 @@ async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRespons
   ];
   if (changes.length === 0) throw new HttpError(400, "Değişiklik yok.");
   let job;
-  if (before.template === "custom") {
+  // E-mail, address and hours are written on the site exactly as saved: replace them directly when the old
+  // value is found. Phone numbers are shown in local formats, so those still go to the assistant.
+  const paths2 = clientPaths(deps.factory.clientsRoot, s);
+  const direct = before.template === "custom"
+    ? Object.entries(contact).filter(([k, v]) => k !== "phone" && v && typeof before.contact?.[k] === "string" && (before.contact[k] as string).length >= 4 && findInSite(paths2, before.contact[k] as string, { html: true }) > 0)
+    : [];
+  if (before.template === "custom" && direct.length === changes.length) {
+    replaceInSite(paths2, direct.map(([k, v]) => [before.contact![k] as string, v as string] as const), { html: true });
+    job = await rebuildAfterDirectEdit(deps, s, "Hızlı düzenleme", changes.join("; "), "İletişim bilgileri güncellendi.");
+  } else if (before.template === "custom") {
     const prompt = [
       `Site Factory, client "${s}". Eren changed these contact details in the panel (already saved in site.config.json):`,
       ...changes.map((c) => `- ${c}`),
@@ -271,8 +283,12 @@ const EDIT_TAIL = "Change nothing else: no other text, colour, layout or animati
  * Structured edits from the panel's "Düzenle" cards. Eren fills a form instead of writing to the agent; the panel
  * validates it, saves what it can itself, and gives the agent an exact, narrow instruction (or none at all).
  */
+const BUSY = "Başka bir işlem sürüyor; tamamlanınca tekrar deneyiniz.";
+
 async function structuredEdit(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug, type]: string[]): Promise<void> {
   const s = assertSlug(slug!);
+  // Nothing is changed while another job works on the files.
+  if (deps.jobs.running()) throw new HttpError(409, BUSY);
   tools.getClientStatus(deps.factory, { slug: s });
   const paths = clientPaths(deps.factory.clientsRoot, s);
   const draft = readDraftConfig(paths) as { template?: string; pages?: string[]; i18n?: { defaultLocale?: string; locales?: string[] }; design?: { palette?: Record<string, string> } };
@@ -294,6 +310,12 @@ async function structuredEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRe
       if (changes.length === 0) throw new HttpError(400, "Değişen renk yok.");
       if (!custom) {
         tools.updateClientConfig(deps.factory, { slug: s, patch: { design: { palette: Object.fromEntries(changes.map((c) => [c.name, c.to])) } } });
+      } else if (changes.every((c) => findInSite(paths, c.from, { caseInsensitive: true }) > 0)) {
+        // Every colour code is in the files: swap them directly (brand.json, CSS, SVG, signature demo).
+        replaceInSite(paths, changes.map((c) => [c.from, c.to] as const), { caseInsensitive: true });
+        const done = await rebuildAfterDirectEdit(deps, s, EDIT_TITLES.colors!, changes.map((c) => `${c.name} ${c.from}→${c.to}`).join(", "), "Renkler güncellendi.");
+        sendJson(res, 202, serialiseJob(done));
+        return;
       }
       lines.push("Eren changed these brand colours in the panel:", ...changes.map((c) => `- ${c.name}: ${c.from} → ${c.to}`),
         "Replace each old value with the new one in brand/brand.json (palette), every css, js, html and svg file of the site and brand/signature.html, including tints you derived from it (rgb/hsl forms and lighter or darker variants: derive them again from the new colour). Mirror the change into design.palette in the config if that colour is there.",
@@ -363,6 +385,27 @@ async function structuredEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRe
       const newText = str(body, "newText", { max: 2000 })!.trim();
       if (!oldText || !newText) throw new HttpError(400, "Eski ve yeni metni yaz.");
       needsAgent = true;
+      // The exact text is on that page: replace it directly (and in the content file, if it is there too).
+      if (custom && findInSite(paths, oldText, { html: true, files: pageFiles(page) }) > 0) {
+        replaceInSite(paths, [[oldText, newText]], { html: true, files: pageFiles(page) });
+        for (const locale of draft.i18n?.locales ?? []) {
+          const file = paths.content(locale);
+          if (!existsSync(file)) continue;
+          const raw = readFileSync(file, "utf8");
+          const enc = (t: string) => JSON.stringify(t).slice(1, -1);
+          if (!raw.includes(enc(oldText))) continue;
+          const next = raw.split(enc(oldText)).join(enc(newText));
+          try {
+            JSON.parse(next);
+            writeFileSync(file, next);
+          } catch {
+            // leave the content file as it was
+          }
+        }
+        const done = await rebuildAfterDirectEdit(deps, s, EDIT_TITLES.text!, `${page}: "${oldText.slice(0, 40)}" → "${newText.slice(0, 40)}"`, "Metin güncellendi.");
+        sendJson(res, 202, serialiseJob(done));
+        return;
+      }
       lines.push(`Eren wants one text changed on the "${page}" page (all languages if the text exists in several).`,
         "Current text (as he sees it on the site):", `«${oldText}»`, "New text, exactly as written:", `«${newText}»`,
         "Find that text (or the closest match on that page) and replace it. If it comes from content/*.json, change it there too. If you cannot find it, change nothing and say so.");
@@ -426,7 +469,7 @@ function meta(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse): void {
 }
 
 /** Rough time a job of each kind takes here: median of recent successful runs across clients, else a default. */
-const DEFAULT_SECONDS: Readonly<Record<string, number>> = { autopilot: 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, concepts: 360, "quick-edit": 180, "brand-board": 300, redesign: 900, "from-library": 600 };
+const DEFAULT_SECONDS: Readonly<Record<string, number>> = { autopilot: 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, concepts: 360, "quick-edit": 180, "brand-board": 300, redesign: 900, "from-library": 600, translate: 600 };
 const RECENT_RUNS = 20;
 function typicalSeconds(deps: ApiDeps): Record<string, number> {
   const byKind = new Map<string, number[]>();
@@ -707,7 +750,11 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   }
   // A version before the agent touches anything, so its changes can always be undone.
   if (!deps.jobs.running()) await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${title}`).catch(() => null);
-  const job = launchAgent(deps, s, kind!, title, `${prompt}${earlierInputsBlock(earlier)}`, request);
+  // Design jobs get everything pasted before; small changes get only the most recent part (a few thousand
+  // characters), enough for facts that were noted but not saved, without paying for the whole history each time.
+  const SMALL_JOB_HISTORY = 4000;
+  const history = DESIGN_KINDS.has(kind!) || kind === "answers" ? earlierInputsBlock(earlier) : earlierInputsBlock(earlier, SMALL_JOB_HISTORY);
+  const job = launchAgent(deps, s, kind!, title, `${prompt}${history}`, request);
   appendInput(deps.factory, s, kind!, input);
   sendJson(res, 202, serialiseJob(job));
 }
@@ -762,6 +809,25 @@ function cancelJob(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [i
 
 // ---------------------------------------------------------------- helpers
 
+/** Saves a version, then rebuilds: used after the panel changed site files itself (no agent, no tokens). */
+async function rebuildAfterDirectEdit(deps: ApiDeps, slug: string, title: string, summary: string, note: string) {
+  await snapshot(clientPaths(deps.factory.clientsRoot, slug).root, `Önce: ${title}`).catch(() => null);
+  return runOrConflict(() =>
+    deps.jobs.startTask(slug, "build", title, async (log) => {
+      log("Değişiklik doğrudan uygulandı (asistan kullanılmadı); site yeniden oluşturuluyor…");
+      const r = await tools.buildSite(deps.factory, { slug });
+      if (!r.passed) throw new Error(`Kontroller geçmedi: ${r.checks.filter((c) => c.status === "fail").map((c) => c.name).join(", ")}`);
+      return `${note} Kaynak kullanılmadı.`;
+    }, `${title}: ${summary}`),
+  );
+}
+
+/** Site files of one page, in every language: home is index.html, others <page>/index.html (and <locale>/…). */
+function pageFiles(page: string): (rel: string) => boolean {
+  if (page === "home") return (rel) => /^(?:[a-z]{2}\/)?index\.html$/.test(rel);
+  return (rel) => new RegExp(`^(?:[a-z]{2}\\/)?${page}\\/index\\.html$`).test(rel);
+}
+
 /**
  * Every agent job starts here: the monthly budget is checked, the client's budget mode decides model, steps,
  * cap, skills and research, and the prompt gets the mode-dependent parts.
@@ -770,8 +836,26 @@ function launchAgent(deps: ApiDeps, slug: string, kind: string, title: string, p
   const blocked = monthlyBlock(deps.factory);
   if (blocked) throw new HttpError(409, blocked);
   const policy = resolvePolicy(deps.factory, slug, kind);
+  // Custom sites get the factory's base stylesheet once, so no job pays for writing resets and layout helpers.
+  if ((readDraftConfig(clientPaths(deps.factory.clientsRoot, slug)) as { template?: string }).template === "custom") {
+    ensureBaseKit(clientPaths(deps.factory.clientsRoot, slug), path.join(FACTORY_ROOT, "rules", "site-kit", "base.css"));
+  }
   const text = finalPrompt(prompt.startsWith(TOOLS_NOTE) ? prompt : `${TOOLS_NOTE}\n${prompt}`, policy);
   return runOrConflict(() => deps.jobs.startAgent(slug, kind, title, text, request, policy));
+}
+
+/**
+ * After a design job: when the site has more than one language, the other languages are added by a separate
+ * translation job on the cheaper model, instead of the design job writing every page twice.
+ */
+export function startTranslation(deps: ApiDeps, slug: string) {
+  const paths = clientPaths(deps.factory.clientsRoot, slug);
+  const draft = readDraftConfig(paths) as { template?: string; i18n?: { defaultLocale?: string; locales?: string[] } };
+  const locales = draft.i18n?.locales ?? [];
+  const def = draft.i18n?.defaultLocale ?? locales[0] ?? "en";
+  if (draft.template !== "custom" || locales.length < 2 || deps.jobs.running()) return null;
+  if (!existsSync(path.join(paths.root, "site", "index.html"))) return null;
+  return launchAgent(deps, slug, "translate", "Diğer diller", translatePrompt(slug, def, locales), `Siteyi ${locales.filter((l) => l !== def).join(", ")} diline çevir.`);
 }
 
 function runOrConflict<T>(fn: () => T): T {

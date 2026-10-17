@@ -208,6 +208,15 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     handler(factory, "search_design_knowledge", (a: { query: string; k?: number }) => tools.searchDesignKnowledge(a)),
   );
   server.registerTool(
+    "save_research_notes",
+    {
+      title: "Save research notes",
+      description: "Saves this client's research (verified facts with source links, estimated/unverified points marked, 3–5 sector examples with one line each) so later jobs reuse it instead of searching again. Replaces earlier notes. Plain text or Markdown, up to 12,000 characters.",
+      inputSchema: { slug, notes: z.string().min(20).max(12_000) },
+    },
+    handler(factory, "save_research_notes", (a: { slug: string; notes: string }) => tools.saveResearchNotes(factory, a)),
+  );
+  server.registerTool(
     "site_map",
     {
       title: "Site map",

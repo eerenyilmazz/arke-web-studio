@@ -37,7 +37,7 @@ describe("MCP server over stdio", () => {
   it("exposes the tools, resources and prompt", async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
-      ["build_site", "create_client", "delete_site_file", "deploy", "generate_design_system", "list_site_files", "read_site_file", "write_site_file", "generate_questionnaire", "get_client_status", "list_clients", "save_asset", "save_content", "update_client_config", "edit_site_file", "site_map", "read_site_file_part", "search_design_knowledge"].sort(),
+      ["build_site", "create_client", "delete_site_file", "deploy", "generate_design_system", "list_site_files", "read_site_file", "write_site_file", "generate_questionnaire", "get_client_status", "list_clients", "save_asset", "save_content", "update_client_config", "edit_site_file", "site_map", "read_site_file_part", "search_design_knowledge", "save_research_notes"].sort(),
     );
     const { resources } = await client.listResources();
     expect(resources.map((r) => r.uri)).toContain("factory://rules/agents");

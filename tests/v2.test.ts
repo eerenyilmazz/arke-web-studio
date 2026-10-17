@@ -88,3 +88,26 @@ describe("Turkish clients", () => {
     expect(cfg.business).toMatchObject({ country: "TR", currency: "TRY", timezone: "Europe/Istanbul" });
   });
 });
+
+describe("cheaper small jobs", () => {
+  it("translation uses the cheaper model with room for a whole site", async () => {
+    const { resolvePolicy, PROFILES } = await import("../src/panel/budget.js");
+    const f = tempFactory();
+    const p = resolvePolicy(f, "any-client", "translate");
+    expect(p.model).toBe(PROFILES.balanced.edit.model);
+    expect(p.maxTurns).toBe(PROFILES.balanced.design.maxTurns);
+    expect(p.tokenCap).toBe(PROFILES.balanced.design.tokenCap / 2);
+  });
+
+  it("small jobs get only the newest earlier inputs that fit", async () => {
+    const { earlierInputsBlock } = await import("../src/panel/prompts.js");
+    const inputs = [
+      { at: "2026-01-01T00:00:00Z", text: "old ".repeat(2000) },
+      { at: "2026-02-01T00:00:00Z", text: "newest request" },
+    ];
+    const short = earlierInputsBlock(inputs as never, 4000);
+    expect(short).toContain("newest request");
+    expect(short).not.toContain("old old old");
+    expect(earlierInputsBlock(inputs as never)).toContain("old old old");
+  });
+});

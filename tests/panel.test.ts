@@ -479,6 +479,39 @@ describe("token budget", () => {
   });
 });
 
+describe("edits without the assistant", () => {
+  async function customSite(calls: SpawnCall[]) {
+    const ctx = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...ctx.auth, "Content-Type": "application/json" };
+    await fetch(`${ctx.base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "direct-co", businessName: "Direct & Co", industry: "bakery", hostingModel: "managed" }) });
+    tools.updateClientConfig(ctx.factory, { slug: "direct-co", patch: { ...COMPLETE_PATCH, template: "custom" } });
+    tools.saveContent(ctx.factory, { slug: "direct-co", locale: "en", content: COMPLETE_CONTENT });
+    const w = (p: string, c: string) => tools.writeSiteFileTool(ctx.factory, { slug: "direct-co", path: p, content: c });
+    w("brand/brand.json", JSON.stringify({ concept: "Bread from a wood oven, crust and flour dust.", personality: ["warm", "honest"], palette: { crust: "#8A4B16", flour: "#F6F1E4", ink: "#1B1B1B" }, fonts: { heading: "Fraunces", body: "Inter" }, visualLanguage: "Loaves, flour dust and oven light.", voice: "Short and warm.", animations: [{ id: "dough-rise", idea: "Dough rises on scroll in the hero.", trigger: "scroll" }, { id: "flour-dust", idea: "Flour dust falls from the cursor.", trigger: "pointer" }] }));
+    w("css/site.css", ":root{--crust:#8A4B16;--flour:#F6F1E4;--ink:#1B1B1B}");
+    w("index.html", '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width"><title>Direct &amp; Co</title></head><body><h1 class="dough-rise">Fresh bread every morning</h1></body></html>');
+    return { ...ctx, json };
+  }
+
+  it("changes colours and exact text itself (no agent run) and asks the agent only when the text is not found", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, json, auth, factory } = await customSite(calls);
+    const r1 = await fetch(`${base}/api/clients/direct-co/edit/colors`, { method: "POST", headers: json, body: JSON.stringify({ colors: { crust: "#123456" } }) });
+    expect(r1.status).toBe(202);
+    expect(((await r1.json()) as { kind: string }).kind).toBe("build");
+    await waitFor(async () => !((await (await fetch(`${base}/api/meta`, { headers: auth })).json()) as { running: unknown }).running);
+    expect(tools.readSiteFileTool(factory, { slug: "direct-co", path: "css/site.css" }).content).toContain("#123456");
+    const r2 = await fetch(`${base}/api/clients/direct-co/edit/text`, { method: "POST", headers: json, body: JSON.stringify({ page: "home", oldText: "Fresh bread every morning", newText: "Bread & butter, daily" }) });
+    expect(((await r2.json()) as { kind: string }).kind).toBe("build");
+    await waitFor(async () => !((await (await fetch(`${base}/api/meta`, { headers: auth })).json()) as { running: unknown }).running);
+    expect(tools.readSiteFileTool(factory, { slug: "direct-co", path: "index.html" }).content).toContain("Bread &amp; butter, daily");
+    expect(calls.length).toBe(0);
+    const r3 = await fetch(`${base}/api/clients/direct-co/edit/text`, { method: "POST", headers: json, body: JSON.stringify({ page: "home", oldText: "Not on the page", newText: "x" }) });
+    expect(((await r3.json()) as { kind: string }).kind).toBe("edit-text");
+    expect(calls.length).toBe(1);
+  });
+});
+
 describe("earlier inputs are kept between agent jobs", () => {
   it("gives the next job everything pasted before, as client data", async () => {
     const calls: SpawnCall[] = [];

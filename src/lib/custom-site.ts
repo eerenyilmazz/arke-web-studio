@@ -233,6 +233,31 @@ function formProblems(rel: string, html: string, formAction: string | null): str
   return out;
 }
 
+/**
+ * Safety problems of one file on its own (everything except links between files and the 404 page). Used by the
+ * build and right when a file is written, so the agent fixes a problem at once instead of after a full build.
+ */
+export function fileProblems(rel: string, text: string, formAction: string | null): string[] {
+  const problems: string[] = [];
+  const ext = path.extname(rel).toLowerCase();
+  if (ext === ".html") {
+    const markup = stripScripts(text);
+    for (const r of HTML_RULES) if (r.pattern.test(text)) problems.push(`${rel}: ${r.label}`);
+    for (const r of SCRIPT_RULES) if (r.pattern.test(inlineScripts(text))) problems.push(`${rel}: ${r.label}`);
+    if (/\son[a-z]+\s*=\s*["'][^"']*(?:fetch|location|cookie|eval)/i.test(markup)) problems.push(`${rel}: unsafe inline event handler`);
+    problems.push(...externalStyleProblems(markup).map((p) => `${rel}: ${p}`));
+    problems.push(...formProblems(rel, markup, formAction));
+    if (!/<meta[^>]+name=["']viewport["']/i.test(text)) problems.push(`${rel}: missing viewport meta (needed for phones)`);
+  } else if (ext === ".js") {
+    for (const r of SCRIPT_RULES) if (r.pattern.test(text)) problems.push(`${rel}: ${r.label}`);
+  } else if (ext === ".css") {
+    problems.push(...externalStyleProblems(text).map((p) => `${rel}: ${p}`));
+  } else if (ext === ".svg") {
+    if (/<script\b|\son[a-z]+\s*=|javascript:/i.test(text)) problems.push(`${rel}: script inside SVG`);
+  }
+  return problems;
+}
+
 export function checkCustomCode(distDir: string, formAction: string | null): CheckResult[] {
   const problems: string[] = [];
   const files = readdirSync(distDir, { recursive: true, withFileTypes: true })
@@ -241,24 +266,9 @@ export function checkCustomCode(distDir: string, formAction: string | null): Che
   for (const abs of files) {
     const rel = path.relative(distDir, abs).replaceAll("\\", "/");
     if (rel.startsWith(`${ASSETS_URL_DIR}/`)) continue;
-    const ext = path.extname(rel).toLowerCase();
     const text = readFileSync(abs, "utf8");
-    if (ext === ".html") {
-      const markup = stripScripts(text);
-      for (const r of HTML_RULES) if (r.pattern.test(text)) problems.push(`${rel}: ${r.label}`);
-      for (const r of SCRIPT_RULES) if (r.pattern.test(inlineScripts(text))) problems.push(`${rel}: ${r.label}`);
-      if (/\son[a-z]+\s*=\s*["'][^"']*(?:fetch|location|cookie|eval)/i.test(markup)) problems.push(`${rel}: unsafe inline event handler`);
-      problems.push(...externalStyleProblems(markup).map((p) => `${rel}: ${p}`));
-      problems.push(...brokenLinks(distDir, rel, markup));
-      problems.push(...formProblems(rel, markup, formAction));
-      if (!/<meta[^>]+name=["']viewport["']/i.test(text)) problems.push(`${rel}: missing viewport meta (needed for phones)`);
-    } else if (ext === ".js") {
-      for (const r of SCRIPT_RULES) if (r.pattern.test(text)) problems.push(`${rel}: ${r.label}`);
-    } else if (ext === ".css") {
-      problems.push(...externalStyleProblems(text).map((p) => `${rel}: ${p}`));
-    } else if (ext === ".svg") {
-      if (/<script\b|\son[a-z]+\s*=|javascript:/i.test(text)) problems.push(`${rel}: script inside SVG`);
-    }
+    problems.push(...fileProblems(rel, text, formAction));
+    if (rel.endsWith(".html")) problems.push(...brokenLinks(distDir, rel, stripScripts(text)));
   }
   if (!existsSync(path.join(distDir, "404.html"))) problems.push("404.html is missing");
   return [
@@ -334,6 +344,16 @@ interface Brand {
 }
 
 export const SIGNATURE_FILE = "brand/signature.html";
+/** The factory's brand-neutral base stylesheet, copied into every custom site so the agent does not write it. */
+export const BASE_CSS = "css/base.css";
+
+export function ensureBaseKit(paths: ClientPaths, kitFile: string): boolean {
+  const dest = path.join(siteDir(paths), BASE_CSS);
+  if (existsSync(dest) || !existsSync(kitFile)) return false;
+  mkdirSync(path.dirname(dest), { recursive: true });
+  writeFileSync(dest, readFileSync(kitFile, "utf8"));
+  return true;
+}
 /** Written by the panel when a site starts from a library design: the source client's facts (see panel/library.ts). */
 export const LIBRARY_SOURCE_FILE = "library-source.json";
 
