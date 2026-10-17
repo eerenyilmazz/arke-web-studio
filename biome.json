@@ -1,0 +1,42 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"files": {
+		"includes": [
+			"src/**",
+			"panel/**",
+			"tests/**",
+			"scripts/**",
+			"!**/node_modules",
+			"!**/dist"
+		]
+	},
+	"formatter": { "enabled": false },
+	"assist": { "enabled": false },
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "none",
+			"suspicious": {
+				"noEmptyBlockStatements": "warn",
+				"noDoubleEquals": "warn",
+				"noDebugger": "warn",
+				"noDuplicateObjectKeys": "error",
+				"noShadowRestrictedNames": "warn"
+			},
+			"correctness": {
+				"noUnusedImports": "warn",
+				"noUnusedVariables": "warn",
+				"noUndeclaredVariables": "off"
+			},
+			"complexity": {
+				"noExcessiveLinesPerFunction": {
+					"level": "warn",
+					"options": { "maxLines": 80, "skipBlankLines": true }
+				}
+			},
+			"style": {
+				"useConst": "warn"
+			}
+		}
+	}
+}

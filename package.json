@@ -1,6 +1,6 @@
 {
   "name": "site-factory",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "private": true,
   "description": "MCP server + rules for producing small-business showcase websites from a fixed template and a validated config.",
   "type": "module",
@@ -18,7 +18,8 @@
     "test": "vitest run",
     "schema": "tsx src/cli/export-schema.ts",
     "approve": "tsx src/cli/approve.ts",
-    "panel": "npm run build && node dist/panel/server.js"
+    "panel": "npm run build && node dist/panel/server.js",
+    "lint": "biome lint"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
@@ -26,6 +27,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.14",
     "@types/node": "^22.20.5",
     "impeccable": "4.5.2",
     "playwright-core": "^1.56.0",

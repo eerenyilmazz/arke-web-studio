@@ -1,6 +1,6 @@
 // Status pill, routing, sidebar, job progress, notifications and job actions.
 import { renderClient } from "./client.js";
-import { $, api, avatar, guarded, h, isBusy, OLD_TABS, plainOf, POLL_MS, state, toast } from "./core.js";
+import { $, api, avatar, guarded, h, ignoreOptional, isBusy, OLD_TABS, plainOf, POLL_MS, state, toast } from "./core.js";
 import { appendLiveLines, STATUS_BADGE } from "./feed.js";
 import { renderHome, renderNew } from "./home.js";
 import { renderLibrary } from "./library.js";
@@ -130,7 +130,7 @@ export function jobProgress(job) {
 /** Ticks the elapsed time and the bar once a second while a job runs. */
 
 export function askNotifyPermission() {
-  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission().catch(() => {});
+  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission().catch(ignoreOptional);
 }
 
 export function chime(ok) {

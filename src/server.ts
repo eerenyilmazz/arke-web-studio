@@ -53,6 +53,16 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     },
   );
 
+  registerClientTools(server, factory);
+  registerContentTools(server, factory);
+  registerSiteFileTools(server, factory);
+  registerDeployTool(server, factory);
+
+  return server;
+}
+
+/** Clients, questionnaires and config (registration order is the order the agent meets the tools). */
+function registerClientTools(server: McpServer, factory: FactoryConfig): void {
   server.registerTool(
     "list_clients",
     { title: "List clients", description: "All client folders and their current stage.", inputSchema: {}, annotations: { readOnlyHint: true } },
@@ -114,7 +124,10 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     },
     handler(factory, "update_client_config", (a: Parameters<typeof tools.updateClientConfig>[1]) => tools.updateClientConfig(factory, a)),
   );
+}
 
+/** Texts, images, the design system and the build. */
+function registerContentTools(server: McpServer, factory: FactoryConfig): void {
   server.registerTool(
     "save_content",
     {
@@ -165,7 +178,10 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     },
     handler(factory, "build_site", (a: { slug: string }) => tools.buildSite(factory, a)),
   );
+}
 
+/** Custom sites: the agent writes site/ only through these, with the factory's safety checks. */
+function registerSiteFileTools(server: McpServer, factory: FactoryConfig): void {
   const sitePath = z.string().min(1).max(130).describe("Path inside the client's site/ folder, e.g. index.html, css/site.css, tr/index.html, brand/brand.json");
   server.registerTool(
     "list_site_files",
@@ -241,7 +257,10 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     { title: "Delete site file", description: "Deletes one file from the client's site/ folder.", inputSchema: { slug, path: sitePath } },
     handler(factory, "delete_site_file", (a: { slug: string; path: string }) => tools.deleteSiteFileTool(factory, a)),
   );
+}
 
+/** Publishing, gated by approvals the agent cannot create. */
+function registerDeployTool(server: McpServer, factory: FactoryConfig): void {
   server.registerTool(
     "deploy",
     {
@@ -286,8 +305,6 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
       ],
     }),
   );
-
-  return server;
 }
 
 async function main(): Promise<void> {

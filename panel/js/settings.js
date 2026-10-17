@@ -1,5 +1,5 @@
 // Settings: publishing, budget, sender, backups, web research.
-import { $, api, copyButton, fmtTokens, guarded, h, MODE_TR, MODEL_TR, toast } from "./core.js";
+import { $, api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODE_TR, MODEL_TR, toast } from "./core.js";
 import { askNotifyPermission, chime } from "./shell.js";
 
 // ---------------------------------------------------------------- settings: publishing setup
@@ -85,7 +85,7 @@ export function budgetCard() {
     meter.className = `meter ${pct >= 90 ? "bad" : pct >= 70 ? "warn" : ""}`;
     stats.textContent = `Bu ay: ${fmtTokens(u.monthTokens)} birim, ${u.monthJobs} işlem${u.monthCostUsd ? `, tahmini ~$${u.monthCostUsd.toFixed(2)}` : ""}${u.monthlyBudget ? ` · sınır ${fmtTokens(u.monthlyBudget)} (%${pct})` : ""}`;
     showProfile();
-  }).catch(() => {});
+  }).catch(ignoreOptional);
   load();
   return h("form", { class: "card stack", onsubmit: async (e) => {
     e.preventDefault();
@@ -107,7 +107,7 @@ export function senderCard() {
   const [email, emailL] = f("email", "E-posta", { type: "email", maxlength: 120 });
   const [phone, phoneL] = f("phone", "Telefon", { type: "tel", maxlength: 40 });
   const [web, webL] = f("web", "Web", { maxlength: 120 });
-  api("GET", "/api/settings").then((s) => { name.value = s.sender?.name || ""; email.value = s.sender?.email || ""; phone.value = s.sender?.phone || ""; web.value = s.sender?.web || ""; }).catch(() => {});
+  api("GET", "/api/settings").then((s) => { name.value = s.sender?.name || ""; email.value = s.sender?.email || ""; phone.value = s.sender?.phone || ""; web.value = s.sender?.web || ""; }).catch(ignoreOptional);
   return h("form", { class: "card stack", onsubmit: async (e) => {
     e.preventDefault();
     if (await guarded(() => api("PUT", "/api/settings", { sender: { name: name.value, email: email.value, phone: phone.value, web: web.value } }))) toast("Teklif bilgileri kaydedildi.");
@@ -123,7 +123,7 @@ export function backupCard() {
     dir.value = r.dir || "";
     list.replaceChildren(...r.backups.slice(0, 5).map((b) => h("li", {}, h("span", { text: b.file }), h("span", { class: "muted", text: `${(b.bytes / 1048576).toFixed(1)} MB · ${new Date(b.at).toLocaleString("tr-TR")}` }))));
     if (!r.backups.length) list.replaceChildren(h("li", { class: "muted small", text: r.dir ? "Henüz yedek yok." : "Yedekleme kapalı." }));
-  }).catch(() => {});
+  }).catch(ignoreOptional);
   load();
   const now = h("button", { class: "btn", type: "button", onclick: async () => {
     now.disabled = true; status.textContent = "Yedek alınıyor…";

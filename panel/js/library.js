@@ -1,6 +1,5 @@
 // Design library, fixed places and library controls.
-import { $, api, guarded, h, isBusy, state, toast } from "./core.js";
-import { inline } from "./feed.js";
+import { $, api, guarded, h, ignoreOptional, isBusy, state, toast } from "./core.js";
 import { render, runAgent } from "./shell.js";
 
 // ---------------------------------------------------------------- design library
@@ -135,7 +134,7 @@ export function libraryControls(slug, hasSite) {
   api("GET", "/api/library").then(({ designs }) => {
     const industry = state.detail?.business?.industry || "";
     for (const d of rankedDesigns(designs, slug, industry)) pick.append(h("option", { value: d.id }, `${d.score > 0 ? "★ " : ""}${d.name}${d.sector ? ` · ${d.sector}` : ""}`));
-  }).catch(() => {});
+  }).catch(ignoreOptional);
   box.append(h("div", { class: "row" }, h("label", { for: "lib-pick", class: "sr-only" }, "Kütüphane tasarımı"), pick,
     h("button", { class: "btn", type: "button", disabled: isBusy(), onclick: () => {
       if (!pick.value) { pick.focus(); return; }

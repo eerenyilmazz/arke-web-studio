@@ -150,7 +150,7 @@ export class JobRunner {
     private readonly spawn: SpawnFn = nodeSpawn,
     private readonly claudeBin: string = process.env.SF_CLAUDE_BIN ?? "claude",
     /** Called once when a job ends (used to keep the conversation history in the client folder). */
-    private readonly onFinish: (slug: string, record: JobRecord) => void = () => {},
+    private readonly onFinish: (slug: string, record: JobRecord) => void = () => { /* nothing to do unless the panel passes a hook */ },
     /** Read at the start of every job, so the setting applies from the next job on. */
     private readonly webResearch: () => boolean = () => false,
     private readonly readDirs: readonly string[] = [],

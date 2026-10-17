@@ -1,5 +1,4 @@
-// Shared state, constants, DOM helpers and the API client.
-import { words } from "./library.js";
+
 
 
 export const STAGES = [
@@ -143,3 +142,11 @@ export const fmtTokens = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e
 export const MODEL_TR = { opus: "en güçlü model", sonnet: "dengeli model", haiku: "hızlı model" };
 export const usageLevel = (n) => (n < 150_000 ? "düşük" : n < 1_000_000 ? "orta" : "yüksek");
 export const usageLine = (job) => job.tokens ? h("span", { class: "usage", title: `${fmtTokens(job.tokens)} birim (önbellekten okunan 1/10 sayılır)${job.usage?.costUsd ? ` · tahmini ~$${job.usage.costUsd.toFixed(2)}` : ""}` }, `Kaynak: ${usageLevel(job.tokens)}${job.model ? ` · ${MODEL_TR[job.model] || job.model}` : ""}`) : null;
+
+/**
+ * For data a screen can do without (a dropdown of library designs, saved settings shown as defaults): the screen
+ * stays usable, and the reason is left in the browser console instead of being dropped silently.
+ */
+export function ignoreOptional(error) {
+  console.debug("[panel] optional data not loaded:", error);
+}

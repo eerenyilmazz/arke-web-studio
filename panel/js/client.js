@@ -1,8 +1,8 @@
 // Client page: header, status strip, preview, Düzenleme tab and approval dialog.
 import { tabBrand } from "./brand.js";
-import { $, api, avatar, copyButton, fmtTokens, guarded, h, ICON, isBusy, LANG_NAMES, OLD_TABS, PACKAGE_TR, state, stepIndex, STEPS, svg, TABS, time, toast } from "./core.js";
+import { $, api, avatar, copyButton, fmtTokens, guarded, h, ICON, ignoreOptional, isBusy, LANG_NAMES, OLD_TABS, PACKAGE_TR, state, stepIndex, STEPS, svg, TABS, time, toast } from "./core.js";
 import { editForm } from "./edit.js";
-import { drawFeed, inline } from "./feed.js";
+import { drawFeed, } from "./feed.js";
 import { infoGuide, renderHome } from "./home.js";
 import { qualityTable, tabInfo, tabProposal, versionsCard } from "./info.js";
 import { rankedDesigns } from "./library.js";
@@ -240,7 +240,7 @@ export function prepareCard(d) {
   const askFirst = h("input", { type: "checkbox", id: "prep-ask", checked: draft.askFirst !== false, disabled: working, onchange: (e) => (draft.askFirst = e.target.checked) });
   // Optional starting point from the design library (custom sites); used once, on this run.
   const startFrom = h("select", { id: "prep-lib", disabled: working }, h("option", { value: "" }, "Başlangıç tasarımı: yeni tasarım"));
-  if (d.template === "custom") api("GET", "/api/library").then(({ designs }) => { for (const x of rankedDesigns(designs, slug, d.business.industry)) startFrom.append(h("option", { value: x.id }, `${x.score > 0 ? "★ Önerilen: " : "Kütüphaneden: "}${x.name}${x.sector ? ` · ${x.sector}` : ""}`)); if (d.startDesign) startFrom.value = d.startDesign; }).catch(() => {});
+  if (d.template === "custom") api("GET", "/api/library").then(({ designs }) => { for (const x of rankedDesigns(designs, slug, d.business.industry)) startFrom.append(h("option", { value: x.id }, `${x.score > 0 ? "★ Önerilen: " : "Kütüphaneden: "}${x.name}${x.sector ? ` · ${x.sector}` : ""}`)); if (d.startDesign) startFrom.value = d.startDesign; }).catch(ignoreOptional);
   const go = async () => {
     const ok = await runAgent(slug, "autopilot", { freeText: draft.freeText || "", askFirst: askFirst.checked, ...(startFrom.value ? { libraryId: startFrom.value } : {}) });
     if (ok) draft.freeText = "";

@@ -1,8 +1,7 @@
 // Sales tracking, concepts, proposal, versions and the information tabs.
 import { approveDialog } from "./client.js";
-import { api, APPROVAL_NAMES, copyButton, fmtTokens, guarded, h, isBusy, LANG_NAMES, MODE_TR, state, svg, time, toast } from "./core.js";
+import { api, APPROVAL_NAMES, copyButton, fmtTokens, guarded, h, isBusy, LANG_NAMES, MODE_TR, state, time, toast } from "./core.js";
 import { PAGE_TR } from "./edit.js";
-import { inline } from "./feed.js";
 import { deployProduction, jobStarted, loadClients, render, runAgent, runTask } from "./shell.js";
 
 export const PAYMENT_LABELS = { none: "Teklif verilmedi", quoted: "Teklif verildi", deposit: "Kapora alındı", paid: "Ödendi" };

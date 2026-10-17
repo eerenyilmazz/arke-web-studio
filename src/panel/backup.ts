@@ -70,7 +70,7 @@ export async function backupNow(factory: FactoryConfig): Promise<BackupResult> {
 }
 
 /** Called when a job ends: backs up quietly when a folder is set and the last backup is old enough. */
-export function autoBackup(factory: FactoryConfig, log: (msg: string) => void = () => {}): void {
+export function autoBackup(factory: FactoryConfig, log: (msg: string) => void = () => { /* silent unless the caller passes a logger */ }): void {
   if (!readSettings(factory).backupDir || Date.now() - lastAuto < AUTO_MIN_INTERVAL_MS) return;
   backupNow(factory).then(
     (r) => log(`Yedek alındı: ${r.file}`),

@@ -17,6 +17,14 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Kod kalitesi (1.11.0)
+
+- `npm run lint`: Biome, sadece uyarı verir (boş blok, kullanılmayan import, 80 satırı aşan fonksiyon). Derlemeyi ve testleri durdurmaz.
+- Panel API alanlara bölündü (`src/panel/api/`); iş türleri ve düzenleme formları birer kayıt tablosunda: yeni iş türü = tek kayıt.
+- Panel arayüzü ES modüllerine bölündü (`panel/js/`, derleme adımı yok). Bir modülde import edilmeyen isim testte yakalanır.
+- Arayüz duman testleri (`tests/ui.test.ts`) gerçek tarayıcıda ana ekranları açar. Linux'ta Chromium/Chrome yoksa (ör. WSL'de sadece Windows tarayıcısı) atlanır; `SF_UI_TESTS=off` ile kapatılır.
+- Davranış değişikliği yok.
+
 ## Kütüphane: sabit alanlar ve başlangıç tasarımı (1.10.0)
 
 - **Sabit alanlar:** Tasarım Kütüphanesi → "Sabit alanları yönet". Tasarımda geçen müşteriye özel metni (ad, telefon, e-posta, adres, saatler, alan adı, harita, Instagram, Facebook) bir alana bağla. Kaydederken kaynak müşterinin bilgileri otomatik eklenir; her satırın yanında tasarımda kaç yerde geçtiği görünür.
@@ -118,6 +126,8 @@ site-factory/            ← bu repo (fabrika)
 ├── src/schema/          ← Zod şema (TEK KAYNAK) + soru listesi (questions.ts)
 ├── schema/*.json        ← Zod'dan üretilir (npm run schema), elle düzenlenmez
 ├── src/tools.ts         ← MCP tool'ları
+├── src/panel/api.ts     ← panel API rotaları; işleyiciler src/panel/api/ (clients, edit, agent, library, ops)
+├── panel/app.js         ← panel arayüzü girişi; ekranlar panel/js/ (core, shell, home, client, brand, library…)
 ├── templates/           ← şablonlar (corporate-v1, corporate-v2) — senin agent'la yapacağın kısım
 └── factory.config.json  ← klasör yolları ve limitler
 

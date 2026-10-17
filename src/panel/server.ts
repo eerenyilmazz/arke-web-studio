@@ -45,7 +45,7 @@ export function createPanel(opts: PanelOptions): Panel {
   const jobs = new JobRunner(FACTORY_ROOT, opts.spawn, undefined, (slug, record) => {
     appendHistory(opts.factory, slug, record);
     // Every finished job leaves a version the operator can go back to (no-op when nothing changed).
-    void snapshot(clientPaths(opts.factory.clientsRoot, slug).root, record.title).catch(() => {});
+    void snapshot(clientPaths(opts.factory.clientsRoot, slug).root, record.title).catch((error) => console.error(`[panel] version not saved for ${slug}:`, (error as Error).message));
     autoBackup(opts.factory, (msg) => console.log(msg));
     // A finished design job on a multilingual custom site continues with the cheaper translation job.
     if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) {

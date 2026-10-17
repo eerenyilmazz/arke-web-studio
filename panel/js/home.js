@@ -1,5 +1,5 @@
 // Home dashboard, new-client form and the what-to-paste guide.
-import { api, avatar, guarded, h, ICON, isBusy, LANG_NAMES, plainOf, state, stepIndex, STEPS, svg, toast } from "./core.js";
+import { api, avatar, guarded, h, ICON, ignoreOptional, isBusy, LANG_NAMES, plainOf, state, stepIndex, STEPS, svg, toast } from "./core.js";
 import { businessLine } from "./info.js";
 import { rankedDesigns } from "./library.js";
 import { render, runAgent } from "./shell.js";
@@ -111,7 +111,7 @@ export function renderNew() {
       ...rankedDesigns(libDesigns, "", industry.value).map((x) => h("option", { value: x.id }, `${x.score > 0 ? "★ " : ""}${x.name}${x.sector ? ` · ${x.sector}` : ""}`)));
     startDesign.value = keep;
   };
-  api("GET", "/api/library").then(({ designs }) => { libDesigns = designs; fillDesigns(); designRow.hidden = designs.length === 0; }).catch(() => {});
+  api("GET", "/api/library").then(({ designs }) => { libDesigns = designs; fillDesigns(); designRow.hidden = designs.length === 0; }).catch(ignoreOptional);
   industry.addEventListener("change", fillDesigns);
   const designRow = h("label", { for: "nc-design", hidden: true }, "Başlangıç tasarımı (isteğe bağlı)",
     h("span", { class: "help", text: "Kütüphanedeki bir tasarımdan başlanır. Sabit alanlar (ad, telefon, e-posta…) panel tarafından doldurulur; agent yalnızca kalan metinleri ve markayı uyarlar." }), startDesign);
