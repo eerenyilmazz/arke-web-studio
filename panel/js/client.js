@@ -56,6 +56,7 @@ export async function renderClient(view, slug, tab) {
     ),
     statusStrip(d),
     logoBanner(d) || "",
+    paymentBanner(d) || "",
     upgradeBanner(d) || "",
     h("div", { class: tab === "marka" || tab === "teklif" ? "work wide" : "work" },
       tab === "marka" || tab === "teklif" ? null : previewPane(d),
@@ -328,4 +329,14 @@ export function logoBanner(d) {
       h("button", { class: "btn btn-sm btn-primary", type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "redesign", {}) }, "Markayı yeni logoya göre yenile"));
   }
   return null;
+}
+
+/** Payment day passed and not paid: shown on the client page, with the unpublish action at hand. */
+export function paymentBanner(d) {
+  const b = d.businessTracking;
+  const today = new Date().toISOString().slice(0, 10);
+  if (!b?.paymentDue || b.paymentDue >= today || b.payment === "paid") return null;
+  return h("div", { class: "notice-bar bad" },
+    h("p", {}, h("strong", { text: "Ödeme gecikti. " }), h("span", { text: `Ödeme günü ${new Date(`${b.paymentDue}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })} idi; durum: ödenmedi.` })),
+    h("a", { class: "btn btn-sm", href: `#/c/${d.status.slug}/bilgiler` }, "İş Takibi ve Yayın"));
 }

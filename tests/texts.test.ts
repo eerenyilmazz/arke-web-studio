@@ -53,3 +53,32 @@ describe("texts of a page, by id", () => {
     expect(decodeEntities("A&nbsp;&rsquo;B&#x27;&#39;&amp;")).toBe("A ’B''&");
   });
 });
+
+describe("search and AI visibility check", () => {
+  it("warns about missing structured data, previews and duplicate titles; passes a complete site", async () => {
+    const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const { checkSeo } = await import("../src/lib/seo.js");
+    const dir = mkdtempSync(path.join(os.tmpdir(), "sf-seo-"));
+    const page = (title: string, extra = "") => `<!doctype html><html lang="tr"><head><title>${title}</title><meta property="og:title" content="x"><meta property="og:description" content="y">${extra}</head><body></body></html>`;
+    writeFileSync(path.join(dir, "index.html"), page("Mono"));
+    mkdirSync(path.join(dir, "contact"));
+    writeFileSync(path.join(dir, "contact", "index.html"), page("Mono"));
+    let r = checkSeo(dir, { name: "Mono Erkek", phone: "+905349856319", domain: null });
+    expect(r.status).toBe("warn");
+    expect(r.detail).toMatch(/no JSON-LD/);
+    expect(r.detail).toMatch(/same <title>/);
+    expect(r.detail).toMatch(/no robots\.txt/);
+    const ld = `<script type="application/ld+json">{"@context":"https://schema.org","@type":"BarberShop","name":"Mono Erkek","telephone":"+90 534 985 63 19"}</script>`;
+    writeFileSync(path.join(dir, "index.html"), page("Mono Erkek Kuaförü", ld));
+    writeFileSync(path.join(dir, "contact", "index.html"), page("İletişim | Mono"));
+    writeFileSync(path.join(dir, "robots.txt"), "User-agent: *\nAllow: /\n");
+    r = checkSeo(dir, { name: "Mono Erkek", phone: "+905349856319", domain: null });
+    expect(r).toMatchObject({ status: "pass" });
+    // With a domain: sitemap and canonical links are expected too.
+    r = checkSeo(dir, { name: "Mono Erkek", phone: "+905349856319", domain: "mono.com.tr" });
+    expect(r.detail).toMatch(/no sitemap\.xml/);
+    expect(r.detail).toMatch(/no canonical/);
+  });
+});

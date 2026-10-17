@@ -16,6 +16,7 @@ import { snapshot } from "../lib/versions.js";
 import { JobRunner, type SpawnFn } from "./jobs.js";
 import { PreviewServer } from "./preview.js";
 import { serveFile } from "./static.js";
+import { startAutoPull } from "./portal.js";
 
 const DEFAULT_PORT = 4777;
 const HOST = "127.0.0.1";
@@ -115,11 +116,13 @@ async function main(): Promise<void> {
   const sessionKey = newSessionKey();
   const panel = createPanel({ factory: loadFactoryConfig(), port, previewPort: port + 1, sessionKey });
   await panel.listen();
+  const stopPull = startAutoPull(loadFactoryConfig(), (m) => console.log(m));
   console.log("\nSite Factory paneli hazır. Bu bağlantıyı tarayıcıda açın (anahtar sadece bu oturum için geçerli):\n");
   console.log(`  http://${HOST}:${port}/login?key=${sessionKey}\n`);
   console.log(`Önizleme adresi: http://${HOST}:${port + 1}/   ·   Kapatmak için Ctrl+C\n`);
   console.log(`Onay kodu: ${panel.gate.code}   (panelde "Onayla" derken sorulur; sadece bu terminalde görünür, kimseyle paylaşma)\n`);
   const stop = () => {
+    stopPull();
     panel.close();
     process.exit(0);
   };

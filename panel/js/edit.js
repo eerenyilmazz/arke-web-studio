@@ -44,7 +44,7 @@ export async function editForm(id, d) {
       const btn = h("button", { class: "btn btn-primary", type: "button", disabled: busy }, "Sayfaları Uygula");
       btn.onclick = () => submitEdit(slug, "pages", { pages: boxes.filter((b) => b.box.checked || b.pid === "home").map((b) => b.pid) }, btn);
       const base = card("Sayfalar", "Kaldırılan sayfa menüden de çıkarılır. Eklenen sayfa marka kimliğine uygun tasarlanır; bilgi eksikse size sorulur.", h("div", { class: "page-checks" }, ...boxes.map((b) => b.el)), btn);
-      if (custom) base.append(extraPageForm(slug, busy));
+      if (custom) base.append(extraPageForm(slug, busy), blogForm(slug, busy));
       return base;
     }
     case "services": {
@@ -166,4 +166,21 @@ async function textEditor(d) {
   holder.append(h("p", { class: "muted small", text: "Metinler yükleniyor…" }));
   load(null);
   return holder;
+}
+
+/** One blog post: the agent writes it in the site's design and keeps a blog index; facts only. */
+function blogForm(slug, busy) {
+  const title = h("input", { type: "text", id: "bl-title", maxlength: 100, placeholder: "ör. Sakal bakımı: evde 5 kolay adım" });
+  const notes = h("textarea", { id: "bl-notes", rows: 3, maxlength: 2000, placeholder: "İsteğe bağlı: anlatılmasını istediğiniz noktalar, müşterinin önerileri, kampanya bilgisi…" });
+  const btn = h("button", { class: "btn", type: "button", disabled: busy }, "Yazıyı Hazırla");
+  btn.onclick = async () => {
+    if (title.value.trim().length < 4) { title.focus(); return; }
+    if (!(await ask({ title: "Blog yazısı", body: `"${title.value.trim()}" yazısı sitenin tasarımıyla yazılacak; blog sayfası ve menü bağlantısı eklenecek. Rakam, ödül ya da yorum uydurulmaz. Önceki hâl Sürümler'de kalır.`, confirm: "Hazırla" }))) return;
+    runAgent(slug, "blog-post", { title: title.value.trim(), notes: notes.value.trim() });
+  };
+  return h("div", { class: "extra-page stack-sm" },
+    h("h5", { text: "Blog yazısı" }),
+    h("label", { for: "bl-title" }, "Konu / başlık", title),
+    h("label", { for: "bl-notes" }, "Notlar", notes),
+    btn);
 }

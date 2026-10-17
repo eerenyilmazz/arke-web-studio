@@ -869,3 +869,30 @@ span.chip { cursor: default; }
   #print-root .board-btn, #print-root .sig-empty { display: none; }
   #print-root .sig-name { margin-bottom: 0; }
 }
+
+/* ---------- 1.15: monthly report ---------- */
+.p-kv { width: 100%; border-collapse: collapse; }
+.p-kv th { text-align: left; font-weight: 500; color: var(--p-mute); width: 9rem; padding: .45rem 0; vertical-align: top; }
+.p-kv td { padding: .45rem 0; border-bottom: 1px solid var(--p-line); }
+.monthly .dot { display: inline-block; width: .6rem; height: .6rem; border-radius: 50%; margin-inline-end: .4rem; background: #2fa86b; }
+.monthly .dot.bad { background: #c0392b; }
+.p-alert { color: #a3261d; font-weight: 600; }
+.monthly ul { margin: 0; padding-inline-start: 1.1rem; display: grid; gap: .35rem; }
+@media print { #print-root .p-hint-list { display: none; } }
+
+/* Client portal (1.15.0) */
+.portal-links { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: .5rem; }
+.portal-links li { min-width: 0; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.portal-url { font-size: .8rem; flex: 1 1 12rem; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.portal-entry summary { cursor: pointer; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.portal-kv { display: grid; grid-template-columns: minmax(8rem, 1fr) 2fr; gap: .35rem 1rem; margin: .5rem 0; }
+.portal-kv dt { color: var(--ink-2); font-size: .9rem; }
+.portal-kv dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.portal-free { white-space: pre-wrap; overflow-wrap: anywhere; }
+.portal-comments { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.portal-comment { border: 1px solid var(--line); border-radius: 12px; padding: .7rem .85rem; display: grid; gap: .35rem; }
+.portal-comment .row { gap: .5rem; flex-wrap: wrap; align-items: center; }
+.portal-comment p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.portal-comment.done { opacity: .65; }
+.portal-approval { display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; margin: 0; }
+@media (max-width: 640px) { .portal-kv { grid-template-columns: 1fr; } }

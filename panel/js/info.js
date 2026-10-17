@@ -2,6 +2,7 @@
 import { approveDialog } from "./client.js";
 import { api, APPROVAL_NAMES, ask, copyButton, fmtTokens, guarded, h, isBusy, LANG_NAMES, MODE_TR, printDoc, state, time, toast } from "./core.js";
 import { PAGE_TR } from "./edit.js";
+import { portalCard } from "./portal.js";
 import { deployProduction, jobStarted, loadClients, render, runAgent, runTask, unpublish } from "./shell.js";
 
 export const PAYMENT_LABELS = { none: "Teklif verilmedi", quoted: "Teklif verildi", deposit: "Kapora alındı", paid: "Ödendi" };
@@ -42,6 +43,7 @@ export function businessForm(d) {
   const currency = h("select", { id: "biz-cur" }, ...Object.entries(CURRENCY_SIGNS).map(([k, v]) => h("option", { value: k, selected: k === b.currency }, `${v} ${k}`)));
   const payment = h("select", { id: "biz-pay" }, ...Object.entries(PAYMENT_LABELS).map(([k, v]) => h("option", { value: k, selected: k === b.payment }, v)));
   const deadline = h("input", { id: "biz-date", type: "date", value: b.deadline || "" });
+  const due = h("input", { id: "biz-due", type: "date", value: b.paymentDue || "" });
   const note = h("textarea", { id: "biz-note", rows: 2, maxlength: 2000 });
   note.value = b.note || "";
   const tags = h("input", { id: "biz-tags", placeholder: "ör. abim, acil, Ankara", value: (b.tags || []).join(", ") });
@@ -59,7 +61,7 @@ export function businessForm(d) {
   const form = h("form", { class: "card biz-form", onsubmit: async (e) => {
     e.preventDefault();
     const r = await guarded(() => api("PUT", `/api/clients/${slug}/business`, {
-      price: price.value === "" ? null : Number(price.value), currency: currency.value, payment: payment.value, deadline: deadline.value || null, note: note.value,
+      price: price.value === "" ? null : Number(price.value), currency: currency.value, payment: payment.value, deadline: deadline.value || null, paymentDue: due.value || null, note: note.value,
       tags: tags.value.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 8),
       budgetMode: bmode.value,
       costs: [...costRows.children].map((r) => { const [l, a] = r.querySelectorAll("input"); return { label: l.value.trim(), amount: Number(a.value || 0) }; }).filter((c) => c.label && c.amount > 0),
@@ -70,6 +72,7 @@ export function businessForm(d) {
       h("label", { for: "biz-price" }, "Fiyat", h("div", { class: "row nowrap" }, price, currency)),
       h("label", { for: "biz-pay" }, "Ödeme", payment),
       h("label", { for: "biz-date" }, "Teslim tarihi", deadline),
+      h("label", { for: "biz-due" }, "Ödeme günü", due),
     ),
     h("label", { for: "biz-note" }, "Not", note),
     h("label", { for: "biz-tags" }, "Etiketler (virgülle)", tags),
@@ -132,9 +135,10 @@ export const FEATURE_TR = [
 /** Teklif tab: the proposal, or the work report ("ne istendi, ne yapıldı"), both printable. */
 export async function tabProposal(body, d) {
   const which = state.docView?.[d.status.slug] || "teklif";
-  const switcher = h("div", { class: "seg doc-switch", role: "group", "aria-label": "Belge" }, ...[["teklif", "Teklif"], ["rapor", "İş Raporu"]].map(([k, l]) =>
+  const switcher = h("div", { class: "seg doc-switch", role: "group", "aria-label": "Belge" }, ...[["teklif", "Teklif"], ["rapor", "İş Raporu"], ["aylik", "Aylık Rapor"]].map(([k, l]) =>
     h("button", { type: "button", "aria-pressed": String(which === k), onclick: () => { state.docView = { ...(state.docView || {}), [d.status.slug]: k }; tabProposal(body, d); } }, l)));
   if (which === "rapor") { body.replaceChildren(h("div", { class: "stack" }, switcher, workReport(d))); return; }
+  if (which === "aylik") { body.replaceChildren(h("div", { class: "stack" }, switcher, await monthlyReport(d))); return; }
   await proposalSheet(body, d, switcher);
 }
 
@@ -171,6 +175,59 @@ export function workReport(d) {
       h("label", { class: "check", for: "wr-cost" }, showCost, " Kaynak kullanımını göster (sadece kendi kopyanız için)"),
       h("button", { class: "btn btn-primary", type: "button", onclick: () => printDoc(sheet, { title: `${slug} is raporu` }) }, "Yazdır / PDF")),
     sheet);
+}
+
+/**
+ * Monthly maintenance report for the client: the site is up (checked now), how fast it answered, what was done
+ * this month, and the health of the last build. Printable; visitor numbers are not included (no analytics read).
+ */
+async function monthlyReport(d) {
+  const slug = d.status.slug;
+  const now = new Date();
+  const monthSel = h("select", { id: "mr-month", "aria-label": "Ay" }, ...[0, 1, 2].map((back) => {
+    const m = new Date(now.getFullYear(), now.getMonth() - back, 1);
+    return h("option", { value: `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}` }, m.toLocaleDateString("tr-TR", { month: "long", year: "numeric" }));
+  }));
+  const holder = h("div", { class: "stack" });
+  const health = await guarded(() => api("GET", `/api/clients/${slug}/health`));
+  const draw = () => {
+    const month = monthSel.value;
+    const monthName = monthSel.selectedOptions[0].textContent;
+    const done = (d.history || []).filter((r) => r.status === "succeeded" && r.kind !== "build" && r.endedAt.slice(0, 7) === month);
+    const live = health?.live || [];
+    const prod = live.find((l) => l.target === "production");
+    const label = (r) => (r.kind.startsWith("edit-") ? "Düzenleme" : KIND_LABEL[r.kind] || r.title);
+    const sheet = h("article", { class: "proposal report monthly" },
+      h("header", { class: "p-head" },
+        h("div", {}, h("span", { class: "p-kicker", text: "Aylık bakım raporu" }), h("h1", { text: d.business.name || slug }),
+          h("p", { class: "p-meta", text: `${monthName} · hazırlanma ${now.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}` }))),
+      h("section", {}, h("h2", { text: "Site durumu" }),
+        live.length ? h("table", { class: "p-kv" }, ...live.map((l) => h("tr", {},
+          h("th", { text: l.target === "production" ? "Canlı site" : "Önizleme" }),
+          h("td", {}, h("span", { class: `dot ${l.ok ? "ok" : "bad"}`, "aria-hidden": "true" }),
+            l.ok ? `Açık · ${l.ms} ms · HTTPS` : `Erişilemiyor${l.status ? ` (HTTP ${l.status})` : ""}${l.error ? ` · ${l.error}` : ""}`,
+            h("div", { class: "small muted", text: l.url }))))) : h("p", { text: "Site henüz yayında değil." }),
+        prod && !prod.ok ? h("p", { class: "p-alert", text: "Canlı site şu an açılmıyor; kontrol ediliyor." }) : null),
+      h("section", {}, h("h2", { text: "Bu ay yapılanlar" }),
+        done.length ? h("ul", {}, ...done.map((r) => h("li", {}, h("strong", { text: `${new Date(r.endedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} · ${label(r)}: ` }), (r.summary || r.request || r.title || "").slice(0, 260))))
+          : h("p", { text: "Bu ay değişiklik yapılmadı; site olduğu gibi yayında." })),
+      health ? h("section", {}, h("h2", { text: "Teknik kontrol" }),
+        h("table", { class: "p-kv" },
+          h("tr", {}, h("th", { text: "Sayfalar" }), h("td", { text: `${health.pages} sayfa, toplam ${health.totalKb} KB` })),
+          h("tr", {}, h("th", { text: "Görseller" }), h("td", { text: `${health.images} görsel${health.heaviestKb ? `, en büyüğü ${health.heaviestKb} KB` : ""}` })),
+          h("tr", {}, h("th", { text: "Son kontrol" }), h("td", { text: health.checks.at ? `${new Date(health.checks.at).toLocaleDateString("tr-TR")} · ${health.checks.pass} geçti, ${health.checks.warn} uyarı, ${health.checks.fail} hata` : "Henüz kontrol yok" }))),
+        health.checks.warnings.length ? h("details", { class: "p-hint-list" }, h("summary", { text: "Uyarılar (sizin için)" }), h("ul", {}, ...health.checks.warnings.map((w) => h("li", { class: "small", text: w })))) : null) : null,
+      h("section", {}, h("h2", { text: "Notlar" }), h("p", { contenteditable: "true", text: "Gelecek ay için önerilerimiz: güncel fotoğraflar, yeni bir blog yazısı ve Google İşletme Profili'nin güncellenmesi." })),
+      h("p", { class: "p-hint", text: "Ziyaretçi sayıları bu raporda yok (Cloudflare analitiği okunmuyor). Notlara tıklayıp düzeltebilirsiniz." }));
+    holder.replaceChildren(
+      h("div", { class: "row", style: "justify-content:space-between;align-items:center" },
+        h("label", { for: "mr-month" }, "Ay ", monthSel),
+        h("button", { class: "btn btn-primary", type: "button", onclick: () => printDoc(sheet, { title: `${slug} aylik rapor ${month}` }) }, "Yazdır / PDF")),
+      sheet);
+  };
+  monthSel.addEventListener("change", draw);
+  draw();
+  return holder;
 }
 
 async function proposalSheet(body, d, switcher) {
@@ -277,6 +334,7 @@ export async function tabInfo(body, d) {
     return el;
   };
   section("İş Takibi", "Teklif, ödeme ve teslim tarihi. Yalnızca panelde tutulur; siteye ve asistana iletilmez.").append(businessForm(d));
+  section("Müşteri Linkleri", "Müşteriye form ya da önizleme linki gönderin; gelen bilgiler, yorumlar ve onay burada görünür.").append(portalCard(d));
   if (d.status.openQuestions.length) {
     const miss = section("Eksik Bilgiler", "Yanıtları Düzenleme sekmesindeki bilgi alanına yapıştırınız.");
     miss.append(h("ul", { class: "missing" }, ...d.status.openQuestions.map((q) => h("li", { title: q.text, text: MISSING_TR[q.id] || q.text }))));

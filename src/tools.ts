@@ -15,6 +15,7 @@ import { assertSlug, clientPaths, safeJoin } from "./lib/paths.js";
 import { checkInputs, checkOutput, renderReport, type CheckResult } from "./lib/quality.js";
 import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, editSiteFile, fileProblems, readSiteFileAround, siteMap, deleteSiteFile, isCustom, listSiteFiles, readSiteFile, writeSiteFile } from "./lib/custom-site.js";
 import { takeScreenshots } from "./lib/screenshots.js";
+import { checkSeo } from "./lib/seo.js";
 import { searchKnowledge } from "./lib/knowledge.js";
 import { effectiveFormAction } from "./lib/form.js";
 import { buildQuestionnaire } from "./lib/questionnaire.js";
@@ -34,6 +35,8 @@ const LOCKED_CONFIG_KEYS = new Set(["slug", "schemaVersion", "meta"]);
 const FORM_ACTION_ENV = "SF_FORM_ACTION";
 const WRANGLER_COMPAT_DATE = "2026-10-01";
 const PREVIEW_SUFFIX = "-preview";
+/** .factory/deploys.json: { preview?: {url, at}, production?: {url, at} }. */
+export const DEPLOYS_FILE = "deploys.json";
 
 // ---------------------------------------------------------------- clients
 
@@ -315,6 +318,7 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
         results.push(...checkCustomCode(paths.distDir, effectiveFormAction(paths.factoryDir)));
         results.push(...checkBrand(paths.distDir, config.brand.logo));
         results.push(...checkLibraryLeftovers(paths.distDir, paths.factoryDir));
+        results.push(checkSeo(paths.distDir, { name: config.business.name, phone: config.contact.phone ?? null, domain: config.site.domain ?? null }));
         results.push(await takeScreenshots(paths.distDir, path.join(paths.factoryDir, "shots")));
       }
     }
@@ -480,6 +484,10 @@ export async function deploy(factory: FactoryConfig, args: { slug: string; targe
   if (!args.dryRun) {
     const record: DeployRecord = { hash, at: new Date().toISOString(), target: args.target, url };
     writeJson(paths.lastDeploy, record);
+    // The latest address of each target, kept separately (last-deploy.json only holds the most recent one).
+    const deploysFile = path.join(paths.factoryDir, DEPLOYS_FILE);
+    const deploys = (readJsonIfExists(deploysFile) as Record<string, unknown> | undefined) ?? {};
+    writeJson(deploysFile, { ...deploys, [args.target]: { url: url ?? (routes ? `https://${config.site.domain}` : null), at: record.at } });
   }
   return {
     target: args.target,
@@ -534,6 +542,12 @@ export async function undeploy(factory: FactoryConfig, args: { slug: string; tar
     if (res.code !== 0 && !missing) throw new FactoryError(`wrangler exited with ${res.code}:\n${output.slice(-1500)}`, "Check the token has Workers Scripts: Edit.");
     const last = readJsonIfExists(paths.lastDeploy) as DeployRecord | undefined;
     if (last?.target === args.target) rmSync(paths.lastDeploy, { force: true });
+    const deploysFile = path.join(paths.factoryDir, DEPLOYS_FILE);
+    const deploys = readJsonIfExists(deploysFile) as Record<string, unknown> | undefined;
+    if (deploys && args.target in deploys) {
+      delete deploys[args.target];
+      writeJson(deploysFile, deploys);
+    }
     return { target: args.target, worker: workerName, alreadyRemoved: res.code !== 0 && missing };
   } finally {
     rmSync(cwd, { recursive: true, force: true });

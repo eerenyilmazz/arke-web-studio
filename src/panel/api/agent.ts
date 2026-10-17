@@ -1,3 +1,4 @@
+import { clientInbox, updateEntry } from "../portal.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { snapshot } from "../../lib/versions.js";
 import { DESIGN_KINDS, resolvePolicy } from "../budget.js";
@@ -9,7 +10,7 @@ import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
 import { appendInput, readInputs } from "../history.js";
 import { serialiseJob } from "../jobs.js";
-import { addPagePrompt, translatePrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "../prompts.js";
+import { addPagePrompt, blogPostPrompt, clientFeedbackPrompt, translatePrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "../prompts.js";
 import { OPTION_IDS } from "../../lib/custom-site.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, MAX_TEXT, asHttp, launchAgent, inboxFiles, stringRecord, isQa } from "./common.js";
 import { filledNote } from "./library.js";
@@ -26,6 +27,8 @@ interface JobSpec {
   readonly request: string;
   /** What Eren gave in this job, kept for later jobs (answers as "question: answer" lines). */
   readonly input?: string;
+  /** Runs only once the job has started (e.g. marking client comments as sent). */
+  readonly afterStart?: () => void;
 }
 
 interface JobContext {
@@ -158,6 +161,19 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     request: `Siteyi yeni şablona (${deps.factory.defaultTemplate}) taşı.`,
   }),
 
+  "blog-post": (ctx) => {
+    requireCustom(ctx, "Blog yazısı yalnızca serbest tasarımlı sitelere eklenir.");
+    const title = (str(ctx.body, "title", { max: 100 }) ?? "").trim();
+    if (title.length < 4) throw new HttpError(400, "Yazının konusunu ya da başlığını yazınız.");
+    const notes = (str(ctx.body, "notes", { optional: true, max: 2000 }) ?? "").trim();
+    return {
+      prompt: blogPostPrompt(ctx.slug, title, pageSlug(title), notes, resolvePolicy(ctx.deps.factory, ctx.slug, "blog-post").research),
+      input: notes ? `Blog yazısı "${title}": ${notes}` : "",
+      title: `Blog: ${title}`,
+      request: `"${title}" blog yazısını yaz.`,
+    };
+  },
+
   translate: (ctx) => {
     requireCustom(ctx, "Diğer diller serbest tasarımlı sitelerde ayrı iş olarak çevrilir.");
     const draft = readDraftConfig(clientPaths(ctx.deps.factory.clientsRoot, ctx.slug)) as { i18n?: { defaultLocale?: string; locales?: string[] } };
@@ -166,6 +182,20 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     if (locales.length < 2) throw new HttpError(400, "Bu sitede tek dil var.");
     const others = locales.filter((l) => l !== def);
     return { prompt: translatePrompt(ctx.slug, def, locales), title: "Diğer diller", request: `Diğer dilleri (${others.join(", ")}) varsayılan dile göre güncelle.` };
+  },
+
+  /** Open portal comments, read from the client's folder by id (never text from the request). */
+  "client-feedback": ({ deps, slug, body }) => {
+    const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === "string").slice(0, 30) : [];
+    const chosen = clientInbox(deps.factory, slug).feedback.filter((f) => ids.includes(f.id) && f.status === "open");
+    if (chosen.length === 0) throw new HttpError(400, "İletilecek açık yorum yok.");
+    return {
+      afterStart: () => { for (const f of chosen) updateEntry(deps.factory, slug, "feedback", f.id, { status: "sent" }); },
+      prompt: clientFeedbackPrompt(slug, chosen),
+      input: chosen.map((c) => `Müşteri yorumu (${c.page || "genel"}): ${c.text}`).join("\n"),
+      title: "Müşteri yorumları",
+      request: `Müşterinin ${chosen.length} yorumunu uygula.`,
+    };
   },
 
   revise: ({ slug, body }) => {
@@ -202,5 +232,6 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   const staleNote = stale ? `\nThe client's logo changed after the brand was made (now ${stale.logo}). First rebuild brand/brand.json from this logo (palette, concept, tagline if it no longer fits, signature motion and brand/signature.html), then the pages; never keep colours that came from the old logo.` : "";
   const job = launchAgent(deps, s, kind!, spec.title, `${spec.prompt}${staleNote}${history}`, spec.request);
   appendInput(deps.factory, s, kind!, spec.input ?? "");
+  spec.afterStart?.();
   sendJson(res, 202, serialiseJob(job));
 }

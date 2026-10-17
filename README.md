@@ -17,6 +17,19 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Müşteri portalı, ödeme, aylık rapor, blog, SEO (1.15.0)
+
+- **Müşteri portalı** (Ayarlar → Yayın → Müşteri Portalı): senin Cloudflare hesabında küçük bir Worker (`sf-portal`) ve depolama (Workers KV). Ücretsiz planda çalışır (günde 100.000 okuma, 1.000 gönderim).
+  1. Token'a izin ekle: Cloudflare → Profil → API Tokens → mevcut token → Edit → **Account · Workers KV Storage · Edit** → Update. Token değişmez.
+  2. Panelde "Portalı kur". Portal anahtarı yalnızca `~/.config/site-factory/portal.json` içinde durur (agent okuyamaz).
+  - Müşteri Bilgileri → **Müşteri Linkleri**: "Bilgi formu linki" (sorular + logo/fotoğraf, en fazla 8 görsel × 5 MB) ve "Yorum ve onay linki" (önizleme + sayfa sayfa yorum + "Onaylıyorum"). Linkler 60 gün geçerli, istediğinde kapatılır.
+  - Gelenler 5 dakikada bir (ya da "Gelenleri şimdi al") panele alınır, portaldan silinir: dosyalar müşterinin gelen kutusuna, cevaplar ve yorumlar müşteri klasörüne. "Agent'a işlet" / "agent'a ilet" ile işlenir; müşterinin yazdığı her şey agent'a veri olarak gider.
+  - Müşteri onayı yalnızca bilgi amaçlıdır; yayın onayı yine terminal kodunla verilir.
+- **Ödeme takibi:** İş Takibi'nde ödeme tarihi; geciken ödemeler ana sayfada ve müşteri sayfasında uyarı; ödeme alınmadan canlıya alırken sorulur.
+- **Aylık rapor** (Teklif → Aylık Rapor): site açık mı, hız, ayın işleri, son kontrol sonuçları; yazdırılabilir.
+- **Blog yazısı:** Düzenleme → Blog; agent mevcut tasarımda tek bir yazı sayfası ekler.
+- **SEO ve yapay zekâ araması kontrolleri:** build'de işletme bilgisi (JSON-LD), robots.txt, sitemap, canonical, paylaşım etiketleri ve başlık uzunlukları uyarı olarak raporlanır.
+
 ## Düzenli PDF'ler (1.14.1)
 
 "Yazdır / PDF" artık yalnızca belgenin kendisini A4'e basar: Teklif ve İş Raporu dikey, tek sayfada (uzunsa düzgün bölünür, tablo başlığı tekrar eder); Marka kartı yatay A4'te tek sayfa. Panel, menüler ve ipucu yazıları PDF'e girmez; ekranda düzelttiğin metinler korunur; PDF dosya adı müşteriye göre önerilir.

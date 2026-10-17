@@ -1,6 +1,7 @@
 // Settings: publishing, budget, sender, backups, web research.
 import { $, api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODE_TR, MODEL_TR, toast } from "./core.js";
 import { askNotifyPermission, chime } from "./shell.js";
+import { portalSettingsCard } from "./portal.js";
 
 // ---------------------------------------------------------------- settings: publishing setup
 
@@ -53,7 +54,7 @@ export async function renderSettings() {
     h("div", { class: "settings stack" },
       group("genel", "Genel", senderCard(), notifications, approvalCode),
       group("kullanim", "Kaynak Kullanımı", budgetCard(), agentsCard(), profitSettingsCard(), webResearchCard()),
-      group("yayin", "Yayın", cloudflare),
+      group("yayin", "Yayın", cloudflare, portalSettingsCard()),
       group("yedek", "Yedek", backupCard())));
 }
 

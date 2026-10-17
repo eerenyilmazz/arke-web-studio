@@ -59,6 +59,7 @@ export function renderHome() {
       const n = state.clients.filter((c) => bucket(c) === key).length;
       return h("div", { class: `count tone-${key}` }, h("strong", { text: String(n) }), h("span", { class: "label", text: label }), h("span", { class: "sub", text: sub }));
     })),
+    overdueCard(),
     profitSummaryCard(),
     toolbar,
     ...groups.map(([k, list]) => h("div", { class: "group" },
@@ -236,4 +237,15 @@ function profitSummaryCard() {
           h("td", { class: c.profit !== null && c.profit < 0 ? "loss" : "", text: c.profit === null ? "—" : fmtMoney(c.profit, c.currency) })))))) : null);
   }).catch(() => body.replaceChildren(h("p", { class: "muted small", text: "Kazanç bilgisi okunamadı." })));
   return box;
+}
+
+/** Clients whose payment day has passed and who have not paid: a reminder, with a way to the client. */
+function overdueCard() {
+  const today = new Date().toISOString().slice(0, 10);
+  const late = state.clients.filter((c) => c.business?.paymentDue && c.business.paymentDue < today && c.business.payment !== "paid");
+  if (!late.length) return null;
+  return h("section", { class: "notice-bar bad overdue", role: "alert" },
+    h("p", {}, h("strong", { text: `Ödemesi geciken ${late.length} müşteri. ` }),
+      ...late.map((c, i) => [i ? ", " : "", h("a", { href: `#/c/${c.slug}/bilgiler`, text: `${c.name || c.slug} (${new Date(`${c.business.paymentDue}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })})` })]).flat()),
+    h("span", { class: "muted small", text: "Müşteri Bilgileri'nden hatırlatabilir ya da Yayın → Yayından kaldır ile siteyi kapatabilirsiniz." }));
 }

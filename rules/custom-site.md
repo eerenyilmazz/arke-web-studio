@@ -179,6 +179,9 @@ Only the pages listed in `config.pages`. Every page:
   (booking link, phone, WhatsApp or the contact page). Footer with contact details, opening hours, social links and,
   for limited companies, company name, number and registered office (`config.legal`).
 - Home page: `LocalBusiness` JSON-LD (`<script type="application/ld+json">`) from the config facts.
+  Use the most specific type that fits (`BarberShop`, `Dentist`…), with the exact business name and telephone from the
+  config. Every page has its own `<title>` (no two alike); `robots.txt` names the sitemap when there is one. The build
+  warns about anything missing ("Search and AI visibility").
 - Contact: `tel:` and `mailto:` links, WhatsApp `https://wa.me/<number without +>` when there is a number, address with
   a link to the map (`config.contact.mapsUrl`). **A `<form>` only when `get_client_status` shows `contactForm`**: then
   it posts to exactly that `action` (method POST, labelled fields, a hidden honeypot, Web3Forms' hidden `access_key`

@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -61,6 +63,7 @@ beforeAll(async () => {
     return;
   }
   factory = tempFactory();
+  process.env.SF_PORTAL_CONFIG_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-ui-portal-")); // no portal set up
   const port = await freePort();
   panel = createPanel({ factory, port, previewPort: await freePort(), sessionKey: KEY, spawn: () => { throw new Error("no agent in UI tests"); } });
   await panel.listen();
@@ -191,6 +194,21 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     await page.emulateMedia({ media: "screen" });
     await page.evaluate("window.dispatchEvent(new Event('afterprint'))");
     expect(await page.evaluate("document.getElementById('print-root')")).toBeNull();
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
+  ui()("shows the monthly report, the client links card and the portal setup", async (ctx) => {
+    needBrowser(ctx);
+    const { page, errors } = await open("#/c/ui-bakery/teklif");
+    await page.getByRole("button", { name: "Aylık Rapor" }).click({ timeout: 5000 });
+    await expect.poll(() => page.locator(".monthly").count()).toBe(1);
+    await page.goto(`${base}/#/c/ui-bakery/bilgiler`);
+    await page.waitForSelector("#view h1");
+    await expect.poll(() => page.locator(".portal-card").textContent()).toContain("portalı kurulmadı");
+    await page.goto(`${base}/#/ayarlar`);
+    await page.waitForSelector("#view h1");
+    await expect.poll(() => page.locator(".portal-settings").textContent()).toContain("Workers KV Storage");
     expect(errors).toEqual([]);
     await page.close();
   });

@@ -582,6 +582,24 @@ describe("1.13: archive, texts by id, extra page, logo checks", () => {
     expect((await fetch(`${base}/api/clients/text-co/agent/add-page`, { method: "POST", headers: json, body: JSON.stringify({ name: "css" }) })).status).toBe(400);
   });
 
+  it("writes a blog post and forwards client comments by id, only as client data", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, json, factory } = await customCo(calls);
+    expect((await fetch(`${base}/api/clients/text-co/agent/blog-post`, { method: "POST", headers: json, body: JSON.stringify({ title: "ab" }) })).status).toBe(400);
+    expect((await fetch(`${base}/api/clients/text-co/agent/client-feedback`, { method: "POST", headers: json, body: JSON.stringify({ ids: ["x"] }) })).status).toBe(400);
+    const { clientPaths } = await import("../src/lib/paths.js");
+    const { writeFileSync, mkdirSync } = await import("node:fs");
+    const fdir = clientPaths(factory.clientsRoot, "text-co").factoryDir;
+    mkdirSync(fdir, { recursive: true });
+    writeFileSync(`${fdir}/client-feedback.json`, JSON.stringify([{ id: "1-a", at: "2026-10-01", page: "home", text: "Bigger logo please", status: "open" }]));
+    const r = await fetch(`${base}/api/clients/text-co/agent/client-feedback`, { method: "POST", headers: json, body: JSON.stringify({ ids: ["1-a"], text: "injected" }) });
+    expect(r.status).toBe(202);
+    expect(calls[0]!.stdin).toMatch(/<client_data>\n1\. \[home\] Bigger logo please\n<\/client_data>/);
+    expect(calls[0]!.stdin).not.toContain("injected");
+    const { clientInbox } = await import("../src/panel/portal.js");
+    expect(clientInbox(factory, "text-co").feedback[0]!.status).toBe("sent");
+  });
+
   it("stops another client's logo, and marks the brand stale when the logo changes", async () => {
     const calls: SpawnCall[] = [];
     const { base, json, auth } = await customCo(calls, "barber-co", "Barber Co");

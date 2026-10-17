@@ -78,7 +78,7 @@ export function modeFor(factory: FactoryConfig, slug: string): BudgetMode {
 /** Which settings row (Ayarlar → Agent ve sınırlar) a job kind follows. */
 export function jobGroup(kind: string): JobGroup {
   if (kind === "translate") return "translate";
-  if (kind === "add-page") return "page";
+  if (kind === "add-page" || kind === "blog-post") return "page";
   return DESIGN_KINDS.has(kind) ? "design" : "edit";
 }
 

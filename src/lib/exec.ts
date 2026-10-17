@@ -9,6 +9,8 @@ export interface RunOptions {
   readonly secrets?: readonly string[];
   /** Keep more output than the default (e.g. a JSON report that must be parsed whole). */
   readonly maxOutputChars?: number;
+  /** Written to the child's stdin (e.g. a secret for `wrangler secret put`, never put in arguments). */
+  readonly input?: string;
 }
 
 export interface RunResult {
@@ -46,7 +48,7 @@ export function run(command: string, args: readonly string[], options: RunOption
   Object.assign(env, options.env);
 
   return new Promise((resolve) => {
-    execFile(
+    const child = execFile(
       isWindowsShim ? `${command}.cmd` : command,
       [...args],
       {
@@ -65,6 +67,7 @@ export function run(command: string, args: readonly string[], options: RunOption
         resolve({ code, stdout: mask(String(stdout)), stderr: mask(String(stderr) + timedOut + spawnError) });
       },
     );
+    if (options.input !== undefined) child.stdin?.end(options.input);
   });
 }
 

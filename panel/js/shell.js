@@ -175,7 +175,15 @@ export async function openPreview(slug) {
 }
 
 export async function deployProduction(slug, dryRun) {
-  if (!dryRun && !(await ask({ title: "Canlıya al", body: `${slug} gerçek adresinde yayına alınacak. Ziyaretçiler bu hâli görür.`, confirm: "Canlıya al", danger: true }))) return;
+  if (!dryRun) {
+    // Publishing before any payment is Eren's call, but never by accident.
+    const pay = state.detail?.status?.slug === slug ? state.detail.businessTracking?.payment : null;
+    const unpaid = !pay || pay === "none" || pay === "quoted";
+    const body = unpaid
+      ? `${slug} gerçek adresinde yayına alınacak.\n\nDikkat: bu müşteriden henüz kapora ya da ödeme alınmadı (İş Takibi). Ödeme gelince yayına almak isteyebilirsiniz.`
+      : `${slug} gerçek adresinde yayına alınacak. Ziyaretçiler bu hâli görür.`;
+    if (!(await ask({ title: unpaid ? "Ödeme alınmadan canlıya al" : "Canlıya al", body, confirm: unpaid ? "Yine de canlıya al" : "Canlıya al", danger: true }))) return;
+  }
   runTask(slug, "deploy", { target: "production", dryRun });
 }
 

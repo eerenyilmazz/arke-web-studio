@@ -1,4 +1,5 @@
 import { clientProfit } from "../profit.js";
+import { siteHealth } from "../health.js";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
@@ -29,6 +30,7 @@ export const clientRoutes: Route[] = [
   { method: "POST", pattern: /^\/api\/clients$/, handler: createClient },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: clientDetail },
   { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: archive },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/health$`), handler: async (d, _r, res, [slug]) => { const s = assertSlug(slug!); tools.getClientStatus(d.factory, { slug: s }); sendJson(res, 200, await siteHealth(d.factory, s)); } },
   { method: "GET", pattern: /^\/api\/archive$/, handler: (d, _r, res) => sendJson(res, 200, { archived: listArchived(d.factory) }) },
   { method: "POST", pattern: /^\/api\/archive\/([a-z0-9-]{3,60})\/restore$/, handler: restoreFromArchive },
   { method: "DELETE", pattern: /^\/api\/archive\/([a-z0-9-]{3,60})$/, handler: deleteFromArchive },
