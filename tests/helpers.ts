@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import type { FactoryConfig } from "../src/config.js";
+import { writeSiteFileTool } from "../src/tools.js";
 
 /** A throwaway factory with its own clients/inbox/templates folders. */
 export function tempFactory(): FactoryConfig & { base: string } {
@@ -70,3 +71,35 @@ export const COMPLETE_CONTENT = {
   contact: { title: "Contact", intro: "Write to us." },
   seo: { home: { title: "Willow & Thread | Bridal alterations", description: "Bridal alterations in Kingston upon Thames." } },
 };
+
+/** A small custom site that passes the build (brand, motion, reduced motion, logo, contact page). */
+export function writePassingCustomSite(f: FactoryConfig, slug: string, name: string): void {
+  const brand = {
+    concept: "Bread from a wood oven: crust, flour dust and warm mornings.",
+    personality: ["warm", "honest"],
+    palette: { crust: "#8A4B16", ink: "#1B1B1B", flour: "#F6F1E4" },
+    fonts: { heading: "Fraunces", body: "Nunito" },
+    visualLanguage: "Loaf silhouettes, flour dust and oven light.",
+    voice: "Short and friendly.",
+    animations: [
+      { id: "dough-rise", idea: "The hero loaf rises on load", trigger: "load" },
+      { id: "flour-dust", idea: "Flour dust drifts from the cursor", trigger: "pointer" },
+    ],
+  };
+  const css = `:root{--crust:#8A4B16;--ink:#1B1B1B;--flour:#F6F1E4}
+.dough-rise{animation:dough-rise 4s ease infinite}@keyframes dough-rise{to{transform:scaleY(1)}}
+[data-anim="flour-dust"]{opacity:.8}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}`;
+  const esc = (s: string) => s.replace(/&/g, "&amp;");
+  const page = (title: string, body: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title><meta name="description" content="Bread baked every morning in a wood oven.">
+<link rel="stylesheet" href="/css/site.css"><link rel="icon" href="/brand/logo.svg"></head>
+<body><header><a href="/"><img src="/brand/logo.svg" alt="${esc(name)}"></a></header><main>${body}</main></body></html>`;
+  const w = (p: string, content: string) => writeSiteFileTool(f, { slug, path: p, content });
+  w("brand/brand.json", JSON.stringify(brand));
+  w("brand/logo.svg", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A4B16"/></svg>');
+  w("css/site.css", css);
+  w("index.html", page(name, `<h1 class="dough-rise">${esc(name)}</h1><div data-anim="flour-dust"></div><a href="/contact/">Contact</a>`));
+  w("contact/index.html", page(`Contact | ${name}`, "<h1>Contact</h1>"));
+  w("404.html", page(`Not found | ${name}`, "<h1>Not found</h1>"));
+}
