@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { FACTORY_ROOT, type FactoryConfig } from "./config.js";
 import { ContentSchema } from "./schema/content.js";
@@ -495,6 +496,48 @@ export async function deploy(factory: FactoryConfig, args: { slug: string; targe
           ? "Check the custom domain loads over HTTPS. DNS for the domain must be on Cloudflare."
           : "Live on workers.dev. Connect the domain once DNS is on Cloudflare (set site.domain, rebuild, deploy).",
   };
+}
+
+/**
+ * Takes a site off Cloudflare (deletes its Worker: the preview one or the live one). Panel only: this is not an
+ * MCP tool, so the agent cannot call it. The client's files, versions and approvals stay; publishing again works.
+ * `runner` is replaceable for tests.
+ */
+export async function undeploy(factory: FactoryConfig, args: { slug: string; target: "preview" | "production" }, runner: typeof run = run) {
+  const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
+  const baseWorker = config.hosting.workerName ?? `sf-${config.slug}`;
+  const workerName = args.target === "preview" ? `${baseWorker}${PREVIEW_SUFFIX}` : baseWorker;
+  const creds = cloudflareCredentials(config.hosting.model, config.slug);
+  if (!creds) {
+    throw new FactoryError(
+      `No Cloudflare credentials for hosting model "${config.hosting.model}".`,
+      config.hosting.model === "managed"
+        ? "Set SF_CF_MANAGED_API_TOKEN and SF_CF_MANAGED_ACCOUNT_ID before starting the panel."
+        : `Set ${clientEnvPrefix(config.slug)}API_TOKEN and ${clientEnvPrefix(config.slug)}ACCOUNT_ID before starting the panel.`,
+    );
+  }
+  const wranglerJs = path.join(FACTORY_ROOT, "node_modules", "wrangler", "bin", "wrangler.js");
+  if (!existsSync(wranglerJs)) throw new FactoryError("wrangler is not installed.", "Run npm install in the factory folder.");
+  // An empty folder, so no wrangler config can change which Worker is meant: only the name given here counts.
+  const cwd = mkdtempSync(path.join(os.tmpdir(), "sf-undeploy-"));
+  try {
+    // --force: no interactive question (the panel already asked Eren).
+    const res = await runner(process.execPath, [wranglerJs, "delete", workerName, "--force"], {
+      cwd,
+      timeoutMs: factory.limits.deployTimeoutMs,
+      env: { CLOUDFLARE_API_TOKEN: creds.token, CLOUDFLARE_ACCOUNT_ID: creds.accountId, WRANGLER_SEND_METRICS: "false" },
+      secrets: [creds.token],
+    });
+    const output = `${res.stdout}\n${res.stderr}`;
+    // Already gone (deleted in the Cloudflare dashboard, or never published) is the wanted end state.
+    const missing = /10007|does not exist|not found/i.test(output);
+    if (res.code !== 0 && !missing) throw new FactoryError(`wrangler exited with ${res.code}:\n${output.slice(-1500)}`, "Check the token has Workers Scripts: Edit.");
+    const last = readJsonIfExists(paths.lastDeploy) as DeployRecord | undefined;
+    if (last?.target === args.target) rmSync(paths.lastDeploy, { force: true });
+    return { target: args.target, worker: workerName, alreadyRemoved: res.code !== 0 && missing };
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
 }
 
 /** Which Cloudflare settings are present (never their values), for the panel's setup page. */

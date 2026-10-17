@@ -519,6 +519,21 @@ describe("edits without the assistant", () => {
   });
 });
 
+describe("unpublish from the panel", () => {
+  it("needs the short name typed again for the live site", async () => {
+    const { base, auth } = await start();
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "live-co", businessName: "Live Co", industry: "bakery", hostingModel: "managed" }) });
+    const post = (body: object) => fetch(`${base}/api/clients/live-co/unpublish`, { method: "POST", headers: json, body: JSON.stringify(body) });
+    expect((await post({ target: "production" })).status).toBe(400);
+    expect((await post({ target: "production", confirm: "other" })).status).toBe(400);
+    expect((await post({ target: "nowhere" })).status).toBe(400);
+    const ok = await post({ target: "production", confirm: "live-co" });
+    expect(ok.status).toBe(202);
+    expect(((await ok.json()) as { kind: string }).kind).toBe("unpublish");
+  });
+});
+
 describe("library fixed places from the panel", () => {
   it("edits fixed places, preselects the start design and fills them without the agent", async () => {
     const calls: SpawnCall[] = [];

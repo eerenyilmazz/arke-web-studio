@@ -2,7 +2,7 @@
 import { approveDialog } from "./client.js";
 import { api, APPROVAL_NAMES, copyButton, fmtTokens, guarded, h, isBusy, LANG_NAMES, MODE_TR, state, time, toast } from "./core.js";
 import { PAGE_TR } from "./edit.js";
-import { deployProduction, jobStarted, loadClients, render, runAgent, runTask } from "./shell.js";
+import { deployProduction, jobStarted, loadClients, render, runAgent, runTask, unpublish } from "./shell.js";
 
 export const PAYMENT_LABELS = { none: "Teklif verilmedi", quoted: "Teklif verildi", deposit: "Kapora alındı", paid: "Ödendi" };
 export const CURRENCY_SIGNS = { TRY: "₺", GBP: "£", EUR: "€", USD: "$" };
@@ -502,6 +502,12 @@ export function tabPublish(body, d) {
         h("button", { class: "btn btn-danger", type: "button", disabled: busy, onclick: () => deployProduction(slug, dry.checked) }, "Canlıya al"),
       ),
       ld && h("p", { class: "small" }, `Son yayın: ${ld.target === "production" ? "canlı" : "önizleme"} · ${time(ld.at)} `, ld.url && h("a", { href: ld.url, target: "_blank", rel: "noopener", text: ld.url })),
+      h("details", { class: "unpublish" },
+        h("summary", { class: "small", text: "Yayından kaldır" }),
+        h("p", { class: "muted small", text: "Siteyi Cloudflare'den kaldırır. Müşterinin dosyaları, sürümleri ve onayları durur; istediğinizde yeniden yayınlayabilirsiniz. Alan adı bağlıysa o bağlantı da kalkar." }),
+        h("div", { class: "row" },
+          h("button", { class: "btn", type: "button", disabled: busy, onclick: () => unpublish(slug, "preview") }, "Önizlemeyi kaldır"),
+          h("button", { class: "btn btn-danger", type: "button", disabled: busy, onclick: () => unpublish(slug, "production") }, "Canlı siteyi kaldır"))),
     ),
   );
 }

@@ -23,6 +23,7 @@ export const opsRoutes: Route[] = [
   { method: "POST", pattern: /^\/api\/backups$/, handler: async (d, _r, res) => { try { sendJson(res, 201, await backupNow(d.factory)); } catch (e) { throw new HttpError(400, (e as Error).message); } } },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/build$`), handler: startBuild },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/deploy$`), handler: startDeploy },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/unpublish$`), handler: startUnpublish },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/preview$`), handler: showPreview },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/approve$`), handler: approveFromPanel },
   { method: "GET", pattern: /^\/api\/jobs\/([0-9a-f-]{36})$/, handler: getJob },
@@ -88,7 +89,7 @@ function meta(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse): void {
 }
 
 /** Rough time a job of each kind takes here: median of recent successful runs across clients, else a default. */
-const DEFAULT_SECONDS: Readonly<Record<string, number>> = { autopilot: 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, concepts: 360, "quick-edit": 180, "brand-board": 300, redesign: 900, "from-library": 600, translate: 600 };
+const DEFAULT_SECONDS: Readonly<Record<string, number>> = { autopilot: 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, unpublish: 60, concepts: 360, "quick-edit": 180, "brand-board": 300, redesign: 900, "from-library": 600, translate: 600 };
 const RECENT_RUNS = 20;
 function typicalSeconds(deps: ApiDeps): Record<string, number> {
   const byKind = new Map<string, number[]>();
@@ -134,6 +135,30 @@ async function startDeploy(deps: ApiDeps, req: IncomingMessage, res: ServerRespo
       if (r.outputTail) log(r.outputTail);
       return dryRun ? "Deneme başarılı; hiçbir şey yüklenmedi." : r.url ? `Yayında: ${r.url}` : "Yüklendi. Adres wrangler çıktısında bulunamadı; Cloudflare panelinden bakın.";
     }, target === "production" ? `Siteyi canlıya al${dryRun ? " (deneme)" : ""}.` : `Önizlemeyi yayınla${dryRun ? " (deneme)" : ""}.`),
+  );
+  sendJson(res, 202, serialiseJob(job));
+}
+
+/**
+ * Takes the preview or the live site off Cloudflare. The live site needs the client's short name typed again
+ * (like archiving), so a mis-click cannot take a client's site down.
+ */
+async function startUnpublish(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const target = body.target === "production" ? "production" : body.target === "preview" ? "preview" : null;
+  if (!target) throw new HttpError(400, "Hedef preview ya da production olmalı.");
+  if (target === "production" && body.confirm !== s) throw new HttpError(400, "Canlı siteyi kaldırmak için müşterinin kısa adını (slug) aynen yazın.");
+  const label = target === "production" ? "canlı site" : "önizleme";
+  const job = runOrConflict(() =>
+    deps.jobs.startTask(s, "unpublish", `Yayından kaldır: ${label}`, async (log) => {
+      log("Cloudflare'den kaldırılıyor…");
+      const r = await tools.undeploy(deps.factory, { slug: s, target });
+      return r.alreadyRemoved
+        ? `${r.worker} Cloudflare'de zaten yoktu. Müşterinin dosyaları duruyor; istediğinizde yeniden yayınlayabilirsiniz.`
+        : `${r.worker} yayından kaldırıldı. Müşterinin dosyaları ve sürümleri duruyor; istediğinizde yeniden yayınlayabilirsiniz.`;
+    }, `${label[0]!.toUpperCase()}${label.slice(1)} yayından kaldırılsın.`),
   );
   sendJson(res, 202, serialiseJob(job));
 }

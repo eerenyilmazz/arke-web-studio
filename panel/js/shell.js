@@ -176,8 +176,20 @@ export function deployProduction(slug, dryRun) {
   runTask(slug, "deploy", { target: "production", dryRun });
 }
 
+/** Takes the preview or the live site off Cloudflare; the live one needs the short name typed again. */
+export function unpublish(slug, target) {
+  if (target === "production") {
+    const typed = prompt(`Canlı site Cloudflare'den kaldırılacak; ziyaretçiler siteye ulaşamaz. Müşterinin dosyaları ve sürümleri durur, istediğinizde yeniden yayınlayabilirsiniz.\n\nOnaylamak için kısa adı yazın: ${slug}`);
+    if (typed === null) return;
+    if (typed.trim() !== slug) { toast("Kısa ad eşleşmedi, hiçbir şey yapılmadı.", true); return; }
+    runTask(slug, "unpublish", { target, confirm: slug });
+    return;
+  }
+  if (confirm("Önizleme adresi kapatılacak; müşteriye gönderdiğiniz link çalışmaz. Devam edilsin mi?")) runTask(slug, "unpublish", { target });
+}
+
 export async function archiveClient(slug, stage) {
-  const liveNote = stage === "live" ? "\n\nDikkat: site yayında. Arşivlemek siteyi kapatmaz; Cloudflare'de yayında kalır." : "";
+  const liveNote = stage === "live" ? "\n\nDikkat: site yayında. Arşivlemek siteyi kapatmaz; önce Müşteri Bilgileri → Yayın → Yayından kaldır → Canlı siteyi kaldır." : "";
   const typed = prompt(`"${slug}" arşivlenecek: listeden kalkar, klasörü sf-clients/_archive altına taşınır (silinmez, geri alınabilir).${liveNote}\n\nOnaylamak için kısa adı yazın: ${slug}`);
   if (typed === null) return;
   if (typed.trim() !== slug) { toast("Kısa ad eşleşmedi, hiçbir şey yapılmadı.", true); return; }
