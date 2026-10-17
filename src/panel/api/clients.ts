@@ -1,0 +1,266 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import path from "node:path";
+import { approvalState, APPROVAL_KINDS } from "../../lib/approvals.js";
+import { listVersions, restoreVersion, snapshot } from "../../lib/versions.js";
+import { readBusiness, writeBusiness } from "../business.js";
+import { modeFor, summarise } from "../budget.js";
+import { readStartDesign, setStartDesign } from "../library.js";
+import { ZodError } from "zod";
+import { archiveClient } from "../../lib/archive.js";
+import { readDraftConfig } from "../../lib/client.js";
+import { dirHash, readJsonIfExists } from "../../lib/files.js";
+import { assertSlug, clientPaths, safeJoin } from "../../lib/paths.js";
+import { industryExtras } from "../../lib/questionnaire.js";
+import { LOCALES } from "../../schema/site-config.js";
+import { QUESTIONS } from "../../schema/questions.js";
+import * as tools from "../../tools.js";
+import { HttpError, readBody, readJsonBody, sendJson, str } from "../http.js";
+import { appendInput, readHistory } from "../history.js";
+import { serialiseJob } from "../jobs.js";
+import { readBrandBoard, readBrandOptions } from "../../lib/custom-site.js";
+import { type ApiDeps, type Route, SLUG, JSON_LIMIT, UPLOAD_LIMIT, safeFileName, IMAGE_TYPES, assetFiles, inboxFiles } from "./common.js";
+
+/** Clients: list, create, archive, detail, questionnaires, uploads, logo, business, versions. */
+export const clientRoutes: Route[] = [
+  { method: "GET", pattern: /^\/api\/clients$/, handler: listClients },
+  { method: "POST", pattern: /^\/api\/clients$/, handler: createClient },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: clientDetail },
+  { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: archive },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: getQuestionnaire },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/questionnaire/([12])$`), handler: writeQuestionnaire },
+  { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/(inbox|assets)/([^/]{1,120})$`), handler: serveClientImage },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/logo$`), handler: setLogo },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/versions$`), handler: versions },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/concepts$`), handler: concepts },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/brand$`), handler: brandBoard },
+  { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/business$`), handler: saveBusiness },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/versions/restore$`), handler: restore },
+];
+
+function concepts(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  sendJson(res, 200, { options: readBrandOptions(clientPaths(deps.factory.clientsRoot, s)) });
+}
+
+/** The brand board: the custom brand (logo, signature demo) or, for template sites, the config's palette and fonts. */
+function brandBoard(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const paths = clientPaths(deps.factory.clientsRoot, s);
+  const cfg = readDraftConfig(paths) as { template?: string; brand?: { logo?: string | null }; business?: { name?: string; industry?: string }; design?: { palette?: Record<string, string>; fonts?: { heading?: string; body?: string } } };
+  sendJson(res, 200, {
+    name: cfg.business?.name ?? s,
+    industry: cfg.business?.industry ?? "",
+    palette: cfg.design?.palette ?? null,
+    fonts: cfg.design?.fonts ?? null,
+    ...readBrandBoard(paths, cfg.template ?? "", cfg.brand?.logo ?? null),
+  });
+}
+
+async function versions(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  sendJson(res, 200, { versions: await listVersions(clientPaths(deps.factory.clientsRoot, s).root) });
+}
+
+/** Back to an earlier version of config, texts, images and site code. Not while a job runs for this client. */
+async function restore(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  if (deps.jobs.running()?.slug === s) throw new HttpError(409, "Bu müşteri için çalışan bir iş var. Bitince geri al.");
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const root = clientPaths(deps.factory.clientsRoot, s).root;
+  await snapshot(root, "Geri almadan önceki hâl");
+  sendJson(res, 200, await restoreVersion(root, str(body, "id", { max: 40 })!));
+}
+
+function listClients(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse): void {
+  const { clients } = tools.listClients(deps.factory);
+  sendJson(res, 200, { clients: clients.map((c) => ({ ...c, business: c.stage === "unreadable" ? null : readBusiness(deps.factory, c.slug) })) });
+}
+
+async function saveBusiness(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const body = await readJsonBody(req, JSON_LIMIT);
+  try {
+    sendJson(res, 200, writeBusiness(deps.factory, s, body));
+  } catch (error) {
+    if (error instanceof ZodError) throw new HttpError(400, `Geçersiz bilgi: ${error.issues.map((i) => i.path.join(".")).join(", ")}`);
+    throw error;
+  }
+}
+
+async function createClient(deps: ApiDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const hosting = str(body, "hostingModel");
+  if (hosting !== "managed" && hosting !== "client") throw new HttpError(400, "Barındırma modeli managed ya da client olmalı.");
+  const extra = str(body, "extraLocale", { optional: true });
+  if (extra && !(LOCALES as readonly string[]).includes(extra)) throw new HttpError(400, "Desteklenmeyen dil.");
+  const country = str(body, "country", { optional: true }) ?? "GB";
+  if (!(tools.COUNTRIES as readonly string[]).includes(country)) throw new HttpError(400, "Ülke GB ya da TR olmalı.");
+  const result = await tools.createClient(deps.factory, {
+    slug: str(body, "slug", { max: 40 })!,
+    businessName: str(body, "businessName", { max: 80 })!,
+    industry: str(body, "industry", { max: 60 })!,
+    hostingModel: hosting,
+    country: country as tools.Country,
+    ...(extra ? { extraLocale: extra as (typeof LOCALES)[number] } : {}),
+  });
+  // Optional start design from the library; used by the first "Siteyi Oluştur" run.
+  const startDesign = str(body, "startDesign", { optional: true, max: 41 });
+  if (startDesign) {
+    try {
+      setStartDesign(deps.factory, result.slug, startDesign);
+    } catch {
+      // The client is created either way; a deleted design is simply not preselected.
+    }
+  }
+  sendJson(res, 201, result);
+}
+
+/** Archive, not delete: the operator must type the slug, and nothing may be running for this client. */
+async function archive(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  const body = await readJsonBody(req, JSON_LIMIT);
+  if (body.confirm !== s) throw new HttpError(400, "Onay için müşterinin kısa adını (slug) aynen yazın.");
+  const running = deps.jobs.running();
+  if (running?.slug === s) throw new HttpError(409, `Bu müşteri için çalışan bir iş var: "${running.title}". Bitmesini bekleyin.`);
+  const r = archiveClient(deps.factory, s);
+  sendJson(res, 200, { archived: true, slug: s, folder: path.basename(r.archivedTo) });
+}
+
+function clientDetail(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  const status = tools.getClientStatus(deps.factory, { slug: s });
+  const paths = clientPaths(deps.factory.clientsRoot, s);
+  const draft = readDraftConfig(paths) as {
+    business?: { name?: string; industry?: string };
+    hosting?: { model?: string };
+    i18n?: { locales?: string[] };
+    site?: { domain?: string | null };
+    meta?: { unmapped?: unknown[]; laterInterests?: string[] };
+    design?: unknown;
+    template?: string;
+    contact?: Record<string, unknown>;
+    whatsapp?: { number?: string | null };
+  };
+  const build = status.lastBuild;
+  const { valid } = approvalState(paths.root, paths.approvals, build?.distHash ?? null);
+  sendJson(res, 200, {
+    status,
+    business: draft.business ?? {},
+    hosting: draft.hosting?.model ?? null,
+    locales: draft.i18n?.locales ?? ["en"],
+    domain: draft.site?.domain ?? null,
+    pages: (draft as { pages?: string[] }).pages ?? [],
+    defaultLocale: (draft as { i18n?: { defaultLocale?: string } }).i18n?.defaultLocale ?? "en",
+    unmapped: draft.meta?.unmapped ?? [],
+    laterInterests: draft.meta?.laterInterests ?? [],
+    design: draft.design ?? null,
+    template: draft.template ?? null,
+    contact: draft.contact ?? {},
+    whatsapp: draft.whatsapp?.number ?? null,
+    country: (draft as { business?: { country?: string } }).business?.country ?? "GB",
+    businessTracking: readBusiness(deps.factory, s),
+    startDesign: readStartDesign(deps.factory, s),
+    budget: { mode: modeFor(deps.factory, s), usage: summarise(deps.factory).byClient[s] ?? { tokens: 0, costUsd: 0, jobs: 0 } },
+    latestTemplate: deps.factory.defaultTemplate,
+    inbox: inboxFiles(deps.factory, s),
+    assets: assetFiles(paths.assetsDir),
+    logo: (draft as { brand?: { logo?: string | null } }).brand?.logo ?? null,
+    questionnaires: existingQuestionnaires(paths.questionnaireDir),
+    qualityReport: existsSync(paths.qualityReport) ? readFileSync(paths.qualityReport, "utf8") : null,
+    distReady: Boolean(build?.passed && build.distHash && dirHash(paths.distDir) === build.distHash),
+    approvals: APPROVAL_KINDS.map((kind) => ({ kind, valid: valid[kind] !== null, at: valid[kind]?.at ?? null, command: `npm run approve -- ${s} ${kind}` })),
+    siteApproveCommand: `npm run approve -- ${s} site`,
+    lastDeploy: readJsonIfExists(paths.lastDeploy) ?? null,
+    content: Object.fromEntries((draft.i18n?.locales ?? ["en"]).map((l) => [l, readJsonIfExists(paths.content(l)) ?? null])),
+    history: readHistory(deps.factory, s),
+    running: deps.jobs.running()?.slug === s ? serialiseJob(deps.jobs.running()!, 0) : null,
+  });
+}
+
+function questionnaireView(deps: ApiDeps, slug: string, round: 1 | 2) {
+  const { questionnaire, industry } = tools.questionnaireFor(deps.factory, { slug, round });
+  const pick = (id: string) => {
+    const q = QUESTIONS.find((x) => x.id === id);
+    return q ? { id: q.id, text: q.text, hint: q.hint ?? null, example: q.example ?? null, choices: q.choices ?? null, required: q.required } : null;
+  };
+  return {
+    round,
+    plainText: questionnaire.plainText,
+    questions: questionnaire.questionIds.map(pick).filter((q) => q !== null),
+    extras: round === 2 ? industryExtras(industry) : [],
+    later: round === 2 ? QUESTIONS.filter((q) => q.round === "later" && q.audience === "client").map((q) => ({ id: q.id, text: q.text })) : [],
+  };
+}
+
+function getQuestionnaire(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug, round]: string[]): void {
+  sendJson(res, 200, questionnaireView(deps, assertSlug(slug!), Number(round) as 1 | 2));
+}
+
+async function writeQuestionnaire(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug, round]: string[]): Promise<void> {
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const replyBy = str(body, "replyBy", { optional: true, max: 40 });
+  const s = assertSlug(slug!);
+  tools.generateQuestionnaire(deps.factory, { slug: s, round: Number(round) as 1 | 2, ...(replyBy ? { replyBy } : {}) });
+  sendJson(res, 200, questionnaireView(deps, s, Number(round) as 1 | 2));
+}
+
+/** Uploads land in <inbox>/<slug>/; save_asset later checks type, size and SVG safety. */
+async function uploadInbox(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug, rawName]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s }); // 404-style error if the client does not exist
+  const name = safeFileName(decodeURIComponent(rawName!));
+  const bytes = await readBody(req, UPLOAD_LIMIT);
+  if (bytes.length === 0) throw new HttpError(400, "Boş dosya.");
+  const dir = safeJoin(deps.factory.inboxDir, s);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(safeJoin(dir, name), bytes);
+  sendJson(res, 201, { name, inbox: inboxFiles(deps.factory, s) });
+}
+
+/**
+ * Thumbnails for the panel. Shown only with <img>; the headers stop anything in a file (an SVG script) from
+ * running even if it were opened directly.
+ */
+function serveClientImage(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug, where, rawName]: string[]): void {
+  const s = assertSlug(slug!);
+  const name = safeFileName(decodeURIComponent(rawName!));
+  const type = IMAGE_TYPES[path.extname(name).toLowerCase()];
+  const dir = where === "inbox" ? safeJoin(deps.factory.inboxDir, s) : clientPaths(deps.factory.clientsRoot, s).assetsDir;
+  const file = safeJoin(dir, name);
+  if (!type || !existsSync(file)) throw new HttpError(404, "Dosya yok.");
+  res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox" });
+  res.end(readFileSync(file));
+}
+
+/** Eren marks a file as the client's logo: saved (checked like save_asset) and set as brand.logo. No agent needed. */
+async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  if (deps.jobs.running()?.slug === s) throw new HttpError(409, "Agent bu müşteride çalışıyor; bitince tekrar dene.");
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const name = safeFileName(str(body, "name", { max: 120 })!);
+  const from = str(body, "from", { max: 10 });
+  let relPath: string;
+  if (from === "inbox") {
+    relPath = tools.saveAssetTool(deps.factory, { slug: s, inboxFile: `${s}/${name}`, kind: "logo" }).relPath;
+  } else if (from === "assets") {
+    if (!existsSync(safeJoin(clientPaths(deps.factory.clientsRoot, s).assetsDir, name))) throw new HttpError(404, "Dosya yok.");
+    relPath = `assets/${name}`;
+  } else {
+    throw new HttpError(400, "Kaynak inbox ya da assets olmalı.");
+  }
+  tools.updateClientConfig(deps.factory, { slug: s, patch: { brand: { logo: relPath } } });
+  appendInput(deps.factory, s, "logo", `Eren set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom-site.md); never draw a replacement.`);
+  sendJson(res, 200, { logo: relPath });
+}
+
+function existingQuestionnaires(dir: string): number[] {
+  return [1, 2].filter((n) => existsSync(path.join(dir, `round-${n}.txt`)));
+}
