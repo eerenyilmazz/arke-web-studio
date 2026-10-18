@@ -31,7 +31,7 @@ export const TOOLS_NOTE =
  */
 const SKILLS_STEP = "[[DESIGN_SKILLS]]";
 const SKILLS_TEXT: Readonly<Record<"none" | "search" | "full", string>> = {
-  full: "Before designing, load the design skills with the Skill tool, one call each: impeccable, design-taste-frontend, and ui-ux-pro-max and brand when they are listed. Use their judgement on direction, composition, type and motion; skip their scripts and image generation. Where they disagree with rules/custom-site.md, the rules win.",
+  full: "Before designing, load the design skills with the Skill tool, one call each: impeccable, design-taste-frontend, and ui-ux-pro-max and brand when they are listed. When you come to the animations and the signature motion (not before), also load animate and follow its build sequence for each one. Use their judgement on direction, composition, type and motion; skip their scripts and image generation, and ignore any 'initial response' a skill asks for: carry on with the job. Where they disagree with rules/custom-site.md, the rules win.",
   search:
     'For design judgement, do not load whole skills: ask search_design_knowledge short, specific questions (e.g. "barber hero composition", "dark palette contrast", "signature motion ideas for a bakery") and use the passages it returns; 3–6 searches are usually enough. Where they disagree with rules/custom-site.md, the rules win.',
   none: "Work from rules/custom-site.md; do not load design skills.",

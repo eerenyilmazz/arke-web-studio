@@ -237,7 +237,7 @@ function registerSiteFileTools(server: McpServer, factory: FactoryConfig): void 
     {
       title: "Search design knowledge",
       description:
-        "Searches the factory's design rules and the design skills (Impeccable, taste-skill, UI UX Pro Max) and returns the few most relevant passages. Ask short, specific questions (e.g. 'barber hero composition', 'dark palette contrast', 'signature motion bakery'). Much cheaper than loading whole skills.",
+        "Searches the factory's design rules and the design skills (Impeccable, taste-skill, animate, UI UX Pro Max) and returns the few most relevant passages. Ask short, specific questions (e.g. 'barber hero composition', 'dark palette contrast', 'signature motion bakery'). Much cheaper than loading whole skills.",
       inputSchema: { query: z.string().min(2).max(200), k: z.number().int().min(1).max(8).optional() },
       annotations: { readOnlyHint: true },
     },

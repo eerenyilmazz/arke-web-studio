@@ -17,6 +17,13 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Hareket skill'i: animate (1.18.1)
+
+Emil Kowalski'nin **animate** skill'i (MIT) `.claude/skills/animate` içinde, değiştirilmeden (kaynak ve sürüm: `UPSTREAM`).
+- Premium: agent sadece animasyonlara ve imza hareketine gelince yükler; her animasyon için "hareket etmeli mi, hangi özellik, hangi eğri ve süre, azaltılmış hareket" sırasını izler.
+- Standart: tamamı yüklenmez, `search_design_knowledge` ile içinden arama yapılır. Temel: kullanılmaz.
+- Sitelerde sadece CSS ve WAAPI yolu geçerli; Motion kütüphanesi ya da npm paketi yok (`rules/custom-site.md` kazanır).
+
 ## İkinci dil, geri alma, yedek kontrolü (1.18.0)
 
 - **Panel İngilizce de olabilir:** Ayarlar → Genel → Panel dili. Seçim sunucuda saklanır, sayfa yeni dilde yeniden açılır. Müşteri verileri (agent'ın yazdıkları, portal cevapları ve yorumları, sitedeki metinler) çevrilmez. Panel İngilizceyken agent da sana özetlerini ve sorularını İngilizce yazar; sitelerin dili değişmez.

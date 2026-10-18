@@ -72,7 +72,7 @@ export const AGENT_ALLOWED_TOOLS = [
   // No bare "Read", "Grep" or "Glob" here: a bare name allows reading ANY file on the machine. Without it, Claude
   // Code lets these read-only tools work without a prompt only in the working directory (the factory) and the
   // --add-dir folders (clients, inbox); anything else is refused in a headless run.
-  // Design skills in .claude/skills (impeccable, taste-skill, UI UX Pro Max): instructions only. Their scripts
+  // Design skills in .claude/skills (impeccable, taste-skill, animate, UI UX Pro Max): instructions only. Their scripts
   // would need Bash, which stays denied below.
   "Skill",
 ] as const;

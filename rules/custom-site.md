@@ -16,6 +16,9 @@ Before designing, load the design skills in `.claude/skills/` with the Skill too
 - **impeccable**: design direction, typography, colour, motion and the audit of generated-looking design.
 - **design-taste-frontend** (taste-skill): art direction for public pages, composition and the no-slop house style.
 - **ui-ux-pro-max** and **brand** (when installed): sector palettes, font pairings, brand identity structure.
+- **animate** (Emil Kowalski, MIT): load it when you design the animations and the signature motion, not before.
+  It decides whether something should move at all, then the property, curve, duration and reduced-motion variant.
+  Here only its CSS and WAAPI paths apply (no Motion library, no npm packages; see below).
 
 Their scripts, browser tools and image generation are not available here (no shell). Do not load their reference
 files whole: ask `search_design_knowledge` for the passage you need (e.g. "hero composition bakery", "dark palette
