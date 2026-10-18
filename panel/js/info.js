@@ -15,12 +15,20 @@ export function quickEditCard(d) {
     const input = h("input", { id: `qe-${id}`, name: id, value: value || "", ...attrs });
     return h("label", { for: `qe-${id}` }, label, input);
   };
-  const form = h("form", { class: "card stack quick-edit", onsubmit: async (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(form).entries());
-    const job = await guarded(() => api("POST", `/api/clients/${slug}/quick-edit`, data));
-    if (job) { toast("Kaydedildi; site güncelleniyor."); await jobStarted(job); }
-  } },
+  const form = h(
+    "form",
+    {
+      class: "card stack quick-edit",
+      onsubmit: async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(form).entries());
+        const job = await guarded(() => api("POST", `/api/clients/${slug}/quick-edit`, data));
+        if (job) {
+          toast("Kaydedildi; site güncelleniyor.");
+          await jobStarted(job);
+        }
+      },
+    },
     h("h3", { text: "Hızlı düzenle" }),
     h("p", { class: "muted small", text: "Telefonu 0 ile yazabilirsin; ülke koduna çevrilir." }),
     field("phone", "Telefon", c.phone, { type: "tel", autocomplete: "off" }),
@@ -37,23 +45,61 @@ export function quickEditCard(d) {
 export function versionsCard(d) {
   const slug = d.status.slug;
   const list = h("ul", { class: "versions" }, h("li", { class: "muted small", text: "Yükleniyor…" }));
-  const card = h("details", { class: "card advanced", open: false }, h("summary", { text: "Sürüm Geçmişi" }),
-    h("p", { class: "muted small", text: "Her işlemden önce ve sonra site kaydedilir. Bir sürüme dönüldüğünde metinler, görseller ve site kodu o hâline gelir; onayın yeniden verilmesi gerekir." }), list);
+  const card = h(
+    "details",
+    { class: "card advanced", open: false },
+    h("summary", { text: "Sürüm Geçmişi" }),
+    h("p", {
+      class: "muted small",
+      text: "Her işlemden önce ve sonra site kaydedilir. Bir sürüme dönüldüğünde metinler, görseller ve site kodu o hâline gelir; onayın yeniden verilmesi gerekir.",
+    }),
+    list,
+  );
   card.addEventListener("toggle", async () => {
     if (!card.open || card.dataset.loaded) return;
     card.dataset.loaded = "1";
     const r = await guarded(() => api("GET", `/api/clients/${slug}/versions`));
     if (!r) return;
-    if (!r.versions.length) { list.replaceChildren(h("li", { class: "muted small", text: "Henüz kayıtlı sürüm yok." })); return; }
-    list.replaceChildren(...r.versions.map((v, i) => h("li", {},
-      h("span", { class: "when", text: time(v.at) }),
-      h("span", { class: "what", text: i === 0 ? `${v.message} (şu anki)` : v.message }),
-      i === 0 ? null : h("button", { class: "btn btn-sm", type: "button", disabled: isBusy(), onclick: async () => {
-        if (!(await ask({ title: "Bu sürüme dön", body: `Site "${v.message}" sonrasındaki hâline döndürülecek.\n\nSonraki değişiklikler kaybolmaz, listede kalır.`, confirm: "Geri al" }))) return;
-        const res = await guarded(() => api("POST", `/api/clients/${slug}/versions/restore`, { id: v.id }));
-        if (res) { toast("Geri alındı. Siteyi yeniden oluşturup bak."); render(); }
-      } }, "Bu Sürüme Dön"),
-    )));
+    if (!r.versions.length) {
+      list.replaceChildren(h("li", { class: "muted small", text: "Henüz kayıtlı sürüm yok." }));
+      return;
+    }
+    list.replaceChildren(
+      ...r.versions.map((v, i) =>
+        h(
+          "li",
+          {},
+          h("span", { class: "when", text: time(v.at) }),
+          h("span", { class: "what", text: i === 0 ? `${v.message} (şu anki)` : v.message }),
+          i === 0
+            ? null
+            : h(
+                "button",
+                {
+                  class: "btn btn-sm",
+                  type: "button",
+                  disabled: isBusy(),
+                  onclick: async () => {
+                    if (
+                      !(await ask({
+                        title: "Bu sürüme dön",
+                        body: `Site "${v.message}" sonrasındaki hâline döndürülecek.\n\nSonraki değişiklikler kaybolmaz, listede kalır.`,
+                        confirm: "Geri al",
+                      }))
+                    )
+                      return;
+                    const res = await guarded(() => api("POST", `/api/clients/${slug}/versions/restore`, { id: v.id }));
+                    if (res) {
+                      toast("Geri alındı. Siteyi yeniden oluşturup bak.");
+                      render();
+                    }
+                  },
+                },
+                "Bu Sürüme Dön",
+              ),
+        ),
+      ),
+    );
   });
   return card;
 }
@@ -63,7 +109,11 @@ export function versionsCard(d) {
 /** What the agent knows: the texts on the site, the answers and files, and the optional questionnaire. */
 export async function tabInfo(body, d) {
   const section = (title, sub) => {
-    const el = h("section", { class: "info-section" }, h("div", { class: "info-head" }, h("h2", { text: title }), sub && h("p", { class: "muted small", text: sub })));
+    const el = h(
+      "section",
+      { class: "info-section" },
+      h("div", { class: "info-head" }, h("h2", { text: title }), sub && h("p", { class: "muted small", text: sub })),
+    );
     body.append(el);
     return el;
   };
@@ -74,7 +124,9 @@ export async function tabInfo(body, d) {
     miss.append(h("ul", { class: "missing" }, ...d.status.openQuestions.map((q) => h("li", { title: q.text, text: MISSING_TR[q.id] || q.text }))));
   }
   tabContent(section("Sitedeki Metinler", "Değiştirmek için Düzenleme → Metin formunu kullanınız."), d);
-  section("Logo ve Görseller", "Yüklenen dosyalar siteye eklenir; logoyu seçmek için \"Logo olarak kullan\"ı kullanınız.").append(uploadCard(d.status.slug, d.inbox, d.assets, d.logo));
+  section("Logo ve Görseller", 'Yüklenen dosyalar siteye eklenir; logoyu seçmek için "Logo olarak kullan"ı kullanınız.').append(
+    uploadCard(d.status.slug, d.inbox, d.assets, d.logo),
+  );
   const pub = section("Onay ve Yayın", "Onay kodu yalnızca paneli başlattığınız terminalde görünür.");
   tabPublish(pub, d);
   tabBuild(pub, d);
@@ -96,19 +148,34 @@ export function tabQuestions(body, d, { compact = false } = {}) {
     out.replaceChildren(h("div", { class: "copybox" }, h("pre", { text: q.plainText }), copyButton(q.plainText)));
     toast(`${round}. tur formu hazır. Metni kopyalayıp müşteriye gönderin.`);
   };
-  body.append(h("section", { class: "card stack" },
-    h("h2", { text: "Müşteriye gidecek soru formu" }),
-    h("p", { class: "muted", text: "1. tur: 10 temel soru. 2. tur: sadece eksik kalanlar, sektöre özel sorular ve 'ileride ilginizi çekebilir' listesi. Form İngilizce; müşteriye siz gönderirsiniz." }),
-    h("label", { for: "reply-by" }, "Son cevap tarihi (isteğe bağlı)", replyBy),
-    h("div", { class: "row" },
-      h("button", { class: "btn btn-primary", type: "button", onclick: () => make(1) }, "1. tur formunu oluştur"),
-      h("button", { class: "btn", type: "button", onclick: () => make(2) }, "2. tur formunu oluştur"),
+  body.append(
+    h(
+      "section",
+      { class: "card stack" },
+      h("h2", { text: "Müşteriye gidecek soru formu" }),
+      h("p", {
+        class: "muted",
+        text: "1. tur: 10 temel soru. 2. tur: sadece eksik kalanlar, sektöre özel sorular ve 'ileride ilginizi çekebilir' listesi. Form İngilizce; müşteriye siz gönderirsiniz.",
+      }),
+      h("label", { for: "reply-by" }, "Son cevap tarihi (isteğe bağlı)", replyBy),
+      h(
+        "div",
+        { class: "row" },
+        h("button", { class: "btn btn-primary", type: "button", onclick: () => make(1) }, "1. tur formunu oluştur"),
+        h("button", { class: "btn", type: "button", onclick: () => make(2) }, "2. tur formunu oluştur"),
+      ),
+      out,
     ),
-    out,
-  ));
+  );
   if (!compact && d.status.openQuestions.length) {
-    body.append(h("section", { class: "card" }, h("h2", { text: "Hâlâ açık sorular" }),
-      h("ul", { style: "margin:0;padding-inline-start:1.2rem" }, ...d.status.openQuestions.map((q) => h("li", { text: `${q.text} (${q.round}. tur)` })))));
+    body.append(
+      h(
+        "section",
+        { class: "card" },
+        h("h2", { text: "Hâlâ açık sorular" }),
+        h("ul", { style: "margin:0;padding-inline-start:1.2rem" }, ...d.status.openQuestions.map((q) => h("li", { text: `${q.text} (${q.round}. tur)` }))),
+      ),
+    );
   }
 }
 
@@ -126,13 +193,31 @@ export async function tabAnswers(body, d, { compact = false } = {}) {
     ta.addEventListener("input", () => onInput(ta.value));
     return ta;
   };
-  const qs = q.questions.map((item) => h("div", { class: "q" },
-    h("label", { for: `a-${item.id}` }, item.text, item.required ? h("span", { class: "req", text: "gerekli" }) : null,
-      (item.example || item.hint) ? h("span", { class: "help", text: [item.example && `Örnek: ${item.example}`, item.hint].filter(Boolean).join(" · ") }) : null,
-      item.choices ? h("span", { class: "help", text: `Seçenekler: ${item.choices.join(" / ")}` }) : null),
-    area(`a-${item.id}`, draft.answers[item.id], (v) => (draft.answers[item.id] = v)),
-  ));
-  const extras = q.extras.map((text, i) => h("div", { class: "q" }, h("label", { for: `x-${i}` }, text), area(`x-${i}`, draft.extras[i], (v) => (draft.extras[i] = v))));
+  const qs = q.questions.map((item) =>
+    h(
+      "div",
+      { class: "q" },
+      h(
+        "label",
+        { for: `a-${item.id}` },
+        item.text,
+        item.required ? h("span", { class: "req", text: "gerekli" }) : null,
+        item.example || item.hint
+          ? h("span", { class: "help", text: [item.example && `Örnek: ${item.example}`, item.hint].filter(Boolean).join(" · ") })
+          : null,
+        item.choices ? h("span", { class: "help", text: `Seçenekler: ${item.choices.join(" / ")}` }) : null,
+      ),
+      area(`a-${item.id}`, draft.answers[item.id], (v) => (draft.answers[item.id] = v)),
+    ),
+  );
+  const extras = q.extras.map((text, i) =>
+    h(
+      "div",
+      { class: "q" },
+      h("label", { for: `x-${i}` }, text),
+      area(`x-${i}`, draft.extras[i], (v) => (draft.extras[i] = v)),
+    ),
+  );
   const later = q.later.map((l) => {
     const cb = h("input", { type: "checkbox", value: l.id, checked: draft.later.has(l.id) });
     cb.addEventListener("change", () => (cb.checked ? draft.later.add(l.id) : draft.later.delete(l.id)));
@@ -140,30 +225,57 @@ export async function tabAnswers(body, d, { compact = false } = {}) {
   });
   const free = area("free", draft.freeText, (v) => (draft.freeText = v), 12);
   free.classList.add("big-paste");
-  free.placeholder = "Müşterinin e-postasını, WhatsApp mesajını ya da kendi notlarını olduğu gibi yapıştır. Sıra, dil ve biçim önemli değil.\n\nÖr: Kuaför, adı Bella Hair. Kadın kesim 35£, boya 60£'dan başlıyor. Tel 07700 900123, Kingston'da. Renkleri pembe-gri olsun. Instagram @bellahair";
+  free.placeholder =
+    "Müşterinin e-postasını, WhatsApp mesajını ya da kendi notlarını olduğu gibi yapıştır. Sıra, dil ve biçim önemli değil.\n\nÖr: Kuaför, adı Bella Hair. Kadın kesim 35£, boya 60£'dan başlıyor. Tel 07700 900123, Kingston'da. Renkleri pembe-gri olsun. Instagram @bellahair";
 
   body.append(
-    compact ? null : h("section", { class: "card stack" },
-      h("h2", { text: "Bilgileri yapıştır, agent dağıtsın" }),
-      h("p", { class: "muted small", text: "Agent her bilgiyi doğru alana kendisi yerleştirir, siteye girecek metinleri sitenin dilinde yazar. Eksik kalanları uydurmaz; 2. tur formuna ekler." }),
-      h("label", { for: "free", class: "sr-only" }, "Müşteri bilgileri"),
-      free,
-    ),
+    compact
+      ? null
+      : h(
+          "section",
+          { class: "card stack" },
+          h("h2", { text: "Bilgileri yapıştır, agent dağıtsın" }),
+          h("p", {
+            class: "muted small",
+            text: "Agent her bilgiyi doğru alana kendisi yerleştirir, siteye girecek metinleri sitenin dilinde yazar. Eksik kalanları uydurmaz; 2. tur formuna ekler.",
+          }),
+          h("label", { for: "free", class: "sr-only" }, "Müşteri bilgileri"),
+          free,
+        ),
     compact ? null : uploadCard(slug, d.inbox, d.assets, d.logo),
-    h("details", { class: "card" },
+    h(
+      "details",
+      { class: "card" },
       h("summary", { style: "cursor:pointer;font-weight:600" }, `Soru soru gir (isteğe bağlı) · ${round}. tur, ${q.questions.length} soru`),
-      h("p", { class: "muted small", style: "margin-top:0.6rem", text: "Müşteri formu soru soru cevapladıysa kullan. Boş bıraktıkların atlanır; 'please suggest' dediyse aynen yaz." }),
+      h("p", {
+        class: "muted small",
+        style: "margin-top:0.6rem",
+        text: "Müşteri formu soru soru cevapladıysa kullan. Boş bıraktıkların atlanır; 'please suggest' dediyse aynen yaz.",
+      }),
       ...qs,
-      extras.length > 0 ? h("h3", { text: "Sektöre özel", style: "margin-top:1rem" }) : null, ...extras,
+      extras.length > 0 ? h("h3", { text: "Sektöre özel", style: "margin-top:1rem" }) : null,
+      ...extras,
       later.length > 0 ? h("fieldset", { style: "margin-top:1rem" }, h("legend", { text: "İleride ilgilenebilecekleri" }), ...later) : null,
     ),
-    h("section", { class: "card row" },
-      h("button", { class: "btn btn-primary btn-lg", type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "answers", {
-        answers: draft.answers,
-        extras: q.extras.map((question, i) => ({ question, answer: draft.extras[i] || "" })),
-        later: [...draft.later],
-        freeText: draft.freeText,
-      }) }, "Agent'a işlet"),
+    h(
+      "section",
+      { class: "card row" },
+      h(
+        "button",
+        {
+          class: "btn btn-primary btn-lg",
+          type: "button",
+          disabled: isBusy(),
+          onclick: () =>
+            runAgent(slug, "answers", {
+              answers: draft.answers,
+              extras: q.extras.map((question, i) => ({ question, answer: draft.extras[i] || "" })),
+              later: [...draft.later],
+              freeText: draft.freeText,
+            }),
+        },
+        "Agent'a işlet",
+      ),
       h("span", { class: "muted small", text: "Agent sadece fabrika araçlarını kullanır; dosya düzenleyemez, komut çalıştıramaz, yayın yapamaz." }),
     ),
   );
@@ -176,32 +288,68 @@ export function uploadCard(slug, inbox, assets = [], logo = null) {
   const draw = () => {
     const rows = [
       ...current.assets.map((f) => ({ ...f, from: "assets", state: "Sitede" })),
-      ...current.inbox.filter((f) => !current.assets.some((a) => a.name === f.name || a.name.endsWith(`-${f.name}`))).map((f) => ({ ...f, from: "inbox", state: "Yüklendi, agent kaydedecek" })),
+      ...current.inbox
+        .filter((f) => !current.assets.some((a) => a.name === f.name || a.name.endsWith(`-${f.name}`)))
+        .map((f) => ({ ...f, from: "inbox", state: "Yüklendi, agent kaydedecek" })),
     ];
-    if (!rows.length) { list.replaceChildren(h("li", { class: "muted small", text: "Henüz dosya yok." })); return; }
-    list.replaceChildren(...rows.map((f) => {
-      const isLogo = current.logo === `assets/${f.name}`;
-      return h("li", { class: isLogo ? "is-logo" : "" },
-        h("img", { src: `/api/clients/${slug}/${f.from}/${encodeURIComponent(f.name)}`, alt: "", loading: "lazy" }),
-        h("div", { class: "meta" }, h("span", { text: f.name }), h("span", { class: "muted small", text: `${Math.ceil(f.bytes / 1024)} KB · ${f.state}` })),
-        isLogo
-          ? h("span", { class: "badge ok", text: "Müşteri logosu" })
-          : h("button", { class: "btn btn-sm", type: "button", disabled: isBusy(), onclick: async () => {
-              let r;
-              try {
-                r = await api("POST", `/api/clients/${slug}/logo`, { name: f.name, from: f.from });
-              } catch (e) {
-                if (e.data?.code !== "shared-logo") { toast(e.message, true); return; }
-                const go = await ask({ title: "Bu logo başka bir müşteride", image: `/api/clients/${slug}/${f.from}/${encodeURIComponent(f.name)}`, body: `${e.message}\n\nBilerek aynı logoyu kullanıyorsanız devam edebilirsiniz.`, confirm: "Yine de kullan", danger: true });
-                if (!go) return;
-                r = await guarded(() => api("POST", `/api/clients/${slug}/logo`, { name: f.name, from: f.from, force: true }));
-              }
-              if (!r) return;
-              current = { ...current, logo: r.logo, assets: current.assets.some((a) => a.name === r.logo.slice(7)) ? current.assets : [...current.assets, { name: r.logo.slice(7), bytes: f.bytes }] };
-              draw();
-              toast("Logo kaydedildi. Marka eski logoya göre; Marka Kimliği sekmesinden 'Marka Kimliğiyle Yeniden Tasarla' ile yeni logoya göre yenileyiniz.");
-            } }, "Logo olarak kullan"));
-    }));
+    if (!rows.length) {
+      list.replaceChildren(h("li", { class: "muted small", text: "Henüz dosya yok." }));
+      return;
+    }
+    list.replaceChildren(
+      ...rows.map((f) => {
+        const isLogo = current.logo === `assets/${f.name}`;
+        return h(
+          "li",
+          { class: isLogo ? "is-logo" : "" },
+          h("img", { src: `/api/clients/${slug}/${f.from}/${encodeURIComponent(f.name)}`, alt: "", loading: "lazy" }),
+          h("div", { class: "meta" }, h("span", { text: f.name }), h("span", { class: "muted small", text: `${Math.ceil(f.bytes / 1024)} KB · ${f.state}` })),
+          isLogo
+            ? h("span", { class: "badge ok", text: "Müşteri logosu" })
+            : h(
+                "button",
+                {
+                  class: "btn btn-sm",
+                  type: "button",
+                  disabled: isBusy(),
+                  onclick: async () => {
+                    let r;
+                    try {
+                      r = await api("POST", `/api/clients/${slug}/logo`, { name: f.name, from: f.from });
+                    } catch (e) {
+                      if (e.data?.code !== "shared-logo") {
+                        toast(e.message, true);
+                        return;
+                      }
+                      const go = await ask({
+                        title: "Bu logo başka bir müşteride",
+                        image: `/api/clients/${slug}/${f.from}/${encodeURIComponent(f.name)}`,
+                        body: `${e.message}\n\nBilerek aynı logoyu kullanıyorsanız devam edebilirsiniz.`,
+                        confirm: "Yine de kullan",
+                        danger: true,
+                      });
+                      if (!go) return;
+                      r = await guarded(() => api("POST", `/api/clients/${slug}/logo`, { name: f.name, from: f.from, force: true }));
+                    }
+                    if (!r) return;
+                    current = {
+                      ...current,
+                      logo: r.logo,
+                      assets: current.assets.some((a) => a.name === r.logo.slice(7))
+                        ? current.assets
+                        : [...current.assets, { name: r.logo.slice(7), bytes: f.bytes }],
+                    };
+                    draw();
+                    toast(
+                      "Logo kaydedildi. Marka eski logoya göre; Marka Kimliği sekmesinden 'Marka Kimliğiyle Yeniden Tasarla' ile yeni logoya göre yenileyiniz.",
+                    );
+                  },
+                },
+                "Logo olarak kullan",
+              ),
+        );
+      }),
+    );
   };
   draw();
   const input = h("input", { type: "file", multiple: true, accept: "image/png,image/jpeg,image/webp,image/avif,image/svg+xml", id: "files", class: "sr-only" });
@@ -209,17 +357,45 @@ export function uploadCard(slug, inbox, assets = [], logo = null) {
     let ok = 0;
     for (const file of files) {
       const res = await guarded(() => api("PUT", `/api/clients/${slug}/inbox/${encodeURIComponent(file.name)}`, file, true));
-      if (res) { ok++; current = { ...current, inbox: res.inbox }; draw(); }
+      if (res) {
+        ok++;
+        current = { ...current, inbox: res.inbox };
+        draw();
+      }
     }
     // Only report what really arrived; failures already showed their own error.
     if (ok) toast(`${ok} dosya yüklendi. Logoysa yanındaki "Logo olarak kullan"a bas.`);
   };
   input.addEventListener("change", () => upload([...input.files]));
-  const drop = h("div", { class: "drop" }, "Logo ve fotoğrafları buraya sürükleyin ya da ", h("label", { for: "files", style: "display:inline;text-decoration:underline;cursor:pointer" }, "dosya seçin"), input);
-  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+  const drop = h(
+    "div",
+    { class: "drop" },
+    "Logo ve fotoğrafları buraya sürükleyin ya da ",
+    h("label", { for: "files", style: "display:inline;text-decoration:underline;cursor:pointer" }, "dosya seçin"),
+    input,
+  );
+  drop.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    drop.classList.add("over");
+  });
   drop.addEventListener("dragleave", () => drop.classList.remove("over"));
-  drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); upload([...e.dataTransfer.files]); });
-  return h("section", { class: "card" }, h("h2", { text: "Dosyalar" }), h("p", { class: "muted small", style: "margin-bottom:0.7rem", text: "PNG, JPG, WebP, AVIF ya da SVG. Dosya içeriği kontrol edilir; zararlı SVG reddedilir." }), drop, list);
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    drop.classList.remove("over");
+    upload([...e.dataTransfer.files]);
+  });
+  return h(
+    "section",
+    { class: "card" },
+    h("h2", { text: "Dosyalar" }),
+    h("p", {
+      class: "muted small",
+      style: "margin-bottom:0.7rem",
+      text: "PNG, JPG, WebP, AVIF ya da SVG. Dosya içeriği kontrol edilir; zararlı SVG reddedilir.",
+    }),
+    drop,
+    list,
+  );
 }
 
 // ---------------------------------------------------------------- tab: content review
@@ -227,9 +403,15 @@ export function uploadCard(slug, inbox, assets = [], logo = null) {
 export function tabContent(body, d) {
   const section = h("section", { class: "card content-view stack" });
   for (const [locale, c] of Object.entries(d.content)) {
-    if (!c) { section.append(h("p", { class: "muted", text: `${LANG_NAMES[locale] || locale}: henüz metin yok.` })); continue; }
+    if (!c) {
+      section.append(h("p", { class: "muted", text: `${LANG_NAMES[locale] || locale}: henüz metin yok.` }));
+      continue;
+    }
     const rows = [
-      ["Slogan", c.tagline], ["Hero başlık", c.hero?.title], ["Hero alt metin", c.hero?.subtitle], ["Buton", c.hero?.ctaLabel],
+      ["Slogan", c.tagline],
+      ["Hero başlık", c.hero?.title],
+      ["Hero alt metin", c.hero?.subtitle],
+      ["Buton", c.hero?.ctaLabel],
       ["Hakkımızda", c.about ? `${c.about.title}\n${c.about.body}` : ""],
       ["Hizmetler", (c.services || []).map((s) => `• ${s.title}${s.price ? ` (${s.price})` : ""}: ${s.description}`).join("\n")],
       ["Yorumlar", (c.testimonials || []).map((t) => `“${t.quote}” ${t.author}`).join("\n")],
@@ -248,25 +430,44 @@ export function tabBuild(body, d) {
   const slug = d.status.slug;
   const b = d.status.lastBuild;
   const busy = isBusy();
-  body.append(h("section", { class: "card stack" },
-    h("h2", { text: "Kalite kontrolü" }),
-    h("p", { class: "muted", text: b ? `Son oluşturma: ${time(b.at)} · ${b.passed ? "kontroller geçti" : "bazı kontroller geçmedi"}` : "Site henüz oluşturulmadı." }),
-    h("div", { class: "row" },
-      h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
-      h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları agent düzeltsin"),
+  body.append(
+    h(
+      "section",
+      { class: "card stack" },
+      h("h2", { text: "Kalite kontrolü" }),
+      h("p", {
+        class: "muted",
+        text: b ? `Son oluşturma: ${time(b.at)} · ${b.passed ? "kontroller geçti" : "bazı kontroller geçmedi"}` : "Site henüz oluşturulmadı.",
+      }),
+      h(
+        "div",
+        { class: "row" },
+        h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
+        h("button", { class: "btn", type: "button", disabled: busy, onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları agent düzeltsin"),
+      ),
     ),
-  ));
+  );
   if (d.qualityReport) body.append(qualityTable(d.qualityReport));
-  body.append(h("details", { class: "card advanced" }, h("summary", { text: "Onaylamadan önce bakılacaklar" }),
-    h("ul", { style: "margin:0;padding-inline-start:1.2rem" }, ...[
-      "5 saniyede işletmenin ne yaptığı ve sonra ne yapılacağı anlaşılıyor.",
-      "Her sayfada tek net çağrı; iletişim en fazla bir dokunuş uzakta.",
-      "Bölümler ne boş ne kalabalık; boşluklar tutarlı.",
-      "Logo, renkler ve ton her sayfada aynı.",
-      "Sektöre uygun hissettiriyor.",
-      "Aynı şablondan başka bir siteyle yan yana belirgin şekilde farklı.",
-      "Telefonda ve masaüstünde bakıldı; Lighthouse elle çalıştırıldı.",
-    ].map((t) => h("li", { text: t })))));
+  body.append(
+    h(
+      "details",
+      { class: "card advanced" },
+      h("summary", { text: "Onaylamadan önce bakılacaklar" }),
+      h(
+        "ul",
+        { style: "margin:0;padding-inline-start:1.2rem" },
+        ...[
+          "5 saniyede işletmenin ne yaptığı ve sonra ne yapılacağı anlaşılıyor.",
+          "Her sayfada tek net çağrı; iletişim en fazla bir dokunuş uzakta.",
+          "Bölümler ne boş ne kalabalık; boşluklar tutarlı.",
+          "Logo, renkler ve ton her sayfada aynı.",
+          "Sektöre uygun hissettiriyor.",
+          "Aynı şablondan başka bir siteyle yan yana belirgin şekilde farklı.",
+          "Telefonda ve masaüstünde bakıldı; Lighthouse elle çalıştırıldı.",
+        ].map((t) => h("li", { text: t })),
+      ),
+    ),
+  );
 }
 
 /** Short Turkish names for the open questions (the questions themselves are written for the client, in English). */
@@ -320,7 +521,10 @@ export const CHECK_NAMES = [
 ];
 
 export function qualityTable(md) {
-  const rows = md.split("\n").filter((l) => l.startsWith("| ") && !l.startsWith("| Check") && !l.startsWith("| ---")).map((l) => l.slice(2, -2).split(" | "));
+  const rows = md
+    .split("\n")
+    .filter((l) => l.startsWith("| ") && !l.startsWith("| Check") && !l.startsWith("| ---"))
+    .map((l) => l.slice(2, -2).split(" | "));
   const cls = { PASS: "ok", FAIL: "bad", WARN: "warn", SKIP: "skip" };
   const names = { PASS: "geçti", FAIL: "kaldı", WARN: "uyarı", SKIP: "atlandı" };
   const tr = (n) => {
@@ -330,12 +534,59 @@ export function qualityTable(md) {
   const counts = { PASS: 0, FAIL: 0, WARN: 0, SKIP: 0 };
   for (const [, r] of rows) counts[r] = (counts[r] || 0) + 1;
   const issues = rows.filter(([, r]) => r === "FAIL" || r === "WARN");
-  return h("section", { class: "card stack" },
-    h("div", { class: "row" }, h("span", { class: "badge ok", text: `${counts.PASS} geçti` }), counts.WARN ? h("span", { class: "badge warn", text: `${counts.WARN} uyarı` }) : null, counts.FAIL ? h("span", { class: "badge bad", text: `${counts.FAIL} kaldı` }) : null),
-    issues.length ? h("ul", { class: "issues" }, ...issues.map(([n, r, detail]) => h("li", {}, h("span", { class: `badge ${cls[r]}`, text: names[r] }), h("strong", { text: tr(n) }), h("span", { class: "muted small", text: (detail || "").replace(/\\\|/g, "|") })))) : h("p", { class: "muted small", text: "Sorun yok." }),
-    h("details", {}, h("summary", { class: "small", text: "Bütün kontroller" }),
-    h("div", { style: "overflow-x:auto" }, h("table", {}, h("thead", {}, h("tr", {}, h("th", { text: "Kontrol" }), h("th", { text: "Sonuç" }), h("th", { text: "Ayrıntı" }))),
-      h("tbody", {}, ...rows.map(([name, result, detail]) => h("tr", {}, h("td", { text: tr(name) }), h("td", {}, h("span", { class: `badge ${cls[result] || "skip"}`, text: names[result] || result })), h("td", { text: (detail || "").replace(/\\\|/g, "|") }))))))));
+  return h(
+    "section",
+    { class: "card stack" },
+    h(
+      "div",
+      { class: "row" },
+      h("span", { class: "badge ok", text: `${counts.PASS} geçti` }),
+      counts.WARN ? h("span", { class: "badge warn", text: `${counts.WARN} uyarı` }) : null,
+      counts.FAIL ? h("span", { class: "badge bad", text: `${counts.FAIL} kaldı` }) : null,
+    ),
+    issues.length
+      ? h(
+          "ul",
+          { class: "issues" },
+          ...issues.map(([n, r, detail]) =>
+            h(
+              "li",
+              {},
+              h("span", { class: `badge ${cls[r]}`, text: names[r] }),
+              h("strong", { text: tr(n) }),
+              h("span", { class: "muted small", text: (detail || "").replace(/\\\|/g, "|") }),
+            ),
+          ),
+        )
+      : h("p", { class: "muted small", text: "Sorun yok." }),
+    h(
+      "details",
+      {},
+      h("summary", { class: "small", text: "Bütün kontroller" }),
+      h(
+        "div",
+        { style: "overflow-x:auto" },
+        h(
+          "table",
+          {},
+          h("thead", {}, h("tr", {}, h("th", { text: "Kontrol" }), h("th", { text: "Sonuç" }), h("th", { text: "Ayrıntı" }))),
+          h(
+            "tbody",
+            {},
+            ...rows.map(([name, result, detail]) =>
+              h(
+                "tr",
+                {},
+                h("td", { text: tr(name) }),
+                h("td", {}, h("span", { class: `badge ${cls[result] || "skip"}`, text: names[result] || result })),
+                h("td", { text: (detail || "").replace(/\\\|/g, "|") }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------- tab: approvals and publish
@@ -349,41 +600,100 @@ export function tabPublish(body, d) {
   const prod = d.approvals.find((a) => a.kind === "production");
   const siteOk = site.every((a) => a.valid);
   body.append(
-    h("section", { class: "card stack" },
+    h(
+      "section",
+      { class: "card stack" },
       h("h2", { text: "Onay" }),
-      h("p", { class: "muted small", text: "Onayı sadece sen verirsin: panel, başlattığın terminalde yazan onay kodunu sorar (agent bu kodu göremez). Sitede her değişiklik onayı sıfırlar." }),
-      h("ol", { class: "approve-steps" },
-        h("li", { class: siteOk ? "ok" : "" },
+      h("p", {
+        class: "muted small",
+        text: "Onayı sadece sen verirsin: panel, başlattığın terminalde yazan onay kodunu sorar (agent bu kodu göremez). Sitede her değişiklik onayı sıfırlar.",
+      }),
+      h(
+        "ol",
+        { class: "approve-steps" },
+        h(
+          "li",
+          { class: siteOk ? "ok" : "" },
           h("div", {}, h("strong", { text: "1. Siteyi onayla" }), h("span", { class: "muted small", text: " metin ve görünüm birlikte" })),
-          siteOk ? h("span", { class: "badge ok", text: "onaylandı" }) : h("button", { class: "btn btn-ok", type: "button", disabled: !d.distReady || isBusy(), onclick: () => approveDialog(d, "site") }, "Onayla")),
-        prod && h("li", { class: prod.valid ? "ok" : "" },
-          h("div", {}, h("strong", { text: "2. Yayın onayı" }), h("span", { class: "muted small", text: " müşteri önizlemeyi beğenince" })),
-          prod.valid ? h("span", { class: "badge ok", text: "onaylandı" }) : h("button", { class: "btn btn-ok", type: "button", disabled: !siteOk || isBusy(), onclick: () => approveDialog(d, "production") }, "Yayın onayı ver")),
+          siteOk
+            ? h("span", { class: "badge ok", text: "onaylandı" })
+            : h("button", { class: "btn btn-ok", type: "button", disabled: !d.distReady || isBusy(), onclick: () => approveDialog(d, "site") }, "Onayla"),
+        ),
+        prod &&
+          h(
+            "li",
+            { class: prod.valid ? "ok" : "" },
+            h("div", {}, h("strong", { text: "2. Yayın onayı" }), h("span", { class: "muted small", text: " müşteri önizlemeyi beğenince" })),
+            prod.valid
+              ? h("span", { class: "badge ok", text: "onaylandı" })
+              : h(
+                  "button",
+                  { class: "btn btn-ok", type: "button", disabled: !siteOk || isBusy(), onclick: () => approveDialog(d, "production") },
+                  "Yayın onayı ver",
+                ),
+          ),
       ),
-      h("details", { class: "small" }, h("summary", { text: "Terminalden onaylamak istersen (komutlar)" }),
-      h("ul", { class: "approvals" }, ...d.approvals.map((a) =>
-        h("li", {},
-          h("strong", { text: APPROVAL_NAMES[a.kind] }),
-          h("span", { class: `badge ${a.valid ? "ok" : "skip"}`, text: a.valid ? `verildi · ${time(a.at)}` : "yok" }),
-          h("span", { class: "cmd" }, h("code", { text: a.command }), copyButton(a.command)),
-        )))),
+      h(
+        "details",
+        { class: "small" },
+        h("summary", { text: "Terminalden onaylamak istersen (komutlar)" }),
+        h(
+          "ul",
+          { class: "approvals" },
+          ...d.approvals.map((a) =>
+            h(
+              "li",
+              {},
+              h("strong", { text: APPROVAL_NAMES[a.kind] }),
+              h("span", { class: `badge ${a.valid ? "ok" : "skip"}`, text: a.valid ? `verildi · ${time(a.at)}` : "yok" }),
+              h("span", { class: "cmd" }, h("code", { text: a.command }), copyButton(a.command)),
+            ),
+          ),
+        ),
+      ),
       h("button", { class: "btn btn-sm", type: "button", onclick: render }, "Onayı verdim, yenile"),
     ),
-    h("section", { class: "card stack" },
+    h(
+      "section",
+      { class: "card stack" },
       h("h2", { text: "Yayın" }),
-      h("p", { class: "muted small", text: "Önizleme: site onayından sonra geçici bir adreste açılır, linki müşteriye gönder. Canlı: ayrıca yayın onayı gerekir." }),
+      h("p", {
+        class: "muted small",
+        text: "Önizleme: site onayından sonra geçici bir adreste açılır, linki müşteriye gönder. Canlı: ayrıca yayın onayı gerekir.",
+      }),
       h("label", { class: "choice", for: "dry" }, dry, "Deneme (hiçbir şey yüklemeden kontrol et)"),
-      h("div", { class: "row" },
-        h("button", { class: "btn btn-primary", type: "button", disabled: busy, onclick: () => runTask(slug, "deploy", { target: "preview", dryRun: dry.checked }) }, "Önizleme yayınla"),
+      h(
+        "div",
+        { class: "row" },
+        h(
+          "button",
+          { class: "btn btn-primary", type: "button", disabled: busy, onclick: () => runTask(slug, "deploy", { target: "preview", dryRun: dry.checked }) },
+          "Önizleme yayınla",
+        ),
         h("button", { class: "btn btn-danger", type: "button", disabled: busy, onclick: () => deployProduction(slug, dry.checked) }, "Canlıya al"),
       ),
-      ld && h("p", { class: "small" }, `Son yayın: ${ld.target === "production" ? "canlı" : "önizleme"} · ${time(ld.at)} `, ld.url && h("a", { href: ld.url, target: "_blank", rel: "noopener", text: ld.url })),
-      h("details", { class: "unpublish" },
+      ld &&
+        h(
+          "p",
+          { class: "small" },
+          `Son yayın: ${ld.target === "production" ? "canlı" : "önizleme"} · ${time(ld.at)} `,
+          ld.url && h("a", { href: ld.url, target: "_blank", rel: "noopener", text: ld.url }),
+        ),
+      h(
+        "details",
+        { class: "unpublish" },
         h("summary", { class: "small", text: "Yayından kaldır" }),
-        h("p", { class: "muted small", text: "Siteyi Cloudflare'den kaldırır. Müşterinin dosyaları, sürümleri ve onayları durur; istediğinizde yeniden yayınlayabilirsiniz. Alan adı bağlıysa o bağlantı da kalkar." }),
-        h("div", { class: "row" },
+        h("p", {
+          class: "muted small",
+          text: "Siteyi Cloudflare'den kaldırır. Müşterinin dosyaları, sürümleri ve onayları durur; istediğinizde yeniden yayınlayabilirsiniz. Alan adı bağlıysa o bağlantı da kalkar.",
+        }),
+        h(
+          "div",
+          { class: "row" },
           h("button", { class: "btn", type: "button", disabled: busy, onclick: () => unpublish(slug, "preview") }, "Önizlemeyi kaldır"),
-          h("button", { class: "btn btn-danger", type: "button", disabled: busy, onclick: () => unpublish(slug, "production") }, "Canlı siteyi kaldır"))),
+          h("button", { class: "btn btn-danger", type: "button", disabled: busy, onclick: () => unpublish(slug, "production") }, "Canlı siteyi kaldır"),
+        ),
+      ),
     ),
   );
 }

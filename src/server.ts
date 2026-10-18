@@ -49,7 +49,7 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
     { name: "site-factory", version: "0.1.0" },
     {
       instructions:
-        "Site Factory: produces small-business websites. Read AGENTS.md first. You write config and content through these tools. Template sites: never edit template code. Custom sites (template \"custom\"): you design the brand and write the site code with the site-file tools, following rules/custom-site.md. Never create approvals.",
+        'Site Factory: produces small-business websites. Read AGENTS.md first. You write config and content through these tools. Template sites: never edit template code. Custom sites (template "custom"): you design the brand and write the site code with the site-file tools, following rules/custom-site.md. Never create approvals.',
     },
   );
 
@@ -73,14 +73,18 @@ function registerClientTools(server: McpServer, factory: FactoryConfig): void {
     "create_client",
     {
       title: "Create client",
-      description: "Creates the client folder (own git repo), a draft site.config.json and empty content/assets folders. The country decides the main language (GB = English, TR = Turkish), currency and time zone.",
+      description:
+        "Creates the client folder (own git repo), a draft site.config.json and empty content/assets folders. The country decides the main language (GB = English, TR = Turkish), currency and time zone.",
       inputSchema: {
         slug,
         businessName: z.string().min(1).max(80),
         industry: z.string().min(2).max(60).describe("Short sector name in English, e.g. 'hair salon', 'family law solicitor'"),
         hostingModel: z.enum(["managed", "client"]).describe("managed = our Cloudflare account; client = the client's own. Ask Eren."),
         extraLocale: z.enum(LOCALES).optional().describe("Second language, only if the client asked for one"),
-        country: z.enum(tools.COUNTRIES).optional().describe("Market: GB (default), TR, IE, US, DE or NL. Main language English, Turkish for TR (rules/markets.md)"),
+        country: z
+          .enum(tools.COUNTRIES)
+          .optional()
+          .describe("Market: GB (default), TR, IE, US, DE or NL. Main language English, Turkish for TR (rules/markets.md)"),
         template: z.string().regex(SLUG_PATTERN).optional(),
       },
     },
@@ -132,7 +136,8 @@ function registerContentTools(server: McpServer, factory: FactoryConfig): void {
     "save_content",
     {
       title: "Save content",
-      description: "Merges text into content/<locale>.json. Rejects invalid or too-long text; missing parts are fine until build. Every locale needs the same items.",
+      description:
+        "Merges text into content/<locale>.json. Rejects invalid or too-long text; missing parts are fine until build. Every locale needs the same items.",
       inputSchema: {
         slug,
         locale: z.enum(LOCALES),
@@ -147,7 +152,8 @@ function registerContentTools(server: McpServer, factory: FactoryConfig): void {
     "save_asset",
     {
       title: "Save image",
-      description: "Copies an image from the inbox folder into the client's assets after checking real type, size and (for SVG) unsafe content. Returns the path to reference.",
+      description:
+        "Copies an image from the inbox folder into the client's assets after checking real type, size and (for SVG) unsafe content. Returns the path to reference.",
       inputSchema: {
         slug,
         inboxFile: z.string().min(1).max(200).describe("Path relative to the inbox folder"),
@@ -162,7 +168,8 @@ function registerContentTools(server: McpServer, factory: FactoryConfig): void {
     "generate_design_system",
     {
       title: "Generate design system",
-      description: "Runs UI UX Pro Max for the client's sector and tone (if installed) and returns its recommendation. You then save the chosen design with update_client_config.",
+      description:
+        "Runs UI UX Pro Max for the client's sector and tone (if installed) and returns its recommendation. You then save the chosen design with update_client_config.",
       inputSchema: { slug, query: z.string().max(120).optional() },
       annotations: { readOnlyHint: true },
     },
@@ -185,12 +192,22 @@ function registerSiteFileTools(server: McpServer, factory: FactoryConfig): void 
   const sitePath = z.string().min(1).max(130).describe("Path inside the client's site/ folder, e.g. index.html, css/site.css, tr/index.html, brand/brand.json");
   server.registerTool(
     "list_site_files",
-    { title: "List site files", description: 'Files in the client\'s site/ folder (custom sites only), with sizes.', inputSchema: { slug }, annotations: { readOnlyHint: true } },
+    {
+      title: "List site files",
+      description: "Files in the client's site/ folder (custom sites only), with sizes.",
+      inputSchema: { slug },
+      annotations: { readOnlyHint: true },
+    },
     handler(factory, "list_site_files", (a: { slug: string }) => tools.listSiteFilesTool(factory, a)),
   );
   server.registerTool(
     "read_site_file",
-    { title: "Read site file", description: "Reads one file from the client's site/ folder.", inputSchema: { slug, path: sitePath }, annotations: { readOnlyHint: true } },
+    {
+      title: "Read site file",
+      description: "Reads one file from the client's site/ folder.",
+      inputSchema: { slug, path: sitePath },
+      annotations: { readOnlyHint: true },
+    },
     handler(factory, "read_site_file", (a: { slug: string; path: string }) => tools.readSiteFileTool(factory, a)),
   );
   server.registerTool(
@@ -211,13 +228,16 @@ function registerSiteFileTools(server: McpServer, factory: FactoryConfig): void 
         "Replaces exact text in one site file (custom sites). Use this for changes to existing files instead of rewriting them with write_site_file: it is much cheaper. oldText must appear exactly once (add surrounding text to make it unique) unless all is true.",
       inputSchema: { slug, path: sitePath, oldText: z.string().min(1).max(100_000), newText: z.string().max(100_000), all: z.boolean().optional() },
     },
-    handler(factory, "edit_site_file", (a: { slug: string; path: string; oldText: string; newText: string; all?: boolean }) => tools.editSiteFileTool(factory, a)),
+    handler(factory, "edit_site_file", (a: { slug: string; path: string; oldText: string; newText: string; all?: boolean }) =>
+      tools.editSiteFileTool(factory, a),
+    ),
   );
   server.registerTool(
     "search_design_knowledge",
     {
       title: "Search design knowledge",
-      description: "Searches the factory's design rules and the design skills (Impeccable, taste-skill, UI UX Pro Max) and returns the few most relevant passages. Ask short, specific questions (e.g. 'barber hero composition', 'dark palette contrast', 'signature motion bakery'). Much cheaper than loading whole skills.",
+      description:
+        "Searches the factory's design rules and the design skills (Impeccable, taste-skill, UI UX Pro Max) and returns the few most relevant passages. Ask short, specific questions (e.g. 'barber hero composition', 'dark palette contrast', 'signature motion bakery'). Much cheaper than loading whole skills.",
       inputSchema: { query: z.string().min(2).max(200), k: z.number().int().min(1).max(8).optional() },
       annotations: { readOnlyHint: true },
     },
@@ -227,7 +247,8 @@ function registerSiteFileTools(server: McpServer, factory: FactoryConfig): void 
     "save_research_notes",
     {
       title: "Save research notes",
-      description: "Saves this client's research (verified facts with source links, estimated/unverified points marked, 3–5 sector examples with one line each) so later jobs reuse it instead of searching again. Replaces earlier notes. Plain text or Markdown, up to 12,000 characters.",
+      description:
+        "Saves this client's research (verified facts with source links, estimated/unverified points marked, 3–5 sector examples with one line each) so later jobs reuse it instead of searching again. Replaces earlier notes. Plain text or Markdown, up to 12,000 characters.",
       inputSchema: { slug, notes: z.string().min(20).max(12_000) },
     },
     handler(factory, "save_research_notes", (a: { slug: string; notes: string }) => tools.saveResearchNotes(factory, a)),
@@ -236,7 +257,8 @@ function registerSiteFileTools(server: McpServer, factory: FactoryConfig): void 
     "site_map",
     {
       title: "Site map",
-      description: "A compact map of a custom site: every file with its size; per page the title, h1 and sections (id, class, heading, animations); per stylesheet the CSS variables and keyframes. Read this first to find where to change something, then read only that part.",
+      description:
+        "A compact map of a custom site: every file with its size; per page the title, h1 and sections (id, class, heading, animations); per stylesheet the CSS variables and keyframes. Read this first to find where to change something, then read only that part.",
       inputSchema: { slug },
       annotations: { readOnlyHint: true },
     },
@@ -246,7 +268,8 @@ function registerSiteFileTools(server: McpServer, factory: FactoryConfig): void 
     "read_site_file_part",
     {
       title: "Read part of a site file",
-      description: "Returns about `lines` lines (default 30) of a site file around the first line containing `around`, with line numbers. Cheaper than reading the whole file for a small change.",
+      description:
+        "Returns about `lines` lines (default 30) of a site file around the first line containing `around`, with line numbers. Cheaper than reading the whole file for a small change.",
       inputSchema: { slug, path: sitePath, around: z.string().min(1).max(200), lines: z.number().int().min(5).max(200).optional() },
       annotations: { readOnlyHint: true },
     },

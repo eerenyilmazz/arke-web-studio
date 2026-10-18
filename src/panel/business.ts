@@ -17,14 +17,25 @@ export const BusinessSchema = z.object({
   price: z.number().nonnegative().max(10_000_000).nullable().default(null),
   currency: z.enum(["TRY", "GBP", "EUR", "USD"]).default("TRY"),
   payment: z.enum(PAYMENT_STATES).default("none"),
-  deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+  deadline: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .default(null),
   /** When the (rest of the) payment is due; past it and not paid = overdue on the dashboard. */
-  paymentDue: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().default(null),
+  paymentDue: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .default(null),
   note: z.string().max(2000).default(""),
   /** Eren's own labels for grouping clients (e.g. "abim", "acil", "Ankara"). */
   tags: z.array(z.string().trim().min(1).max(24)).max(8).default([]),
   /** Eren's own costs for this client, in the same currency as the price (domain, stock photos, a form plan…). */
-  costs: z.array(z.object({ label: z.string().trim().min(1).max(60), amount: z.number().nonnegative().max(10_000_000) })).max(20).default([]),
+  costs: z
+    .array(z.object({ label: z.string().trim().min(1).max(60), amount: z.number().nonnegative().max(10_000_000) }))
+    .max(20)
+    .default([]),
   /** This client's budget mode; empty = the panel-wide one. */
   budgetMode: z.enum(["", "economy", "balanced", "premium"]).default(""),
 });

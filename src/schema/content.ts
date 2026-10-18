@@ -11,8 +11,30 @@ const shortText = (max: number) => z.string().trim().min(1).max(max);
 
 /** Service icons available in corporate-v2 (stroke icons drawn by the template). */
 export const ICONS = [
-  "code", "mobile", "globe", "qr", "box", "chart", "cart", "scissors", "tooth", "home", "hammer", "leaf",
-  "car", "scales", "heart", "cup", "bread", "sparkle", "shield", "clock", "calendar", "chat", "camera", "star",
+  "code",
+  "mobile",
+  "globe",
+  "qr",
+  "box",
+  "chart",
+  "cart",
+  "scissors",
+  "tooth",
+  "home",
+  "hammer",
+  "leaf",
+  "car",
+  "scales",
+  "heart",
+  "cup",
+  "bread",
+  "sparkle",
+  "shield",
+  "clock",
+  "calendar",
+  "chat",
+  "camera",
+  "star",
 ] as const;
 
 const SeoSchema = z.object({

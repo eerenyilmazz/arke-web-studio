@@ -10,14 +10,24 @@ import { refreshStatus, render, renderSidebar } from "./js/router.js";
 $("#theme").addEventListener("click", () => {
   const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
-  try { localStorage.setItem("sf-theme", next); } catch { /* private window: theme just isn't remembered */ }
+  try {
+    localStorage.setItem("sf-theme", next);
+  } catch {
+    /* private window: theme just isn't remembered */
+  }
 });
 
 setInterval(refreshStatus, STATUS_POLL_MS);
 
-$("#search").addEventListener("input", (e) => { state.search = e.target.value.toLowerCase(); renderSidebar(); });
+$("#search").addEventListener("input", (e) => {
+  state.search = e.target.value.toLowerCase();
+  renderSidebar();
+});
 
-window.addEventListener("hashchange", () => { state.libEdit = null; render(); });
+window.addEventListener("hashchange", () => {
+  state.libEdit = null;
+  render();
+});
 
 setInterval(() => {
   const p = $("#job-progress");

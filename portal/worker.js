@@ -195,46 +195,59 @@ function authorised(request, env) {
   return diff === 0;
 }
 
+async function putLink(request, env, id) {
+  const link = await request.json();
+  if (!SLUG.test(String(link.slug || "")) || !["intake", "review"].includes(link.kind)) return json({ error: "bad link" }, 400);
+  const ttl = Math.max(60, Math.round((Date.parse(link.expiresAt) - Date.now()) / 1000) || 60 * 60 * 24 * 60);
+  await env.SF_PORTAL.put(`link:${id}`, JSON.stringify({ ...link, count: 0 }), { expirationTtl: ttl });
+  return json({ ok: true });
+}
+
+const MAX_ITEMS = 500;
+
+async function listItems(env) {
+  const out = [];
+  let cursor;
+  do {
+    const batch = await env.SF_PORTAL.list({ prefix: "item:", cursor });
+    for (const k of batch.keys) {
+      const value = await env.SF_PORTAL.get(k.name, "json");
+      if (value) out.push({ key: k.name, slug: k.name.split(":")[1], ...value });
+    }
+    cursor = batch.list_complete ? undefined : batch.cursor;
+  } while (cursor && out.length < MAX_ITEMS);
+  return json({ items: out });
+}
+
+/** Deletes a collected item together with its files. */
+async function deleteItem(env, id) {
+  const value = await env.SF_PORTAL.get(id, "json");
+  for (const f of value?.files || []) await env.SF_PORTAL.delete(f.key);
+  await env.SF_PORTAL.delete(id);
+  return json({ ok: true });
+}
+
+async function getFile(env, id) {
+  const { value, metadata } = await env.SF_PORTAL.getWithMetadata(id, "arrayBuffer");
+  if (!value) return json({ error: "not found" }, 404);
+  return new Response(value, { headers: headers({ "Content-Type": "application/octet-stream", "X-File-Name": metadata?.name || "file", "X-File-Type": metadata?.type || "" }) });
+}
+
+/** The panel's API (Bearer secret): one handler per route; anything else is "not found". */
 async function handleApi(request, env, parts) {
   if (!authorised(request, env)) return json({ error: "unauthorised" }, 401);
   const [what, id] = parts;
+  const method = request.method;
   if (what === "links" && id && TOKEN.test(id)) {
-    if (request.method === "PUT") {
-      const link = await request.json();
-      if (!SLUG.test(String(link.slug || "")) || !["intake", "review"].includes(link.kind)) return json({ error: "bad link" }, 400);
-      const ttl = Math.max(60, Math.round((Date.parse(link.expiresAt) - Date.now()) / 1000) || 60 * 60 * 24 * 60);
-      await env.SF_PORTAL.put(`link:${id}`, JSON.stringify({ ...link, count: 0 }), { expirationTtl: ttl });
-      return json({ ok: true });
-    }
-    if (request.method === "DELETE") {
+    if (method === "PUT") return putLink(request, env, id);
+    if (method === "DELETE") {
       await env.SF_PORTAL.delete(`link:${id}`);
       return json({ ok: true });
     }
   }
-  if (what === "items" && request.method === "GET" && !id) {
-    const out = [];
-    let cursor;
-    do {
-      const page = await env.SF_PORTAL.list({ prefix: "item:", cursor });
-      for (const k of page.keys) {
-        const value = await env.SF_PORTAL.get(k.name, "json");
-        if (value) out.push({ key: k.name, slug: k.name.split(":")[1], ...value });
-      }
-      cursor = page.list_complete ? undefined : page.cursor;
-    } while (cursor && out.length < 500);
-    return json({ items: out });
-  }
-  if (what === "items" && request.method === "DELETE" && id && id.startsWith("item:")) {
-    const value = await env.SF_PORTAL.get(id, "json");
-    for (const f of value?.files || []) await env.SF_PORTAL.delete(f.key);
-    await env.SF_PORTAL.delete(id);
-    return json({ ok: true });
-  }
-  if (what === "files" && request.method === "GET" && id && id.startsWith("file:")) {
-    const { value, metadata } = await env.SF_PORTAL.getWithMetadata(id, "arrayBuffer");
-    if (!value) return json({ error: "not found" }, 404);
-    return new Response(value, { headers: headers({ "Content-Type": "application/octet-stream", "X-File-Name": metadata?.name || "file", "X-File-Type": metadata?.type || "" }) });
-  }
+  if (what === "items" && method === "GET" && !id) return listItems(env);
+  if (what === "items" && method === "DELETE" && id?.startsWith("item:")) return deleteItem(env, id);
+  if (what === "files" && method === "GET" && id?.startsWith("file:")) return getFile(env, id);
   if (what === "ping") return json({ ok: true, version: 1 });
   return json({ error: "not found" }, 404);
 }

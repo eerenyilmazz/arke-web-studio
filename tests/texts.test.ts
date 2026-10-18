@@ -30,7 +30,7 @@ describe("texts of a page, by id", () => {
       { id: "meta-description", oldText: "Ankara'da erkek kuaförü", newText: 'Ankara\'nın "en iyi" kuaförü' },
       { id: "p-1", oldText: "Randevu için arayın.", newText: "Randevu <hemen>" },
     ]);
-    expect(out).toContain("<h1 class=\"hero\">Kesim, sakal &amp; bakım</h1>");
+    expect(out).toContain('<h1 class="hero">Kesim, sakal &amp; bakım</h1>');
     expect(out).toContain('content="Ankara\'nın &quot;en iyi&quot; kuaförü"');
     expect(out).toContain("<p>Randevu &lt;hemen&gt;</p>");
     expect(out).toContain("<li>Saç kesimi</li>");
@@ -39,7 +39,11 @@ describe("texts of a page, by id", () => {
   });
 
   it("template sites: content fields by JSON path", () => {
-    const content = { hero: { title: "Hello", cta: "/contact" }, services: [{ title: "Cut", description: "A good cut" }], seo: { home: { description: "Barber in Leeds" } } };
+    const content = {
+      hero: { title: "Hello", cta: "/contact" },
+      services: [{ title: "Cut", description: "A good cut" }],
+      seo: { home: { description: "Barber in Leeds" } },
+    };
     const ids = contentTexts(content).map((t) => t.id);
     expect(ids).toEqual(["hero.title", "services.0.title", "services.0.description", "seo.home.description"]);
     const next = setContentText(content, "services.0.description", "A good cut", "The best cut") as typeof content;
@@ -61,7 +65,8 @@ describe("search and AI visibility check", () => {
     const path = await import("node:path");
     const { checkSeo } = await import("../src/lib/seo.js");
     const dir = mkdtempSync(path.join(os.tmpdir(), "sf-seo-"));
-    const page = (title: string, extra = "") => `<!doctype html><html lang="tr"><head><title>${title}</title><meta property="og:title" content="x"><meta property="og:description" content="y">${extra}</head><body></body></html>`;
+    const page = (title: string, extra = "") =>
+      `<!doctype html><html lang="tr"><head><title>${title}</title><meta property="og:title" content="x"><meta property="og:description" content="y">${extra}</head><body></body></html>`;
     writeFileSync(path.join(dir, "index.html"), page("Mono"));
     mkdirSync(path.join(dir, "contact"));
     writeFileSync(path.join(dir, "contact", "index.html"), page("Mono"));

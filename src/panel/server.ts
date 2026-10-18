@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createServer, type Server } from "node:http";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { readSettings } from "./settings.js";
 import { autoBackup } from "./backup.js";
 import { DESIGN_KINDS, recordUsage, type BudgetMode } from "./budget.js";
@@ -44,55 +44,79 @@ export interface Panel {
 }
 
 export function createPanel(opts: PanelOptions): Panel {
-  const jobs = new JobRunner(FACTORY_ROOT, opts.spawn, undefined, (slug, record) => {
-    appendHistory(opts.factory, slug, record);
-    // Every finished job leaves a version the operator can go back to (no-op when nothing changed).
-    void snapshot(clientPaths(opts.factory.clientsRoot, slug).root, record.title).catch((error) => console.error(`[panel] version not saved for ${slug}:`, (error as Error).message));
-    autoBackup(opts.factory, (msg) => console.log(msg));
-    // A finished design job on a multilingual custom site continues with the cheaper translation job.
-    // A finished design job rebuilt the brand from the current logo.
-    if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) clearBrandStale(opts.factory, slug);
-    if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) {
-      setTimeout(() => { try { startTranslation(deps, slug); } catch { /* the operator can start it again */ } }, 300);
-    }
-    if (record.usage) recordUsage(opts.factory, { at: record.endedAt, slug, kind: record.kind, mode: (record.mode ?? "balanced") as BudgetMode, model: record.model ?? "", usage: record.usage, tokens: record.tokens ?? 0, ...(record.provider ? { provider: record.provider } : {}) });
-  }, () => readSettings(opts.factory).webResearch, [opts.factory.clientsRoot, opts.factory.inboxDir]);
+  const jobs = new JobRunner(
+    FACTORY_ROOT,
+    opts.spawn,
+    undefined,
+    (slug, record) => {
+      appendHistory(opts.factory, slug, record);
+      // Every finished job leaves a version the operator can go back to (no-op when nothing changed).
+      void snapshot(clientPaths(opts.factory.clientsRoot, slug).root, record.title).catch((error) =>
+        console.error(`[panel] version not saved for ${slug}:`, (error as Error).message),
+      );
+      autoBackup(opts.factory, (msg) => console.log(msg));
+      // A finished design job on a multilingual custom site continues with the cheaper translation job.
+      // A finished design job rebuilt the brand from the current logo.
+      if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) clearBrandStale(opts.factory, slug);
+      if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) {
+        setTimeout(() => {
+          try {
+            startTranslation(deps, slug);
+          } catch {
+            /* the operator can start it again */
+          }
+        }, 300);
+      }
+      if (record.usage)
+        recordUsage(opts.factory, {
+          at: record.endedAt,
+          slug,
+          kind: record.kind,
+          mode: (record.mode ?? "balanced") as BudgetMode,
+          model: record.model ?? "",
+          usage: record.usage,
+          tokens: record.tokens ?? 0,
+          ...(record.provider ? { provider: record.provider } : {}),
+        });
+    },
+    () => readSettings(opts.factory).webResearch,
+    [opts.factory.clientsRoot, opts.factory.inboxDir],
+  );
   const preview = new PreviewServer(opts.previewPort);
   const gate = new ApprovalGate(opts.approvalCode);
   const deps = { factory: opts.factory, jobs, preview, gate };
 
   const server = createServer((req, res) => {
-    const url = new URL(req.url ?? "/", `http://${HOST}`);
-    void (async () => {
-      try {
-        if (!allowedHost(req, opts.port)) throw new HttpError(403, "Bu adresten erişilemez.");
-
-        if (url.pathname === "/login") {
-          const key = url.searchParams.get("key") ?? "";
-          if (!safeEqual(key, opts.sessionKey)) throw new HttpError(403, "Geçersiz oturum anahtarı.");
-          res.writeHead(303, { "Set-Cookie": cookieHeader(opts.sessionKey), Location: "/" }).end();
-          return;
-        }
-        if (!hasSession(req, opts.sessionKey)) {
-          if (url.pathname.startsWith("/api/")) throw new HttpError(401, "Oturum yok. Terminaldeki bağlantıyla açın.");
-          res.writeHead(401, { "Content-Type": "text/html; charset=utf-8" }).end(LOCKED_PAGE);
-          return;
-        }
-        if (req.method !== "GET" && req.method !== "HEAD" && !allowedOrigin(req, opts.port)) {
-          throw new HttpError(403, "İstek panelin kendisinden gelmedi.");
-        }
-        if (url.pathname.startsWith("/api/")) {
-          await handleApi(deps, req, res, url.pathname);
-          return;
-        }
-        if (req.method !== "GET") throw new HttpError(405, "İzin verilmeyen yöntem.");
-        serveFile(res, UI_DIR, url.pathname === "/" ? "/index.html" : url.pathname);
-      } catch (error) {
-        if (!res.headersSent) sendError(res, error);
-        else res.end();
-      }
-    })();
+    void handleRequest(req, res).catch((error: unknown) => {
+      if (!res.headersSent) sendError(res, error);
+      else res.end();
+    });
   });
+
+  /** Every request: local Host only, the session cookie, same-origin writes; then the API or a panel file. */
+  async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const url = new URL(req.url ?? "/", `http://${HOST}`);
+    if (!allowedHost(req, opts.port)) throw new HttpError(403, "Bu adresten erişilemez.");
+    if (url.pathname === "/login") return login(url, res);
+    if (!hasSession(req, opts.sessionKey)) {
+      if (url.pathname.startsWith("/api/")) throw new HttpError(401, "Oturum yok. Terminaldeki bağlantıyla açın.");
+      res.writeHead(401, { "Content-Type": "text/html; charset=utf-8" }).end(LOCKED_PAGE);
+      return;
+    }
+    if (req.method !== "GET" && req.method !== "HEAD" && !allowedOrigin(req, opts.port)) {
+      throw new HttpError(403, "İstek panelin kendisinden gelmedi.");
+    }
+    if (url.pathname.startsWith("/api/")) return handleApi(deps, req, res, url.pathname);
+    if (req.method !== "GET") throw new HttpError(405, "İzin verilmeyen yöntem.");
+    serveFile(res, UI_DIR, url.pathname === "/" ? "/index.html" : url.pathname);
+  }
+
+  /** The terminal's one-time link: sets the session cookie when the key matches. */
+  function login(url: URL, res: ServerResponse): void {
+    const key = url.searchParams.get("key") ?? "";
+    if (!safeEqual(key, opts.sessionKey)) throw new HttpError(403, "Geçersiz oturum anahtarı.");
+    res.writeHead(303, { "Set-Cookie": cookieHeader(opts.sessionKey), Location: "/" }).end();
+  }
   server.on("clientError", (_err, socket) => socket.destroy());
 
   return {
@@ -136,4 +160,3 @@ if (process.argv[1] && /panel[\\/]server\.(ts|js)$/.test(process.argv[1])) {
     process.exit(1);
   });
 }
-

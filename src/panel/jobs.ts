@@ -81,12 +81,27 @@ export const AGENT_DENIED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "Tas
  * tool credentials and .env files. Explicit denies, on top of the folder limit above.
  */
 export const AGENT_DENIED_READS = [
-  "Read(//proc/**)", "Read(//sys/**)",
-  "Read(~/.ssh/**)", "Read(~/.gnupg/**)", "Read(~/.aws/**)", "Read(~/.docker/**)",
-  "Read(~/.claude/**)", "Read(~/.config/**)", "Read(~/.wrangler/**)",
-  "Read(~/.bashrc)", "Read(~/.bash_profile)", "Read(~/.profile)", "Read(~/.zshrc)", "Read(~/.zprofile)",
-  "Read(~/.netrc)", "Read(~/.npmrc)", "Read(~/.git-credentials)", "Read(~/.gitconfig)",
-  "Read(**/.env)", "Read(**/.env.*)", "Read(**/.dev.vars)",
+  "Read(//proc/**)",
+  "Read(//sys/**)",
+  "Read(~/.ssh/**)",
+  "Read(~/.gnupg/**)",
+  "Read(~/.aws/**)",
+  "Read(~/.docker/**)",
+  "Read(~/.claude/**)",
+  "Read(~/.config/**)",
+  "Read(~/.wrangler/**)",
+  "Read(~/.bashrc)",
+  "Read(~/.bash_profile)",
+  "Read(~/.profile)",
+  "Read(~/.zshrc)",
+  "Read(~/.zprofile)",
+  "Read(~/.netrc)",
+  "Read(~/.npmrc)",
+  "Read(~/.git-credentials)",
+  "Read(~/.gitconfig)",
+  "Read(**/.env)",
+  "Read(**/.env.*)",
+  "Read(**/.dev.vars)",
 ] as const;
 /** Web research tools: allowed only while the "İnternet araştırması" setting is on, denied otherwise. */
 export const WEB_TOOLS = ["WebSearch", "WebFetch"] as const;
@@ -105,13 +120,18 @@ export type SpawnFn = (command: string, args: readonly string[], options: SpawnO
 export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false, readDirs: readonly string[] = []): string[] {
   return [
     "-p",
-    "--output-format", "stream-json",
+    "--output-format",
+    "stream-json",
     "--verbose",
-    "--max-turns", String(maxTurns),
-    "--mcp-config", ".mcp.json",
+    "--max-turns",
+    String(maxTurns),
+    "--mcp-config",
+    ".mcp.json",
     "--strict-mcp-config",
-    "--allowedTools", [...AGENT_ALLOWED_TOOLS, ...(web ? WEB_TOOLS : [])].join(","),
-    "--disallowedTools", [...AGENT_DENIED_TOOLS, ...AGENT_DENIED_READS, ...(web ? [] : WEB_TOOLS)].join(","),
+    "--allowedTools",
+    [...AGENT_ALLOWED_TOOLS, ...(web ? WEB_TOOLS : [])].join(","),
+    "--disallowedTools",
+    [...AGENT_DENIED_TOOLS, ...AGENT_DENIED_READS, ...(web ? [] : WEB_TOOLS)].join(","),
     // Client folders and the inbox, so Read can open logos, uploads and screenshots (writing stays denied).
     ...readDirs.flatMap((d) => ["--add-dir", d]),
   ];
@@ -123,11 +143,31 @@ export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false, read
  * The list is kept explicit (not "everything but"), so a new Codex version cannot silently turn on less.
  */
 export const CODEX_DISABLED_FEATURES = [
-  "shell_tool", "unified_exec", "unified_exec_tty", "shell_snapshot", "write_stdin_approval",
-  "browser_use", "browser_use_external", "browser_use_full_cdp_access", "browser_annotation_api", "in_app_browser",
-  "computer_use", "in_app_local_automation", "apps", "plugins", "remote_plugin", "plugin_sharing", "hooks",
-  "multi_agent", "image_generation", "realtime_conversation", "skill_mcp_dependency_install", "tool_suggest",
-  "workspace_dependencies", "worktrees", "goals",
+  "shell_tool",
+  "unified_exec",
+  "unified_exec_tty",
+  "shell_snapshot",
+  "write_stdin_approval",
+  "browser_use",
+  "browser_use_external",
+  "browser_use_full_cdp_access",
+  "browser_annotation_api",
+  "in_app_browser",
+  "computer_use",
+  "in_app_local_automation",
+  "apps",
+  "plugins",
+  "remote_plugin",
+  "plugin_sharing",
+  "hooks",
+  "multi_agent",
+  "image_generation",
+  "realtime_conversation",
+  "skill_mcp_dependency_install",
+  "tool_suggest",
+  "workspace_dependencies",
+  "worktrees",
+  "goals",
 ] as const;
 
 /** TOML string for a -c override (JSON strings are valid TOML basic strings). */
@@ -142,13 +182,23 @@ export function codexArgs(opts: { factoryRoot: string; workDir: string; model?: 
   const server = path.join(opts.factoryRoot, "dist", "server.js");
   const envPairs = Object.entries(opts.serverEnv ?? {}).flatMap(([k, v]) => ["-c", `mcp_servers.site-factory.env.${k}=${toml(v)}`]);
   return [
-    "exec", "--json", "--skip-git-repo-check", "--ephemeral", "--ignore-user-config", "--ignore-rules",
-    "-s", "read-only",
-    "-c", `approval_policy=${toml("never")}`,
-    "-C", opts.workDir,
+    "exec",
+    "--json",
+    "--skip-git-repo-check",
+    "--ephemeral",
+    "--ignore-user-config",
+    "--ignore-rules",
+    "-s",
+    "read-only",
+    "-c",
+    `approval_policy=${toml("never")}`,
+    "-C",
+    opts.workDir,
     ...CODEX_DISABLED_FEATURES.flatMap((f) => ["--disable", f]),
-    "-c", `mcp_servers.site-factory.command=${toml(process.execPath)}`,
-    "-c", `mcp_servers.site-factory.args=[${toml(server)}]`,
+    "-c",
+    `mcp_servers.site-factory.command=${toml(process.execPath)}`,
+    "-c",
+    `mcp_servers.site-factory.args=[${toml(server)}]`,
     ...envPairs,
     ...(opts.web ? ["--search"] : []),
     ...(opts.model ? ["-m", opts.model] : []),
@@ -205,7 +255,10 @@ export function toRecord(job: Job): JobRecord {
     status: job.status,
     ...(job.summary ? { summary: job.summary } : {}),
     tools: job.log.filter((l) => l.kind === "tool").map((l) => l.text.split("(")[0] ?? l.text),
-    errors: job.log.filter((l) => l.kind === "error").map((l) => l.text).slice(-MAX_RECORD_ERRORS),
+    errors: job.log
+      .filter((l) => l.kind === "error")
+      .map((l) => l.text)
+      .slice(-MAX_RECORD_ERRORS),
     ...(job.usage ? { usage: job.usage, tokens: job.tokens ?? weighted(job.usage), model: job.model, mode: job.mode } : {}),
     ...(job.provider ? { provider: job.provider } : {}),
   };
@@ -219,7 +272,9 @@ export class JobRunner {
     private readonly spawn: SpawnFn = nodeSpawn,
     private readonly claudeBin: string = process.env.SF_CLAUDE_BIN ?? "claude",
     /** Called once when a job ends (used to keep the conversation history in the client folder). */
-    private readonly onFinish: (slug: string, record: JobRecord) => void = () => { /* nothing to do unless the panel passes a hook */ },
+    private readonly onFinish: (slug: string, record: JobRecord) => void = () => {
+      /* nothing to do unless the panel passes a hook */
+    },
     /** Read at the start of every job, so the setting applies from the next job on. */
     private readonly webResearch: () => boolean = () => false,
     private readonly readDirs: readonly string[] = [],
@@ -294,7 +349,11 @@ export class JobRunner {
     const codex = policy?.provider === "codex";
     job.provider = codex ? "codex" : "claude";
     const engine = codex ? "Codex" : "Claude Code";
-    this.push(job, "info", `Agent başlatıldı: ${engine} (sadece site-factory araçları; shell ve dosya düzenleme kapalı)${policy ? ` · ${PACKAGE_LABELS[policy.mode]} paket, ${policy.model || "varsayılan model"}, en fazla ${Math.round(policy.tokenCap / 1000)}K token` : ""}.`);
+    this.push(
+      job,
+      "info",
+      `Agent başlatıldı: ${engine} (sadece site-factory araçları; shell ve dosya düzenleme kapalı)${policy ? ` · ${PACKAGE_LABELS[policy.mode]} paket, ${policy.model || "varsayılan model"}, en fazla ${Math.round(policy.tokenCap / 1000)}K token` : ""}.`,
+    );
     let child: ChildProcess;
     let workDir: string | null = null;
     try {
@@ -314,7 +373,9 @@ export class JobRunner {
       this.finish(job, "failed");
       return job;
     }
-    const cleanup = () => { if (workDir) rmSync(workDir, { recursive: true, force: true }); };
+    const cleanup = () => {
+      if (workDir) rmSync(workDir, { recursive: true, force: true });
+    };
     job.child = child;
 
     let buffer = "";
@@ -325,7 +386,7 @@ export class JobRunner {
       while ((nl = buffer.indexOf("\n")) >= 0) {
         const line = buffer.slice(0, nl).trim();
         buffer = buffer.slice(nl + 1);
-        if (line) (codex ? this.handleCodexEvent(job, line) : this.handleEvent(job, line));
+        if (line) codex ? this.handleCodexEvent(job, line) : this.handleEvent(job, line);
       }
     });
     let stderr = "";
@@ -335,9 +396,13 @@ export class JobRunner {
     });
     child.on("error", (error) => {
       cleanup();
-      this.push(job, "error", codex
-        ? `Codex çalıştırılamadı (${error.message}). WSL içinde "codex" kurulu ve giriş yapılmış mı? (npm i -g @openai/codex, sonra codex login)`
-        : `Claude Code çalıştırılamadı (${error.message}). WSL içinde "claude" kurulu mu?`);
+      this.push(
+        job,
+        "error",
+        codex
+          ? `Codex çalıştırılamadı (${error.message}). WSL içinde "codex" kurulu ve giriş yapılmış mı? (npm i -g @openai/codex, sonra codex login)`
+          : `Claude Code çalıştırılamadı (${error.message}). WSL içinde "claude" kurulu mu?`,
+      );
       this.finish(job, "failed");
     });
     child.on("close", (code) => {
@@ -362,7 +427,6 @@ export class JobRunner {
     return true;
   }
 
-  /** Turns one stream-json event from Claude Code into readable log lines. */
   /** Adds one assistant message's usage (counted once per message id) and stops the job past its cap. */
   private countUsage(job: Job, messageId: string | undefined, raw: unknown): void {
     const u = usageFrom(raw);
@@ -377,110 +441,149 @@ export class JobRunner {
     job.usage.output += u.output;
     job.usage.cacheRead += u.cacheRead;
     job.usage.cacheWrite += u.cacheWrite;
+    this.stopIfOverCap(job, "Yazılanlar duruyor; devam için tekrar başlat ya da Ayarlar → Kaynak Kullanımı'ndan paketi yükselt.");
+  }
+
+  /** Recomputes the job's units and stops it once they pass its cap. */
+  private stopIfOverCap(job: Job, advice: string): void {
+    if (!job.usage) return;
     job.tokens = weighted(job.usage);
-    if (job.tokenCap && job.tokens > job.tokenCap && job.status === "running" && job.child) {
-      job.child.kill("SIGTERM");
-      this.push(job, "error", `Bu işin token tavanı aşıldı (${Math.round(job.tokens / 1000)}K / ${Math.round(job.tokenCap / 1000)}K), iş durduruldu. Yazılanlar duruyor; devam için tekrar başlat ya da Ayarlar → Kaynak Kullanımı'ndan paketi yükselt.`);
-      this.finish(job, "failed");
+    if (!job.tokenCap || job.tokens <= job.tokenCap || job.status !== "running" || !job.child) return;
+    job.child.kill("SIGTERM");
+    this.push(job, "error", `Bu işin token tavanı aşıldı (${Math.round(job.tokens / 1000)}K / ${Math.round(job.tokenCap / 1000)}K), iş durduruldu. ${advice}`);
+    this.finish(job, "failed");
+  }
+
+  /** A tool call started by either agent: shown in the log, and it moves the progress phase. */
+  private noteToolCall(job: Job, tool: string, input: unknown): void {
+    this.push(job, "tool", `${tool}(${summariseInput(input)})`);
+    const phase = phaseOf(tool, input);
+    if (phase) job.phase = phase;
+    if (phase === "pages" || phase === "brand") job.filesWritten = (job.filesWritten ?? 0) + 1;
+    if (tool === "Skill") {
+      const name = String((input as { skill?: unknown } | undefined)?.skill ?? "").slice(0, 60);
+      if (name && !(job.skillsUsed ?? []).includes(name)) job.skillsUsed = [...(job.skillsUsed ?? []), name];
     }
   }
+
+  // ---------------------------------------------------------------- Codex events
 
   /**
    * One JSONL event from `codex exec --json`: messages, MCP tool calls, usage at the end of a turn, failures.
    * Codex reports no price, so cost is left to the profit settings (USD per million units).
    */
   private handleCodexEvent(job: Job, line: string): void {
-    let event: { type?: string; message?: string; item?: Record<string, unknown>; usage?: Record<string, unknown>; error?: { message?: string } };
+    let event: CodexEvent;
     try {
-      event = JSON.parse(line) as typeof event;
+      event = JSON.parse(line) as CodexEvent;
     } catch {
       return; // log lines on stdout that are not events
     }
-    const item = event.item ?? {};
-    if (event.type === "item.completed" || event.type === "item.started") {
-      const kind = String(item.type ?? "");
-      if (event.type === "item.completed" && kind === "agent_message" && typeof item.text === "string" && item.text.trim()) {
-        job.summary = item.text.trim();
-        this.push(job, "agent", job.summary);
-      }
-      if (kind === "mcp_tool_call") {
-        const tool = String(item.tool ?? item.name ?? "");
-        if (event.type === "item.started") {
-          this.push(job, "tool", `${tool}(${summariseInput(item.arguments)})`);
-          const phase = phaseOf(tool, item.arguments);
-          if (phase) job.phase = phase;
-          if (phase === "pages" || phase === "brand") job.filesWritten = (job.filesWritten ?? 0) + 1;
-        } else if (item.status === "failed" || item.error) {
-          const err = item.error as { message?: string } | string | undefined;
-          this.push(job, "error", typeof err === "string" ? err : err?.message ?? `${tool} başarısız`);
-        }
-      }
-    } else if (event.type === "turn.completed" && event.usage && job.usage) {
-      const n = (k: string) => (typeof event.usage?.[k] === "number" ? (event.usage[k] as number) : 0);
-      const cached = n("cached_input_tokens");
-      // OpenAI counts cached tokens inside input_tokens.
-      job.usage.input += Math.max(0, n("input_tokens") - cached);
-      job.usage.cacheRead += cached;
-      job.usage.output += n("output_tokens");
-      job.tokens = weighted(job.usage);
-      if (job.tokenCap && job.tokens > job.tokenCap && job.status === "running" && job.child) {
-        job.child.kill("SIGTERM");
-        this.push(job, "error", `Bu işin token tavanı aşıldı (${Math.round(job.tokens / 1000)}K / ${Math.round(job.tokenCap / 1000)}K), iş durduruldu.`);
-        this.finish(job, "failed");
-      }
-    } else if (event.type === "turn.failed" || (event.type === "error" && !/^Reconnecting/i.test(event.message ?? ""))) {
-      const text = event.error?.message ?? event.message ?? "Codex hatası";
-      this.push(job, "error", /usage limit|rate limit|quota/i.test(text) ? `Codex kullanım limiti doldu. Yazılan dosyalar duruyor; limit açılınca tekrar deneyin. (${text.slice(0, 200)})` : text);
-      if (event.type === "turn.failed") this.finish(job, "failed");
+    if (event.type === "item.completed" || event.type === "item.started") this.codexItem(job, event.type, event.item ?? {});
+    else if (event.type === "turn.completed") this.codexUsage(job, event.usage);
+    else if (event.type === "turn.failed" || (event.type === "error" && !/^Reconnecting/i.test(event.message ?? ""))) this.codexFailure(job, event);
+  }
+
+  private codexItem(job: Job, type: "item.started" | "item.completed", item: Record<string, unknown>): void {
+    const kind = String(item.type ?? "");
+    if (type === "item.completed" && kind === "agent_message" && typeof item.text === "string" && item.text.trim()) {
+      job.summary = item.text.trim();
+      this.push(job, "agent", job.summary);
+      return;
+    }
+    if (kind !== "mcp_tool_call") return;
+    const tool = String(item.tool ?? item.name ?? "");
+    if (type === "item.started") this.noteToolCall(job, tool, item.arguments);
+    else if (item.status === "failed" || item.error) {
+      const err = item.error as { message?: string } | string | undefined;
+      this.push(job, "error", typeof err === "string" ? err : (err?.message ?? `${tool} başarısız`));
     }
   }
 
+  private codexUsage(job: Job, usage: Record<string, unknown> | undefined): void {
+    if (!usage || !job.usage) return;
+    const n = (k: string) => (typeof usage[k] === "number" ? (usage[k] as number) : 0);
+    const cached = n("cached_input_tokens");
+    // OpenAI counts cached tokens inside input_tokens.
+    job.usage.input += Math.max(0, n("input_tokens") - cached);
+    job.usage.cacheRead += cached;
+    job.usage.output += n("output_tokens");
+    this.stopIfOverCap(job, "Yazılanlar duruyor; devam için tekrar başlat.");
+  }
+
+  private codexFailure(job: Job, event: CodexEvent): void {
+    const text = event.error?.message ?? event.message ?? "Codex hatası";
+    this.push(
+      job,
+      "error",
+      /usage limit|rate limit|quota/i.test(text)
+        ? `Codex kullanım limiti doldu. Yazılan dosyalar duruyor; limit açılınca tekrar deneyin. (${text.slice(0, 200)})`
+        : text,
+    );
+    if (event.type === "turn.failed") this.finish(job, "failed");
+  }
+
+  // ---------------------------------------------------------------- Claude Code events
+
+  /** One stream-json event from Claude Code, turned into readable log lines. */
   private handleEvent(job: Job, line: string): void {
-    let event: { type?: string; subtype?: string; message?: { id?: string; content?: unknown; usage?: unknown }; result?: string; is_error?: boolean; num_turns?: number; usage?: unknown; total_cost_usd?: number };
+    let event: ClaudeEvent;
     try {
-      event = JSON.parse(line) as typeof event;
+      event = JSON.parse(line) as ClaudeEvent;
     } catch {
       this.push(job, "info", line);
       return;
     }
     const blocks = Array.isArray(event.message?.content) ? (event.message.content as Array<Record<string, unknown>>) : [];
-    if (event.type === "assistant") {
-      this.countUsage(job, event.message?.id, event.message?.usage);
-      for (const b of blocks) {
-        if (b.type === "text" && typeof b.text === "string" && b.text.trim()) this.push(job, "agent", b.text.trim());
-        if (b.type === "tool_use") {
-          this.push(job, "tool", `${shortTool(String(b.name))}(${summariseInput(b.input)})`);
-          const phase = phaseOf(shortTool(String(b.name)), b.input);
-          if (phase) job.phase = phase;
-          if (phase === "pages" || phase === "brand") job.filesWritten = (job.filesWritten ?? 0) + 1;
-          if (String(b.name) === "Skill") {
-            const name = String((b.input as { skill?: unknown } | undefined)?.skill ?? "").slice(0, 60);
-            if (name && !(job.skillsUsed ?? []).includes(name)) job.skillsUsed = [...(job.skillsUsed ?? []), name];
-          }
-        }
-      }
-    } else if (event.type === "user") {
-      for (const b of blocks) {
-        if (b.type === "tool_result" && b.is_error === true) this.push(job, "error", toolResultText(b.content));
-      }
-    } else if (event.type === "result") {
-      // The final totals from Claude replace the running count (they include everything, e.g. retries).
-      const total = usageFrom(event.usage);
-      if (total && job.usage) {
-        job.usage = { ...total, ...(typeof event.total_cost_usd === "number" ? { costUsd: Math.round(event.total_cost_usd * 10000) / 10000 } : {}) };
-        job.tokens = weighted(job.usage);
-      }
-      job.summary = typeof event.result === "string" ? event.result : undefined;
-      if (job.summary) this.push(job, "result", job.summary);
-      if (event.is_error || event.subtype !== "success") {
-        this.push(job, "error", failureText(job.summary, event.subtype));
-        this.finish(job, "failed");
-      }
+    if (event.type === "assistant") this.claudeAssistant(job, event, blocks);
+    else if (event.type === "user") {
+      for (const b of blocks) if (b.type === "tool_result" && b.is_error === true) this.push(job, "error", toolResultText(b.content));
+    } else if (event.type === "result") this.claudeResult(job, event);
+  }
+
+  private claudeAssistant(job: Job, event: ClaudeEvent, blocks: Array<Record<string, unknown>>): void {
+    this.countUsage(job, event.message?.id, event.message?.usage);
+    for (const b of blocks) {
+      if (b.type === "text" && typeof b.text === "string" && b.text.trim()) this.push(job, "agent", b.text.trim());
+      if (b.type === "tool_use") this.noteToolCall(job, shortTool(String(b.name)), b.input);
+    }
+  }
+
+  private claudeResult(job: Job, event: ClaudeEvent): void {
+    // The final totals from Claude replace the running count (they include everything, e.g. retries).
+    const total = usageFrom(event.usage);
+    if (total && job.usage) {
+      job.usage = { ...total, ...(typeof event.total_cost_usd === "number" ? { costUsd: Math.round(event.total_cost_usd * 10000) / 10000 } : {}) };
+      job.tokens = weighted(job.usage);
+    }
+    job.summary = typeof event.result === "string" ? event.result : undefined;
+    if (job.summary) this.push(job, "result", job.summary);
+    if (event.is_error || event.subtype !== "success") {
+      this.push(job, "error", failureText(job.summary, event.subtype));
+      this.finish(job, "failed");
     }
   }
 }
 
-/** What the operator sees while an agent works. Order matters: it is the usual sequence. */
+interface CodexEvent {
+  type?: string;
+  message?: string;
+  item?: Record<string, unknown>;
+  usage?: Record<string, unknown>;
+  error?: { message?: string };
+}
+
+interface ClaudeEvent {
+  type?: string;
+  subtype?: string;
+  message?: { id?: string; content?: unknown; usage?: unknown };
+  result?: string;
+  is_error?: boolean;
+  num_turns?: number;
+  usage?: unknown;
+  total_cost_usd?: number;
+}
+
 /** A plain Turkish reason for a failed agent run; the usage limit is the common one and needs no fixing. */
 export function failureText(summary: string | undefined, subtype: unknown): string {
   const text = summary ?? "";
@@ -492,19 +595,34 @@ export function failureText(summary: string | undefined, subtype: unknown): stri
   return `Agent tamamlanamadı (${typeof subtype === "string" ? subtype : "hata"}).`;
 }
 
+/** What the operator sees while an agent works. Order matters: it is the usual sequence. */
 export const PHASES = ["reading", "saving", "design", "brand", "pages", "checking"] as const;
 export type Phase = (typeof PHASES)[number];
 
 export function phaseOf(tool: string, input: unknown): Phase | null {
   const path = typeof input === "object" && input !== null ? String((input as { path?: unknown }).path ?? "") : "";
   switch (tool) {
-    case "get_client_status": case "list_clients": case "read_site_file": case "list_site_files": case "Read": case "Glob": case "Grep": case "site_map": case "read_site_file_part":
+    case "get_client_status":
+    case "list_clients":
+    case "read_site_file":
+    case "list_site_files":
+    case "Read":
+    case "Glob":
+    case "Grep":
+    case "site_map":
+    case "read_site_file_part":
       return "reading";
-    case "update_client_config": case "save_content": case "save_asset":
+    case "update_client_config":
+    case "save_content":
+    case "save_asset":
       return "saving";
-    case "generate_design_system": case "Skill": case "search_design_knowledge":
+    case "generate_design_system":
+    case "Skill":
+    case "search_design_knowledge":
       return "design";
-    case "write_site_file": case "delete_site_file": case "edit_site_file":
+    case "write_site_file":
+    case "delete_site_file":
+    case "edit_site_file":
       return path.startsWith("brand/") ? "brand" : "pages";
     case "build_site":
       return "checking";
@@ -520,7 +638,10 @@ function shortTool(name: string): string {
 function summariseInput(input: unknown): string {
   if (typeof input !== "object" || input === null) return "";
   return Object.entries(input as Record<string, unknown>)
-    .map(([k, v]) => `${k}=${typeof v === "string" ? JSON.stringify(v.length > 40 ? `${v.slice(0, 37)}…` : v) : typeof v === "object" && v !== null ? `{${Object.keys(v).join(",")}}` : String(v)}`)
+    .map(
+      ([k, v]) =>
+        `${k}=${typeof v === "string" ? JSON.stringify(v.length > 40 ? `${v.slice(0, 37)}…` : v) : typeof v === "object" && v !== null ? `{${Object.keys(v).join(",")}}` : String(v)}`,
+    )
     .join(", ");
 }
 

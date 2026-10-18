@@ -89,7 +89,9 @@ describe("end-to-end flow", () => {
 
     expect(tools.getClientStatus(f, { slug: "willow-thread" }).stage).toBe("content");
     expect(() => tools.saveContent(f, { slug: "willow-thread", locale: "de", content: {} })).toThrow(/not in i18n.locales/);
-    expect(() => tools.saveContent(f, { slug: "willow-thread", locale: "en", content: { seo: { home: { title: "x".repeat(80), description: "ok ok ok ok" } } } })).toThrow(/Invalid content/);
+    expect(() =>
+      tools.saveContent(f, { slug: "willow-thread", locale: "en", content: { seo: { home: { title: "x".repeat(80), description: "ok ok ok ok" } } } }),
+    ).toThrow(/Invalid content/);
     tools.saveContent(f, { slug: "willow-thread", locale: "en", content: COMPLETE_CONTENT });
 
     writeFileSync(path.join(f.inboxDir, "logo.png"), PNG_1PX);

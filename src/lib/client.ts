@@ -129,9 +129,10 @@ export function clientStatus(factory: FactoryConfig, slug: string): ClientStatus
   let nextStep: string;
   if (clientMissing.length > 0 || cfg.invalid.length > 0) {
     stage = "collecting-answers";
-    nextStep = cfg.invalid.length > 0
-      ? "Fix the invalid fields with update_client_config."
-      : "Generate the next questionnaire round (generate_questionnaire) or record answers with update_client_config.";
+    nextStep =
+      cfg.invalid.length > 0
+        ? "Fix the invalid fields with update_client_config."
+        : "Generate the next questionnaire round (generate_questionnaire) or record answers with update_client_config.";
   } else if (designMissing) {
     stage = "design";
     nextStep = "Run generate_design_system, choose palette/fonts/variants, then save them under `design` with update_client_config.";

@@ -14,46 +14,64 @@ export type AgentProvider = (typeof AGENT_PROVIDERS)[number];
 export const JOB_GROUPS = ["design", "edit", "translate", "page"] as const;
 export type JobGroup = (typeof JOB_GROUPS)[number];
 
-const AgentRouteSchema = z.object({
-  provider: z.enum(["", ...AGENT_PROVIDERS]).default(""),
-  /** A model name the provider understands (Claude: opus, sonnet, haiku…; Codex: its model names). Letters, digits, . _ : - only. */
-  model: z.string().trim().max(60).regex(/^[A-Za-z0-9._:-]*$/).default(""),
-  maxTurns: z.number().int().min(0).max(500).default(0),
-  tokenCap: z.number().int().min(0).max(50_000_000).default(0),
-}).default({ provider: "", model: "", maxTurns: 0, tokenCap: 0 });
+const AgentRouteSchema = z
+  .object({
+    provider: z.enum(["", ...AGENT_PROVIDERS]).default(""),
+    /** A model name the provider understands (Claude: opus, sonnet, haiku…; Codex: its model names). Letters, digits, . _ : - only. */
+    model: z
+      .string()
+      .trim()
+      .max(60)
+      .regex(/^[A-Za-z0-9._:-]*$/)
+      .default(""),
+    maxTurns: z.number().int().min(0).max(500).default(0),
+    tokenCap: z.number().int().min(0).max(50_000_000).default(0),
+  })
+  .default({ provider: "", model: "", maxTurns: 0, tokenCap: 0 });
 
 export const SettingsSchema = z.object({
   /** The agent may search the web and read pages (business research, sector examples). */
   webResearch: z.boolean().default(true),
   /** Who the proposal (Teklif) is from. */
-  sender: z.object({
-    name: z.string().trim().max(80).default(""),
-    email: z.string().trim().max(120).default(""),
-    phone: z.string().trim().max(40).default(""),
-    web: z.string().trim().max(120).default(""),
-  }).default({ name: "", email: "", phone: "", web: "" }),
+  sender: z
+    .object({
+      name: z.string().trim().max(80).default(""),
+      email: z.string().trim().max(120).default(""),
+      phone: z.string().trim().max(40).default(""),
+      web: z.string().trim().max(120).default(""),
+    })
+    .default({ name: "", email: "", phone: "", web: "" }),
   /** Folder for automatic backups (a path on this computer, e.g. a OneDrive folder under /mnt/c). Empty = off. */
   backupDir: z.string().trim().max(400).default(""),
   /** Token budget: the mode decides models, step limits and caps per job (panel/budget.ts). 0 = no monthly budget. */
-  budget: z.object({
-    mode: z.enum(["economy", "balanced", "premium"]).default("balanced"),
-    monthlyTokens: z.number().int().min(0).max(10_000_000_000).default(0),
-  }).default({ mode: "balanced", monthlyTokens: 0 }),
+  budget: z
+    .object({
+      mode: z.enum(["economy", "balanced", "premium"]).default("balanced"),
+      monthlyTokens: z.number().int().min(0).max(10_000_000_000).default(0),
+    })
+    .default({ mode: "balanced", monthlyTokens: 0 }),
   /**
    * Per kind of job: which agent (Claude Code or Codex), which model, step limit and token cap. Empty or 0 = the
    * package's value (budget.mode). Lets Eren send cheap work to a cheaper model or to another provider.
    */
-  agents: z.object({
-    design: AgentRouteSchema,
-    edit: AgentRouteSchema,
-    translate: AgentRouteSchema,
-    page: AgentRouteSchema,
-  }).partial().default({}),
+  agents: z
+    .object({
+      design: AgentRouteSchema,
+      edit: AgentRouteSchema,
+      translate: AgentRouteSchema,
+      page: AgentRouteSchema,
+    })
+    .partial()
+    .default({}),
   /** Profit: how to turn the agent's USD cost into the client's currency, and a price per million units for jobs without a reported cost (Codex). */
-  profit: z.object({
-    usdRates: z.object({ TRY: z.number().min(0).max(1_000_000).default(0), GBP: z.number().min(0).max(1000).default(0), EUR: z.number().min(0).max(1000).default(0) }).default({ TRY: 0, GBP: 0, EUR: 0 }),
-    usdPerMillionUnits: z.number().min(0).max(1000).default(0),
-  }).default({ usdRates: { TRY: 0, GBP: 0, EUR: 0 }, usdPerMillionUnits: 0 }),
+  profit: z
+    .object({
+      usdRates: z
+        .object({ TRY: z.number().min(0).max(1_000_000).default(0), GBP: z.number().min(0).max(1000).default(0), EUR: z.number().min(0).max(1000).default(0) })
+        .default({ TRY: 0, GBP: 0, EUR: 0 }),
+      usdPerMillionUnits: z.number().min(0).max(1000).default(0),
+    })
+    .default({ usdRates: { TRY: 0, GBP: 0, EUR: 0 }, usdPerMillionUnits: 0 }),
 });
 export type Settings = z.infer<typeof SettingsSchema>;
 

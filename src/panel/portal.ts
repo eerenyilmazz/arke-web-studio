@@ -55,7 +55,11 @@ function writePortal(c: PortalConfig): void {
   const file = portalPaths.file();
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, JSON.stringify(c, null, 2), { mode: 0o600 });
-  try { chmodSync(file, 0o600); } catch { /* Windows file systems ignore modes */ }
+  try {
+    chmodSync(file, 0o600);
+  } catch {
+    /* Windows file systems ignore modes */
+  }
 }
 
 /** Whether the portal is set up (never the secret). */
@@ -83,7 +87,15 @@ export async function setupPortal(factory: FactoryConfig, log: (t: string) => vo
   if (!existsSync(wrangler)) throw new Error("wrangler kurulu değil (npm install).");
   const env = { CLOUDFLARE_API_TOKEN: creds.token, CLOUDFLARE_ACCOUNT_ID: creds.accountId, WRANGLER_SEND_METRICS: "false" };
   const dir = mkdtempSync(path.join(os.tmpdir(), "sf-portal-"));
-  const w = (args: string[], input?: string) => run(process.execPath, [wrangler, ...args], { cwd: dir, timeoutMs: factory.limits.deployTimeoutMs, env, secrets: [creds.token], ...(input !== undefined ? { input } : {}), maxOutputChars: 40_000 });
+  const w = (args: string[], input?: string) =>
+    run(process.execPath, [wrangler, ...args], {
+      cwd: dir,
+      timeoutMs: factory.limits.deployTimeoutMs,
+      env,
+      secrets: [creds.token],
+      ...(input !== undefined ? { input } : {}),
+      maxOutputChars: 40_000,
+    });
   try {
     const old = readPortal();
     let kvId = old?.kvId ?? "";
@@ -91,9 +103,13 @@ export async function setupPortal(factory: FactoryConfig, log: (t: string) => vo
       log("Depolama (KV) aranıyor…");
       const list = await w(["kv", "namespace", "list"]);
       try {
-        const found = (JSON.parse(list.stdout.slice(list.stdout.indexOf("["))) as Array<{ id: string; title: string }>).find((n) => n.title === KV_TITLE || n.title.endsWith(KV_TITLE));
+        const found = (JSON.parse(list.stdout.slice(list.stdout.indexOf("["))) as Array<{ id: string; title: string }>).find(
+          (n) => n.title === KV_TITLE || n.title.endsWith(KV_TITLE),
+        );
         if (found) kvId = found.id;
-      } catch { /* not JSON: create below */ }
+      } catch {
+        /* not JSON: create below */
+      }
     }
     if (!kvId) {
       log("Depolama (KV) oluşturuluyor…");
@@ -102,7 +118,14 @@ export async function setupPortal(factory: FactoryConfig, log: (t: string) => vo
       if (!kvId) throw new Error(`Depolama oluşturulamadı. Token'da "Workers KV Storage: Edit" izni var mı?\n${created.stderr.slice(-600)}`);
     }
     cpSync(path.join(FACTORY_ROOT, "portal", "worker.js"), path.join(dir, "worker.js"));
-    writeFileSync(path.join(dir, "wrangler.jsonc"), JSON.stringify({ name: PORTAL_NAME, main: "worker.js", compatibility_date: COMPAT_DATE, workers_dev: true, kv_namespaces: [{ binding: "SF_PORTAL", id: kvId }] }, null, 2));
+    writeFileSync(
+      path.join(dir, "wrangler.jsonc"),
+      JSON.stringify(
+        { name: PORTAL_NAME, main: "worker.js", compatibility_date: COMPAT_DATE, workers_dev: true, kv_namespaces: [{ binding: "SF_PORTAL", id: kvId }] },
+        null,
+        2,
+      ),
+    );
     log("Portal yayınlanıyor…");
     const dep = await w(["deploy"]);
     if (dep.code !== 0) throw new Error(`Portal yayınlanamadı:\n${(dep.stderr || dep.stdout).slice(-800)}`);
@@ -166,11 +189,13 @@ const MAX_QUESTIONS = 25;
 
 /** Client questions for the intake form: the questionnaire's client questions (the questionnaire is English). */
 function intakeQuestions(): Array<{ id: string; text: string; hint?: string }> {
-  return QUESTIONS.filter((q) => q.audience === "client" && q.round !== "later").slice(0, MAX_QUESTIONS).map((q) => ({
-    id: q.id,
-    text: q.text,
-    ...(q.hint ? { hint: q.hint } : {}),
-  }));
+  return QUESTIONS.filter((q) => q.audience === "client" && q.round !== "later")
+    .slice(0, MAX_QUESTIONS)
+    .map((q) => ({
+      id: q.id,
+      text: q.text,
+      ...(q.hint ? { hint: q.hint } : {}),
+    }));
 }
 
 /** A new link for this client: the details form, or the preview with comments and approval. */
@@ -182,15 +207,23 @@ export async function createLink(factory: FactoryConfig, slug: string, kind: "in
   const lang = draft.i18n?.defaultLocale === "tr" ? "tr" : "en";
   const deploys = (readJsonIfExists(path.join(paths.factoryDir, tools.DEPLOYS_FILE)) ?? {}) as { preview?: { url?: string | null } };
   const previewUrl = deploys.preview?.url ?? null;
-  if (kind === "review" && !(previewUrl && /^https:\/\//.test(previewUrl))) throw new Error("Önce önizlemeyi yayınlayınız (Yayın → Önizleme yayınla); yorum linki o adresi gösterir.");
+  if (kind === "review" && !(previewUrl && /^https:\/\//.test(previewUrl)))
+    throw new Error("Önce önizlemeyi yayınlayınız (Yayın → Önizleme yayınla); yorum linki o adresi gösterir.");
   const token = randomBytes(24).toString("base64url");
   const now = new Date();
   const expiresAt = new Date(now.getTime() + LINK_DAYS * 86_400_000).toISOString();
   const labels = PAGE_LABELS[lang]!;
   const record = {
-    slug, kind, lang, name: draft.business?.name ?? slug, createdAt: now.toISOString(), expiresAt,
+    slug,
+    kind,
+    lang,
+    name: draft.business?.name ?? slug,
+    createdAt: now.toISOString(),
+    expiresAt,
     maxSubmissions: kind === "intake" ? 10 : 100,
-    ...(kind === "intake" ? { questions: intakeQuestions() } : { previewUrl, pages: [...(draft.pages ?? ["home"]), "other"].map((p) => ({ id: p, label: labels[p] ?? p })) }),
+    ...(kind === "intake"
+      ? { questions: intakeQuestions() }
+      : { previewUrl, pages: [...(draft.pages ?? ["home"]), "other"].map((p) => ({ id: p, label: labels[p] ?? p })) }),
   };
   await call(c, "PUT", `links/${token}`, record, fetcher);
   const link: PortalLink = { token, kind, url: `${c.url}/${kind === "intake" ? "f" : "r"}/${token}`, createdAt: record.createdAt, expiresAt };
@@ -204,7 +237,10 @@ export async function closeLink(factory: FactoryConfig, slug: string, token: str
   const links = listLinks(factory, slug);
   if (!links.some((l) => l.token === token)) throw new Error("Bu müşteride böyle bir link yok.");
   await call(c, "DELETE", `links/${token}`, undefined, fetcher);
-  writeJson(linksFile(factory, slug), links.filter((l) => l.token !== token));
+  writeJson(
+    linksFile(factory, slug),
+    links.filter((l) => l.token !== token),
+  );
 }
 
 // ---------------------------------------------------------------- what clients sent
@@ -250,7 +286,10 @@ export function updateEntry(factory: FactoryConfig, slug: string, kind: "intake"
   const file = portalFile(factory, slug, kind === "intake" ? INTAKE_FILE : COMMENTS_FILE);
   const list = readList<{ id: string }>(file);
   if (!list.some((e) => e.id === id)) throw new Error("Kayıt bulunamadı.");
-  writeJson(file, list.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  writeJson(
+    file,
+    list.map((e) => (e.id === id ? { ...e, ...patch } : e)),
+  );
 }
 
 const SAFE_NAME = /[^\w.-]+/g;
@@ -278,12 +317,23 @@ export async function pullPortal(factory: FactoryConfig, fetcher?: PortalFetch):
       for (const f of (item.files as Array<{ key: string; name: string }> | undefined) ?? []) {
         const fr = await call(c, "GET", `files/${encodeURIComponent(f.key)}`, undefined, fetcher);
         if (!fr.ok) continue;
-        const name = `musteri-${id.slice(0, 13)}-${String(f.name).replace(SAFE_NAME, "-").replace(/^[-.]+/, "").slice(0, 60) || "dosya"}`;
+        const name = `musteri-${id.slice(0, 13)}-${
+          String(f.name)
+            .replace(SAFE_NAME, "-")
+            .replace(/^[-.]+/, "")
+            .slice(0, 60) || "dosya"
+        }`;
         writeFileSync(safeJoin(inbox, name), Buffer.from(await fr.arrayBuffer()));
         saved.push(name);
       }
       const file = portalFile(factory, item.slug, INTAKE_FILE);
-      const entry: IntakeEntry = { id, at: item.at, answers: (item.answers as IntakeEntry["answers"]) ?? {}, freeText: String(item.freeText ?? ""), files: saved };
+      const entry: IntakeEntry = {
+        id,
+        at: item.at,
+        answers: (item.answers as IntakeEntry["answers"]) ?? {},
+        freeText: String(item.freeText ?? ""),
+        files: saved,
+      };
       writeJson(file, [...readList<IntakeEntry>(file).filter((e) => e.id !== id), entry]);
       counts.intake += 1;
     } else if (item.type === "comment") {
@@ -292,7 +342,11 @@ export async function pullPortal(factory: FactoryConfig, fetcher?: PortalFetch):
       writeJson(file, [...readList<CommentEntry>(file).filter((e) => e.id !== id), entry]);
       counts.comments += 1;
     } else if (item.type === "approval") {
-      writeJson(portalFile(factory, item.slug, APPROVAL_FILE), { at: item.at, name: String(item.name ?? "").slice(0, 80), previewUrl: item.previewUrl ?? null });
+      writeJson(portalFile(factory, item.slug, APPROVAL_FILE), {
+        at: item.at,
+        name: String(item.name ?? "").slice(0, 80),
+        previewUrl: item.previewUrl ?? null,
+      });
       counts.approvals += 1;
     }
     await call(c, "DELETE", `items/${encodeURIComponent(item.key)}`, undefined, fetcher);
@@ -314,7 +368,9 @@ let pulling: Promise<unknown> | null = null;
 /** One pull at a time (the timer and the button may meet). */
 export function pullOnce(factory: FactoryConfig, fetcher?: PortalFetch): Promise<{ intake: number; comments: number; approvals: number }> {
   if (pulling) return pulling as Promise<{ intake: number; comments: number; approvals: number }>;
-  const p = pullPortal(factory, fetcher).finally(() => { pulling = null; });
+  const p = pullPortal(factory, fetcher).finally(() => {
+    pulling = null;
+  });
   pulling = p;
   return p;
 }
@@ -324,7 +380,9 @@ export function startAutoPull(factory: FactoryConfig, log: (t: string) => void):
   const timer = setInterval(() => {
     if (!readPortal()) return;
     pullOnce(factory)
-      .then((c) => { if (c.intake + c.comments + c.approvals) log(`[portal] yeni: ${c.intake} form, ${c.comments} yorum, ${c.approvals} onay`); })
+      .then((c) => {
+        if (c.intake + c.comments + c.approvals) log(`[portal] yeni: ${c.intake} form, ${c.comments} yorum, ${c.approvals} onay`);
+      })
       .catch((e: Error) => log(`[portal] alınamadı: ${e.message}`));
   }, AUTO_PULL_MS);
   timer.unref();

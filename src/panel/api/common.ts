@@ -64,12 +64,24 @@ export async function rebuildAfterDirectEdit(deps: ApiDeps, slug: string, title:
     throw new HttpError(400, (error as Error).message);
   }
   return runOrConflict(() =>
-    deps.jobs.startTask(slug, "build", title, async (log) => {
-      log("Değişiklik doğrudan uygulandı (asistan kullanılmadı); site yeniden oluşturuluyor…");
-      const r = await tools.buildSite(deps.factory, { slug });
-      if (!r.passed) throw new Error(`Kontroller geçmedi: ${r.checks.filter((c) => c.status === "fail").map((c) => c.name).join(", ")}`);
-      return `${note} Kaynak kullanılmadı.`;
-    }, `${title}: ${summary}`),
+    deps.jobs.startTask(
+      slug,
+      "build",
+      title,
+      async (log) => {
+        log("Değişiklik doğrudan uygulandı (asistan kullanılmadı); site yeniden oluşturuluyor…");
+        const r = await tools.buildSite(deps.factory, { slug });
+        if (!r.passed)
+          throw new Error(
+            `Kontroller geçmedi: ${r.checks
+              .filter((c) => c.status === "fail")
+              .map((c) => c.name)
+              .join(", ")}`,
+          );
+        return `${note} Kaynak kullanılmadı.`;
+      },
+      `${title}: ${summary}`,
+    ),
   );
 }
 
@@ -106,7 +118,14 @@ export function startTranslation(deps: ApiDeps, slug: string) {
   const def = draft.i18n?.defaultLocale ?? locales[0] ?? "en";
   if (draft.template !== "custom" || locales.length < 2 || deps.jobs.running()) return null;
   if (!existsSync(path.join(paths.root, "site", "index.html"))) return null;
-  return launchAgent(deps, slug, "translate", "Diğer diller", translatePrompt(slug, def, locales), `Siteyi ${locales.filter((l) => l !== def).join(", ")} diline çevir.`);
+  return launchAgent(
+    deps,
+    slug,
+    "translate",
+    "Diğer diller",
+    translatePrompt(slug, def, locales),
+    `Siteyi ${locales.filter((l) => l !== def).join(", ")} diline çevir.`,
+  );
 }
 
 export function runOrConflict<T>(fn: () => T): T {
@@ -118,12 +137,24 @@ export function runOrConflict<T>(fn: () => T): T {
 }
 
 export function safeFileName(name: string): string {
-  const base = path.basename(name).normalize("NFKD").replace(/[^\w.-]+/g, "-").replace(/^[-.]+/, "").slice(0, 80);
+  const base = path
+    .basename(name)
+    .normalize("NFKD")
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/^[-.]+/, "")
+    .slice(0, 80);
   if (!base || base === "." || base === "..") throw new HttpError(400, "Geçersiz dosya adı.");
   return base;
 }
 
-export const IMAGE_TYPES: Readonly<Record<string, string>> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".avif": "image/avif", ".svg": "image/svg+xml" };
+export const IMAGE_TYPES: Readonly<Record<string, string>> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".avif": "image/avif",
+  ".svg": "image/svg+xml",
+};
 
 export function assetFiles(dir: string): Array<{ name: string; bytes: number }> {
   if (!existsSync(dir)) return [];
@@ -150,5 +181,7 @@ export function stringRecord(value: unknown): Record<string, string> {
 }
 
 export function isQa(x: unknown): x is { question: string; answer: string } {
-  return typeof x === "object" && x !== null && typeof (x as { question?: unknown }).question === "string" && typeof (x as { answer?: unknown }).answer === "string";
+  return (
+    typeof x === "object" && x !== null && typeof (x as { question?: unknown }).question === "string" && typeof (x as { answer?: unknown }).answer === "string"
+  );
 }

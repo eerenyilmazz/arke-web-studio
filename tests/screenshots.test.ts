@@ -11,24 +11,28 @@ describe("screenshots for the agent", () => {
     expect((await takeScreenshots("/nowhere", "/nowhere")).status).toBe("skip");
   });
 
-  it.runIf(existsSync(BROWSER))("serves dist and saves a phone and a desktop image", async () => {
-    const dir = mkdtempSync(path.join(os.tmpdir(), "shots-"));
-    const dist = path.join(dir, "dist");
-    mkdirSync(dist);
-    writeFileSync(path.join(dist, "index.html"), "<!doctype html><title>x</title><h1 style='color:#c00'>Hello</h1>");
-    const prev = { s: process.env.SF_SCREENSHOTS, b: process.env.SF_BROWSER };
-    process.env.SF_SCREENSHOTS = "on";
-    process.env.SF_BROWSER = BROWSER;
-    try {
-      const r = await takeScreenshots(dist, path.join(dir, "shots"));
-      expect(r.status).toBe("pass");
-      expect(existsSync(path.join(dir, "shots", "telefon.png"))).toBe(true);
-      expect(existsSync(path.join(dir, "shots", "masaustu.png"))).toBe(true);
-    } finally {
-      process.env.SF_SCREENSHOTS = prev.s;
-      process.env.SF_BROWSER = prev.b;
-    }
-  }, 60_000);
+  it.runIf(existsSync(BROWSER))(
+    "serves dist and saves a phone and a desktop image",
+    async () => {
+      const dir = mkdtempSync(path.join(os.tmpdir(), "shots-"));
+      const dist = path.join(dir, "dist");
+      mkdirSync(dist);
+      writeFileSync(path.join(dist, "index.html"), "<!doctype html><title>x</title><h1 style='color:#c00'>Hello</h1>");
+      const prev = { s: process.env.SF_SCREENSHOTS, b: process.env.SF_BROWSER };
+      process.env.SF_SCREENSHOTS = "on";
+      process.env.SF_BROWSER = BROWSER;
+      try {
+        const r = await takeScreenshots(dist, path.join(dir, "shots"));
+        expect(r.status).toBe("pass");
+        expect(existsSync(path.join(dir, "shots", "telefon.png"))).toBe(true);
+        expect(existsSync(path.join(dir, "shots", "masaustu.png"))).toBe(true);
+      } finally {
+        process.env.SF_SCREENSHOTS = prev.s;
+        process.env.SF_BROWSER = prev.b;
+      }
+    },
+    60_000,
+  );
 });
 
 describe("screenshot server stays inside dist/", () => {
@@ -48,7 +52,10 @@ describe("screenshot server stays inside dist/", () => {
       // fetch() would normalise "..", so the raw path goes out through node:http, as a local process could send it.
       const { request } = await import("node:http");
       const status = await new Promise<number>((resolve, reject) => {
-        const req = request(`${url}/`, { path: "/../dist2/secret.txt" }, (res) => { res.resume(); resolve(res.statusCode ?? 0); });
+        const req = request(`${url}/`, { path: "/../dist2/secret.txt" }, (res) => {
+          res.resume();
+          resolve(res.statusCode ?? 0);
+        });
         req.on("error", reject);
         req.end();
       });

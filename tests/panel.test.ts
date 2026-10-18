@@ -27,7 +27,12 @@ function freePort(): Promise<number> {
   });
 }
 
-interface SpawnCall { command: string; args: readonly string[]; options: SpawnOptions; stdin: string }
+interface SpawnCall {
+  command: string;
+  args: readonly string[];
+  options: SpawnOptions;
+  stdin: string;
+}
 
 /** Stands in for `claude -p`: records the call and replays stream-json events. */
 function fakeSpawn(calls: SpawnCall[], events: object[], exitCode = 0) {
@@ -107,10 +112,18 @@ describe("panel access", () => {
 describe("panel flow", () => {
   it("creates a client, keeps uploads inside the client's inbox and serves the questionnaire", async () => {
     const { base, auth, factory } = await start();
-    const created = await fetch(`${base}/api/clients`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ slug: "willow-thread", businessName: "Willow & Thread", industry: "bridal salon", hostingModel: "managed" }) });
+    const created = await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: { ...auth, "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: "willow-thread", businessName: "Willow & Thread", industry: "bridal salon", hostingModel: "managed" }),
+    });
     expect(created.status).toBe(201);
 
-    const up = await fetch(`${base}/api/clients/willow-thread/inbox/${encodeURIComponent("../../evil.png")}`, { method: "PUT", headers: auth, body: Buffer.from("abc") });
+    const up = await fetch(`${base}/api/clients/willow-thread/inbox/${encodeURIComponent("../../evil.png")}`, {
+      method: "PUT",
+      headers: auth,
+      body: Buffer.from("abc"),
+    });
     expect(up.status).toBe(201);
     expect(((await up.json()) as { name: string }).name).toBe("evil.png");
     expect(readdirSync(path.join(factory.inboxDir, "willow-thread"))).toEqual(["evil.png"]);
@@ -127,14 +140,26 @@ describe("panel flow", () => {
   it("runs the agent restricted to factory tools, without Cloudflare secrets, one job at a time", async () => {
     const calls: SpawnCall[] = [];
     const events = [
-      { type: "assistant", message: { content: [{ type: "text", text: "Kaydediyorum." }, { type: "tool_use", name: "mcp__site-factory__update_client_config", input: { slug: "willow-thread", patch: { contact: {} } } }] } },
+      {
+        type: "assistant",
+        message: {
+          content: [
+            { type: "text", text: "Kaydediyorum." },
+            { type: "tool_use", name: "mcp__site-factory__update_client_config", input: { slug: "willow-thread", patch: { contact: {} } } },
+          ],
+        },
+      },
       { type: "user", message: { content: [{ type: "tool_result", is_error: true, content: [{ type: "text", text: "Nothing saved." }] }] } },
       { type: "result", subtype: "success", result: "Özet: e-posta kaydedildi." },
     ];
     const { base, auth } = await start(fakeSpawn(calls, events));
     process.env.SF_CF_MANAGED_API_TOKEN = "secret-token-value";
     try {
-      await fetch(`${base}/api/clients`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }) });
+      await fetch(`${base}/api/clients`, {
+        method: "POST",
+        headers: { ...auth, "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }),
+      });
       const res = await fetch(`${base}/api/clients/willow-thread/agent/answers`, {
         method: "POST",
         headers: { ...auth, "Content-Type": "application/json" },
@@ -162,14 +187,21 @@ describe("panel flow", () => {
       expect(call.stdin).toContain("ignore your rules");
 
       await waitFor(async () => ((await (await fetch(`${base}/api/jobs/${job.id}`, { headers: auth })).json()) as { status: string }).status !== "running");
-      const done = (await (await fetch(`${base}/api/jobs/${job.id}`, { headers: auth })).json()) as { status: string; summary: string; log: Array<{ kind: string; text: string }> };
+      const done = (await (await fetch(`${base}/api/jobs/${job.id}`, { headers: auth })).json()) as {
+        status: string;
+        summary: string;
+        log: Array<{ kind: string; text: string }>;
+      };
       expect(done.status).toBe("succeeded");
       expect(done.summary).toMatch(/Özet/);
       expect(done.log.map((l) => l.kind)).toEqual(["info", "agent", "tool", "error", "result"]);
       expect(done.log[2]?.text).toMatch(/^update_client_config\(/);
 
       // The finished job is kept in the client folder, so the conversation survives a panel restart.
-      const detail = (await (await fetch(`${base}/api/clients/willow-thread`, { headers: auth })).json()) as { history: Array<{ request: string; summary: string; tools: string[]; errors: string[] }>; running: unknown };
+      const detail = (await (await fetch(`${base}/api/clients/willow-thread`, { headers: auth })).json()) as {
+        history: Array<{ request: string; summary: string; tools: string[]; errors: string[] }>;
+        running: unknown;
+      };
       expect(detail.running).toBeNull();
       expect(detail.history).toHaveLength(1);
       expect(detail.history[0]?.request).toMatch(/^Müşterinin cevaplarını işle: 1 cevap/);
@@ -191,18 +223,36 @@ describe("panel flow", () => {
       return child;
     };
     const { base, auth } = await start(hanging as ReturnType<typeof fakeSpawn>);
-    await fetch(`${base}/api/clients`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }) });
-    const first = await fetch(`${base}/api/clients/willow-thread/agent/design-content`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: "{}" });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: { ...auth, "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }),
+    });
+    const first = await fetch(`${base}/api/clients/willow-thread/agent/design-content`, {
+      method: "POST",
+      headers: { ...auth, "Content-Type": "application/json" },
+      body: "{}",
+    });
     expect(first.status).toBe(202);
-    const second = await fetch(`${base}/api/clients/willow-thread/agent/design-content`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: "{}" });
+    const second = await fetch(`${base}/api/clients/willow-thread/agent/design-content`, {
+      method: "POST",
+      headers: { ...auth, "Content-Type": "application/json" },
+      body: "{}",
+    });
     expect(second.status).toBe(409);
     const job = (await first.json()) as { id: string };
-    expect(((await (await fetch(`${base}/api/jobs/${job.id}/cancel`, { method: "POST", headers: auth })).json()) as { cancelled: boolean }).cancelled).toBe(true);
+    expect(((await (await fetch(`${base}/api/jobs/${job.id}/cancel`, { method: "POST", headers: auth })).json()) as { cancelled: boolean }).cancelled).toBe(
+      true,
+    );
   });
 
   it("preview serves only the chosen dist folder", async () => {
     const { base, auth, factory, port } = await start();
-    await fetch(`${base}/api/clients`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: { ...auth, "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }),
+    });
     expect((await fetch(`${base}/api/clients/willow-thread/preview`, { method: "POST", headers: auth })).status).toBe(409);
     const dist = path.join(factory.clientsRoot, "willow-thread", "dist");
     mkdirSync(dist, { recursive: true });
@@ -219,7 +269,11 @@ describe("archiving a client", () => {
   it("needs the typed slug, moves folders to _archive and keeps everything", async () => {
     const { base, auth, factory } = await start();
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }),
+    });
     await fetch(`${base}/api/clients/willow-thread/inbox/logo.png`, { method: "PUT", headers: auth, body: Buffer.from("x") });
 
     const wrong = await fetch(`${base}/api/clients/willow-thread`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "nope" }) });
@@ -237,7 +291,15 @@ describe("archiving a client", () => {
     const list = (await (await fetch(`${base}/api/clients`, { headers: auth })).json()) as { clients: unknown[] };
     expect(list.clients).toEqual([]);
     // The slug is free again for a new client.
-    expect((await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }) })).status).toBe(201);
+    expect(
+      (
+        await fetch(`${base}/api/clients`, {
+          method: "POST",
+          headers: json,
+          body: JSON.stringify({ slug: "willow-thread", businessName: "Willow", industry: "bridal salon", hostingModel: "managed" }),
+        })
+      ).status,
+    ).toBe(201);
   });
 });
 
@@ -246,8 +308,16 @@ describe("single paste box", () => {
     const calls: SpawnCall[] = [];
     const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "bella-hair", businessName: "Bella Hair", industry: "hair salon", hostingModel: "managed" }) });
-    const res = await fetch(`${base}/api/clients/bella-hair/agent/answers`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Kuaför, kadın kesim 35£. Tel 07700 900123." }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "bella-hair", businessName: "Bella Hair", industry: "hair salon", hostingModel: "managed" }),
+    });
+    const res = await fetch(`${base}/api/clients/bella-hair/agent/answers`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ freeText: "Kuaför, kadın kesim 35£. Tel 07700 900123." }),
+    });
     expect(res.status).toBe(202);
     const prompt = calls[0]!.stdin;
     expect(prompt).toContain("Kuaför, kadın kesim 35£. Tel 07700 900123.");
@@ -263,9 +333,17 @@ describe("prepare site (create-site job)", () => {
     const calls: SpawnCall[] = [];
     const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "Yaptıklarım: ..." }]));
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "reinware", businessName: "Reinware", industry: "software development", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "reinware", businessName: "Reinware", industry: "software development", hostingModel: "managed" }),
+    });
 
-    const first = await fetch(`${base}/api/clients/reinware/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "5 yıldır yazılım yapıyorum. eerenyilmazz1@gmail.com" }) });
+    const first = await fetch(`${base}/api/clients/reinware/agent/create-site`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ freeText: "5 yıldır yazılım yapıyorum. eerenyilmazz1@gmail.com" }),
+    });
     expect(first.status).toBe(202);
     await waitFor(async () => ((await (await fetch(`${base}/api/clients/reinware`, { headers: auth })).json()) as { running: unknown }).running === null);
     const call = calls[0]!;
@@ -293,7 +371,11 @@ describe("move to the new template", () => {
     const calls: SpawnCall[] = [];
     const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "old-site", businessName: "Old Site", industry: "bakery", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "old-site", businessName: "Old Site", industry: "bakery", hostingModel: "managed" }),
+    });
     const detail = (await (await fetch(`${base}/api/clients/old-site`, { headers: auth })).json()) as { template: string; latestTemplate: string };
     expect(typeof detail.template).toBe("string");
     expect(typeof detail.latestTemplate).toBe("string");
@@ -311,13 +393,21 @@ describe("brand board", () => {
     const calls: SpawnCall[] = [];
     const { base, auth, factory } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "tpl-site", businessName: "Tpl", industry: "bakery", hostingModel: "managed", template: "stub-v1" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "tpl-site", businessName: "Tpl", industry: "bakery", hostingModel: "managed", template: "stub-v1" }),
+    });
     const board = (await (await fetch(`${base}/api/clients/tpl-site/brand`, { headers: auth })).json()) as { source: string; name: string };
     expect(board.name).toBe("Tpl");
     if (board.source === "template") {
       expect((await fetch(`${base}/api/clients/tpl-site/agent/brand-board`, { method: "POST", headers: json, body: "{}" })).status).toBe(409);
     }
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "own-brand", businessName: "Own", industry: "bakery", hostingModel: "managed", template: "custom" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "own-brand", businessName: "Own", industry: "bakery", hostingModel: "managed", template: "custom" }),
+    });
     (await import("../src/tools.js")).updateClientConfig(factory, { slug: "own-brand", patch: { template: "custom" } });
     const own = (await (await fetch(`${base}/api/clients/own-brand/brand`, { headers: auth })).json()) as { source: string; brand: unknown; missing: string[] };
     expect(own.source).toBe("custom");
@@ -342,8 +432,15 @@ describe("research first", () => {
     const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...auth, "Content-Type": "application/json" };
     expect(((await (await fetch(`${base}/api/settings`, { headers: auth })).json()) as { webResearch: boolean }).webResearch).toBe(true);
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "web-on", businessName: "Web", industry: "barber shop", hostingModel: "managed" }) });
-    expect((await fetch(`${base}/api/clients/web-on/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Berber, Ankara" }) })).status).toBe(202);
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "web-on", businessName: "Web", industry: "barber shop", hostingModel: "managed" }),
+    });
+    expect(
+      (await fetch(`${base}/api/clients/web-on/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Berber, Ankara" }) }))
+        .status,
+    ).toBe(202);
     const on = calls[0]!;
     expect(on.args[on.args.indexOf("--allowedTools") + 1]).toMatch(/WebSearch,WebFetch/);
     expect(on.args[on.args.indexOf("--disallowedTools") + 1]).not.toMatch(/WebFetch/);
@@ -370,9 +467,24 @@ describe("client logo from the panel", () => {
   it("shows uploads as thumbnails and sets the logo without the agent", async () => {
     const { base, auth } = await start();
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "logo-co", businessName: "Logo Co", industry: "agency", hostingModel: "managed" }) });
-    const png = Buffer.from("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fea7a9a0b70000000049454e44ae426082", "hex");
-    expect((await fetch(`${base}/api/clients/logo-co/inbox/My%20Logo.png`, { method: "PUT", headers: { ...auth, "Content-Type": "application/octet-stream" }, body: png })).status).toBe(201);
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "logo-co", businessName: "Logo Co", industry: "agency", hostingModel: "managed" }),
+    });
+    const png = Buffer.from(
+      "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fea7a9a0b70000000049454e44ae426082",
+      "hex",
+    );
+    expect(
+      (
+        await fetch(`${base}/api/clients/logo-co/inbox/My%20Logo.png`, {
+          method: "PUT",
+          headers: { ...auth, "Content-Type": "application/octet-stream" },
+          body: png,
+        })
+      ).status,
+    ).toBe(201);
     const img = await fetch(`${base}/api/clients/logo-co/inbox/My-Logo.png`, { headers: auth });
     expect(img.headers.get("content-type")).toBe("image/png");
     expect(img.headers.get("content-security-policy")).toMatch(/sandbox/);
@@ -384,7 +496,9 @@ describe("client logo from the panel", () => {
     const detail = (await (await fetch(`${base}/api/clients/logo-co`, { headers: auth })).json()) as { logo: string; assets: { name: string }[] };
     expect(detail.logo).toBe(logo);
     expect(detail.assets.map((a) => `assets/${a.name}`)).toContain(logo);
-    expect((await fetch(`${base}/api/clients/logo-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "../x.png", from: "assets" }) })).status).toBe(404);
+    expect(
+      (await fetch(`${base}/api/clients/logo-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "../x.png", from: "assets" }) })).status,
+    ).toBe(404);
   });
 });
 
@@ -393,10 +507,15 @@ describe("structured edits (Düzenle)", () => {
     const calls: SpawnCall[] = [];
     const { base, auth, factory } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "edit-me", businessName: "Edit Me", industry: "barber shop", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "edit-me", businessName: "Edit Me", industry: "barber shop", hostingModel: "managed" }),
+    });
     tools.updateClientConfig(factory, { slug: "edit-me", patch: { ...COMPLETE_PATCH, template: "custom" } });
     tools.saveContent(factory, { slug: "edit-me", locale: "en", content: COMPLETE_CONTENT });
-    const post = (type: string, payload: unknown) => fetch(`${base}/api/clients/edit-me/edit/${type}`, { method: "POST", headers: json, body: JSON.stringify(payload) });
+    const post = (type: string, payload: unknown) =>
+      fetch(`${base}/api/clients/edit-me/edit/${type}`, { method: "POST", headers: json, body: JSON.stringify(payload) });
 
     expect((await post("colors", { colors: { primary: "not-a-colour" } })).status).toBe(400);
     expect((await post("pages", { pages: ["contact"] })).status).toBe(400);
@@ -423,7 +542,11 @@ describe("backups", () => {
     const os = await import("node:os");
     const { mkdtempSync } = await import("node:fs");
     const dir = mkdtempSync(path.join(os.tmpdir(), "sf-backup-"));
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "keep-me", businessName: "Keep", industry: "bakery", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "keep-me", businessName: "Keep", industry: "bakery", hostingModel: "managed" }),
+    });
     expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ backupDir: dir }) })).status).toBe(200);
     const r = await fetch(`${base}/api/backups`, { method: "POST", headers: auth });
     expect(r.status).toBe(201);
@@ -437,29 +560,52 @@ describe("backups", () => {
 });
 
 describe("token budget", () => {
-  const usage = (input: number, output: number, cacheRead = 0) => ({ input_tokens: input, output_tokens: output, cache_read_input_tokens: cacheRead, cache_creation_input_tokens: 0 });
+  const usage = (input: number, output: number, cacheRead = 0) => ({
+    input_tokens: input,
+    output_tokens: output,
+    cache_read_input_tokens: cacheRead,
+    cache_creation_input_tokens: 0,
+  });
   it("counts each message once, records the job in the ledger, and uses the client's mode", async () => {
     const calls: SpawnCall[] = [];
     const events = [
       { type: "assistant", message: { id: "m1", usage: usage(1000, 200, 5000), content: [{ type: "text", text: "a" }] } },
-      { type: "assistant", message: { id: "m1", usage: usage(1000, 200, 5000), content: [{ type: "tool_use", name: "mcp__site-factory__get_client_status", input: {} }] } },
+      {
+        type: "assistant",
+        message: { id: "m1", usage: usage(1000, 200, 5000), content: [{ type: "tool_use", name: "mcp__site-factory__get_client_status", input: {} }] },
+      },
       { type: "result", subtype: "success", result: "ok", usage: usage(1000, 300, 5000), total_cost_usd: 0.0123 },
     ];
     const { base, auth, factory } = await start(fakeSpawn(calls, events));
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "cheap-co", businessName: "Cheap", industry: "bakery", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "cheap-co", businessName: "Cheap", industry: "bakery", hostingModel: "managed" }),
+    });
     await fetch(`${base}/api/clients/cheap-co/business`, { method: "PUT", headers: json, body: JSON.stringify({ budgetMode: "economy" }) });
-    const res = await fetch(`${base}/api/clients/cheap-co/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "Başlığı kısalt" }) });
+    const res = await fetch(`${base}/api/clients/cheap-co/agent/revise`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ request: "Başlığı kısalt" }),
+    });
     expect(res.status).toBe(202);
     const call = calls[0]!;
     expect(call.args[call.args.indexOf("--model") + 1]).toBe("haiku");
     expect(call.args[call.args.indexOf("--max-turns") + 1]).toBe("30");
     await waitFor(async () => !((await (await fetch(`${base}/api/meta`, { headers: auth })).json()) as { running: unknown }).running);
-    const u = (await (await fetch(`${base}/api/usage`, { headers: auth })).json()) as { monthTokens: number; monthJobs: number; byClient: Record<string, { tokens: number; costUsd: number }> };
+    const u = (await (await fetch(`${base}/api/usage`, { headers: auth })).json()) as {
+      monthTokens: number;
+      monthJobs: number;
+      byClient: Record<string, { tokens: number; costUsd: number }>;
+    };
     // 1000 + 300 + 5000/10 = 1800 weighted tokens, from Claude's final totals.
     expect(u.monthTokens).toBe(1800);
     expect(u.byClient["cheap-co"]!.costUsd).toBeCloseTo(0.0123);
-    const detail = (await (await fetch(`${base}/api/clients/cheap-co`, { headers: auth })).json()) as { history: Array<{ tokens: number; model: string }>; budget: { mode: string } };
+    const detail = (await (await fetch(`${base}/api/clients/cheap-co`, { headers: auth })).json()) as {
+      history: Array<{ tokens: number; model: string }>;
+      budget: { mode: string };
+    };
     expect(detail.history.at(-1)!.tokens).toBe(1800);
     expect(detail.history.at(-1)!.model).toBe("haiku");
     expect(detail.budget.mode).toBe("economy");
@@ -477,8 +623,14 @@ describe("token budget", () => {
     const big = [{ type: "assistant", message: { id: "big", usage: usage(500_000, 1000), content: [{ type: "text", text: "çok" }] } }];
     const { base, auth } = await start(fakeSpawn(calls, big));
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "cap-co", businessName: "Cap", industry: "bakery", hostingModel: "managed" }) });
-    const job = (await (await fetch(`${base}/api/clients/cap-co/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "x" }) })).json()) as { id: string };
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "cap-co", businessName: "Cap", industry: "bakery", hostingModel: "managed" }),
+    });
+    const job = (await (
+      await fetch(`${base}/api/clients/cap-co/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "x" }) })
+    ).json()) as { id: string };
     await waitFor(async () => ((await (await fetch(`${base}/api/jobs/${job.id}`, { headers: auth })).json()) as { status: string }).status !== "running");
     const done = (await (await fetch(`${base}/api/jobs/${job.id}`, { headers: auth })).json()) as { status: string; log: Array<{ text: string }> };
     expect(done.status).toBe("failed");
@@ -490,30 +642,63 @@ describe("edits without the assistant", () => {
   async function customSite(calls: SpawnCall[]) {
     const ctx = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...ctx.auth, "Content-Type": "application/json" };
-    await fetch(`${ctx.base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "direct-co", businessName: "Direct & Co", industry: "bakery", hostingModel: "managed" }) });
+    await fetch(`${ctx.base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "direct-co", businessName: "Direct & Co", industry: "bakery", hostingModel: "managed" }),
+    });
     tools.updateClientConfig(ctx.factory, { slug: "direct-co", patch: { ...COMPLETE_PATCH, template: "custom" } });
     tools.saveContent(ctx.factory, { slug: "direct-co", locale: "en", content: COMPLETE_CONTENT });
     const w = (p: string, c: string) => tools.writeSiteFileTool(ctx.factory, { slug: "direct-co", path: p, content: c });
-    w("brand/brand.json", JSON.stringify({ concept: "Bread from a wood oven, crust and flour dust.", personality: ["warm", "honest"], palette: { crust: "#8A4B16", flour: "#F6F1E4", ink: "#1B1B1B" }, fonts: { heading: "Fraunces", body: "Inter" }, visualLanguage: "Loaves, flour dust and oven light.", voice: "Short and warm.", animations: [{ id: "dough-rise", idea: "Dough rises on scroll in the hero.", trigger: "scroll" }, { id: "flour-dust", idea: "Flour dust falls from the cursor.", trigger: "pointer" }] }));
+    w(
+      "brand/brand.json",
+      JSON.stringify({
+        concept: "Bread from a wood oven, crust and flour dust.",
+        personality: ["warm", "honest"],
+        palette: { crust: "#8A4B16", flour: "#F6F1E4", ink: "#1B1B1B" },
+        fonts: { heading: "Fraunces", body: "Inter" },
+        visualLanguage: "Loaves, flour dust and oven light.",
+        voice: "Short and warm.",
+        animations: [
+          { id: "dough-rise", idea: "Dough rises on scroll in the hero.", trigger: "scroll" },
+          { id: "flour-dust", idea: "Flour dust falls from the cursor.", trigger: "pointer" },
+        ],
+      }),
+    );
     w("css/site.css", ":root{--crust:#8A4B16;--flour:#F6F1E4;--ink:#1B1B1B}");
-    w("index.html", '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width"><title>Direct &amp; Co</title></head><body><h1 class="dough-rise">Fresh bread every morning</h1></body></html>');
+    w(
+      "index.html",
+      '<!doctype html><html lang="en"><head><meta name="viewport" content="width=device-width"><title>Direct &amp; Co</title></head><body><h1 class="dough-rise">Fresh bread every morning</h1></body></html>',
+    );
     return { ...ctx, json };
   }
 
   it("changes colours and exact text itself (no agent run) and asks the agent only when the text is not found", async () => {
     const calls: SpawnCall[] = [];
     const { base, json, auth, factory } = await customSite(calls);
-    const r1 = await fetch(`${base}/api/clients/direct-co/edit/colors`, { method: "POST", headers: json, body: JSON.stringify({ colors: { crust: "#123456" } }) });
+    const r1 = await fetch(`${base}/api/clients/direct-co/edit/colors`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ colors: { crust: "#123456" } }),
+    });
     expect(r1.status).toBe(202);
     expect(((await r1.json()) as { kind: string }).kind).toBe("build");
     await waitFor(async () => !((await (await fetch(`${base}/api/meta`, { headers: auth })).json()) as { running: unknown }).running);
     expect(tools.readSiteFileTool(factory, { slug: "direct-co", path: "css/site.css" }).content).toContain("#123456");
-    const r2 = await fetch(`${base}/api/clients/direct-co/edit/text`, { method: "POST", headers: json, body: JSON.stringify({ page: "home", oldText: "Fresh bread every morning", newText: "Bread & butter, daily" }) });
+    const r2 = await fetch(`${base}/api/clients/direct-co/edit/text`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ page: "home", oldText: "Fresh bread every morning", newText: "Bread & butter, daily" }),
+    });
     expect(((await r2.json()) as { kind: string }).kind).toBe("build");
     await waitFor(async () => !((await (await fetch(`${base}/api/meta`, { headers: auth })).json()) as { running: unknown }).running);
     expect(tools.readSiteFileTool(factory, { slug: "direct-co", path: "index.html" }).content).toContain("Bread &amp; butter, daily");
     expect(calls.length).toBe(0);
-    const r3 = await fetch(`${base}/api/clients/direct-co/edit/text`, { method: "POST", headers: json, body: JSON.stringify({ page: "home", oldText: "Not on the page", newText: "x" }) });
+    const r3 = await fetch(`${base}/api/clients/direct-co/edit/text`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ page: "home", oldText: "Not on the page", newText: "x" }),
+    });
     expect(((await r3.json()) as { kind: string }).kind).toBe("edit-text");
     expect(calls.length).toBe(1);
   });
@@ -523,7 +708,11 @@ describe("1.13: archive, texts by id, extra page, logo checks", () => {
   async function customCo(calls: SpawnCall[], slug = "text-co", name = "Text Co") {
     const ctx = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...ctx.auth, "Content-Type": "application/json" };
-    await fetch(`${ctx.base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug, businessName: name, industry: "barber shop", hostingModel: "managed" }) });
+    await fetch(`${ctx.base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug, businessName: name, industry: "barber shop", hostingModel: "managed" }),
+    });
     tools.updateClientConfig(ctx.factory, { slug, patch: { ...COMPLETE_PATCH, template: "custom" } });
     tools.saveContent(ctx.factory, { slug, locale: "en", content: COMPLETE_CONTENT });
     const { writePassingCustomSite } = await import("./helpers.js");
@@ -537,15 +726,22 @@ describe("1.13: archive, texts by id, extra page, logo checks", () => {
     const calls: SpawnCall[] = [];
     const { base, json, auth } = await customCo(calls, "arch-co", "Arch Co");
     await fetch(`${base}/api/clients/arch-co`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "arch-co" }) });
-    let list = ((await (await fetch(`${base}/api/archive`, { headers: auth })).json()) as { archived: Array<{ id: string; slug: string; name: string }> }).archived;
+    let list = ((await (await fetch(`${base}/api/archive`, { headers: auth })).json()) as { archived: Array<{ id: string; slug: string; name: string }> })
+      .archived;
     expect(list[0]).toMatchObject({ slug: "arch-co", name: "Arch Co" });
     const r = await fetch(`${base}/api/archive/${list[0]!.id}/restore`, { method: "POST", headers: json });
     expect(r.status).toBe(200);
-    expect(((await (await fetch(`${base}/api/clients`, { headers: auth })).json()) as { clients: Array<{ slug: string }> }).clients.map((c) => c.slug)).toContain("arch-co");
+    expect(
+      ((await (await fetch(`${base}/api/clients`, { headers: auth })).json()) as { clients: Array<{ slug: string }> }).clients.map((c) => c.slug),
+    ).toContain("arch-co");
     await fetch(`${base}/api/clients/arch-co`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "arch-co" }) });
     list = ((await (await fetch(`${base}/api/archive`, { headers: auth })).json()) as { archived: Array<{ id: string; slug: string; name: string }> }).archived;
-    expect((await fetch(`${base}/api/archive/${list[0]!.id}`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "wrong" }) })).status).toBe(400);
-    expect((await fetch(`${base}/api/archive/${list[0]!.id}`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "arch-co" }) })).status).toBe(200);
+    expect((await fetch(`${base}/api/archive/${list[0]!.id}`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "wrong" }) })).status).toBe(
+      400,
+    );
+    expect((await fetch(`${base}/api/archive/${list[0]!.id}`, { method: "DELETE", headers: json, body: JSON.stringify({ confirm: "arch-co" }) })).status).toBe(
+      200,
+    );
     expect(((await (await fetch(`${base}/api/archive`, { headers: auth })).json()) as { archived: unknown[] }).archived).toEqual([]);
     expect((await fetch(`${base}/api/archive/..%2F..%2Fetc/restore`, { method: "POST", headers: json })).status).toBe(404);
   });
@@ -553,11 +749,19 @@ describe("1.13: archive, texts by id, extra page, logo checks", () => {
   it("edits page texts by id without the agent, saving the version before the change", async () => {
     const calls: SpawnCall[] = [];
     const { base, json, auth, factory } = await customCo(calls);
-    const t = (await (await fetch(`${base}/api/clients/text-co/texts?page=home`, { headers: auth })).json()) as { pages: string[]; page: string; items: Array<{ id: string; text: string }> };
+    const t = (await (await fetch(`${base}/api/clients/text-co/texts?page=home`, { headers: auth })).json()) as {
+      pages: string[];
+      page: string;
+      items: Array<{ id: string; text: string }>;
+    };
     expect(t.pages).toEqual(["home", "contact"]);
     const h1 = t.items.find((i) => i.id === "h1-1")!;
     expect(h1.text).toBe("Text Co");
-    const r = await fetch(`${base}/api/clients/text-co/edit/text`, { method: "POST", headers: json, body: JSON.stringify({ page: "home", changes: [{ id: "h1-1", oldText: "Text Co", newText: "Fresh cuts & shaves" }] }) });
+    const r = await fetch(`${base}/api/clients/text-co/edit/text`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ page: "home", changes: [{ id: "h1-1", oldText: "Text Co", newText: "Fresh cuts & shaves" }] }),
+    });
     expect(r.status).toBe(202);
     await idle(base, auth);
     expect(calls.length).toBe(0);
@@ -569,30 +773,52 @@ describe("1.13: archive, texts by id, extra page, logo checks", () => {
     const old = execFileSync("git", ["show", `${before.id}:site/index.html`], { cwd: clientPaths(factory.clientsRoot, "text-co").root, encoding: "utf8" });
     expect(old).toContain(">Text Co</h1>");
     // Stale edit (the page changed since it was opened): nothing written.
-    expect((await fetch(`${base}/api/clients/text-co/edit/text`, { method: "POST", headers: json, body: JSON.stringify({ page: "home", changes: [{ id: "h1-1", oldText: "Text Co", newText: "x" }] }) })).status).toBe(409);
+    expect(
+      (
+        await fetch(`${base}/api/clients/text-co/edit/text`, {
+          method: "POST",
+          headers: json,
+          body: JSON.stringify({ page: "home", changes: [{ id: "h1-1", oldText: "Text Co", newText: "x" }] }),
+        })
+      ).status,
+    ).toBe(409);
   });
 
   it("adds an extra page through a narrow agent job", async () => {
     const calls: SpawnCall[] = [];
     const { base, json } = await customCo(calls);
-    const r = await fetch(`${base}/api/clients/text-co/agent/add-page`, { method: "POST", headers: json, body: JSON.stringify({ name: "Sıkça Sorulan Sorular", purpose: "Randevu ve ödeme soruları" }) });
+    const r = await fetch(`${base}/api/clients/text-co/agent/add-page`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ name: "Sıkça Sorulan Sorular", purpose: "Randevu ve ödeme soruları" }),
+    });
     expect(r.status).toBe(202);
     expect(calls[0]!.stdin).toMatch(/at sikca-sorulan-sorular\/index\.html/);
     expect(calls[0]!.stdin).toMatch(/<client_data>\nRandevu ve ödeme soruları/);
-    expect((await fetch(`${base}/api/clients/text-co/agent/add-page`, { method: "POST", headers: json, body: JSON.stringify({ name: "css" }) })).status).toBe(400);
+    expect((await fetch(`${base}/api/clients/text-co/agent/add-page`, { method: "POST", headers: json, body: JSON.stringify({ name: "css" }) })).status).toBe(
+      400,
+    );
   });
 
   it("writes a blog post and forwards client comments by id, only as client data", async () => {
     const calls: SpawnCall[] = [];
     const { base, json, factory } = await customCo(calls);
-    expect((await fetch(`${base}/api/clients/text-co/agent/blog-post`, { method: "POST", headers: json, body: JSON.stringify({ title: "ab" }) })).status).toBe(400);
-    expect((await fetch(`${base}/api/clients/text-co/agent/portal-comments`, { method: "POST", headers: json, body: JSON.stringify({ ids: ["x"] }) })).status).toBe(400);
+    expect((await fetch(`${base}/api/clients/text-co/agent/blog-post`, { method: "POST", headers: json, body: JSON.stringify({ title: "ab" }) })).status).toBe(
+      400,
+    );
+    expect(
+      (await fetch(`${base}/api/clients/text-co/agent/portal-comments`, { method: "POST", headers: json, body: JSON.stringify({ ids: ["x"] }) })).status,
+    ).toBe(400);
     const { clientPaths } = await import("../src/lib/paths.js");
     const { writeFileSync, mkdirSync } = await import("node:fs");
     const fdir = clientPaths(factory.clientsRoot, "text-co").factoryDir;
     mkdirSync(fdir, { recursive: true });
     writeFileSync(`${fdir}/client-feedback.json`, JSON.stringify([{ id: "1-a", at: "2026-10-01", page: "home", text: "Bigger logo please", status: "open" }]));
-    const r = await fetch(`${base}/api/clients/text-co/agent/portal-comments`, { method: "POST", headers: json, body: JSON.stringify({ ids: ["1-a"], text: "injected" }) });
+    const r = await fetch(`${base}/api/clients/text-co/agent/portal-comments`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ ids: ["1-a"], text: "injected" }),
+    });
     expect(r.status).toBe(202);
     expect(calls[0]!.stdin).toMatch(/<client_data>\n1\. \[home\] Bigger logo please\n<\/client_data>/);
     expect(calls[0]!.stdin).not.toContain("injected");
@@ -604,15 +830,33 @@ describe("1.13: archive, texts by id, extra page, logo checks", () => {
     const calls: SpawnCall[] = [];
     const { base, json, auth } = await customCo(calls, "barber-co", "Barber Co");
     // A second client whose logo is the same file.
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "pickle-co", businessName: "Pickle Co", industry: "pickle shop", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "pickle-co", businessName: "Pickle Co", industry: "pickle shop", hostingModel: "managed" }),
+    });
     const png = PNG_1PX;
-    for (const slug of ["pickle-co", "barber-co"]) await fetch(`${base}/api/clients/${slug}/inbox/logo.png`, { method: "PUT", headers: { ...auth, "Content-Type": "application/octet-stream" }, body: png });
-    expect((await fetch(`${base}/api/clients/pickle-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "logo.png", from: "inbox" }) })).status).toBe(200);
+    for (const slug of ["pickle-co", "barber-co"])
+      await fetch(`${base}/api/clients/${slug}/inbox/logo.png`, { method: "PUT", headers: { ...auth, "Content-Type": "application/octet-stream" }, body: png });
+    expect(
+      (await fetch(`${base}/api/clients/pickle-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "logo.png", from: "inbox" }) })).status,
+    ).toBe(200);
     const dup = await fetch(`${base}/api/clients/barber-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "logo.png", from: "inbox" }) });
     expect(dup.status).toBe(409);
-    expect(((await dup.json()) as { code: string; owner: { name: string } })).toMatchObject({ code: "shared-logo", owner: { name: "Pickle Co" } });
-    expect((await fetch(`${base}/api/clients/barber-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "logo.png", from: "inbox", force: true }) })).status).toBe(200);
-    const detail = (await (await fetch(`${base}/api/clients/barber-co`, { headers: auth })).json()) as { brandStale: unknown; sharedLogo: { slug: string } | null };
+    expect((await dup.json()) as { code: string; owner: { name: string } }).toMatchObject({ code: "shared-logo", owner: { name: "Pickle Co" } });
+    expect(
+      (
+        await fetch(`${base}/api/clients/barber-co/logo`, {
+          method: "POST",
+          headers: json,
+          body: JSON.stringify({ name: "logo.png", from: "inbox", force: true }),
+        })
+      ).status,
+    ).toBe(200);
+    const detail = (await (await fetch(`${base}/api/clients/barber-co`, { headers: auth })).json()) as {
+      brandStale: unknown;
+      sharedLogo: { slug: string } | null;
+    };
     expect(detail.brandStale).toBeTruthy();
     expect(detail.sharedLogo?.slug).toBe("pickle-co");
     // A design job is not started with another client's logo unless Eren confirms it.
@@ -632,11 +876,22 @@ describe("1.14: profit, translation job, agent settings", () => {
     const calls: SpawnCall[] = [];
     const { base, auth, factory } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "two-lang", businessName: "Two Lang", industry: "barber shop", hostingModel: "managed", country: "TR", extraLocale: "en" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "two-lang", businessName: "Two Lang", industry: "barber shop", hostingModel: "managed", country: "TR", extraLocale: "en" }),
+    });
     tools.updateClientConfig(factory, { slug: "two-lang", patch: { template: "custom" } });
-    const saved = await fetch(`${base}/api/clients/two-lang/business`, { method: "PUT", headers: json, body: JSON.stringify({ price: 8000, currency: "TRY", payment: "quoted", costs: [{ label: "Alan adı", amount: 450 }] }) });
+    const saved = await fetch(`${base}/api/clients/two-lang/business`, {
+      method: "PUT",
+      headers: json,
+      body: JSON.stringify({ price: 8000, currency: "TRY", payment: "quoted", costs: [{ label: "Alan adı", amount: 450 }] }),
+    });
     expect(saved.status).toBe(200);
-    const profit = (await (await fetch(`${base}/api/profit`, { headers: auth })).json()) as { clients: Array<{ slug: string; profit: number | null; extraCosts: number }>; totals: Record<string, { price: number }> };
+    const profit = (await (await fetch(`${base}/api/profit`, { headers: auth })).json()) as {
+      clients: Array<{ slug: string; profit: number | null; extraCosts: number }>;
+      totals: Record<string, { price: number }>;
+    };
     expect(profit.clients.find((c) => c.slug === "two-lang")).toMatchObject({ extraCosts: 450, profit: 7550 });
     expect(profit.totals.TRY?.price).toBe(8000);
     const detail = (await (await fetch(`${base}/api/clients/two-lang`, { headers: auth })).json()) as { profit: { price: number } };
@@ -644,7 +899,15 @@ describe("1.14: profit, translation job, agent settings", () => {
     const tr = await fetch(`${base}/api/clients/two-lang/agent/translate`, { method: "POST", headers: json, body: "{}" });
     expect(tr.status).toBe(202);
     expect(calls[0]!.stdin).toMatch(/Add these languages: en/);
-    expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ agents: { edit: { provider: "codex", model: "a b", maxTurns: 0, tokenCap: 0 } } }) })).status).toBe(400);
+    expect(
+      (
+        await fetch(`${base}/api/settings`, {
+          method: "PUT",
+          headers: json,
+          body: JSON.stringify({ agents: { edit: { provider: "codex", model: "a b", maxTurns: 0, tokenCap: 0 } } }),
+        })
+      ).status,
+    ).toBe(400);
   });
 });
 
@@ -652,7 +915,11 @@ describe("unpublish from the panel", () => {
   it("needs the short name typed again for the live site", async () => {
     const { base, auth } = await start();
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "live-co", businessName: "Live Co", industry: "bakery", hostingModel: "managed" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "live-co", businessName: "Live Co", industry: "bakery", hostingModel: "managed" }),
+    });
     const post = (body: object) => fetch(`${base}/api/clients/live-co/unpublish`, { method: "POST", headers: json, body: JSON.stringify(body) });
     expect((await post({ target: "production" })).status).toBe(400);
     expect((await post({ target: "production", confirm: "other" })).status).toBe(400);
@@ -668,26 +935,51 @@ describe("library fixed places from the panel", () => {
     const calls: SpawnCall[] = [];
     const ctx = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...ctx.auth, "Content-Type": "application/json" };
-    await fetch(`${ctx.base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "src-co", businessName: "Source Bakery", industry: "bakery", hostingModel: "managed" }) });
+    await fetch(`${ctx.base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "src-co", businessName: "Source Bakery", industry: "bakery", hostingModel: "managed" }),
+    });
     tools.updateClientConfig(ctx.factory, { slug: "src-co", patch: { ...COMPLETE_PATCH, template: "custom" } });
-    tools.writeSiteFileTool(ctx.factory, { slug: "src-co", path: "index.html", content: '<!doctype html><html lang="en"><head><title>Source Bakery</title></head><body><h1>Source Bakery</h1><p>Call 07700 900123</p></body></html>' });
-    const saved = await (await fetch(`${ctx.base}/api/clients/src-co/library`, { method: "POST", headers: json, body: JSON.stringify({ name: "Fırın" }) })).json() as { id: string; slots: Array<{ text: string; field: string }> };
-    const put = await fetch(`${ctx.base}/api/library/${saved.id}`, { method: "PUT", headers: json, body: JSON.stringify({ slots: [...saved.slots, { text: "07700 900123", field: "phone" }] }) });
+    tools.writeSiteFileTool(ctx.factory, {
+      slug: "src-co",
+      path: "index.html",
+      content: '<!doctype html><html lang="en"><head><title>Source Bakery</title></head><body><h1>Source Bakery</h1><p>Call 07700 900123</p></body></html>',
+    });
+    const saved = (await (
+      await fetch(`${ctx.base}/api/clients/src-co/library`, { method: "POST", headers: json, body: JSON.stringify({ name: "Fırın" }) })
+    ).json()) as { id: string; slots: Array<{ text: string; field: string }> };
+    const put = await fetch(`${ctx.base}/api/library/${saved.id}`, {
+      method: "PUT",
+      headers: json,
+      body: JSON.stringify({ slots: [...saved.slots, { text: "07700 900123", field: "phone" }] }),
+    });
     expect(put.status).toBe(200);
-    const detail = await put.json() as { counts: number[]; fields: Record<string, string> };
+    const detail = (await put.json()) as { counts: number[]; fields: Record<string, string> };
     expect(detail.counts.at(-1)).toBe(1);
     expect(detail.fields.phone).toBe("Telefon");
-    expect((await fetch(`${ctx.base}/api/library/${saved.id}`, { method: "PUT", headers: json, body: JSON.stringify({ slots: [{ text: "", field: "nope" }] }) })).status).toBe(400);
+    expect(
+      (await fetch(`${ctx.base}/api/library/${saved.id}`, { method: "PUT", headers: json, body: JSON.stringify({ slots: [{ text: "", field: "nope" }] }) }))
+        .status,
+    ).toBe(400);
 
-    await fetch(`${ctx.base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "new-co", businessName: "New Bakery", industry: "bakery", hostingModel: "managed", startDesign: saved.id }) });
-    const nd = await (await fetch(`${ctx.base}/api/clients/new-co`, { headers: ctx.auth })).json() as { startDesign: string | null };
+    await fetch(`${ctx.base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "new-co", businessName: "New Bakery", industry: "bakery", hostingModel: "managed", startDesign: saved.id }),
+    });
+    const nd = (await (await fetch(`${ctx.base}/api/clients/new-co`, { headers: ctx.auth })).json()) as { startDesign: string | null };
     expect(nd.startDesign).toBe(saved.id);
     tools.updateClientConfig(ctx.factory, { slug: "new-co", patch: { template: "custom" } });
-    const r = await fetch(`${ctx.base}/api/clients/new-co/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Phone +447700900999", libraryId: saved.id }) });
+    const r = await fetch(`${ctx.base}/api/clients/new-co/agent/create-site`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ freeText: "Phone +447700900999", libraryId: saved.id }),
+    });
     expect(r.status).toBe(202);
     expect(tools.readSiteFileTool(ctx.factory, { slug: "new-co", path: "index.html" }).content).toContain("New Bakery");
     expect(calls[0]!.stdin + calls[0]!.args.join(" ")).toMatch(/Panel filled: İşletme adı/);
-    const after = await (await fetch(`${ctx.base}/api/clients/new-co`, { headers: ctx.auth })).json() as { startDesign: string | null };
+    const after = (await (await fetch(`${ctx.base}/api/clients/new-co`, { headers: ctx.auth })).json()) as { startDesign: string | null };
     expect(after.startDesign).toBeNull();
   });
 });
@@ -697,11 +989,23 @@ describe("earlier inputs are kept between agent jobs", () => {
     const calls: SpawnCall[] = [];
     const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "mono-barber", businessName: "Mono", industry: "barber shop", hostingModel: "managed" }) });
-    const first = await fetch(`${base}/api/clients/mono-barber/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Saç kesimi 500 TL. Pazartesi–Cumartesi 09:00–22:00." }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "mono-barber", businessName: "Mono", industry: "barber shop", hostingModel: "managed" }),
+    });
+    const first = await fetch(`${base}/api/clients/mono-barber/agent/create-site`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ freeText: "Saç kesimi 500 TL. Pazartesi–Cumartesi 09:00–22:00." }),
+    });
     expect(first.status).toBe(202);
     await waitFor(async () => ((await (await fetch(`${base}/api/clients/mono-barber`, { headers: auth })).json()) as { running: unknown }).running === null);
-    const second = await fetch(`${base}/api/clients/mono-barber/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "E-posta: a@b.co" }) });
+    const second = await fetch(`${base}/api/clients/mono-barber/agent/revise`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ request: "E-posta: a@b.co" }),
+    });
     expect(second.status).toBe(202);
     const prompt = calls[1]!.stdin;
     expect(prompt).toContain("Earlier information Eren gave about this client");
@@ -719,7 +1023,9 @@ describe("approval from the panel", () => {
     tools.updateClientConfig(factory, { slug: "willow-thread", patch: COMPLETE_PATCH });
     tools.saveContent(factory, { slug: "willow-thread", locale: "en", content: COMPLETE_CONTENT });
     await tools.buildSite(factory, { slug: "willow-thread" });
-    const d = (await (await fetch(`${base}/api/clients/willow-thread`, { headers: auth })).json()) as { status: { contentHash: string; lastBuild: { distHash: string } } };
+    const d = (await (await fetch(`${base}/api/clients/willow-thread`, { headers: auth })).json()) as {
+      status: { contentHash: string; lastBuild: { distHash: string } };
+    };
     const pins = { hash: d.status.contentHash, distHash: d.status.lastBuild.distHash };
     const post = (body: object) => fetch(`${base}/api/clients/willow-thread/approve`, { method: "POST", headers: json, body: JSON.stringify(body) });
 
@@ -729,7 +1035,12 @@ describe("approval from the panel", () => {
     const ok = await post({ kind: "site", code: "424242", pins });
     expect(ok.status).toBe(200);
     const after = (await (await fetch(`${base}/api/clients/willow-thread`, { headers: auth })).json()) as { approvals: { kind: string; valid: boolean }[] };
-    expect(after.approvals.filter((a) => a.valid).map((a) => a.kind).sort()).toEqual(["content", "visual"]);
+    expect(
+      after.approvals
+        .filter((a) => a.valid)
+        .map((a) => a.kind)
+        .sort(),
+    ).toEqual(["content", "visual"]);
 
     for (let i = 0; i < 5; i++) await post({ kind: "production", code: "111111", pins });
     expect((await post({ kind: "production", code: "424242", pins })).status).toBe(423);
@@ -762,12 +1073,22 @@ describe("business tracking", () => {
   it("saves quote, payment and deadline per client, validates them, and lists them for the dashboard", async () => {
     const { base, auth } = await start();
     const json = { ...auth, "Content-Type": "application/json" };
-    await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "uzunoglu", businessName: "Uzunoğlu", industry: "pickle shop", hostingModel: "managed", country: "TR" }) });
-    const ok = await fetch(`${base}/api/clients/uzunoglu/business`, { method: "PUT", headers: json, body: JSON.stringify({ price: 4000, currency: "TRY", payment: "deposit", deadline: "2026-10-30", note: "Kapora 1000" }) });
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "uzunoglu", businessName: "Uzunoğlu", industry: "pickle shop", hostingModel: "managed", country: "TR" }),
+    });
+    const ok = await fetch(`${base}/api/clients/uzunoglu/business`, {
+      method: "PUT",
+      headers: json,
+      body: JSON.stringify({ price: 4000, currency: "TRY", payment: "deposit", deadline: "2026-10-30", note: "Kapora 1000" }),
+    });
     expect(ok.status).toBe(200);
     const bad = await fetch(`${base}/api/clients/uzunoglu/business`, { method: "PUT", headers: json, body: JSON.stringify({ payment: "maybe" }) });
     expect(bad.status).toBe(400);
-    const list = (await (await fetch(`${base}/api/clients`, { headers: auth })).json()) as { clients: { slug: string; name: string; business: { price: number; payment: string } }[] };
+    const list = (await (await fetch(`${base}/api/clients`, { headers: auth })).json()) as {
+      clients: { slug: string; name: string; business: { price: number; payment: string } }[];
+    };
     expect(list.clients[0]).toMatchObject({ slug: "uzunoglu", name: "Uzunoğlu", business: { price: 4000, payment: "deposit" } });
   });
 });

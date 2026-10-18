@@ -23,11 +23,27 @@ describe("panel browser modules", () => {
   it("every name used in the panel scripts is declared or imported", () => {
     // The TypeScript compiler as a checker only (this project's TypeScript has no JS API): plain JS, no config.
     const tsc = path.join(FACTORY_ROOT, "node_modules", ".bin", "tsc");
-    const run = spawnSync(tsc, [
-      "--ignoreConfig", "--allowJs", "--checkJs", "--noEmit", "--skipLibCheck", "--listFiles",
-      "--target", "es2022", "--module", "esnext", "--moduleResolution", "bundler", "--lib", "es2022,dom,dom.iterable",
-      path.join(FACTORY_ROOT, "panel", "app.js"),
-    ], { encoding: "utf8", timeout: 120_000 });
+    const run = spawnSync(
+      tsc,
+      [
+        "--ignoreConfig",
+        "--allowJs",
+        "--checkJs",
+        "--noEmit",
+        "--skipLibCheck",
+        "--listFiles",
+        "--target",
+        "es2022",
+        "--module",
+        "esnext",
+        "--moduleResolution",
+        "bundler",
+        "--lib",
+        "es2022,dom,dom.iterable",
+        path.join(FACTORY_ROOT, "panel", "app.js"),
+      ],
+      { encoding: "utf8", timeout: 120_000 },
+    );
     const out = `${run.stdout}${run.stderr}`;
     const problems = out.split("\n").filter((line) => {
       const m = /error TS(\d+):/.exec(line);

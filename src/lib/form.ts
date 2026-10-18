@@ -7,7 +7,8 @@ import path from "node:path";
  * form services are accepted; the global SF_FORM_ACTION still works as a fallback for every client.
  */
 export const FORM_FILE = "form.json";
-export const FORM_ACTION = /^https:\/\/(formspree\.io\/f\/[A-Za-z0-9]{4,20}|getform\.io\/f\/[A-Za-z0-9-]{4,40}|formsubmit\.co\/[A-Za-z0-9@._+-]{4,80}|api\.web3forms\.com\/submit)$/;
+export const FORM_ACTION =
+  /^https:\/\/(formspree\.io\/f\/[A-Za-z0-9]{4,20}|getform\.io\/f\/[A-Za-z0-9-]{4,40}|formsubmit\.co\/[A-Za-z0-9@._+-]{4,80}|api\.web3forms\.com\/submit)$/;
 /** Web3Forms needs a public access key in a hidden field. */
 export const WEB3FORMS_KEY = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

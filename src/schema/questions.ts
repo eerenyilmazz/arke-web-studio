@@ -114,7 +114,7 @@ export const QUESTIONS: readonly Question[] = [
     audience: "client",
     required: false,
     text: "Would you like a WhatsApp button? If yes, which number, and what should the pre-filled message say?",
-    example: "+44 7700 900123 — \"Hi, I'd like to book a fitting\"",
+    example: '+44 7700 900123 — "Hi, I\'d like to book a fitting"',
     targets: ["config:whatsapp.number", "config:whatsapp.floatingButton", "content:whatsappMessage"],
   },
   {
@@ -278,7 +278,7 @@ export const QUESTIONS: readonly Question[] = [
 export const INDUSTRY_EXTRAS: Readonly<Record<string, readonly string[]>> = {
   restaurant: ["Please share your menu (PDF or text) and say whether you take reservations."],
   cafe: ["Please share your menu and say whether you offer takeaway or delivery."],
-  salon: ["Please list your services with prices or \"from\" prices."],
+  salon: ['Please list your services with prices or "from" prices.'],
   barber: ["Please list your services with prices, and whether walk-ins are welcome."],
   law: ["Which practice areas do you cover, and are you SRA-regulated? (Your SRA number must appear on the site.)"],
   solicitor: ["Which practice areas do you cover? Please give your SRA number."],

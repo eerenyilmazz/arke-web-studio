@@ -31,7 +31,9 @@ function fakeKv() {
     async put(key: string, value: string | ArrayBuffer, opts?: { metadata?: unknown }) {
       data.set(key, { value, metadata: opts?.metadata });
     },
-    async delete(key: string) { data.delete(key); },
+    async delete(key: string) {
+      data.delete(key);
+    },
     async list({ prefix }: { prefix: string }) {
       return { keys: [...data.keys()].filter((k) => k.startsWith(prefix)).map((name) => ({ name })), list_complete: true };
     },
@@ -108,7 +110,10 @@ describe("client portal", () => {
     await expect(createLink(factory, "rose-cafe", "review", fetcher)).rejects.toThrow(/önizleme/i);
     const fdir = clientPaths(factory.clientsRoot, "rose-cafe").factoryDir;
     mkdirSync(fdir, { recursive: true });
-    writeFileSync(path.join(fdir, tools.DEPLOYS_FILE), JSON.stringify({ preview: { url: "https://sf-rose-cafe-preview.example.workers.dev", at: "2026-10-01" } }));
+    writeFileSync(
+      path.join(fdir, tools.DEPLOYS_FILE),
+      JSON.stringify({ preview: { url: "https://sf-rose-cafe-preview.example.workers.dev", at: "2026-10-01" } }),
+    );
     const link = await createLink(factory, "rose-cafe", "review", fetcher);
     const html = await (await visit(link.url)).text();
     expect(html).toContain('src="https://sf-rose-cafe-preview.example.workers.dev"');
@@ -152,16 +157,102 @@ describe("client portal", () => {
 describe("monthly report data and payment", () => {
   it("checks the published addresses with the given fetcher", async () => {
     const seen: string[] = [];
-    const h = await siteHealth(factory, "rose-cafe", async (url) => { seen.push(url); return { status: 200 }; });
+    const h = await siteHealth(factory, "rose-cafe", async (url) => {
+      seen.push(url);
+      return { status: 200 };
+    });
     expect(seen).toEqual(["https://sf-rose-cafe-preview.example.workers.dev"]);
     expect(h.live[0]).toMatchObject({ target: "preview", ok: true, status: 200 });
-    const down = await siteHealth(factory, "rose-cafe", async () => { throw new Error("ENOTFOUND"); });
+    const down = await siteHealth(factory, "rose-cafe", async () => {
+      throw new Error("ENOTFOUND");
+    });
     expect(down.live[0]).toMatchObject({ ok: false, status: null });
   });
 
   it("keeps the payment due date and refuses a malformed one", () => {
     expect(writeBusiness(factory, "rose-cafe", { payment: "deposit", paymentDue: "2026-11-01" }).paymentDue).toBe("2026-11-01");
     expect(() => writeBusiness(factory, "rose-cafe", { paymentDue: "next week" })).toThrow();
-    expect(readFileSync(path.join(clientPaths(factory.clientsRoot, "rose-cafe").factoryDir, "..", ".factory", "business.json"), "utf8").length).toBeGreaterThan(0);
+    expect(readFileSync(path.join(clientPaths(factory.clientsRoot, "rose-cafe").factoryDir, "..", ".factory", "business.json"), "utf8").length).toBeGreaterThan(
+      0,
+    );
+  });
+});
+
+describe("portal endpoints of the panel", () => {
+  it("creates, lists and closes links, pulls and marks comments, and never returns the secret", async () => {
+    const { createServer } = await import("node:http");
+    const { createPanel } = await import("../src/panel/server.js");
+    const port = await new Promise<number>((resolve) => {
+      const s = createServer().listen(0, "127.0.0.1", () => {
+        const p = (s.address() as { port: number }).port;
+        s.close(() => resolve(p));
+      });
+    });
+    const key = "k".repeat(64);
+    const panel = createPanel({
+      factory,
+      port,
+      previewPort: port + 1,
+      sessionKey: key,
+      spawn: () => {
+        throw new Error("no agent");
+      },
+    });
+    await panel.listen();
+    // The panel's own calls to the portal go to the in-memory Worker; everything else uses the real fetch.
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = ((input: string | URL | Request, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      return url.startsWith(URL_BASE) ? worker.fetch(new Request(url, init), env) : realFetch(input, init);
+    }) as typeof fetch;
+    const base = `http://127.0.0.1:${port}`;
+    const headers = { Cookie: `sf_panel=${key}`, Origin: base, "Content-Type": "application/json" };
+    const call = async (method: string, p: string, body?: unknown) => {
+      const r = await realFetch(`${base}${p}`, { method, headers, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
+      return { status: r.status, text: await r.text() };
+    };
+    try {
+      const status = await call("GET", "/api/portal");
+      expect(status.status).toBe(200);
+      expect(JSON.parse(status.text)).toMatchObject({ configured: true, url: URL_BASE });
+      expect(status.text).not.toContain(SECRET);
+
+      expect((await call("POST", "/api/clients/rose-cafe/portal/links", { kind: "everything" })).status).toBe(400);
+      const created = await call("POST", "/api/clients/rose-cafe/portal/links", { kind: "intake" });
+      expect(created.status).toBe(201);
+      const link = JSON.parse(created.text) as { token: string; url: string };
+      expect(link.url).toMatch(/^https:\/\/sf-portal\.example\.workers\.dev\/f\//);
+      const listed = JSON.parse((await call("GET", "/api/clients/rose-cafe/portal")).text) as { links: Array<{ token: string }> };
+      expect(listed.links.some((l) => l.token === link.token)).toBe(true);
+
+      // A client comments through a review link; the panel pulls it and Eren marks it done.
+      const review = JSON.parse((await call("POST", "/api/clients/rose-cafe/portal/links", { kind: "review" })).text) as { url: string };
+      await visit(`${review.url}/comment`, { method: "POST", body: new URLSearchParams({ page: "contact", text: "Add Sunday hours" }) });
+      expect(JSON.parse((await call("POST", "/api/portal/pull")).text)).toMatchObject({ comments: 1 });
+      const comment = (
+        JSON.parse((await call("GET", "/api/clients/rose-cafe/portal")).text) as { comments: Array<{ id: string; text: string }> }
+      ).comments.find((c) => c.text === "Add Sunday hours")!;
+      expect((await call("POST", `/api/clients/rose-cafe/portal/comments/${encodeURIComponent(comment.id)}`, { status: "done" })).status).toBe(200);
+      expect((await call("POST", "/api/clients/rose-cafe/portal/comments/no-such-id", { status: "done" })).status).toBe(404);
+
+      expect((await call("DELETE", `/api/clients/rose-cafe/portal/links/${link.token}`)).status).toBe(200);
+      expect((await call("DELETE", `/api/clients/rose-cafe/portal/links/${"z".repeat(32)}`)).status).toBe(400);
+    } finally {
+      globalThis.fetch = realFetch;
+      panel.close();
+    }
+  });
+
+  it("refuses setup without the Cloudflare token and account in the environment", async () => {
+    const saved = [process.env.SF_CF_MANAGED_API_TOKEN, process.env.SF_CF_MANAGED_ACCOUNT_ID];
+    delete process.env.SF_CF_MANAGED_API_TOKEN;
+    delete process.env.SF_CF_MANAGED_ACCOUNT_ID;
+    try {
+      const { setupPortal } = await import("../src/panel/portal.js");
+      await expect(setupPortal(factory, () => undefined)).rejects.toThrow(/SF_CF_MANAGED_API_TOKEN/);
+    } finally {
+      if (saved[0] !== undefined) process.env.SF_CF_MANAGED_API_TOKEN = saved[0];
+      if (saved[1] !== undefined) process.env.SF_CF_MANAGED_ACCOUNT_ID = saved[1];
+    }
   });
 });

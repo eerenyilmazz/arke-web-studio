@@ -12,10 +12,24 @@ export const STAGES = [
   { id: "live", label: "Yayında", long: "Yayında" },
 ];
 
-export const TABS = [["duzenle", "Düzenleme"], ["marka", "Marka Kimliği"], ["teklif", "Teklif"], ["bilgiler", "Müşteri Bilgileri"]];
+export const TABS = [
+  ["duzenle", "Düzenleme"],
+  ["marka", "Marka Kimliği"],
+  ["teklif", "Teklif"],
+  ["bilgiler", "Müşteri Bilgileri"],
+];
 
 /** Old tab links (bookmarks, earlier versions) land on the tab that now holds that content. */
-export const OLD_TABS = { sohbet: "duzenle", akis: "duzenle", site: "duzenle", build: "duzenle", yayin: "bilgiler", sorular: "bilgiler", cevaplar: "bilgiler", metinler: "bilgiler" };
+export const OLD_TABS = {
+  sohbet: "duzenle",
+  akis: "duzenle",
+  site: "duzenle",
+  build: "duzenle",
+  yayin: "bilgiler",
+  sorular: "bilgiler",
+  cevaplar: "bilgiler",
+  metinler: "bilgiler",
+};
 
 /** Four steps the operator thinks in; the nine internal stages map onto them. */
 export const STEPS = [
@@ -39,9 +53,14 @@ export const PLAIN = {
   unreadable: { text: "Dosya okunamadı", tone: "bad" },
 };
 
-export function plainOf(stage) { return PLAIN[stage] || { text: stage, tone: "you" }; }
+export function plainOf(stage) {
+  return PLAIN[stage] || { text: stage, tone: "you" };
+}
 
-export function stepIndex(stage) { const i = STEPS.findIndex((s) => s.stages.includes(stage)); return i < 0 ? 0 : i; }
+export function stepIndex(stage) {
+  const i = STEPS.findIndex((s) => s.stages.includes(stage));
+  return i < 0 ? 0 : i;
+}
 
 export const LANG_NAMES = { en: "İngilizce", tr: "Türkçe", de: "Almanca", fr: "Fransızca", es: "İspanyolca", it: "İtalyanca", pl: "Lehçe", ar: "Arapça" };
 
@@ -66,7 +85,8 @@ export function h(tag, attrs = {}, ...children) {
     else if (k === "text") el.textContent = v;
     else el.setAttribute(k, v === true ? "" : String(v));
   }
-  for (const c of children.flat()) if (c !== null && c !== undefined && c !== false && c !== "") el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  for (const c of children.flat())
+    if (c !== null && c !== undefined && c !== false && c !== "") el.append(c instanceof Node ? c : document.createTextNode(String(c)));
   return el;
 }
 
@@ -74,7 +94,18 @@ export const $ = (sel) => document.querySelector(sel);
 
 export function svg(paths, size = 16, strokeWidth = 2) {
   const el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  for (const [k, v] of Object.entries({ width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": strokeWidth, "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" })) el.setAttribute(k, String(v));
+  for (const [k, v] of Object.entries({
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    "stroke-width": strokeWidth,
+    "stroke-linecap": "round",
+    "stroke-linejoin": "round",
+    "aria-hidden": "true",
+  }))
+    el.setAttribute(k, String(v));
   for (const d of paths) {
     const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
     p.setAttribute("d", d);
@@ -127,11 +158,25 @@ export async function guarded(fn) {
 }
 
 export function copyButton(text, label = "Kopyala") {
-  return h("button", { class: "btn btn-sm", type: "button", onclick: async () => { await navigator.clipboard.writeText(text); toast("Kopyalandı."); } }, label);
+  return h(
+    "button",
+    {
+      class: "btn btn-sm",
+      type: "button",
+      onclick: async () => {
+        await navigator.clipboard.writeText(text);
+        toast("Kopyalandı.");
+      },
+    },
+    label,
+  );
 }
 
 export function initials(text) {
-  const words = text.replace(/[^\p{L}\p{N}\s-]/gu, " ").split(/[\s-]+/).filter(Boolean);
+  const words = text
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .split(/[\s-]+/)
+    .filter(Boolean);
   return ((words[0]?.[0] || "?") + (words[1]?.[0] || "")).toUpperCase();
 }
 
@@ -142,13 +187,20 @@ export function avatarColor(slug) {
 }
 
 export function avatar(slug, label, large = false, live = false) {
-  return h("span", { class: large ? "avatar lg" : "avatar", style: `background:${avatarColor(slug)}`, "aria-hidden": "true" }, initials(label), live && h("span", { class: "live" }));
+  return h(
+    "span",
+    { class: large ? "avatar lg" : "avatar", style: `background:${avatarColor(slug)}`, "aria-hidden": "true" },
+    initials(label),
+    live && h("span", { class: "live" }),
+  );
 }
 
 export function time(iso) {
   const d = new Date(iso);
   const today = new Date().toDateString() === d.toDateString();
-  return today ? d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return today
+    ? d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 export const stageInfo = (id) => STAGES.find((s) => s.id === id) || { id, label: id, long: id };
@@ -166,7 +218,17 @@ export const MODEL_TR = { opus: "en güçlü model", sonnet: "dengeli model", ha
 
 export const usageLevel = (n) => (n < 150_000 ? "düşük" : n < 1_000_000 ? "orta" : "yüksek");
 
-export const usageLine = (job) => job.tokens ? h("span", { class: "usage", title: `${fmtTokens(job.tokens)} birim (önbellekten okunan 1/10 sayılır)${job.usage?.costUsd ? ` · tahmini ~$${job.usage.costUsd.toFixed(2)}` : ""}` }, `Kaynak: ${usageLevel(job.tokens)}${job.model ? ` · ${MODEL_TR[job.model] || job.model}` : ""}`) : null;
+export const usageLine = (job) =>
+  job.tokens
+    ? h(
+        "span",
+        {
+          class: "usage",
+          title: `${fmtTokens(job.tokens)} birim (önbellekten okunan 1/10 sayılır)${job.usage?.costUsd ? ` · tahmini ~$${job.usage.costUsd.toFixed(2)}` : ""}`,
+        },
+        `Kaynak: ${usageLevel(job.tokens)}${job.model ? ` · ${MODEL_TR[job.model] || job.model}` : ""}`,
+      )
+    : null;
 
 /**
  * For data a screen can do without (a dropdown of library designs, saved settings shown as defaults): the screen
@@ -185,19 +247,42 @@ export function ask({ title, body = "", confirm = "Devam", cancel = "Vazgeç", d
     const dialog = h("dialog", { class: "ask-dialog", "aria-labelledby": "ask-title" });
     const typed = typeToConfirm ? h("input", { type: "text", id: "ask-typed", autocomplete: "off", spellcheck: "false", placeholder: typeToConfirm }) : null;
     const ok = h("button", { class: `btn ${danger ? "btn-danger-solid" : "btn-primary"}`, type: "submit", disabled: Boolean(typeToConfirm) }, confirm);
-    if (typed) typed.addEventListener("input", () => { ok.disabled = typed.value.trim() !== typeToConfirm; });
+    if (typed)
+      typed.addEventListener("input", () => {
+        ok.disabled = typed.value.trim() !== typeToConfirm;
+      });
     let answered = false;
-    const done = (value) => { if (answered) return; answered = true; dialog.close(); dialog.remove(); resolve(value); };
-    dialog.addEventListener("cancel", (e) => { e.preventDefault(); done(false); });
-    dialog.append(h("form", { method: "dialog", onsubmit: (e) => { e.preventDefault(); if (!ok.disabled) done(true); } },
-      h("h2", { id: "ask-title", text: title }),
-      image && h("img", { class: "ask-image", src: image, alt: "" }),
-      ...String(body).split("\n\n").filter(Boolean).map((t) => h("p", { class: "muted", text: t })),
-      typed && h("label", { for: "ask-typed" }, "Onaylamak için yazın: ", h("code", { text: typeToConfirm }), typed),
-      h("div", { class: "row ask-actions" },
-        h("button", { class: "btn", type: "button", onclick: () => done(false) }, cancel),
-        ok),
-    ));
+    const done = (value) => {
+      if (answered) return;
+      answered = true;
+      dialog.close();
+      dialog.remove();
+      resolve(value);
+    };
+    dialog.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      done(false);
+    });
+    dialog.append(
+      h(
+        "form",
+        {
+          method: "dialog",
+          onsubmit: (e) => {
+            e.preventDefault();
+            if (!ok.disabled) done(true);
+          },
+        },
+        h("h2", { id: "ask-title", text: title }),
+        image && h("img", { class: "ask-image", src: image, alt: "" }),
+        ...String(body)
+          .split("\n\n")
+          .filter(Boolean)
+          .map((t) => h("p", { class: "muted", text: t })),
+        typed && h("label", { for: "ask-typed" }, "Onaylamak için yazın: ", h("code", { text: typeToConfirm }), typed),
+        h("div", { class: "row ask-actions" }, h("button", { class: "btn", type: "button", onclick: () => done(false) }, cancel), ok),
+      ),
+    );
     document.body.append(dialog);
     dialog.showModal();
     (typed || ok).focus();
@@ -231,5 +316,13 @@ export function printDoc(el, { landscape = false, title = "" } = {}) {
   window.addEventListener("afterprint", done);
   // Logos are images: print once they are loaded, so they are not missing from the PDF.
   const images = [...root.querySelectorAll("img")].filter((i) => !i.complete);
-  Promise.all(images.map((i) => new Promise((r) => { i.onload = r; i.onerror = r; }))).then(() => window.print());
+  Promise.all(
+    images.map(
+      (i) =>
+        new Promise((r) => {
+          i.onload = r;
+          i.onerror = r;
+        }),
+    ),
+  ).then(() => window.print());
 }

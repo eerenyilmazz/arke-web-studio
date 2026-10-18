@@ -37,7 +37,27 @@ describe("MCP server over stdio", () => {
   it("exposes the tools, resources and prompt", async () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(
-      ["build_site", "create_client", "delete_site_file", "deploy", "generate_design_system", "list_site_files", "read_site_file", "write_site_file", "generate_questionnaire", "get_client_status", "list_clients", "save_asset", "save_content", "update_client_config", "edit_site_file", "site_map", "read_site_file_part", "search_design_knowledge", "save_research_notes"].sort(),
+      [
+        "build_site",
+        "create_client",
+        "delete_site_file",
+        "deploy",
+        "generate_design_system",
+        "list_site_files",
+        "read_site_file",
+        "write_site_file",
+        "generate_questionnaire",
+        "get_client_status",
+        "list_clients",
+        "save_asset",
+        "save_content",
+        "update_client_config",
+        "edit_site_file",
+        "site_map",
+        "read_site_file_part",
+        "search_design_knowledge",
+        "save_research_notes",
+      ].sort(),
     );
     const { resources } = await client.listResources();
     expect(resources.map((r) => r.uri)).toContain("factory://rules/agents");
@@ -62,7 +82,10 @@ describe("MCP server over stdio", () => {
     const badSlug = await call("get_client_status", { slug: "../etc" });
     expect(badSlug.isError).toBe(true);
 
-    const log = readFileSync(path.join(f.clientsRoot, "harbour-dental", ".factory", "audit.log"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    const log = readFileSync(path.join(f.clientsRoot, "harbour-dental", ".factory", "audit.log"), "utf8")
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l));
     expect(log.map((l) => l.tool)).toEqual(["create_client", "get_client_status", "deploy"]);
     expect(log[2].ok).toBe(false);
   });

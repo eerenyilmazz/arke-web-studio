@@ -39,7 +39,23 @@ export const VARIANTS = ["a", "b", "c"] as const;
 export const PERSONALITIES = ["bold", "premium", "friendly"] as const;
 /** Animated sector illustrations in corporate-v2. "abstract" fits any sector; "none" turns motion off. */
 export const DARK_MODES = ["auto", "off"] as const;
-export const MOTIFS = ["jar", "code", "cup", "scissors", "tooth", "bricks", "leaf", "car", "scales", "heartbeat", "bread", "grill", "plate", "abstract", "none"] as const;
+export const MOTIFS = [
+  "jar",
+  "code",
+  "cup",
+  "scissors",
+  "tooth",
+  "bricks",
+  "leaf",
+  "car",
+  "scales",
+  "heartbeat",
+  "bread",
+  "grill",
+  "plate",
+  "abstract",
+  "none",
+] as const;
 
 const hexColor = z.string().regex(HEX_COLOR, "Use a 6-digit hex colour such as #1A2B3C");
 const assetPath = z.string().regex(CLIENT_ASSET_PATH, "Must be a file saved with save_asset (assets/<name>)");
@@ -84,9 +100,7 @@ export const SiteConfigSchema = z
     brand: z.object({
       logo: assetPath.nullable(),
       /** Client-supplied colours. null = let the design system choose. */
-      colors: z
-        .object({ primary: hexColor, secondary: hexColor.optional(), accent: hexColor.optional() })
-        .nullable(),
+      colors: z.object({ primary: hexColor, secondary: hexColor.optional(), accent: hexColor.optional() }).nullable(),
     }),
 
     design: z.object({
@@ -165,9 +179,7 @@ export const SiteConfigSchema = z
     /** Bookkeeping the agent maintains. Never rendered on the site. */
     meta: z
       .object({
-        unmapped: z
-          .array(z.object({ question: z.string(), answer: z.string(), note: z.string().optional() }))
-          .default([]),
+        unmapped: z.array(z.object({ question: z.string(), answer: z.string(), note: z.string().optional() })).default([]),
         laterInterests: z.array(z.string()).default([]),
       })
       .default({ unmapped: [], laterInterests: [] }),

@@ -72,12 +72,26 @@ export interface LibraryEntry extends LibraryMeta {
 const root = (factory: FactoryConfig) => path.join(factory.clientsRoot, LIBRARY_DIR);
 
 function slugify(name: string): string {
-  return name.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/ı/g, "i").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "tasarim";
+  return (
+    name
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/ı/g, "i")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "tasarim"
+  );
 }
 
 /** The client's own facts that must not survive into another client's site. */
 function forbiddenStrings(draft: Record<string, unknown>): string[] {
-  const d = draft as { business?: { name?: string }; contact?: Record<string, unknown>; whatsapp?: { number?: string | null }; site?: { domain?: string | null } };
+  const d = draft as {
+    business?: { name?: string };
+    contact?: Record<string, unknown>;
+    whatsapp?: { number?: string | null };
+    site?: { domain?: string | null };
+  };
   const values = [d.business?.name, d.site?.domain, d.whatsapp?.number, ...Object.values(d.contact ?? {})];
   const out = new Set<string>();
   for (const v of values) {
@@ -90,12 +104,29 @@ function forbiddenStrings(draft: Record<string, unknown>): string[] {
   return [...out];
 }
 
-type Draft = { business?: { name?: string }; contact?: Record<string, unknown>; whatsapp?: { number?: string | null }; site?: { domain?: string | null }; social?: Record<string, unknown> };
+type Draft = {
+  business?: { name?: string };
+  contact?: Record<string, unknown>;
+  whatsapp?: { number?: string | null };
+  site?: { domain?: string | null };
+  social?: Record<string, unknown>;
+};
 
 /** A client's value for a fixed place, or null when the client does not have it yet. */
 export function slotValue(draft: Record<string, unknown>, field: SlotField): string | null {
   const d = draft as Draft;
-  const v = { name: d.business?.name, phone: d.contact?.phone, whatsapp: d.whatsapp?.number, email: d.contact?.email, address: d.contact?.address, hours: d.contact?.hours, domain: d.site?.domain, mapsUrl: d.contact?.mapsUrl, instagram: d.social?.instagram, facebook: d.social?.facebook }[field];
+  const v = {
+    name: d.business?.name,
+    phone: d.contact?.phone,
+    whatsapp: d.whatsapp?.number,
+    email: d.contact?.email,
+    address: d.contact?.address,
+    hours: d.contact?.hours,
+    domain: d.site?.domain,
+    mapsUrl: d.contact?.mapsUrl,
+    instagram: d.social?.instagram,
+    facebook: d.social?.facebook,
+  }[field];
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
@@ -124,7 +155,8 @@ export function updateLibraryEntry(factory: FactoryConfig, id: string, input: { 
   const entry = listLibrary(factory).find((e) => e.id === id);
   if (!entry) throw new Error("Kütüphanede böyle bir tasarım yok.");
   const parsedSlots = input.slots === undefined ? entry.slots : z.array(SlotSchema).max(40).safeParse(input.slots);
-  if (!Array.isArray(parsedSlots) && !parsedSlots.success) throw new Error("Sabit alanlarda hata var: her satırda en az 2 karakterlik bir metin ve bir alan seçilmeli.");
+  if (!Array.isArray(parsedSlots) && !parsedSlots.success)
+    throw new Error("Sabit alanlarda hata var: her satırda en az 2 karakterlik bir metin ve bir alan seçilmeli.");
   const slots = Array.isArray(parsedSlots) ? parsedSlots : parsedSlots.data;
   const { palette: _p, fonts: _f, concept: _c, hasPreview: _h, ...meta } = entry;
   const next = LibraryMetaSchema.parse({
@@ -164,8 +196,18 @@ export function listLibrary(factory: FactoryConfig): LibraryEntry[] {
     if (!e.isDirectory()) continue;
     const parsed = LibraryMetaSchema.safeParse(readJsonIfExists(path.join(dir, e.name, META)));
     if (!parsed.success) continue;
-    const brand = (readJsonIfExists(path.join(dir, e.name, "site", BRAND_FILE)) ?? {}) as { palette?: Record<string, string>; fonts?: { heading?: string; body?: string }; concept?: string };
-    out.push({ ...parsed.data, palette: brand.palette ?? {}, fonts: brand.fonts ?? null, concept: brand.concept ?? "", hasPreview: existsSync(path.join(dir, e.name, PREVIEW)) });
+    const brand = (readJsonIfExists(path.join(dir, e.name, "site", BRAND_FILE)) ?? {}) as {
+      palette?: Record<string, string>;
+      fonts?: { heading?: string; body?: string };
+      concept?: string;
+    };
+    out.push({
+      ...parsed.data,
+      palette: brand.palette ?? {},
+      fonts: brand.fonts ?? null,
+      concept: brand.concept ?? "",
+      hasPreview: existsSync(path.join(dir, e.name, PREVIEW)),
+    });
   }
   return out.sort((a, b) => a.sector.localeCompare(b.sector) || a.name.localeCompare(b.name));
 }
@@ -254,7 +296,10 @@ export function applyLibraryDesign(factory: FactoryConfig, slug: string, id: str
   const missing = new Set<string>();
   for (const x of entry.slots) {
     const to = slotValue(draft, x.field);
-    if (!to) { missing.add(SLOT_FIELDS[x.field]); continue; }
+    if (!to) {
+      missing.add(SLOT_FIELDS[x.field]);
+      continue;
+    }
     if (to === x.text) continue;
     pairs.push({ from: x.text, to, field: x.field });
     // Phone numbers also appear without "+" in links (wa.me/905…, tel:905…).
@@ -265,14 +310,28 @@ export function applyLibraryDesign(factory: FactoryConfig, slug: string, id: str
   const counts = new Map<SlotField, number>();
   const add = (field: SlotField, n: number) => counts.set(field, (counts.get(field) ?? 0) + n);
   const isJson = (rel: string) => rel.endsWith(".json");
-  const a = replaceInSite(paths, pairs.map((p) => [p.from, p.to] as const), { html: true, files: (rel) => !isJson(rel) });
-  const b = replaceInSite(paths, pairs.map((p) => [jsonEscape(p.from), jsonEscape(p.to)] as const), { files: isJson });
+  const a = replaceInSite(
+    paths,
+    pairs.map((p) => [p.from, p.to] as const),
+    { html: true, files: (rel) => !isJson(rel) },
+  );
+  const b = replaceInSite(
+    paths,
+    pairs.map((p) => [jsonEscape(p.from), jsonEscape(p.to)] as const),
+    { files: isJson },
+  );
   pairs.forEach((p, i) => add(p.field, (a.counts[i] ?? 0) + (b.counts[i] ?? 0)));
   const filled = [...counts].filter(([, n]) => n > 0).map(([field, count]) => ({ field, label: SLOT_FIELDS[field], count }));
 
   // A forbidden string that is part of this client's own values (same street, same first word) is not a leftover.
   const own = SLOT_KEYS.map((f) => slotValue(draft, f)).filter((v): v is string => Boolean(v));
   const forbidden = entry.forbidden.filter((t) => !own.some((v) => v.includes(t)));
-  writeJson(path.join(paths.factoryDir, LIBRARY_SOURCE_FILE), { id: entry.id, name: entry.name, sourceSlug: entry.sourceSlug, forbidden, at: new Date().toISOString() });
+  writeJson(path.join(paths.factoryDir, LIBRARY_SOURCE_FILE), {
+    id: entry.id,
+    name: entry.name,
+    sourceSlug: entry.sourceSlug,
+    forbidden,
+    at: new Date().toISOString(),
+  });
   return { entry, filled, missing: [...missing] };
 }

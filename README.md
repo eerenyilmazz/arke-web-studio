@@ -17,6 +17,15 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Kod kalitesi (1.17.1)
+
+Davranış değişmedi.
+
+- **Yeni testler:** terminal onay komutu (terminal yoksa reddeder, hiçbir onay yazmaz), portalın panel adresleri, yayın kapısı (onaysız ya da değişmiş build yayınlanmaz), Claude Code ve Codex olay akışları (token tavanı, kullanım limiti, araç hataları).
+- **Sadeleştirme:** en karmaşık fonksiyonlar bölündü (agent çıktısını okuyan iki fonksiyon, metin bulucu, portal API'si, panelin istek karşılayıcısı, SEO kontrolü, yayın). En yüksek karmaşıklık 56'dan 37'ye indi.
+- **`src/tools.ts` bölündü:** `src/tools/` altında `clients`, `build`, `deploy`, `site-files`, `shared`; `tools.ts` tek giriş noktası olarak kaldı.
+- **Biçimlendirme:** kod Biome ile tek tip biçimlendirildi (satır en fazla 160 karakter). Yeni kod için: `npm run format`.
+
 ## Tutarlı adlandırma (1.17.0)
 
 Davranış değişmedi; adlar yaptıkları işi söylüyor. Eski kayıtlar, dosyalar ve adresler çalışmaya devam eder.

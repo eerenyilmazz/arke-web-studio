@@ -80,7 +80,10 @@ export function checkInputs(clientRoot: string, config: SiteConfig, content: Rec
     results.push({
       name: "Locales have matching content",
       status: shapes.size === 1 ? "pass" : "fail",
-      detail: shapes.size === 1 ? `${locales.join(", ")} match` : `item counts differ (services/gallery/testimonials/faq): ${locales.map((l) => `${l}=${shape(content[l] as Content)}`).join(" ")}`,
+      detail:
+        shapes.size === 1
+          ? `${locales.join(", ")} match`
+          : `item counts differ (services/gallery/testimonials/faq): ${locales.map((l) => `${l}=${shape(content[l] as Content)}`).join(" ")}`,
     });
   }
 
@@ -153,7 +156,9 @@ export function renderReport(slug: string, hash: string, results: readonly Check
     "",
     `Content hash: \`${hash}\` · ${new Date().toISOString()}`,
     "",
-    failed === 0 ? "**Result: passed.** Visual review by a person is still required (design checklist in rules/design-rules.md)." : `**Result: ${failed} check(s) failed.** Fix them and run build_site again.`,
+    failed === 0
+      ? "**Result: passed.** Visual review by a person is still required (design checklist in rules/design-rules.md)."
+      : `**Result: ${failed} check(s) failed.** Fix them and run build_site again.`,
     "",
     "| Check | Result | Detail |",
     "| --- | --- | --- |",

@@ -4,7 +4,10 @@ import { chunkMarkdown, searchKnowledge, tokenize } from "../src/lib/knowledge.j
 
 describe("design knowledge search", () => {
   it("chunks markdown at headings and folds Turkish letters", () => {
-    const chunks = chunkMarkdown("x.md", "# Top\n\nintro text that is long enough to keep around here.\n\n## Colour\n\nUse a dark palette with enough contrast for body text.\n\n## Contents\n\n- a\n- b\n- c and more words to pass the minimum");
+    const chunks = chunkMarkdown(
+      "x.md",
+      "# Top\n\nintro text that is long enough to keep around here.\n\n## Colour\n\nUse a dark palette with enough contrast for body text.\n\n## Contents\n\n- a\n- b\n- c and more words to pass the minimum",
+    );
     expect(chunks.map((c) => c.heading)).toEqual(["Top", "Top › Colour"]);
     expect(tokenize("Şeffaf Çizgi Işık")).toEqual(["seffaf", "cizgi", "isik"]);
   });

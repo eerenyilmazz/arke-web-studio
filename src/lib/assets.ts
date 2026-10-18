@@ -48,18 +48,15 @@ export interface SavedAsset {
  * Copies one file from the inbox into the client's assets folder after checking
  * size, real type and (for SVG) content. The caller has already confined both paths.
  */
-export function saveAsset(params: {
-  sourceAbs: string;
-  assetsDir: string;
-  kind: AssetKind;
-  name: string;
-  maxBytes: number;
-}): SavedAsset {
+export function saveAsset(params: { sourceAbs: string; assetsDir: string; kind: AssetKind; name: string; maxBytes: number }): SavedAsset {
   const stat = lstatSync(params.sourceAbs, { throwIfNoEntry: false });
   if (!stat) throw new FactoryError("Source file not found in the inbox.", "Put the file in the inbox folder first.");
   if (stat.isSymbolicLink() || !stat.isFile()) throw new FactoryError("Source must be a regular file (no links or folders).");
   if (stat.size > params.maxBytes) {
-    throw new FactoryError(`File is ${(stat.size / 1048576).toFixed(1)} MB; limit is ${(params.maxBytes / 1048576).toFixed(1)} MB.`, "Ask the client for a smaller export.");
+    throw new FactoryError(
+      `File is ${(stat.size / 1048576).toFixed(1)} MB; limit is ${(params.maxBytes / 1048576).toFixed(1)} MB.`,
+      "Ask the client for a smaller export.",
+    );
   }
 
   const bytes = readFileSync(params.sourceAbs);

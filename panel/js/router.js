@@ -51,7 +51,11 @@ export async function render() {
   const r = route();
   const view = $("#view");
   for (const a of document.querySelectorAll(".main-nav a")) {
-    const on = (a.dataset.nav === "home" && (r.view === "home" || r.view === "client" || r.view === "new")) || (a.dataset.nav === "library" && r.view === "library") || (a.dataset.nav === "archive" && r.view === "archive") || (a.dataset.nav === "settings" && r.view === "settings");
+    const on =
+      (a.dataset.nav === "home" && (r.view === "home" || r.view === "client" || r.view === "new")) ||
+      (a.dataset.nav === "library" && r.view === "library") ||
+      (a.dataset.nav === "archive" && r.view === "archive") ||
+      (a.dataset.nav === "settings" && r.view === "settings");
     a.toggleAttribute("aria-current", on);
     if (on) a.setAttribute("aria-current", "page");
   }
@@ -97,10 +101,18 @@ export function renderSidebar() {
       return [
         h("p", { class: "group-title", text: g }),
         ...items.map((c) =>
-          h("a", { class: "client-link", href: `#/musteri/${c.slug}`, "aria-current": r.slug === c.slug ? "page" : null },
+          h(
+            "a",
+            { class: "client-link", href: `#/musteri/${c.slug}`, "aria-current": r.slug === c.slug ? "page" : null },
             avatar(c.slug, c.name || c.slug, false, isBusy() && state.running.slug === c.slug),
-            h("span", { class: "meta" }, h("span", { class: "name", text: c.name || c.slug }), h("span", { class: "sub", text: isBusy() && state.running.slug === c.slug ? "İşlem sürüyor…" : plainOf(c.stage).text })),
-          )),
+            h(
+              "span",
+              { class: "meta" },
+              h("span", { class: "name", text: c.name || c.slug }),
+              h("span", { class: "sub", text: isBusy() && state.running.slug === c.slug ? "İşlem sürüyor…" : plainOf(c.stage).text }),
+            ),
+          ),
+        ),
       ];
     }),
   );

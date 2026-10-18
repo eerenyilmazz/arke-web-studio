@@ -44,7 +44,14 @@ export function clientProfit(factory: FactoryConfig, slug: string, name = slug, 
   const extraCosts = round2((b?.costs ?? []).reduce((sum, c) => sum + c.amount, 0));
   const price = b?.price ?? null;
   return {
-    slug, name, currency, price, payment: b?.payment ?? "none", extraCosts, agentUsd, agentCost,
+    slug,
+    name,
+    currency,
+    price,
+    payment: b?.payment ?? "none",
+    extraCosts,
+    agentUsd,
+    agentCost,
     profit: price !== null && agentCost !== null ? round2(price - extraCosts - agentCost) : null,
     jobs: entries.length,
   };
@@ -61,8 +68,9 @@ export interface ProfitSummary {
 export function profitSummary(factory: FactoryConfig, now = new Date()): ProfitSummary {
   const ledger = readLedger(factory);
   const s = readSettings(factory).profit;
-  const clients = tools.listClients(factory).clients
-    .filter((c) => c.stage !== "unreadable")
+  const clients = tools
+    .listClients(factory)
+    .clients.filter((c) => c.stage !== "unreadable")
     .map((c) => clientProfit(factory, c.slug, "name" in c && c.name ? c.name : c.slug, ledger));
   const totals: ProfitSummary["totals"] = {};
   for (const c of clients) {

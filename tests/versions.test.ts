@@ -10,7 +10,13 @@ describe("version history", () => {
   it("records versions and restores config, content and site files, never approvals", async () => {
     const f = tempFactory();
     installStubTemplate(f.templatesDir);
-    await tools.createClient(f, { slug: "willow-thread", businessName: "Willow & Thread", industry: "bridal salon", hostingModel: "managed", template: "custom" });
+    await tools.createClient(f, {
+      slug: "willow-thread",
+      businessName: "Willow & Thread",
+      industry: "bridal salon",
+      hostingModel: "managed",
+      template: "custom",
+    });
     tools.updateClientConfig(f, { slug: "willow-thread", patch: COMPLETE_PATCH });
     tools.saveContent(f, { slug: "willow-thread", locale: "en", content: COMPLETE_CONTENT });
     tools.writeSiteFileTool(f, { slug: "willow-thread", path: "index.html", content: "<p>v1</p>" });

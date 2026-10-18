@@ -37,8 +37,8 @@ export function buildQuestionnaire(input: QuestionnaireInput): Questionnaire {
 
   const intro =
     input.round === 1
-      ? "This takes about 10 minutes. Short answers are fine; if you are unsure, write \"please suggest\" and we will propose something."
-      : "Thank you for your first answers. These are the remaining details we need. Write \"please suggest\" wherever you are unsure.";
+      ? 'This takes about 10 minutes. Short answers are fine; if you are unsure, write "please suggest" and we will propose something.'
+      : 'Thank you for your first answers. These are the remaining details we need. Write "please suggest" wherever you are unsure.';
   md.push(intro, "");
   txt.push(intro, "");
   if (input.replyBy) {

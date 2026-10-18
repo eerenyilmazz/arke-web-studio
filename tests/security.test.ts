@@ -67,14 +67,18 @@ describe("images", () => {
     const f = tempFactory();
     const assets = path.join(f.base, "assets");
     writeFileSync(path.join(f.inboxDir, "fake.png"), "not an image");
-    expect(() => saveAsset({ sourceAbs: path.join(f.inboxDir, "fake.png"), assetsDir: assets, kind: "logo", name: "fake.png", maxBytes: 1000 })).toThrow(/Not a supported image/);
+    expect(() => saveAsset({ sourceAbs: path.join(f.inboxDir, "fake.png"), assetsDir: assets, kind: "logo", name: "fake.png", maxBytes: 1000 })).toThrow(
+      /Not a supported image/,
+    );
 
     writeFileSync(path.join(f.inboxDir, "big.png"), Buffer.concat([PNG_1PX, Buffer.alloc(5000)]));
     expect(() => saveAsset({ sourceAbs: path.join(f.inboxDir, "big.png"), assetsDir: assets, kind: "logo", name: "big", maxBytes: 1000 })).toThrow(/limit/);
 
     writeFileSync(path.join(f.base, "outside.png"), PNG_1PX);
     symlinkSync(path.join(f.base, "outside.png"), path.join(f.inboxDir, "ln.png"));
-    expect(() => saveAsset({ sourceAbs: path.join(f.inboxDir, "ln.png"), assetsDir: assets, kind: "logo", name: "ln", maxBytes: 1000 })).toThrow(/regular file/);
+    expect(() => saveAsset({ sourceAbs: path.join(f.inboxDir, "ln.png"), assetsDir: assets, kind: "logo", name: "ln", maxBytes: 1000 })).toThrow(
+      /regular file/,
+    );
 
     writeFileSync(path.join(f.inboxDir, "ok.jpg"), PNG_1PX);
     const saved = saveAsset({ sourceAbs: path.join(f.inboxDir, "ok.jpg"), assetsDir: assets, kind: "logo", name: "My Logo; rm -rf.JPG", maxBytes: 1000 });

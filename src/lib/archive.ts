@@ -74,7 +74,14 @@ export function listArchived(factory: FactoryConfig): ArchivedClient[] {
     if (!e.isDirectory() || !ARCHIVE_ID.test(e.name)) continue;
     const { slug, archivedAt } = parseId(e.name);
     const cfg = (readJsonIfExists(path.join(root, e.name, "site.config.json")) ?? {}) as { business?: { name?: string; industry?: string } };
-    out.push({ id: e.name, slug, name: cfg.business?.name ?? slug, industry: cfg.business?.industry ?? "", archivedAt, slugTaken: existsSync(path.join(factory.clientsRoot, slug)) });
+    out.push({
+      id: e.name,
+      slug,
+      name: cfg.business?.name ?? slug,
+      industry: cfg.business?.industry ?? "",
+      archivedAt,
+      slugTaken: existsSync(path.join(factory.clientsRoot, slug)),
+    });
   }
   return out.sort((a, b) => b.archivedAt.localeCompare(a.archivedAt));
 }

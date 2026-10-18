@@ -18,7 +18,12 @@ describe("agent per kind of job (Claude Code or Codex)", () => {
     expect(jobGroup("edit-text")).toBe("edit");
     expect(jobGroup("add-page")).toBe("page");
     expect(resolvePolicy(f, "x-co", "revise")).toMatchObject({ provider: "claude", model: "sonnet" });
-    writeSettings(f, { agents: { edit: { provider: "codex", model: "", maxTurns: 0, tokenCap: 0 }, design: { provider: "claude", model: "haiku", maxTurns: 90, tokenCap: 2_000_000 } } });
+    writeSettings(f, {
+      agents: {
+        edit: { provider: "codex", model: "", maxTurns: 0, tokenCap: 0 },
+        design: { provider: "claude", model: "haiku", maxTurns: 90, tokenCap: 2_000_000 },
+      },
+    });
     expect(resolvePolicy(f, "x-co", "revise")).toMatchObject({ provider: "codex", model: "" });
     expect(resolvePolicy(f, "x-co", "redesign")).toMatchObject({ provider: "claude", model: "haiku", maxTurns: 90, tokenCap: 2_000_000 });
     // A Claude model name is not passed to Codex.
@@ -57,18 +62,39 @@ describe("agent per kind of job (Claude Code or Codex)", () => {
       stdin.on("finish", () => {
         for (const e of [
           { type: "thread.started", thread_id: "t" },
-          { type: "item.started", item: { id: "1", type: "mcp_tool_call", server: "site-factory", tool: "write_site_file", arguments: { path: "index.html" }, status: "in_progress" } },
+          {
+            type: "item.started",
+            item: { id: "1", type: "mcp_tool_call", server: "site-factory", tool: "write_site_file", arguments: { path: "index.html" }, status: "in_progress" },
+          },
           { type: "item.completed", item: { id: "1", type: "mcp_tool_call", server: "site-factory", tool: "write_site_file", status: "completed" } },
           { type: "item.completed", item: { id: "2", type: "agent_message", text: "Başlık değişti." } },
           { type: "turn.completed", usage: { input_tokens: 12000, cached_input_tokens: 10000, output_tokens: 800 } },
-        ]) stdout.write(`${JSON.stringify(e)}\n`);
+        ])
+          stdout.write(`${JSON.stringify(e)}\n`);
         stdout.end();
         setTimeout(() => child.emit("close", 0), 10);
       });
       return child;
     };
-    const runner = new JobRunner("/f", spawn, "claude", () => undefined, () => false, [], "codex");
-    const job = runner.startAgent("x-co", "revise", "Değişiklik", "prompt", "req", { mode: "balanced", provider: "codex", model: "", maxTurns: 40, tokenCap: 400_000, skills: "search", research: false, screenshots: false });
+    const runner = new JobRunner(
+      "/f",
+      spawn,
+      "claude",
+      () => undefined,
+      () => false,
+      [],
+      "codex",
+    );
+    const job = runner.startAgent("x-co", "revise", "Değişiklik", "prompt", "req", {
+      mode: "balanced",
+      provider: "codex",
+      model: "",
+      maxTurns: 40,
+      tokenCap: 400_000,
+      skills: "search",
+      research: false,
+      screenshots: false,
+    });
     await new Promise((r) => setTimeout(r, 80));
     expect(calls[0]!.command).toBe("codex");
     expect(job.status).toBe("succeeded");
@@ -85,8 +111,25 @@ describe("profit per client", () => {
     const f = tempFactory();
     writeBusiness(f, "p-co", { price: 10000, currency: "TRY", costs: [{ label: "Alan adı", amount: 500 }] });
     const at = new Date().toISOString();
-    recordUsage(f, { at, slug: "p-co", kind: "autopilot", mode: "balanced", model: "opus", usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, costUsd: 3 }, tokens: 2 });
-    recordUsage(f, { at, slug: "p-co", kind: "revise", mode: "balanced", model: "", usage: { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite: 0 }, tokens: 1_000_000, provider: "codex" });
+    recordUsage(f, {
+      at,
+      slug: "p-co",
+      kind: "autopilot",
+      mode: "balanced",
+      model: "opus",
+      usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, costUsd: 3 },
+      tokens: 2,
+    });
+    recordUsage(f, {
+      at,
+      slug: "p-co",
+      kind: "revise",
+      mode: "balanced",
+      model: "",
+      usage: { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite: 0 },
+      tokens: 1_000_000,
+      provider: "codex",
+    });
     let p = clientProfit(f, "p-co");
     expect(p.agentUsd).toBe(3);
     expect(p.agentCost).toBeNull();
@@ -96,6 +139,119 @@ describe("profit per client", () => {
     expect(p.agentUsd).toBe(5);
     expect(p.agentCost).toBe(200);
     expect(p.profit).toBe(9300);
-    expect(entryUsd({ at, slug: "p-co", kind: "x", mode: "balanced", model: "", usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, tokens: 500_000 }, 2)).toBe(1);
+    expect(
+      entryUsd({ at, slug: "p-co", kind: "x", mode: "balanced", model: "", usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, tokens: 500_000 }, 2),
+    ).toBe(1);
+  });
+});
+
+/** A fake agent process that prints the given events, then exits 0 (unless it was stopped). */
+function scriptedAgent(events: readonly unknown[]) {
+  const killed: string[] = [];
+  const spawn = (): ChildProcess => {
+    const child = new EventEmitter() as ChildProcess;
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    Object.assign(child, {
+      stdin,
+      stdout,
+      stderr: new PassThrough(),
+      kill: (sig: string) => {
+        killed.push(sig);
+        return true;
+      },
+    });
+    stdin.on("finish", () => {
+      for (const e of events) stdout.write(`${typeof e === "string" ? e : JSON.stringify(e)}\n`);
+      stdout.end();
+      setTimeout(() => child.emit("close", 0), 10);
+    });
+    return child;
+  };
+  return { spawn, killed };
+}
+const POLICY = { mode: "balanced" as const, model: "", maxTurns: 40, tokenCap: 400_000, skills: "search" as const, research: false, screenshots: false };
+const settle = () => new Promise((r) => setTimeout(r, 60));
+
+describe("agent event streams", () => {
+  it("Codex: stops a job past its token cap, and explains a usage limit", async () => {
+    const big = scriptedAgent([{ type: "turn.completed", usage: { input_tokens: 900_000, cached_input_tokens: 0, output_tokens: 10 } }]);
+    const job = new JobRunner(
+      "/f",
+      big.spawn,
+      "claude",
+      () => undefined,
+      () => false,
+      [],
+      "codex",
+    ).startAgent("x-co", "revise", "t", "p", "r", { ...POLICY, provider: "codex" });
+    await settle();
+    expect(big.killed).toEqual(["SIGTERM"]);
+    expect(job.status).toBe("failed");
+    expect(job.log.at(-1)?.text).toMatch(/token tavanı aşıldı/);
+
+    const limited = scriptedAgent([
+      { type: "error", message: "Reconnecting… 1/5" },
+      { type: "turn.failed", error: { message: "You've hit your usage limit" } },
+    ]);
+    const job2 = new JobRunner(
+      "/f",
+      limited.spawn,
+      "claude",
+      () => undefined,
+      () => false,
+      [],
+      "codex",
+    ).startAgent("x-co", "revise", "t", "p", "r", { ...POLICY, provider: "codex" });
+    await settle();
+    expect(job2.status).toBe("failed");
+    expect(job2.log.filter((l) => l.kind === "error").map((l) => l.text)).toEqual([expect.stringMatching(/^Codex kullanım limiti doldu/)]);
+  });
+
+  it("Claude Code: tool calls move the phase, skills are listed once, failed tools and results are logged", async () => {
+    const agent = scriptedAgent([
+      "not json: shown as info",
+      {
+        type: "assistant",
+        message: {
+          id: "m1",
+          content: [
+            { type: "tool_use", name: "Skill", input: { skill: "impeccable" } },
+            { type: "tool_use", name: "Skill", input: { skill: "impeccable" } },
+          ],
+          usage: { input_tokens: 10, output_tokens: 5 },
+        },
+      },
+      {
+        type: "assistant",
+        message: {
+          id: "m2",
+          content: [
+            { type: "text", text: "Writing the brand." },
+            { type: "tool_use", name: "mcp__site-factory__write_site_file", input: { path: "brand/brand.json" } },
+          ],
+        },
+      },
+      { type: "user", message: { content: [{ type: "tool_result", is_error: true, content: [{ type: "text", text: "Path outside site/" }] }] } },
+      { type: "result", subtype: "success", result: "Marka hazır.", usage: { input_tokens: 100, output_tokens: 50 }, total_cost_usd: 0.12345 },
+    ]);
+    const job = new JobRunner(
+      "/f",
+      agent.spawn,
+      "claude",
+      () => undefined,
+      () => false,
+    ).startAgent("x-co", "revise", "t", "p", "r", { ...POLICY, provider: "claude" });
+    await settle();
+    expect(job.status).toBe("succeeded");
+    expect(job.skillsUsed).toEqual(["impeccable"]);
+    expect(job.phase).toBe("brand");
+    expect(job.filesWritten).toBe(1);
+    expect(job.summary).toBe("Marka hazır.");
+    expect(job.usage?.costUsd).toBe(0.1235);
+    const kinds = job.log.map((l) => `${l.kind}:${l.text.slice(0, 24)}`);
+    expect(kinds).toEqual(
+      expect.arrayContaining(["info:not json: shown as info", "agent:Writing the brand.", "error:Path outside site/", "result:Marka hazır."]),
+    );
   });
 });

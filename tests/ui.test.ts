@@ -65,7 +65,15 @@ beforeAll(async () => {
   factory = tempFactory();
   process.env.SF_PORTAL_CONFIG_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-ui-portal-")); // no portal set up
   const port = await freePort();
-  panel = createPanel({ factory, port, previewPort: await freePort(), sessionKey: KEY, spawn: () => { throw new Error("no agent in UI tests"); } });
+  panel = createPanel({
+    factory,
+    port,
+    previewPort: await freePort(),
+    sessionKey: KEY,
+    spawn: () => {
+      throw new Error("no agent in UI tests");
+    },
+  });
   await panel.listen();
   base = `http://127.0.0.1:${port}`;
 
@@ -75,7 +83,12 @@ beforeAll(async () => {
   tools.saveContent(factory, { slug: "ui-bakery", locale: "en", content: COMPLETE_CONTENT });
   writePassingCustomSite(factory, "ui-bakery", "UI Bakery");
   // A signature demo with a script placed before <head>: the panel's policy must still come first.
-  tools.writeSiteFileTool(factory, { slug: "ui-bakery", path: "brand/signature.html", content: '<!doctype html><script>document.title="early"</script><html lang="en"><head><meta name="viewport" content="width=device-width"><title>Sig</title></head><body><div class="dough-rise">Loaf</div></body></html>' });
+  tools.writeSiteFileTool(factory, {
+    slug: "ui-bakery",
+    path: "brand/signature.html",
+    content:
+      '<!doctype html><script>document.title="early"</script><html lang="en"><head><meta name="viewport" content="width=device-width"><title>Sig</title></head><body><div class="dough-rise">Loaf</div></body></html>',
+  });
   installStubTemplate(factory.templatesDir);
   const built = await tools.buildSite(factory, { slug: "ui-bakery" });
   if (!built.passed) throw new Error(`UI fixture build failed: ${JSON.stringify(built.checks.filter((c) => c.status === "fail"))}`);
@@ -103,7 +116,9 @@ async function open(hash: string, viewport = { width: 1280, height: 900 }): Prom
 
 /** Decided when tests are collected (before the browser starts); a browser that fails to start skips at run time. */
 const ui = () => (executable ? it : it.skip);
-const needBrowser = (ctx: { skip: () => void }) => { if (!browser) ctx.skip(); };
+const needBrowser = (ctx: { skip: () => void }) => {
+  if (!browser) ctx.skip();
+};
 
 describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
   ui()("renders the dashboard, settings and library without script errors", async (ctx) => {

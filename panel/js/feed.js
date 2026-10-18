@@ -19,7 +19,14 @@ export function agentBlock(job, live) {
     const lines = h("details", { class: "live-details" }, h("summary", { text: "Ayrıntılı kayıt" }), h("div", { class: "live-lines", id: "live-lines" }));
     appendLiveLines(lines.querySelector("#live-lines"), job.log || []);
     parts.push(lines);
-    parts.push(h("div", { class: "row" }, h("span", { class: "typing", role: "img", "aria-label": "çalışıyor" }, h("span"), h("span"), h("span")), isAgent && h("button", { class: "btn btn-sm", type: "button", onclick: () => cancelJob(job.id) }, "Durdur")));
+    parts.push(
+      h(
+        "div",
+        { class: "row" },
+        h("span", { class: "typing", role: "img", "aria-label": "çalışıyor" }, h("span"), h("span"), h("span")),
+        isAgent && h("button", { class: "btn btn-sm", type: "button", onclick: () => cancelJob(job.id) }, "Durdur"),
+      ),
+    );
   } else {
     if (job.tools?.length) parts.push(toolChips(job.tools));
     const used = usageLine(job);
@@ -27,10 +34,20 @@ export function agentBlock(job, live) {
     if (job.summary) parts.push(richText(job.summary));
     for (const e of job.errors || []) parts.push(h("p", { class: "err", text: e }));
   }
-  return h("div", { class: "msg-agent" },
+  return h(
+    "div",
+    { class: "msg-agent" },
     h("span", { class: "who", "aria-hidden": "true" }, svg(isAgent ? ICON.spark : ICON.check, 16)),
-    h("div", { class: "body" },
-      h("div", { class: "head" }, h("strong", { text: isAgent ? `Agent · ${job.title}` : job.title }), h("span", { class: `badge ${cls}`, text: label }), h("span", { text: time(job.endedAt || job.startedAt) })),
+    h(
+      "div",
+      { class: "body" },
+      h(
+        "div",
+        { class: "head" },
+        h("strong", { text: isAgent ? `Agent · ${job.title}` : job.title }),
+        h("span", { class: `badge ${cls}`, text: label }),
+        h("span", { text: time(job.endedAt || job.startedAt) }),
+      ),
       ...parts,
     ),
   );
@@ -63,8 +80,14 @@ export function richText(text) {
     if (bullet) {
       const indent = bullet[1].length >= 2 ? 1 : 0;
       if (!list || indent !== depth) {
-        if (indent > depth && list?.lastElementChild) { const sub = h("ul"); list.lastElementChild.append(sub); list = sub; }
-        else if (indent < depth || !list) { list = h("ul"); root.append(list); }
+        if (indent > depth && list?.lastElementChild) {
+          const sub = h("ul");
+          list.lastElementChild.append(sub);
+          list = sub;
+        } else if (indent < depth || !list) {
+          list = h("ul");
+          root.append(list);
+        }
         depth = indent;
       }
       list.append(h("li", {}, ...inline(bullet[2])));
@@ -84,7 +107,10 @@ export function appendLiveLines(container, lines) {
   for (const line of lines) {
     if (line.kind === "tool") {
       let chips = container.lastElementChild;
-      if (!chips || !chips.classList.contains("tools")) { chips = h("div", { class: "tools" }); container.append(chips); }
+      if (!chips || !chips.classList.contains("tools")) {
+        chips = h("div", { class: "tools" });
+        container.append(chips);
+      }
       chips.append(h("span", { class: "tool", text: line.text.split("(")[0] }));
     } else if (line.kind === "error") container.append(h("p", { class: "err", text: line.text }));
     else if (line.kind === "result") container.append(richText(line.text));
@@ -105,6 +131,14 @@ export function drawFeed(feed, d) {
     state.logSince = running.logTotal ?? (running.log || []).length;
   }
   // The approval step itself is shown once, in the "now" card above the tabs.
-  if (!items.length) items.push(h("div", { class: "feed-empty" }, h("p", { text: "Henüz talep bulunmuyor." }), h("p", { class: "small", text: "Formlarda bulunmayan bir değişikliği aşağıya yazabilirsiniz." })));
+  if (!items.length)
+    items.push(
+      h(
+        "div",
+        { class: "feed-empty" },
+        h("p", { text: "Henüz talep bulunmuyor." }),
+        h("p", { class: "small", text: "Formlarda bulunmayan bir değişikliği aşağıya yazabilirsiniz." }),
+      ),
+    );
   feed.replaceChildren(...items);
 }

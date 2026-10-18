@@ -21,9 +21,25 @@ export interface RunResult {
 
 /** Only these parent variables reach child processes, so stray secrets in the shell never leak into builds. */
 const INHERITED_ENV = [
-  "PATH", "HOME", "USERPROFILE", "SystemRoot", "TEMP", "TMP", "APPDATA", "LOCALAPPDATA", "LANG", "NODE_OPTIONS",
+  "PATH",
+  "HOME",
+  "USERPROFILE",
+  "SystemRoot",
+  "TEMP",
+  "TMP",
+  "APPDATA",
+  "LOCALAPPDATA",
+  "LANG",
+  "NODE_OPTIONS",
   // Network setup (corporate proxies, custom CAs) so npm/wrangler can reach the internet.
-  "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy", "NODE_EXTRA_CA_CERTS", "SSL_CERT_FILE",
+  "HTTP_PROXY",
+  "HTTPS_PROXY",
+  "NO_PROXY",
+  "http_proxy",
+  "https_proxy",
+  "no_proxy",
+  "NODE_EXTRA_CA_CERTS",
+  "SSL_CERT_FILE",
 ];
 const MAX_OUTPUT_CHARS = 12_000;
 /** On Windows, .cmd shims need a shell; we only allow it when every argument is plain. */

@@ -30,10 +30,16 @@ export function siteDir(paths: ClientPaths): string {
 
 function sitePath(paths: ClientPaths, rel: string): string {
   if (!SITE_PATH.test(rel)) {
-    throw new FactoryError(`File path "${rel.slice(0, 80)}" is not allowed.`, "Use lowercase letters, digits, - _ . and / only, e.g. index.html, css/site.css, tr/index.html.");
+    throw new FactoryError(
+      `File path "${rel.slice(0, 80)}" is not allowed.`,
+      "Use lowercase letters, digits, - _ . and / only, e.g. index.html, css/site.css, tr/index.html.",
+    );
   }
   if (rel === ASSETS_URL_DIR || rel.startsWith(`${ASSETS_URL_DIR}/`)) {
-    throw new FactoryError("site/assets/ is reserved.", "Images go in with save_asset and are served from /assets/<name>; reference them from your HTML and CSS.");
+    throw new FactoryError(
+      "site/assets/ is reserved.",
+      "Images go in with save_asset and are served from /assets/<name>; reference them from your HTML and CSS.",
+    );
   }
   const ext = path.extname(rel).toLowerCase();
   if (!ALLOWED_EXTENSIONS.has(ext)) {
@@ -64,18 +70,25 @@ export function readSiteFile(paths: ClientPaths, rel: string): { path: string; c
 export function writeSiteFile(paths: ClientPaths, rel: string, content: string): { path: string; bytes: number; totalFiles: number } {
   const abs = sitePath(paths, rel);
   const bytes = Buffer.byteLength(content, "utf8");
-  if (bytes > MAX_FILE_BYTES) throw new FactoryError(`site/${rel} is too large (${bytes} bytes).`, `Keep each file under ${MAX_FILE_BYTES} bytes; split CSS or JS into several files.`);
+  if (bytes > MAX_FILE_BYTES)
+    throw new FactoryError(`site/${rel} is too large (${bytes} bytes).`, `Keep each file under ${MAX_FILE_BYTES} bytes; split CSS or JS into several files.`);
   const { files, totalBytes } = listSiteFiles(paths);
   const existing = files.find((f) => f.path === rel);
   if (!existing && files.length >= MAX_FILES) throw new FactoryError(`The site already has ${MAX_FILES} files.`, "Delete unused files first.");
-  if (totalBytes - (existing?.bytes ?? 0) + bytes > MAX_TOTAL_BYTES) throw new FactoryError("The site is too large.", `Keep the whole site under ${MAX_TOTAL_BYTES} bytes (images excluded).`);
+  if (totalBytes - (existing?.bytes ?? 0) + bytes > MAX_TOTAL_BYTES)
+    throw new FactoryError("The site is too large.", `Keep the whole site under ${MAX_TOTAL_BYTES} bytes (images excluded).`);
   mkdirSync(path.dirname(abs), { recursive: true });
   writeFileSync(abs, content);
   return { path: rel, bytes, totalFiles: files.length + (existing ? 0 : 1) };
 }
 
 /** A part of a file around the first match of `around` (the line numbers say where it is). Saves reading whole files. */
-export function readSiteFileAround(paths: ClientPaths, rel: string, around: string, lines = 30): { path: string; from: number; to: number; totalLines: number; content: string } {
+export function readSiteFileAround(
+  paths: ClientPaths,
+  rel: string,
+  around: string,
+  lines = 30,
+): { path: string; from: number; to: number; totalLines: number; content: string } {
   const all = readSiteFile(paths, rel).content.split("\n");
   const hit = all.findIndex((l) => l.includes(around));
   if (hit < 0) throw new FactoryError(`"${around.slice(0, 60)}" is not in site/${rel}.`, "Use site_map to find which file has it, or read the whole file.");
@@ -88,12 +101,26 @@ export function readSiteFileAround(paths: ClientPaths, rel: string, around: stri
  * Replaces exact text in one site file: the cheap way to change a few lines without rewriting the file.
  * `oldText` must occur exactly once (or pass all=true to replace every occurrence).
  */
-export function editSiteFile(paths: ClientPaths, rel: string, oldText: string, newText: string, all = false): { path: string; replaced: number; bytes: number } {
+export function editSiteFile(
+  paths: ClientPaths,
+  rel: string,
+  oldText: string,
+  newText: string,
+  all = false,
+): { path: string; replaced: number; bytes: number } {
   if (!oldText) throw new FactoryError("oldText is empty.");
   const content = readSiteFile(paths, rel).content;
   const count = content.split(oldText).length - 1;
-  if (count === 0) throw new FactoryError(`The text to replace is not in site/${rel}.`, "Copy it exactly (spaces and line breaks included) from read_site_file, or use site_map to find the right file.");
-  if (count > 1 && !all) throw new FactoryError(`The text occurs ${count} times in site/${rel}.`, "Add surrounding text so it is unique, or pass all: true to replace every occurrence.");
+  if (count === 0)
+    throw new FactoryError(
+      `The text to replace is not in site/${rel}.`,
+      "Copy it exactly (spaces and line breaks included) from read_site_file, or use site_map to find the right file.",
+    );
+  if (count > 1 && !all)
+    throw new FactoryError(
+      `The text occurs ${count} times in site/${rel}.`,
+      "Add surrounding text so it is unique, or pass all: true to replace every occurrence.",
+    );
   const next = all ? content.split(oldText).join(newText) : content.replace(oldText, () => newText);
   const r = writeSiteFile(paths, rel, next);
   return { path: rel, replaced: all ? count : 1, bytes: r.bytes };
@@ -108,7 +135,12 @@ export function siteMap(paths: ClientPaths): string {
   const root = siteDir(paths);
   const { files, totalBytes } = listSiteFiles(paths);
   const out: string[] = [`site/ — ${files.length} files, ${Math.round(totalBytes / 1024)} KB`];
-  const clean = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 70);
+  const clean = (s: string) =>
+    s
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 70);
   for (const f of files) {
     const abs = path.join(root, f.path);
     const kb = `${Math.max(1, Math.round(f.bytes / 1024))} KB`;
@@ -123,7 +155,9 @@ export function siteMap(paths: ClientPaths): string {
         const cls = /\bclass=["']([^"']+)/.exec(attrs)?.[1];
         const heading = clean(/<h[2-3]\b[^>]*>([\s\S]*?)<\/h[2-3]>/i.exec(m[2] ?? "")?.[1] ?? "");
         const anims = [...new Set([...(m[2] ?? "").matchAll(/data-anim=["']([^"']+)/g)].map((a) => a[1]))];
-        out.push(`  section${id ? ` #${id}` : ""}${cls ? ` .${cls.split(/\s+/).join(".")}` : ""}${heading ? ` "${heading}"` : ""}${anims.length ? ` anim: ${anims.join(", ")}` : ""}`);
+        out.push(
+          `  section${id ? ` #${id}` : ""}${cls ? ` .${cls.split(/\s+/).join(".")}` : ""}${heading ? ` "${heading}"` : ""}${anims.length ? ` anim: ${anims.join(", ")}` : ""}`,
+        );
       }
     } else if (f.path.endsWith(".css")) {
       const css = readFileSync(abs, "utf8");
@@ -149,12 +183,20 @@ export function deleteSiteFile(paths: ClientPaths, rel: string): { deleted: stri
 export function buildCustomSite(paths: ClientPaths): CheckResult {
   const src = siteDir(paths);
   if (!existsSync(path.join(src, "index.html"))) {
-    return { name: "Custom site build", status: "fail", detail: "site/index.html does not exist yet. Write the site with write_site_file first (rules/custom-site.md)." };
+    return {
+      name: "Custom site build",
+      status: "fail",
+      detail: "site/index.html does not exist yet. Write the site with write_site_file first (rules/custom-site.md).",
+    };
   }
   rmSync(paths.distDir, { recursive: true, force: true });
   mkdirSync(paths.distDir, { recursive: true });
   // Design proposals (brand/options/) are for choosing, not for the published site.
-  cpSync(src, paths.distDir, { recursive: true, dereference: false, filter: (from) => !path.relative(src, from).replaceAll("\\", "/").startsWith(OPTIONS_DIR) });
+  cpSync(src, paths.distDir, {
+    recursive: true,
+    dereference: false,
+    filter: (from) => !path.relative(src, from).replaceAll("\\", "/").startsWith(OPTIONS_DIR),
+  });
   if (existsSync(paths.assetsDir)) cpSync(paths.assetsDir, path.join(paths.distDir, ASSETS_URL_DIR), { recursive: true });
   return { name: "Custom site build", status: "pass", detail: `${listSiteFiles(paths).files.length} file(s) from site/ plus assets/` };
 }
@@ -179,7 +221,10 @@ const HTML_RULES: readonly Rule[] = [
 
 const SCRIPT_RULES: readonly Rule[] = [
   { pattern: /\beval\s*\(|\bnew\s+Function\s*\(/, label: "eval / new Function" },
-  { pattern: /\bfetch\s*\(|XMLHttpRequest|sendBeacon|\bWebSocket\b|EventSource/, label: "network request from JavaScript (the site is static; it must not call other servers)" },
+  {
+    pattern: /\bfetch\s*\(|XMLHttpRequest|sendBeacon|\bWebSocket\b|EventSource/,
+    label: "network request from JavaScript (the site is static; it must not call other servers)",
+  },
   { pattern: /document\.cookie/, label: "document.cookie (the site promises no cookies)" },
   { pattern: /(?:window\.|document\.|\b)location(?:\.href)?\s*=(?!=)|location\.(?:assign|replace)\s*\(/, label: "JavaScript redirect" },
   { pattern: /\bimport\s*\(\s*["'`]https?:|from\s+["']https?:/, label: "script imported from another site" },
@@ -228,7 +273,10 @@ function formProblems(rel: string, html: string, formAction: string | null): str
   const out: string[] = [];
   for (const m of html.matchAll(/<form\b[^>]*>/gi)) {
     const action = /\baction\s*=\s*["']([^"']*)["']/i.exec(m[0])?.[1] ?? "";
-    if (!formAction || action !== formAction) out.push(`${rel}: <form action="${action.slice(0, 60)}"> (forms may only post to the configured form service; without one, show phone/email/WhatsApp buttons)`);
+    if (!formAction || action !== formAction)
+      out.push(
+        `${rel}: <form action="${action.slice(0, 60)}"> (forms may only post to the configured form service; without one, show phone/email/WhatsApp buttons)`,
+      );
   }
   return out;
 }
@@ -374,11 +422,16 @@ export function checkLibraryLeftovers(distDir: string, factoryDir: string): Chec
     .join("\n")
     .toLowerCase();
   const left = forbidden.filter((s) => text.includes(s.toLowerCase()));
-  return [{
-    name: "Library design adapted (no facts of the source client)",
-    status: left.length === 0 ? "pass" : "fail",
-    detail: left.length === 0 ? `started from "${source.name ?? "library"}"; nothing of the source client left` : `still on the site from the design's source client: ${left.join(", ")}. Replace them with this client's facts or remove them.`,
-  }];
+  return [
+    {
+      name: "Library design adapted (no facts of the source client)",
+      status: left.length === 0 ? "pass" : "fail",
+      detail:
+        left.length === 0
+          ? `started from "${source.name ?? "library"}"; nothing of the source client left`
+          : `still on the site from the design's source client: ${left.join(", ")}. Replace them with this client's facts or remove them.`,
+    },
+  ];
 }
 
 /** Brand board completeness. Warnings only, so sites made before the board existed keep building. */
@@ -409,7 +462,13 @@ export interface BrandBoard {
 }
 
 /** Everything the panel's brand board (Marka Atölyesi) shows. Read-only. */
-const LOGO_MIME: Readonly<Record<string, string>> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml" };
+const LOGO_MIME: Readonly<Record<string, string>> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
+};
 
 /** The client's own logo file as a data URI for the panel (shown as an image, never run). */
 function clientLogoDataUri(paths: ClientPaths, clientLogo: string | null): string | null {
@@ -457,9 +516,11 @@ export function designDepth(distDir: string, code: string, brand: Brand): CheckR
   const sig = brand.signature?.id;
   if (sig && !firstBlock.includes(sig)) out.push(`the signature motion "${sig}" is not in the home page's first section (the hero)`);
   const sections = (main.match(/<section\b/gi) ?? []).length;
-  if (sections < MIN_HOME_SECTIONS) out.push(`home page has ${sections} sections (at least ${MIN_HOME_SECTIONS}: hero, a composed brand section, services, story or process, contact)`);
+  if (sections < MIN_HOME_SECTIONS)
+    out.push(`home page has ${sections} sections (at least ${MIN_HOME_SECTIONS}: hero, a composed brand section, services, story or process, contact)`);
   const svgs = (home.match(/<svg\b/gi) ?? []).length + (home.match(/<img[^>]+\.svg/gi) ?? []).length;
-  if (svgs < MIN_HOME_SVGS + 1) out.push("home page has almost no drawn graphics: use the mark and the brand's visual language as illustrations, not only text");
+  if (svgs < MIN_HOME_SVGS + 1)
+    out.push("home page has almost no drawn graphics: use the mark and the brand's visual language as illustrations, not only text");
   // Container widths: max-width declarations (not media queries) and width-like custom properties (--wrap: 76rem).
   const css = code.replace(/@media[^{]*/gi, "");
   const px = (m: RegExpMatchArray) => Number(m[1]) * (m[2]!.toLowerCase() === "rem" ? REM_PX : 1);
@@ -468,7 +529,8 @@ export function designDepth(distDir: string, code: string, brand: Brand): CheckR
     ...[...css.matchAll(/--[\w-]*(?:wrap|container|max|width|page)[\w-]*\s*:\s*(?:min\()?\s*(\d+(?:\.\d+)?)(px|rem)/gi)].map(px),
   ];
   const widest = widths.length ? Math.max(...widths) : 0;
-  if (widest > 0 && widest < MIN_LAYOUT_WIDTH_PX) out.push(`the layout is at most ${Math.round(widest)}px wide; use the screen (around 1200-1360px containers, full-bleed bands)`);
+  if (widest > 0 && widest < MIN_LAYOUT_WIDTH_PX)
+    out.push(`the layout is at most ${Math.round(widest)}px wide; use the screen (around 1200-1360px containers, full-bleed bands)`);
   return {
     name: "Design depth (the brand on every page)",
     status: out.length === 0 ? "pass" : "warn",
@@ -491,7 +553,8 @@ export function brandProblems(raw: unknown): string[] {
   const anims = Array.isArray(b.animations) ? b.animations : [];
   if (anims.length < MIN_ANIMATIONS) out.push(`animations: at least ${MIN_ANIMATIONS} signature animations tied to the business (id, idea, trigger)`);
   for (const a of anims) {
-    if (!a || !ANIMATION_ID.test(a.id ?? "") || !text(a.idea, 15) || !text(a.trigger, 3)) out.push(`animations: "${String(a?.id ?? "?").slice(0, 30)}" needs id (kebab-case), idea and trigger`);
+    if (!a || !ANIMATION_ID.test(a.id ?? "") || !text(a.idea, 15) || !text(a.trigger, 3))
+      out.push(`animations: "${String(a?.id ?? "?").slice(0, 30)}" needs id (kebab-case), idea and trigger`);
   }
   return out;
 }
@@ -502,7 +565,13 @@ export function checkBrand(distDir: string, clientLogo: string | null = null): C
   // The client's own logo (config brand.logo, e.g. "assets/logo.png") is used as it is; then no drawn logo is needed.
   const ownLogo = clientLogo && existsSync(path.join(distDir, clientLogo)) ? clientLogo : null;
   if (!existsSync(brandPath) || (!ownLogo && !existsSync(path.join(distDir, LOGO_FILE)))) {
-    return [{ name: "Brand identity", status: "fail", detail: `Design the brand first: write site/${BRAND_FILE} and site/${LOGO_FILE} (rules/custom-site.md, step 1).` }];
+    return [
+      {
+        name: "Brand identity",
+        status: "fail",
+        detail: `Design the brand first: write site/${BRAND_FILE} and site/${LOGO_FILE} (rules/custom-site.md, step 1).`,
+      },
+    ];
   }
   let brand: Brand;
   try {
@@ -521,18 +590,24 @@ export function checkBrand(distDir: string, clientLogo: string | null = null): C
   const lower = code.toLowerCase();
   const usage: string[] = [];
   // With a client logo, only that file counts: a drawn logo (brand/logo.svg or an inline "logo" SVG) must not replace it.
-  const logoUsed = ownLogo !== null
-    ? code.includes(`/${ownLogo}`)
-    : /brand\/logo\.svg/.test(code) || /<svg[^>]*class=["'][^"']*logo/i.test(code);
-  if (!logoUsed) usage.push(ownLogo ? `the client's own logo (/${ownLogo}) is not used on the pages: use that file in the header and as the favicon, never a drawn replacement` : "the logo (brand/logo.svg) is not used on the pages");
-  if (ownLogo !== null && (/brand\/logo\.svg/.test(code) || existsSync(path.join(distDir, LOGO_FILE)))) usage.push(`the client has a logo (/${ownLogo}): delete site/${LOGO_FILE} and do not use a drawn logo`);
+  const logoUsed = ownLogo !== null ? code.includes(`/${ownLogo}`) : /brand\/logo\.svg/.test(code) || /<svg[^>]*class=["'][^"']*logo/i.test(code);
+  if (!logoUsed)
+    usage.push(
+      ownLogo
+        ? `the client's own logo (/${ownLogo}) is not used on the pages: use that file in the header and as the favicon, never a drawn replacement`
+        : "the logo (brand/logo.svg) is not used on the pages",
+    );
+  if (ownLogo !== null && (/brand\/logo\.svg/.test(code) || existsSync(path.join(distDir, LOGO_FILE))))
+    usage.push(`the client has a logo (/${ownLogo}): delete site/${LOGO_FILE} and do not use a drawn logo`);
   const missingColours = Object.entries(brand.palette).filter(([, hex]) => !lower.includes(hex.toLowerCase()));
   if (missingColours.length > 0) usage.push(`brand colours not used in the code: ${missingColours.map(([n]) => n).join(", ")}`);
   const missingAnims = brand.animations.filter((a) => !code.includes(a.id));
-  if (missingAnims.length > 0) usage.push(`signature animations not found in the code (use the id as class, keyframes or data attribute): ${missingAnims.map((a) => a.id).join(", ")}`);
+  if (missingAnims.length > 0)
+    usage.push(`signature animations not found in the code (use the id as class, keyframes or data attribute): ${missingAnims.map((a) => a.id).join(", ")}`);
   if (!/prefers-reduced-motion/.test(code)) usage.push("no prefers-reduced-motion handling (animations must calm down for visitors who ask)");
   const board = brandBoardProblems(brand, distDir);
-  if (board.length === 0 && brand.signature?.id && !code.includes(brand.signature.id)) board.push(`the signature motion "${brand.signature.id}" is not used on the site's pages`);
+  if (board.length === 0 && brand.signature?.id && !code.includes(brand.signature.id))
+    board.push(`the signature motion "${brand.signature.id}" is not used on the site's pages`);
   return [
     {
       name: "Brand identity (designed first, used everywhere)",

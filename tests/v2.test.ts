@@ -82,7 +82,14 @@ describe("Turkish clients", () => {
   it("open with Turkish as the main language, lira and Istanbul time", async () => {
     const f = tempFactory();
     installStubTemplate(f.templatesDir);
-    await tools.createClient(f, { slug: "mono-berber", businessName: "Mono Erkek Kuaförü", industry: "barber shop", hostingModel: "managed", country: "TR", extraLocale: "en" });
+    await tools.createClient(f, {
+      slug: "mono-berber",
+      businessName: "Mono Erkek Kuaförü",
+      industry: "barber shop",
+      hostingModel: "managed",
+      country: "TR",
+      extraLocale: "en",
+    });
     const cfg = JSON.parse(readFileSync(clientPaths(f.clientsRoot, "mono-berber").config, "utf8"));
     expect(cfg.i18n).toEqual({ defaultLocale: "tr", locales: ["tr", "en"] });
     expect(cfg.business).toMatchObject({ country: "TR", currency: "TRY", timezone: "Europe/Istanbul" });
@@ -126,7 +133,10 @@ describe("taking a site off Cloudflare (panel only)", () => {
     const f = await publishedClient();
     const { writeFileSync } = await import("node:fs");
     const paths = clientPaths(f.clientsRoot, "off-co");
-    writeFileSync(paths.lastDeploy, JSON.stringify({ hash: "x", at: "2026-10-17T00:00:00Z", target: "preview", url: "https://sf-off-co-preview.example.workers.dev" }));
+    writeFileSync(
+      paths.lastDeploy,
+      JSON.stringify({ hash: "x", at: "2026-10-17T00:00:00Z", target: "preview", url: "https://sf-off-co-preview.example.workers.dev" }),
+    );
     const calls: Array<{ args: readonly string[]; env?: Record<string, string> }> = [];
     const fake = (async (_cmd: string, args: readonly string[], opts: { env?: Record<string, string> }) => {
       calls.push({ args, env: opts.env });
@@ -143,7 +153,9 @@ describe("taking a site off Cloudflare (panel only)", () => {
       expect(existsSync(paths.lastDeploy)).toBe(false);
 
       // Already deleted in the dashboard: that is the wanted end state, not an error.
-      const gone = (async () => ({ code: 1, stdout: "", stderr: "This Worker does not exist on your account. [code: 10007]" })) as unknown as Parameters<typeof tools.undeploy>[2];
+      const gone = (async () => ({ code: 1, stdout: "", stderr: "This Worker does not exist on your account. [code: 10007]" })) as unknown as Parameters<
+        typeof tools.undeploy
+      >[2];
       expect((await tools.undeploy(f, { slug: "off-co", target: "production" }, gone)).alreadyRemoved).toBe(true);
       const broken = (async () => ({ code: 1, stdout: "", stderr: "Authentication error [code: 10000]" })) as unknown as Parameters<typeof tools.undeploy>[2];
       await expect(tools.undeploy(f, { slug: "off-co", target: "production" }, broken)).rejects.toThrow(/wrangler exited/);
@@ -151,6 +163,8 @@ describe("taking a site off Cloudflare (panel only)", () => {
       delete process.env.SF_CF_MANAGED_API_TOKEN;
       delete process.env.SF_CF_MANAGED_ACCOUNT_ID;
     }
-    await expect(tools.undeploy(f, { slug: "off-co", target: "preview" }, (async () => ({ code: 0, stdout: "", stderr: "" })) as never)).rejects.toThrow(/No Cloudflare credentials/);
+    await expect(tools.undeploy(f, { slug: "off-co", target: "preview" }, (async () => ({ code: 0, stdout: "", stderr: "" })) as never)).rejects.toThrow(
+      /No Cloudflare credentials/,
+    );
   });
 });

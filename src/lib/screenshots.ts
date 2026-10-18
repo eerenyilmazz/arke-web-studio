@@ -51,20 +51,42 @@ async function findBrowser(): Promise<{ bin: string; windows: boolean } | null> 
   return null;
 }
 
-const TYPES: Readonly<Record<string, string>> = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".avif": "image/avif", ".json": "application/json", ".xml": "application/xml", ".txt": "text/plain" };
+const TYPES: Readonly<Record<string, string>> = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css",
+  ".js": "text/javascript",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".avif": "image/avif",
+  ".json": "application/json",
+  ".xml": "application/xml",
+  ".txt": "text/plain",
+};
 
 /** A tiny static server for dist/ on a random local port (closed right after). */
 function serve(distDir: string): Promise<Server> {
   const root = path.resolve(distDir);
   const server = createServer((req, res) => {
     const url = decodeURIComponent((req.url ?? "/").split("?")[0]!);
-    if (url === "/__phone__") { res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }).end(PHONE_FRAME); return; }
+    if (url === "/__phone__") {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }).end(PHONE_FRAME);
+      return;
+    }
     let file = path.resolve(root, `.${url}`);
     // Inside dist/ only: a plain prefix test would also accept a sibling such as dist2/.
     const rel = path.relative(root, file);
-    if (rel.startsWith("..") || path.isAbsolute(rel)) { res.writeHead(403).end(); return; }
+    if (rel.startsWith("..") || path.isAbsolute(rel)) {
+      res.writeHead(403).end();
+      return;
+    }
     if (existsSync(file) && statSync(file).isDirectory()) file = path.join(file, "index.html");
-    if (!existsSync(file)) { res.writeHead(404).end(); return; }
+    if (!existsSync(file)) {
+      res.writeHead(404).end();
+      return;
+    }
     res.writeHead(200, { "Content-Type": TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream" });
     res.end(readFileSync(file));
   });
@@ -97,9 +119,15 @@ export async function takeScreenshots(distDir: string, outDir: string): Promise<
       const file = path.join(outDir, `${shot.name}.png`);
       const target = browser.windows ? await toWindowsPath(file) : file;
       const args = [
-        "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", "--no-default-browser-check",
+        "--headless=new",
+        "--disable-gpu",
+        "--hide-scrollbars",
+        "--no-first-run",
+        "--no-default-browser-check",
         ...(browser.windows ? [] : ["--no-sandbox"]),
-        `--window-size=${shot.width},${shot.height}`, "--virtual-time-budget=4000", `--screenshot=${target}`,
+        `--window-size=${shot.width},${shot.height}`,
+        "--virtual-time-budget=4000",
+        `--screenshot=${target}`,
         `http://127.0.0.1:${port}${shot.path}`,
       ];
       await run(browser.bin, args, { timeout: TIMEOUT_MS }).catch(() => null);
@@ -109,6 +137,10 @@ export async function takeScreenshots(distDir: string, outDir: string): Promise<
     server.close();
   }
   return made.length
-    ? { name, status: "pass", detail: `Read these images and fix what looks wrong (overlaps, empty areas, unreadable text, broken layout). The phone image shows a ${PHONE_WIDTH}px-wide page in the middle of grey margins: ${made.join(", ")}` }
+    ? {
+        name,
+        status: "pass",
+        detail: `Read these images and fix what looks wrong (overlaps, empty areas, unreadable text, broken layout). The phone image shows a ${PHONE_WIDTH}px-wide page in the middle of grey margins: ${made.join(", ")}`,
+      }
     : { name, status: "skip", detail: `The browser (${path.basename(browser.bin)}) did not produce screenshots. Nothing else is affected.` };
 }

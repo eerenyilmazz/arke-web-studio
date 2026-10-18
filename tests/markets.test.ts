@@ -35,11 +35,17 @@ describe("markets", () => {
     expect(checkLegal(dist({ "index.html": form }), "TR")).toMatchObject({ status: "warn", detail: expect.stringContaining("KVKK") });
     expect(checkLegal(dist({ "index.html": form.replace("</form>", '</form><a href="/gizlilik/">KVKK</a>') }), "TR").status).toBe("pass");
     expect(checkLegal(dist({ "index.html": "<html><body>hi</body></html>" }), "GB").status).toBe("pass");
-    expect(checkLegal(dist({ "index.html": "<html><body>hi</body></html>" }), "DE")).toMatchObject({ status: "warn", detail: expect.stringContaining("Impressum") });
+    expect(checkLegal(dist({ "index.html": "<html><body>hi</body></html>" }), "DE")).toMatchObject({
+      status: "warn",
+      detail: expect.stringContaining("Impressum"),
+    });
   });
 
   it("warns about heavy images and images without a size", () => {
-    const d = dist({ "index.html": '<img src="/a.jpg" alt="a"><img src="/b.jpg" alt="b" width="10" height="10">' }, { "a.jpg": Buffer.alloc(700 * 1024), "b.jpg": Buffer.alloc(10) });
+    const d = dist(
+      { "index.html": '<img src="/a.jpg" alt="a"><img src="/b.jpg" alt="b" width="10" height="10">' },
+      { "a.jpg": Buffer.alloc(700 * 1024), "b.jpg": Buffer.alloc(10) },
+    );
     const r = checkImages(d);
     expect(r.status).toBe("warn");
     expect(r.detail).toContain("a.jpg is 700 KB");

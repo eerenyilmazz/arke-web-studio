@@ -1,4 +1,3 @@
-
 import { existsSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
@@ -35,7 +34,12 @@ async function approveFromPanel(deps: ApiDeps, req: IncomingMessage, res: Server
   if (deps.jobs.running()?.slug === s) throw new HttpError(409, "Bu müşteri için çalışan bir iş var. Bitince onayla.");
   if (deps.gate.locked) throw new HttpError(423, "Çok fazla yanlış kod girildi. Paneli kapatıp yeniden başlat (yeni kod çıkar).");
   if (!deps.gate.check(str(body, "code", { max: 12 }) ?? "")) {
-    throw new HttpError(403, deps.gate.locked ? "Kod yanlış. Onay kilitlendi; paneli yeniden başlat." : `Kod yanlış. Kalan deneme: ${deps.gate.triesLeft}. Kod, paneli başlattığın terminalde yazıyor.`);
+    throw new HttpError(
+      403,
+      deps.gate.locked
+        ? "Kod yanlış. Onay kilitlendi; paneli yeniden başlat."
+        : `Kod yanlış. Kalan deneme: ${deps.gate.triesLeft}. Kod, paneli başlattığın terminalde yazıyor.`,
+    );
   }
   const paths = clientPaths(deps.factory.clientsRoot, s);
   const pinsNow = kinds.map((k) => approvalPins(k, paths.root, paths.distDir, clientStatus(deps.factory, s).lastBuild));
@@ -55,13 +59,25 @@ async function approveFromPanel(deps: ApiDeps, req: IncomingMessage, res: Server
 function startBuild(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
   const s = assertSlug(slug!);
   const job = runOrConflict(() =>
-    deps.jobs.startTask(s, "build", "Build", async (log) => {
-      log("Şablon derleniyor ve kalite kontrolleri çalışıyor…");
-      const r = await tools.buildSite(deps.factory, { slug: s });
-      for (const c of r.checks) log(`${c.status.toUpperCase().padEnd(4)}  ${c.name}: ${c.detail}`);
-      if (!r.passed) throw new Error(`Build kontrolleri geçmedi. ${r.checks.filter((c) => c.status === "fail").map((c) => c.name).join(", ")}`);
-      return "Build geçti. Önizlemeyi açıp görsel kontrol listesiyle bakın, sonra görsel onayı terminalden verin.";
-    }, "Build al."),
+    deps.jobs.startTask(
+      s,
+      "build",
+      "Build",
+      async (log) => {
+        log("Şablon derleniyor ve kalite kontrolleri çalışıyor…");
+        const r = await tools.buildSite(deps.factory, { slug: s });
+        for (const c of r.checks) log(`${c.status.toUpperCase().padEnd(4)}  ${c.name}: ${c.detail}`);
+        if (!r.passed)
+          throw new Error(
+            `Build kontrolleri geçmedi. ${r.checks
+              .filter((c) => c.status === "fail")
+              .map((c) => c.name)
+              .join(", ")}`,
+          );
+        return "Build geçti. Önizlemeyi açıp görsel kontrol listesiyle bakın, sonra görsel onayı terminalden verin.";
+      },
+      "Build al.",
+    ),
   );
   sendJson(res, 202, serialiseJob(job));
 }
@@ -73,12 +89,22 @@ async function startDeploy(deps: ApiDeps, req: IncomingMessage, res: ServerRespo
   if (!target) throw new HttpError(400, "Hedef preview ya da production olmalı.");
   const dryRun = body.dryRun === true;
   const job = runOrConflict(() =>
-    deps.jobs.startTask(s, "deploy", `Yayın: ${target}${dryRun ? " (deneme)" : ""}`, async (log) => {
-      log("Onaylar ve build kontrol ediliyor, wrangler çalışıyor…");
-      const r = await tools.deploy(deps.factory, { slug: s, target, dryRun });
-      if (r.outputTail) log(r.outputTail);
-      return dryRun ? "Deneme başarılı; hiçbir şey yüklenmedi." : r.url ? `Yayında: ${r.url}` : "Yüklendi. Adres wrangler çıktısında bulunamadı; Cloudflare panelinden bakın.";
-    }, target === "production" ? `Siteyi canlıya al${dryRun ? " (deneme)" : ""}.` : `Önizlemeyi yayınla${dryRun ? " (deneme)" : ""}.`),
+    deps.jobs.startTask(
+      s,
+      "deploy",
+      `Yayın: ${target}${dryRun ? " (deneme)" : ""}`,
+      async (log) => {
+        log("Onaylar ve build kontrol ediliyor, wrangler çalışıyor…");
+        const r = await tools.deploy(deps.factory, { slug: s, target, dryRun });
+        if (r.outputTail) log(r.outputTail);
+        return dryRun
+          ? "Deneme başarılı; hiçbir şey yüklenmedi."
+          : r.url
+            ? `Yayında: ${r.url}`
+            : "Yüklendi. Adres wrangler çıktısında bulunamadı; Cloudflare panelinden bakın.";
+      },
+      target === "production" ? `Siteyi canlıya al${dryRun ? " (deneme)" : ""}.` : `Önizlemeyi yayınla${dryRun ? " (deneme)" : ""}.`,
+    ),
   );
   sendJson(res, 202, serialiseJob(job));
 }
@@ -96,13 +122,19 @@ async function startUnpublish(deps: ApiDeps, req: IncomingMessage, res: ServerRe
   if (target === "production" && body.confirm !== s) throw new HttpError(400, "Canlı siteyi kaldırmak için müşterinin kısa adını (slug) aynen yazın.");
   const label = target === "production" ? "canlı site" : "önizleme";
   const job = runOrConflict(() =>
-    deps.jobs.startTask(s, "unpublish", `Yayından kaldır: ${label}`, async (log) => {
-      log("Cloudflare'den kaldırılıyor…");
-      const r = await tools.undeploy(deps.factory, { slug: s, target });
-      return r.alreadyRemoved
-        ? `${r.worker} Cloudflare'de zaten yoktu. Müşterinin dosyaları duruyor; istediğinizde yeniden yayınlayabilirsiniz.`
-        : `${r.worker} yayından kaldırıldı. Müşterinin dosyaları ve sürümleri duruyor; istediğinizde yeniden yayınlayabilirsiniz.`;
-    }, `${label[0]!.toUpperCase()}${label.slice(1)} yayından kaldırılsın.`),
+    deps.jobs.startTask(
+      s,
+      "unpublish",
+      `Yayından kaldır: ${label}`,
+      async (log) => {
+        log("Cloudflare'den kaldırılıyor…");
+        const r = await tools.undeploy(deps.factory, { slug: s, target });
+        return r.alreadyRemoved
+          ? `${r.worker} Cloudflare'de zaten yoktu. Müşterinin dosyaları duruyor; istediğinizde yeniden yayınlayabilirsiniz.`
+          : `${r.worker} yayından kaldırıldı. Müşterinin dosyaları ve sürümleri duruyor; istediğinizde yeniden yayınlayabilirsiniz.`;
+      },
+      `${label[0]!.toUpperCase()}${label.slice(1)} yayından kaldırılsın.`,
+    ),
   );
   sendJson(res, 202, serialiseJob(job));
 }
@@ -112,4 +144,3 @@ function showPreview(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, 
   if (!existsSync(path.join(paths.distDir, "index.html"))) throw new HttpError(409, "Henüz build yok. Önce build alın.");
   sendJson(res, 200, { url: deps.preview.show(paths.distDir) });
 }
-

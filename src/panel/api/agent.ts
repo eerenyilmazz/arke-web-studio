@@ -10,7 +10,25 @@ import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
 import { appendInput, readInputs } from "../history.js";
 import { serialiseJob } from "../jobs.js";
-import { addPagePrompt, blogPostPrompt, portalCommentsPrompt, translatePrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "../prompts.js";
+import {
+  addPagePrompt,
+  blogPostPrompt,
+  portalCommentsPrompt,
+  translatePrompt,
+  fromLibraryPrompt,
+  redesignPrompt,
+  answersPrompt,
+  autopilotPrompt,
+  brandBoardPrompt,
+  chooseConceptPrompt,
+  conceptsPrompt,
+  designContentPrompt,
+  earlierInputsBlock,
+  fixBuildPrompt,
+  revisePrompt,
+  upgradeTemplatePrompt,
+  type AnswersInput,
+} from "../prompts.js";
 import { OPTION_IDS } from "../../lib/custom-site.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, MAX_TEXT, asHttp, launchAgent, inboxFiles, stringRecord, isQa } from "./common.js";
 import { filledNote } from "./library.js";
@@ -54,8 +72,14 @@ async function applyFromLibrary(ctx: JobContext, id: string) {
 
 /** "Sıkça Sorulan Sorular" → "sikca-sorulan-sorular" (the page's folder). */
 function pageSlug(name: string): string {
-  const s = name.toLocaleLowerCase("tr").replace(/[çğıöşü]/g, (c) => ({ ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" })[c] ?? c)
-    .normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  const s = name
+    .toLocaleLowerCase("tr")
+    .replace(/[çğıöşü]/g, (c) => ({ ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" })[c] ?? c)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
   if (s.length < 2) throw new HttpError(400, "Sayfa adı en az iki harf ya da rakam içermeli.");
   return s;
 }
@@ -74,12 +98,18 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     return {
       prompt: answersPrompt(slug, { answers, extras, later, freeText, files: files.map((f) => f.name) }),
       input: [
-        ...Object.entries(answers).filter(([, a]) => a.trim()).map(([id, a]) => `${id}: ${a.trim()}`),
+        ...Object.entries(answers)
+          .filter(([, a]) => a.trim())
+          .map(([id, a]) => `${id}: ${a.trim()}`),
         ...extras.filter((e) => e.answer.trim()).map((e) => `${e.question}: ${e.answer.trim()}`),
         freeText,
-      ].filter((x) => x.trim()).join("\n"),
+      ]
+        .filter((x) => x.trim())
+        .join("\n"),
       title: "Cevapları işle",
-      request: [`Müşterinin cevaplarını işle: ${answered} cevap`, freeText.trim() ? "serbest metin" : "", files.length ? `${files.length} dosya` : ""].filter(Boolean).join(", "),
+      request: [`Müşterinin cevaplarını işle: ${answered} cevap`, freeText.trim() ? "serbest metin" : "", files.length ? `${files.length} dosya` : ""]
+        .filter(Boolean)
+        .join(", "),
     };
   },
 
@@ -105,7 +135,12 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
       clearStartDesign(deps.factory, slug);
     }
     return {
-      prompt: autopilotPrompt(slug, hasInput ? pasted : null, { web: resolvePolicy(deps.factory, slug, "autopilot").research, askFirst: body.askFirst !== false, libraryName, libraryFilled }),
+      prompt: autopilotPrompt(slug, hasInput ? pasted : null, {
+        web: resolvePolicy(deps.factory, slug, "autopilot").research,
+        askFirst: body.askFirst !== false,
+        libraryName,
+        libraryFilled,
+      }),
       input: pasted.freeText,
       title: "Siteyi hazırla",
       request: pasted.freeText.trim() ? pasted.freeText.trim() : pasted.files.length ? `Siteyi hazırla (${pasted.files.length} dosya)` : "Siteyi hazırla.",
@@ -135,14 +170,22 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     requireCustom(ctx, "Tasarım önerileri serbest tasarımlı sitelerde var. Önce 'Serbest tasarıma geç'.");
     const option = str(ctx.body, "option", { max: 1 })!;
     if (!(OPTION_IDS as readonly string[]).includes(option)) throw new HttpError(400, "Öneri a, b ya da c olmalı.");
-    return { prompt: chooseConceptPrompt(ctx.slug, option), title: "Seçilen tasarımla siteyi kur", request: `Öneri ${option.toUpperCase()} seçildi; siteyi bu tasarımla kur.` };
+    return {
+      prompt: chooseConceptPrompt(ctx.slug, option),
+      title: "Seçilen tasarımla siteyi kur",
+      request: `Öneri ${option.toUpperCase()} seçildi; siteyi bu tasarımla kur.`,
+    };
   },
 
   "from-library": async (ctx) => {
     requireCustom(ctx, "Kütüphane tasarımları serbest tasarımlı sitelerde kullanılır. Önce 'Serbest tasarıma geç'.");
     const applied = await applyFromLibrary(ctx, str(ctx.body, "id", { max: 41 })!);
     const { name } = applied.entry;
-    return { prompt: fromLibraryPrompt(ctx.slug, name, filledNote(applied)), title: `Kütüphaneden: ${name}`, request: `"${name}" tasarımını bu müşteriye uyarla.` };
+    return {
+      prompt: fromLibraryPrompt(ctx.slug, name, filledNote(applied)),
+      title: `Kütüphaneden: ${name}`,
+      request: `"${name}" tasarımını bu müşteriye uyarla.`,
+    };
   },
 
   "add-page": (ctx) => {
@@ -152,7 +195,12 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     const purpose = (str(ctx.body, "purpose", { optional: true, max: 1200 }) ?? "").trim();
     const path = pageSlug(name);
     if (["index", "brand", "css", "js", "assets", "img", "fonts"].includes(path)) throw new HttpError(400, "Bu sayfa adı kullanılamaz; başka bir ad yazınız.");
-    return { prompt: addPagePrompt(ctx.slug, name, path, purpose), input: purpose ? `Ek sayfa "${name}": ${purpose}` : "", title: `Sayfa ekle: ${name}`, request: `"${name}" sayfasını ekle.` };
+    return {
+      prompt: addPagePrompt(ctx.slug, name, path, purpose),
+      input: purpose ? `Ek sayfa "${name}": ${purpose}` : "",
+      title: `Sayfa ekle: ${name}`,
+      request: `"${name}" sayfasını ekle.`,
+    };
   },
 
   "upgrade-template": ({ deps, slug }) => ({
@@ -181,7 +229,11 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     const def = draft.i18n?.defaultLocale ?? locales[0] ?? "en";
     if (locales.length < 2) throw new HttpError(400, "Bu sitede tek dil var.");
     const others = locales.filter((l) => l !== def);
-    return { prompt: translatePrompt(ctx.slug, def, locales), title: "Diğer diller", request: `Diğer dilleri (${others.join(", ")}) varsayılan dile göre güncelle.` };
+    return {
+      prompt: translatePrompt(ctx.slug, def, locales),
+      title: "Diğer diller",
+      request: `Diğer dilleri (${others.join(", ")}) varsayılan dile göre güncelle.`,
+    };
   },
 
   /** Open portal comments, read from the client's folder by id (never text from the request). */
@@ -190,7 +242,9 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     const chosen = portalMessages(deps.factory, slug).comments.filter((f) => ids.includes(f.id) && f.status === "open");
     if (chosen.length === 0) throw new HttpError(400, "İletilecek açık yorum yok.");
     return {
-      afterStart: () => { for (const f of chosen) updateEntry(deps.factory, slug, "comment", f.id, { status: "sent" }); },
+      afterStart: () => {
+        for (const f of chosen) updateEntry(deps.factory, slug, "comment", f.id, { status: "sent" });
+      },
       prompt: portalCommentsPrompt(slug, chosen),
       input: chosen.map((c) => `Müşteri yorumu (${c.page || "genel"}): ${c.text}`).join("\n"),
       title: "Müşteri yorumları",
@@ -220,7 +274,11 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   // A design job with another client's logo wastes the whole job: stop before spending anything.
   const owner = DESIGN_KINDS.has(kind!) ? sharedLogo(deps.factory, s) : null;
   if (owner && body.allowSharedLogo !== true) {
-    sendJson(res, 409, { error: `Bu müşterinin logosu "${owner.name}" müşterisinin logosuyla aynı. Müşteri Bilgileri → Logo ve Görseller'den doğru logoyu seçiniz.`, code: "shared-logo", owner });
+    sendJson(res, 409, {
+      error: `Bu müşterinin logosu "${owner.name}" müşterisinin logosuyla aynı. Müşteri Bilgileri → Logo ve Görseller'den doğru logoyu seçiniz.`,
+      code: "shared-logo",
+      owner,
+    });
     return;
   }
   const earlier = readInputs(deps.factory, s);
@@ -229,7 +287,9 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   if (!deps.jobs.running()) await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${spec.title}`).catch(() => null);
   const history = DESIGN_KINDS.has(kind!) || kind === "answers" ? earlierInputsBlock(earlier) : earlierInputsBlock(earlier, SMALL_JOB_HISTORY);
   const stale = DESIGN_KINDS.has(kind!) ? readBrandStale(deps.factory, s) : null;
-  const staleNote = stale ? `\nThe client's logo changed after the brand was made (now ${stale.logo}). First rebuild brand/brand.json from this logo (palette, concept, tagline if it no longer fits, signature motion and brand/signature.html), then the pages; never keep colours that came from the old logo.` : "";
+  const staleNote = stale
+    ? `\nThe client's logo changed after the brand was made (now ${stale.logo}). First rebuild brand/brand.json from this logo (palette, concept, tagline if it no longer fits, signature motion and brand/signature.html), then the pages; never keep colours that came from the old logo.`
+    : "";
   const job = launchAgent(deps, s, kind!, spec.title, `${spec.prompt}${staleNote}${history}`, spec.request);
   appendInput(deps.factory, s, kind!, spec.input ?? "");
   spec.afterStart?.();

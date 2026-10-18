@@ -30,7 +30,15 @@ export const clientRoutes: Route[] = [
   { method: "POST", pattern: /^\/api\/clients$/, handler: createClient },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: clientDetail },
   { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}$`), handler: archive },
-  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/health$`), handler: async (d, _r, res, [slug]) => { const s = assertSlug(slug!); tools.getClientStatus(d.factory, { slug: s }); sendJson(res, 200, await siteHealth(d.factory, s)); } },
+  {
+    method: "GET",
+    pattern: new RegExp(`^/api/clients/${SLUG}/health$`),
+    handler: async (d, _r, res, [slug]) => {
+      const s = assertSlug(slug!);
+      tools.getClientStatus(d.factory, { slug: s });
+      sendJson(res, 200, await siteHealth(d.factory, s));
+    },
+  },
   { method: "GET", pattern: /^\/api\/archive$/, handler: (d, _r, res) => sendJson(res, 200, { archived: listArchived(d.factory) }) },
   { method: "POST", pattern: /^\/api\/archive\/([a-z0-9-]{3,60})\/restore$/, handler: restoreFromArchive },
   { method: "DELETE", pattern: /^\/api\/archive\/([a-z0-9-]{3,60})$/, handler: deleteFromArchive },
@@ -57,7 +65,12 @@ function brandBoard(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
   const paths = clientPaths(deps.factory.clientsRoot, s);
-  const cfg = readDraftConfig(paths) as { template?: string; brand?: { logo?: string | null }; business?: { name?: string; industry?: string }; design?: { palette?: Record<string, string>; fonts?: { heading?: string; body?: string } } };
+  const cfg = readDraftConfig(paths) as {
+    template?: string;
+    brand?: { logo?: string | null };
+    business?: { name?: string; industry?: string };
+    design?: { palette?: Record<string, string>; fonts?: { heading?: string; body?: string } };
+  };
   sendJson(res, 200, {
     name: cfg.business?.name ?? s,
     industry: cfg.business?.industry ?? "",
@@ -261,7 +274,12 @@ function serveClientImage(deps: ApiDeps, _req: IncomingMessage, res: ServerRespo
   const dir = where === "inbox" ? safeJoin(deps.factory.inboxDir, s) : clientPaths(deps.factory.clientsRoot, s).assetsDir;
   const file = safeJoin(dir, name);
   if (!type || !existsSync(file)) throw new HttpError(404, "Dosya yok.");
-  res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox" });
+  res.writeHead(200, {
+    "Content-Type": type,
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+  });
   res.end(readFileSync(file));
 }
 
@@ -275,7 +293,8 @@ async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse,
   const from = str(body, "from", { max: 10 });
   // The same file as another client's logo is almost always a mix-up (a pickle shop's logo for a barber):
   // refused unless Eren confirms it, before anything is saved or any job is paid for.
-  const candidate = from === "inbox" ? safeJoin(deps.factory.inboxDir, s, name) : from === "assets" ? safeJoin(clientPaths(deps.factory.clientsRoot, s).assetsDir, name) : null;
+  const candidate =
+    from === "inbox" ? safeJoin(deps.factory.inboxDir, s, name) : from === "assets" ? safeJoin(clientPaths(deps.factory.clientsRoot, s).assetsDir, name) : null;
   const owner = candidate && existsSync(candidate) ? logoUsedElsewhere(deps.factory, s, candidate) : null;
   if (owner && body.force !== true) {
     sendJson(res, 409, { error: `Bu dosya "${owner.name}" müşterisinin logosuyla aynı. Yanlış müşteriye mi ekliyorsunuz?`, code: "shared-logo", owner });
@@ -294,7 +313,12 @@ async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse,
   tools.updateClientConfig(deps.factory, { slug: s, patch: { brand: { logo: relPath } } });
   // A new logo on an existing brand: colours, tagline and signature still follow the old one until redesigned.
   if (previous !== relPath) markBrandStale(deps.factory, s, relPath);
-  appendInput(deps.factory, s, "logo", `Eren set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom-site.md); never draw a replacement.`);
+  appendInput(
+    deps.factory,
+    s,
+    "logo",
+    `Eren set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom-site.md); never draw a replacement.`,
+  );
   sendJson(res, 200, { logo: relPath });
 }
 

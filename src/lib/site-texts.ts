@@ -27,7 +27,27 @@ interface Located extends TextItem {
 
 const SKIP_PARENTS = new Set(["script", "style", "noscript", "template", "svg", "code", "pre"]);
 const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"]);
-const NAMED: Readonly<Record<string, string>> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“", ndash: "–", mdash: "—", hellip: "…", copy: "©", reg: "®", trade: "™", middot: "·", euro: "€", pound: "£" };
+const NAMED: Readonly<Record<string, string>> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  rsquo: "’",
+  lsquo: "‘",
+  rdquo: "”",
+  ldquo: "“",
+  ndash: "–",
+  mdash: "—",
+  hellip: "…",
+  copy: "©",
+  reg: "®",
+  trade: "™",
+  middot: "·",
+  euro: "€",
+  pound: "£",
+};
 
 export function decodeEntities(s: string): string {
   return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
@@ -46,53 +66,70 @@ export function encodeText(s: string, attribute = false): string {
 
 const TOKEN = /<!--[\s\S]*?-->|<(script|style|noscript|template)\b[^>]*>[\s\S]*?<\/\1\s*>|<\/?[a-zA-Z][^>]*>|[^<]+|</g;
 
-function locate(html: string): Located[] {
-  const out: Located[] = [];
+/** Numbers texts per kind ("p-1", "p-2"…) in page order. */
+function counter(): (kind: string) => number {
   const counts = new Map<string, number>();
-  const next = (kind: string) => {
+  return (kind) => {
     const n = (counts.get(kind) ?? 0) + 1;
     counts.set(kind, n);
     return n;
   };
+}
+
+/** The value of one double-quoted attribute in a tag, located in the file. */
+function attributeAt(tok: string, at: number, attr: string): { value: string; start: number } | null {
+  const m = new RegExp(`\\b${attr}\\s*=\\s*"([^"]*)"`, "i").exec(tok);
+  return m ? { value: m[1]!, start: at + m.index + m[0].indexOf('"') + 1 } : null;
+}
+
+/** Texts held in a tag's attributes: the meta description and image alt texts. */
+function tagTexts(tok: string, at: number, name: string, next: (kind: string) => number): Located[] {
+  if (name === "meta" && /\bname\s*=\s*["']description["']/i.test(tok)) {
+    const c = attributeAt(tok, at, "content");
+    if (c) return [{ id: "meta-description", kind: "meta", text: decodeEntities(c.value), start: c.start, end: c.start + c.value.length, attribute: true }];
+  }
+  if (name === "img") {
+    const a = attributeAt(tok, at, "alt");
+    if (a?.value.trim())
+      return [{ id: `alt-${next("alt")}`, kind: "alt", text: decodeEntities(a.value), start: a.start, end: a.start + a.value.length, attribute: true }];
+  }
+  return [];
+}
+
+/** A text node, named after the element it sits in; whitespace, single characters and code are skipped. */
+function textNode(tok: string, at: number, stack: readonly string[], next: (kind: string) => number): Located | null {
+  if (stack.some((t) => SKIP_PARENTS.has(t))) return null;
+  const trimmed = tok.trim();
+  if (decodeEntities(trimmed).replace(/\s+/g, "").length < 2) return null;
+  const lead = tok.length - tok.trimStart().length;
+  const kind = stack[stack.length - 1] ?? "text";
+  const id = kind === "title" ? "title" : `${kind}-${next(kind)}`;
+  return { id, kind, text: decodeEntities(trimmed).replace(/\s+/g, " "), start: at + lead, end: at + lead + trimmed.length, attribute: false };
+}
+
+function locate(html: string): Located[] {
+  const out: Located[] = [];
+  const next = counter();
   const stack: string[] = [];
   for (const m of html.matchAll(TOKEN)) {
     const tok = m[0];
-    const at = m.index;
-    if (tok.startsWith("<!--") || m[1]) continue;
+    if (tok.startsWith("<!--") || m[1]) continue; // comments, scripts and styles
     if (tok.startsWith("</")) {
-      const name = tok.slice(2).replace(/[\s>].*$/s, "").toLowerCase();
-      const i = stack.lastIndexOf(name);
+      const i = stack.lastIndexOf(
+        tok
+          .slice(2)
+          .replace(/[\s>].*$/s, "")
+          .toLowerCase(),
+      );
       if (i >= 0) stack.length = i;
-      continue;
-    }
-    if (tok.startsWith("<") && tok.length > 1) {
+    } else if (tok.startsWith("<") && tok.length > 1) {
       const name = /^<([a-zA-Z][\w-]*)/.exec(tok)?.[1]?.toLowerCase() ?? "";
-      if (name === "meta" && /\bname\s*=\s*["']description["']/i.test(tok)) {
-        const c = /\bcontent\s*=\s*"([^"]*)"/i.exec(tok);
-        if (c) {
-          const start = at + c.index + c[0].indexOf('"') + 1;
-          out.push({ id: "meta-description", kind: "meta", text: decodeEntities(c[1]!), start, end: start + c[1]!.length, attribute: true });
-        }
-      }
-      if (name === "img") {
-        const a = /\balt\s*=\s*"([^"]*)"/i.exec(tok);
-        if (a && a[1]!.trim()) {
-          const start = at + a.index + a[0].indexOf('"') + 1;
-          out.push({ id: `alt-${next("alt")}`, kind: "alt", text: decodeEntities(a[1]!), start, end: start + a[1]!.length, attribute: true });
-        }
-      }
+      out.push(...tagTexts(tok, m.index, name, next));
       if (!VOID.has(name) && !tok.endsWith("/>")) stack.push(name);
-      continue;
+    } else {
+      const t = textNode(tok, m.index, stack, next);
+      if (t) out.push(t);
     }
-    // A text node: skip whitespace and texts inside code, svg and similar.
-    if (stack.some((t) => SKIP_PARENTS.has(t))) continue;
-    const lead = tok.length - tok.trimStart().length;
-    const trimmed = tok.trim();
-    if (decodeEntities(trimmed).replace(/\s+/g, "").length < 2) continue;
-    const parent = stack[stack.length - 1] ?? "text";
-    const kind = parent === "title" ? "title" : parent;
-    const id = kind === "title" ? "title" : `${kind}-${next(kind)}`;
-    out.push({ id, kind, text: decodeEntities(trimmed).replace(/\s+/g, " "), start: at + lead, end: at + lead + trimmed.length, attribute: false });
   }
   return out;
 }

@@ -57,7 +57,7 @@ describe("visual/production approvals are pinned to the built output", () => {
   it("deploy refuses a dist/ that was edited after the build", async () => {
     const { f, paths } = await builtClient();
     approve(paths, "visual");
-    writeFileSync(path.join(paths.distDir, "index.html"), "<html lang=\"en\"><title>tampered</title></html>");
+    writeFileSync(path.join(paths.distDir, "index.html"), '<html lang="en"><title>tampered</title></html>');
     await expect(tools.deploy(f, { slug: SLUG, target: "preview", dryRun: true })).rejects.toThrow(/dist\/ is not the output of the last build/);
   });
 
@@ -88,7 +88,12 @@ describe("site approval alias", () => {
 describe("preview deploy target", () => {
   it("uses a separate -preview Worker and never the custom domain", async () => {
     const { f, paths } = await builtClient();
-    addApproval(paths.approvals, { kind: "visual", by: "t", at: new Date().toISOString(), ...approvalPins("visual", paths.root, paths.distDir, lastBuild(paths.buildRecord)) });
+    addApproval(paths.approvals, {
+      kind: "visual",
+      by: "t",
+      at: new Date().toISOString(),
+      ...approvalPins("visual", paths.root, paths.distDir, lastBuild(paths.buildRecord)),
+    });
     tools.updateClientConfig(f, { slug: SLUG, patch: {} });
     const r = await tools.deploy(f, { slug: SLUG, target: "preview", dryRun: true }).catch((e: Error) => e);
     // wrangler may be missing in the test env; the generated config is what matters.

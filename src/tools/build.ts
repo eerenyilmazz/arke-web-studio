@@ -1,0 +1,142 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { FACTORY_ROOT, type FactoryConfig } from "../config.js";
+import { loadValidClient, type BuildRecord } from "../lib/client.js";
+import { run } from "../lib/exec.js";
+import { contentHash, dirHash, writeJson, writeText } from "../lib/files.js";
+import { assertSlug, safeJoin } from "../lib/paths.js";
+import { checkInputs, checkOutput, renderReport, type CheckResult } from "../lib/quality.js";
+import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, isCustom } from "../lib/custom-site.js";
+import { takeScreenshots } from "../lib/screenshots.js";
+import { checkImages, checkLegal, checkSeo } from "../lib/seo.js";
+import { effectiveFormAction } from "../lib/form.js";
+import { buildEnv } from "./shared.js";
+
+/** The build tool: checks inputs, builds the site (template or custom), runs the quality checks. */
+
+// ---------------------------------------------------------------- build
+
+export async function buildSite(factory: FactoryConfig, args: { slug: string }) {
+  const { paths, config, content } = loadValidClient(factory, assertSlug(args.slug));
+  const results: CheckResult[] = [{ name: "Config and content schema", status: "pass", detail: `locales: ${config.i18n.locales.join(", ")}` }];
+  results.push(...checkInputs(paths.root, config, content));
+
+  // Pin the inputs before building: if they change while the build runs, the output no longer matches them.
+  const hashBefore = contentHash(paths.root);
+  let buildOutput = "";
+  if (isCustom(config.template)) {
+    // The agent wrote the site itself: copy it, then check the code and the brand identity.
+    if (results.some((r) => r.status === "fail")) {
+      results.push({ name: "Custom site build", status: "skip", detail: "Skipped because input checks failed." });
+    } else {
+      const built = buildCustomSite(paths);
+      results.push(built);
+      if (built.status === "pass") {
+        results.push(...checkOutput(paths.distDir, config));
+        results.push(...checkCustomCode(paths.distDir, effectiveFormAction(paths.factoryDir)));
+        results.push(...checkBrand(paths.distDir, config.brand.logo));
+        results.push(...checkLibraryLeftovers(paths.distDir, paths.factoryDir));
+        results.push(checkSeo(paths.distDir, { name: config.business.name, phone: config.contact.phone ?? null, domain: config.site.domain ?? null }));
+        results.push(checkImages(paths.distDir), checkLegal(paths.distDir, config.business.country));
+        results.push(await takeScreenshots(paths.distDir, path.join(paths.factoryDir, "shots")));
+      }
+    }
+  } else if (!existsSync(path.join(safeJoin(factory.templatesDir, config.template), "package.json"))) {
+    results.push({ name: "Template build", status: "fail", detail: `Template "${config.template}" not found in templates/. See README: template contract.` });
+  } else if (!existsSync(path.join(safeJoin(factory.templatesDir, config.template), "node_modules"))) {
+    results.push({ name: "Template build", status: "fail", detail: `Run "npm install" once in templates/${config.template}.` });
+  } else if (results.some((r) => r.status === "fail")) {
+    results.push({ name: "Template build", status: "skip", detail: "Skipped because input checks failed." });
+  } else {
+    const res = await run("npm", ["run", "build", "--silent"], {
+      cwd: safeJoin(factory.templatesDir, config.template),
+      timeoutMs: factory.limits.buildTimeoutMs,
+      env: buildEnv(paths.root, paths.distDir),
+    });
+    buildOutput = `${res.stdout}\n${res.stderr}`.trim();
+    results.push({
+      name: "Template build",
+      status: res.code === 0 ? "pass" : "fail",
+      detail: res.code === 0 ? `templates/${config.template}` : `exit ${res.code}: ${buildOutput.slice(-600)}`,
+    });
+    if (res.code === 0) results.push(...checkOutput(paths.distDir, config));
+  }
+
+  results.push(await runImpeccable(paths.distDir, results));
+
+  const hash = hashBefore;
+  if (contentHash(paths.root) !== hashBefore) {
+    results.push({ name: "Inputs unchanged during build", status: "fail", detail: "Config, content or assets changed while building. Run build_site again." });
+  }
+  const failures = results.filter((r) => r.status === "fail").map((r) => `${r.name}: ${r.detail}`);
+  const distHash = dirHash(paths.distDir);
+  const record: BuildRecord = { hash, at: new Date().toISOString(), passed: failures.length === 0, failures, ...(distHash ? { distHash } : {}) };
+  writeJson(paths.buildRecord, record);
+  writeText(paths.qualityReport, renderReport(config.slug, hash, results));
+
+  return {
+    passed: record.passed,
+    report: "quality-report.md",
+    dist: record.passed ? paths.distDir : null,
+    checks: results,
+    // Log only when something failed: it is long and costs tokens on every successful build.
+    buildLogTail: !record.passed && buildOutput ? buildOutput.slice(-1500) : undefined,
+    next: record.passed
+      ? "Ask Eren to open dist/ locally and review it against the design checklist (visual approval)."
+      : isCustom(config.template)
+        ? "Fix the failed checks in config, content or the site files (write_site_file), then build again."
+        : "Fix the failed checks (config/content only, never the template), then build again.",
+  };
+}
+
+async function runImpeccable(distDir: string, prior: CheckResult[]): Promise<CheckResult> {
+  const bin = path.join(FACTORY_ROOT, "node_modules", ".bin", process.platform === "win32" ? "impeccable.cmd" : "impeccable");
+  if (prior.some((r) => r.name === "Build output" && r.status === "pass") === false) {
+    return { name: "Impeccable design lint", status: "skip", detail: "No build output." };
+  }
+  if (!existsSync(bin)) return { name: "Impeccable design lint", status: "skip", detail: "Not installed (optional: npm i -D impeccable)." };
+  const res = await run(bin, ["detect", "--json", distDir], {
+    cwd: FACTORY_ROOT,
+    timeoutMs: 120_000,
+    env: { IMPECCABLE_NO_TELEMETRY: "1", DO_NOT_TRACK: "1" },
+    maxOutputChars: IMPECCABLE_MAX_OUTPUT,
+  });
+  // Exit 0 = clean, 2 = findings (warnings included), 1 = could not scan.
+  if (res.code === 0) return { name: "Impeccable design lint", status: "pass", detail: "No findings." };
+  if (res.code !== 2) return { name: "Impeccable design lint", status: "warn", detail: `Could not scan: ${res.stderr.slice(-300)}` };
+  return summariseImpeccable(res.stdout);
+}
+
+const IMPECCABLE_MAX_OUTPUT = 2_000_000;
+
+interface ImpeccableFinding {
+  readonly antipattern?: string;
+  readonly severity?: string;
+}
+
+/**
+ * Design findings are advice, not proof the site is broken: warnings are reported (and the agent can act
+ * on them), only findings marked "error" fail the build.
+ */
+export function summariseImpeccable(stdout: string): CheckResult {
+  let findings: ImpeccableFinding[];
+  try {
+    const parsed: unknown = JSON.parse(stdout);
+    findings = Array.isArray(parsed) ? (parsed as ImpeccableFinding[]) : [];
+  } catch {
+    return { name: "Impeccable design lint", status: "warn", detail: "Findings could not be read." };
+  }
+  const counts = new Map<string, number>();
+  for (const f of findings) counts.set(f.antipattern ?? "unknown", (counts.get(f.antipattern ?? "unknown") ?? 0) + 1);
+  const top = [...counts]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([k, n]) => `${k} ×${n}`)
+    .join(", ");
+  const errors = findings.filter((f) => f.severity === "error").length;
+  return {
+    name: "Impeccable design lint",
+    status: errors > 0 ? "fail" : findings.length > 0 ? "warn" : "pass",
+    detail: findings.length ? `${findings.length} finding(s)${errors ? `, ${errors} error(s)` : ""}: ${top}` : "No findings.",
+  };
+}

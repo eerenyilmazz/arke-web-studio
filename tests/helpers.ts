@@ -91,7 +91,10 @@ export function writePassingCustomSite(f: FactoryConfig, slug: string, name: str
 [data-anim="flour-dust"]{opacity:.8}
 @media (prefers-reduced-motion: reduce){*{animation:none!important}}`;
   const esc = (s: string) => s.replace(/&/g, "&amp;");
-  const page = (title: string, body: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  const page = (
+    title: string,
+    body: string,
+  ) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title><meta name="description" content="Bread baked every morning in a wood oven.">
 <link rel="stylesheet" href="/css/site.css"><link rel="icon" href="/brand/logo.svg"></head>
 <body><header><a href="/"><img src="/brand/logo.svg" alt="${esc(name)}"></a></header><main>${body}</main></body></html>`;

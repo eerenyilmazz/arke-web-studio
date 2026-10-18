@@ -81,12 +81,23 @@ describe("custom sites: the agent writes the site, the factory checks it", () =>
     expect(r.checks.find((c) => c.name.startsWith("Brand identity"))?.status).toBe("fail");
 
     writeGoodSite(f);
-    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/brand.json", content: JSON.stringify({ ...BRAND, animations: [...BRAND.animations, { id: "lid-twist", idea: "Jar lid twists open on hover", trigger: "hover" }] }) });
+    tools.writeSiteFileTool(f, {
+      slug: SLUG,
+      path: "brand/brand.json",
+      content: JSON.stringify({ ...BRAND, animations: [...BRAND.animations, { id: "lid-twist", idea: "Jar lid twists open on hover", trigger: "hover" }] }),
+    });
     r = await tools.buildSite(f, { slug: SLUG });
     expect(r.checks.find((c) => c.name.startsWith("Brand identity"))?.detail).toMatch(/lid-twist/);
 
     writeGoodSite(f);
-    tools.writeSiteFileTool(f, { slug: SLUG, path: "index.html", content: page("Home", '<h1 class="jar-fill">x</h1><div data-anim="brine-bubbles"></div><script src="https://evil.example/x.js"></script><script>fetch("https://x.example")</script><a href="/nope/">x</a>') });
+    tools.writeSiteFileTool(f, {
+      slug: SLUG,
+      path: "index.html",
+      content: page(
+        "Home",
+        '<h1 class="jar-fill">x</h1><div data-anim="brine-bubbles"></div><script src="https://evil.example/x.js"></script><script>fetch("https://x.example")</script><a href="/nope/">x</a>',
+      ),
+    });
     r = await tools.buildSite(f, { slug: SLUG });
     const safety = r.checks.find((c) => c.name.startsWith("Custom code safety"));
     expect(safety?.status).toBe("fail");
@@ -114,13 +125,22 @@ describe("brand board (Marka Atölyesi)", () => {
     expect(board()?.status).toBe("warn");
     expect(r.passed).toBe(true);
 
-    const full = { ...BRAND, tagline: "Crunch since 1962", typeSample: "Brine, dill and patience.", signature: { id: "jar-fill", name: "Kavanoz dolar", idea: "The jar fills with brine and settles, once." } };
+    const full = {
+      ...BRAND,
+      tagline: "Crunch since 1962",
+      typeSample: "Brine, dill and patience.",
+      signature: { id: "jar-fill", name: "Kavanoz dolar", idea: "The jar fills with brine and settles, once." },
+    };
     tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/brand.json", content: JSON.stringify(full) });
     tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/signature.html", content: page("Signature", '<div class="jar-fill"></div>') });
     r = await tools.buildSite(f, { slug: SLUG });
     expect(board()?.status).toBe("pass");
 
-    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/brand.json", content: JSON.stringify({ ...full, signature: { ...full.signature, id: "lid-twist" } }) });
+    tools.writeSiteFileTool(f, {
+      slug: SLUG,
+      path: "brand/brand.json",
+      content: JSON.stringify({ ...full, signature: { ...full.signature, id: "lid-twist" } }),
+    });
     r = await tools.buildSite(f, { slug: SLUG });
     expect(board()?.status).toBe("warn");
     expect(board()?.detail).toMatch(/lid-twist/);
@@ -185,7 +205,10 @@ describe("design depth", () => {
     expect(r.detail).toMatch(/hero/);
     expect(r.detail).toMatch(/860px/);
     const svg = '<svg viewBox="0 0 1 1"></svg>';
-    writeFileSync(path.join(dir, "index.html"), `<main><section class="hero"><div class="jar-fill">${svg}</div></section>${"<section>x</section>".repeat(4)}${svg}${svg}</main>`);
+    writeFileSync(
+      path.join(dir, "index.html"),
+      `<main><section class="hero"><div class="jar-fill">${svg}</div></section>${"<section>x</section>".repeat(4)}${svg}${svg}</main>`,
+    );
     r = designDepth(dir, ":root{--wrap: 80rem}.wrap{max-width:var(--wrap)}", brand);
     expect(r.status).toBe("pass");
   });
@@ -198,14 +221,18 @@ describe("client's own logo", () => {
     const os = await import("node:os");
     const path = await import("node:path");
     const dir = mkdtempSync(path.join(os.tmpdir(), "own-logo-"));
-    mkdirSync(path.join(dir, "brand")); mkdirSync(path.join(dir, "assets"));
+    mkdirSync(path.join(dir, "brand"));
+    mkdirSync(path.join(dir, "assets"));
     writeFileSync(path.join(dir, "brand", "brand.json"), JSON.stringify(BRAND));
     writeFileSync(path.join(dir, "assets", "logo.png"), "png");
     writeFileSync(path.join(dir, "index.html"), `<style>${CSS}</style><h1 class="jar-fill"></h1><div data-anim="brine-bubbles"></div>`);
     expect(checkBrand(dir)[0]!.status).toBe("fail");
     let r = checkBrand(dir, "assets/logo.png");
     expect(r[0]!.detail).toMatch(/client's own logo/);
-    writeFileSync(path.join(dir, "index.html"), `<img src="/assets/logo.png" alt="x"><style>${CSS}</style><h1 class="jar-fill"></h1><div data-anim="brine-bubbles"></div>`);
+    writeFileSync(
+      path.join(dir, "index.html"),
+      `<img src="/assets/logo.png" alt="x"><style>${CSS}</style><h1 class="jar-fill"></h1><div data-anim="brine-bubbles"></div>`,
+    );
     r = checkBrand(dir, "assets/logo.png");
     expect(r[0]!.status).toBe("pass");
     // A drawn logo next to the client's logo is refused.
@@ -295,7 +322,11 @@ describe("contact form per client", () => {
     writeGoodSite(f);
     const { writeFileSync, mkdirSync } = await import("node:fs");
     const path = await import("node:path");
-    const formPage = (action: string) => page("Contact | Willow & Thread", `<h1>Contact</h1><form action="${action}" method="POST"><label>E-mail <input name="email" type="email"></label><button>Send</button></form>`);
+    const formPage = (action: string) =>
+      page(
+        "Contact | Willow & Thread",
+        `<h1>Contact</h1><form action="${action}" method="POST"><label>E-mail <input name="email" type="email"></label><button>Send</button></form>`,
+      );
     tools.writeSiteFileTool(f, { slug: SLUG, path: "contact/index.html", content: formPage("https://formspree.io/f/abcd1234") });
     let r = await tools.buildSite(f, { slug: SLUG });
     expect(r.checks.find((c) => c.name.startsWith("Custom code safety"))?.status).toBe("fail");
@@ -324,7 +355,12 @@ describe("cheap edits: site map, part reads and exact replacements", () => {
     expect(part.content).toContain("Contact");
     expect(() => tools.editSiteFileTool(f, { slug: SLUG, path: "index.html", oldText: "nope-not-here", newText: "x" })).toThrow(/not in/);
     expect(() => tools.editSiteFileTool(f, { slug: SLUG, path: "index.html", oldText: "<", newText: "x" })).toThrow(/occurs/);
-    const r = tools.editSiteFileTool(f, { slug: SLUG, path: "index.html", oldText: '<a href="/contact/">Contact</a>', newText: '<a href="/contact/">Get in touch</a>' });
+    const r = tools.editSiteFileTool(f, {
+      slug: SLUG,
+      path: "index.html",
+      oldText: '<a href="/contact/">Contact</a>',
+      newText: '<a href="/contact/">Get in touch</a>',
+    });
     expect(r.replaced).toBe(1);
     expect(tools.readSiteFileTool(f, { slug: SLUG, path: "index.html" }).content).toContain("Get in touch");
     expect(() => tools.editSiteFileTool(f, { slug: SLUG, path: "../site.config.json", oldText: "a", newText: "b" })).toThrow(/not allowed/);

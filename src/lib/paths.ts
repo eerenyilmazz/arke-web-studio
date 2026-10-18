@@ -6,10 +6,7 @@ import { FactoryError } from "./errors.js";
 /** Validates a client slug. Every path and Cloudflare Worker name is derived from it. */
 export function assertSlug(slug: string): string {
   if (!SLUG_PATTERN.test(slug)) {
-    throw new FactoryError(
-      `Invalid slug "${slug.slice(0, 60)}".`,
-      "Use 3–40 lowercase letters, digits and hyphens, e.g. willow-thread.",
-    );
+    throw new FactoryError(`Invalid slug "${slug.slice(0, 60)}".`, "Use 3–40 lowercase letters, digits and hyphens, e.g. willow-thread.");
   }
   return slug;
 }
@@ -40,7 +37,7 @@ export function safeJoin(base: string, ...parts: string[]): string {
 
 function assertInside(root: string, target: string): void {
   const rel = path.relative(root, target);
-  if (rel === "" ) return;
+  if (rel === "") return;
   if (rel.startsWith("..") || path.isAbsolute(rel)) {
     throw new FactoryError("Path escapes the allowed folder.", "Paths must stay inside the client folder.");
   }

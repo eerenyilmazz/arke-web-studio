@@ -26,7 +26,9 @@ export function readHistory(factory: FactoryConfig, slug: string): JobRecord[] {
   const file = historyFile(factory, slug);
   if (!existsSync(file)) return [];
   const out: JobRecord[] = [];
-  for (const line of readFileSync(file, "utf8").split("\n").slice(-MAX_SHOWN - 1)) {
+  for (const line of readFileSync(file, "utf8")
+    .split("\n")
+    .slice(-MAX_SHOWN - 1)) {
     if (!line.trim()) continue;
     try {
       out.push(withCurrentKind(JSON.parse(line) as JobRecord));

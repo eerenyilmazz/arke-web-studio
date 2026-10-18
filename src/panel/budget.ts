@@ -32,7 +32,16 @@ export interface AgentPolicy {
 }
 
 /** Jobs that design or write a whole site; everything else is an edit. */
-export const DESIGN_KINDS: ReadonlySet<string> = new Set(["create-site", "upgrade-template", "concepts", "choose-concept", "redesign", "from-library", "brand-board", "design-content"]);
+export const DESIGN_KINDS: ReadonlySet<string> = new Set([
+  "create-site",
+  "upgrade-template",
+  "concepts",
+  "choose-concept",
+  "redesign",
+  "from-library",
+  "brand-board",
+  "design-content",
+]);
 
 interface Profile {
   readonly design: { model: string; maxTurns: number; tokenCap: number };
@@ -93,10 +102,14 @@ export function resolvePolicy(factory: FactoryConfig, slug: string, kind: string
   // Translation is long but simple: the edit (cheaper) model with design-sized limits, half the design cap.
   // An extra page is one page: the edit model with a little more room.
   const group = jobGroup(kind);
-  const base = group === "translate"
-    ? { model: p.edit.model, maxTurns: p.design.maxTurns, tokenCap: Math.round(p.design.tokenCap / 2) }
-    : group === "page" ? { model: p.edit.model, maxTurns: p.edit.maxTurns + 20, tokenCap: Math.round(p.edit.tokenCap * 1.5) }
-    : group === "design" ? p.design : p.edit;
+  const base =
+    group === "translate"
+      ? { model: p.edit.model, maxTurns: p.design.maxTurns, tokenCap: Math.round(p.design.tokenCap / 2) }
+      : group === "page"
+        ? { model: p.edit.model, maxTurns: p.edit.maxTurns + 20, tokenCap: Math.round(p.edit.tokenCap * 1.5) }
+        : group === "design"
+          ? p.design
+          : p.edit;
   // Eren's per-kind choices (provider, model, limits) win over the package; 0 / empty keep the package's value.
   const route = settings.agents[group];
   const provider: AgentProvider = route?.provider || "claude";

@@ -37,7 +37,6 @@ export function normalisePhone(raw: string, country: string): string {
 
 const QUICK_FIELDS = ["phone", "email", "address", "hours"] as const;
 
-
 /**
  * Small fixes without writing to the agent: contact details are validated and saved in the config, then
  * template sites rebuild; custom sites get a short agent job that changes those values in the site files.
@@ -46,7 +45,12 @@ async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRespons
   const s = assertSlug(slug!);
   if (deps.jobs.running()) throw new HttpError(409, "Başka bir işlem sürüyor; tamamlanınca tekrar deneyiniz.");
   const paths = clientPaths(deps.factory.clientsRoot, s);
-  const before = readDraftConfig(paths) as { template?: string; business?: { country?: string }; contact?: Record<string, unknown>; whatsapp?: { number?: string | null } };
+  const before = readDraftConfig(paths) as {
+    template?: string;
+    business?: { country?: string };
+    contact?: Record<string, unknown>;
+    whatsapp?: { number?: string | null };
+  };
   const body = await readJsonBody(req, JSON_LIMIT);
   const country = before.business?.country ?? "GB";
   const contact: Record<string, string | null> = {};
@@ -74,12 +78,24 @@ async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRespons
   // E-mail, address and hours are written on the site exactly as saved: replace them directly when the old
   // value is found. Phone numbers are shown in local formats, so those still go to the assistant.
   const paths2 = clientPaths(deps.factory.clientsRoot, s);
-  const direct = before.template === "custom"
-    ? Object.entries(contact).filter(([k, v]) => k !== "phone" && v && typeof before.contact?.[k] === "string" && (before.contact[k] as string).length >= 4 && findInSite(paths2, before.contact[k] as string, { html: true }) > 0)
-    : [];
+  const direct =
+    before.template === "custom"
+      ? Object.entries(contact).filter(
+          ([k, v]) =>
+            k !== "phone" &&
+            v &&
+            typeof before.contact?.[k] === "string" &&
+            (before.contact[k] as string).length >= 4 &&
+            findInSite(paths2, before.contact[k] as string, { html: true }) > 0,
+        )
+      : [];
   if (before.template === "custom" && direct.length === changes.length) {
     job = await rebuildAfterDirectEdit(deps, s, "Hızlı düzenleme", changes.join("; "), "İletişim bilgileri güncellendi.", () => {
-      replaceInSite(paths2, direct.map(([k, v]) => [before.contact![k] as string, v as string] as const), { html: true });
+      replaceInSite(
+        paths2,
+        direct.map(([k, v]) => [before.contact![k] as string, v as string] as const),
+        { html: true },
+      );
     });
   } else if (before.template === "custom") {
     const prompt = [
@@ -118,8 +134,15 @@ async function saveForm(deps: ApiDeps, req: IncomingMessage, res: ServerResponse
 const HEX_COLOUR = /^#[0-9a-fA-F]{6}$/;
 const KNOWN_PAGES = ["home", "about", "services", "gallery", "contact"];
 const MAX_SERVICES = 12;
-const EDIT_TITLES: Readonly<Record<EditType, string>> = { colors: "Renkleri değiştir", pages: "Sayfaları değiştir", services: "Hizmet ve fiyatlar", text: "Metin değiştir", form: "İletişim formu" };
-const EDIT_TAIL = "Change nothing else: no other text, colour, layout or animation. build_site; if a check fails, fix only what the check names and build again (at most 3 builds). Do not deploy. Finish with one or two sentences in Turkish listing exactly what you changed.";
+const EDIT_TITLES: Readonly<Record<EditType, string>> = {
+  colors: "Renkleri değiştir",
+  pages: "Sayfaları değiştir",
+  services: "Hizmet ve fiyatlar",
+  text: "Metin değiştir",
+  form: "İletişim formu",
+};
+const EDIT_TAIL =
+  "Change nothing else: no other text, colour, layout or animation. build_site; if a check fails, fix only what the check names and build again (at most 3 builds). Do not deploy. Finish with one or two sentences in Turkish listing exactly what you changed.";
 
 type EditType = "colors" | "pages" | "services" | "text" | "form";
 type Draft = { template?: string; pages?: string[]; i18n?: { defaultLocale?: string; locales?: string[] }; design?: { palette?: Record<string, string> } };
@@ -144,17 +167,29 @@ type EditResult =
 /** A template site only needs a rebuild after its config or content changed. */
 function rebuildTask(deps: ApiDeps, slug: string, title: string, request: string) {
   return runOrConflict(() =>
-    deps.jobs.startTask(slug, "build", title, async (log) => {
-      log("Kaydedildi, site yeniden oluşturuluyor…");
-      const r = await tools.buildSite(deps.factory, { slug });
-      if (!r.passed) throw new Error(`Kontroller geçmedi: ${r.checks.filter((c) => c.status === "fail").map((c) => c.name).join(", ")}`);
-      return "Kaydedildi ve site yeniden oluşturuldu.";
-    }, request),
+    deps.jobs.startTask(
+      slug,
+      "build",
+      title,
+      async (log) => {
+        log("Kaydedildi, site yeniden oluşturuluyor…");
+        const r = await tools.buildSite(deps.factory, { slug });
+        if (!r.passed)
+          throw new Error(
+            `Kontroller geçmedi: ${r.checks
+              .filter((c) => c.status === "fail")
+              .map((c) => c.name)
+              .join(", ")}`,
+          );
+        return "Kaydedildi ve site yeniden oluşturuldu.";
+      },
+      request,
+    ),
   );
 }
 
 async function editColors({ deps, slug, paths, draft, custom, body }: EditContext): Promise<EditResult> {
-  const raw = (typeof body.colors === "object" && body.colors) ? (body.colors as Record<string, unknown>) : {};
+  const raw = typeof body.colors === "object" && body.colors ? (body.colors as Record<string, unknown>) : {};
   const current: Record<string, string> = custom
     ? ((readJsonIfExists(path.join(paths.root, "site", "brand", "brand.json")) as { palette?: Record<string, string> } | null)?.palette ?? {})
     : (draft.design?.palette ?? {});
@@ -167,17 +202,27 @@ async function editColors({ deps, slug, paths, draft, custom, body }: EditContex
     tools.updateClientConfig(deps.factory, { slug, patch: { design: { palette: Object.fromEntries(changes.map((c) => [c.name, c.to])) } } });
   } else if (changes.every((c) => findInSite(paths, c.from, { caseInsensitive: true }) > 0)) {
     // Every colour code is in the files: swap them directly (brand.json, CSS, SVG, signature demo).
-    return { kind: "direct", job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.colors, summary, "Renkler güncellendi.", () => {
-      replaceInSite(paths, changes.map((c) => [c.from, c.to] as const), { caseInsensitive: true });
-    }) };
+    return {
+      kind: "direct",
+      job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.colors, summary, "Renkler güncellendi.", () => {
+        replaceInSite(
+          paths,
+          changes.map((c) => [c.from, c.to] as const),
+          { caseInsensitive: true },
+        );
+      }),
+    };
   }
   return {
     kind: "plan",
     needsAgent: custom,
     summary,
-    lines: ["Eren changed these brand colours in the panel:", ...changes.map((c) => `- ${c.name}: ${c.from} → ${c.to}`),
+    lines: [
+      "Eren changed these brand colours in the panel:",
+      ...changes.map((c) => `- ${c.name}: ${c.from} → ${c.to}`),
       "Replace each old value with the new one in brand/brand.json (palette), every css, js, html and svg file of the site and brand/signature.html, including tints you derived from it (rgb/hsl forms and lighter or darker variants: derive them again from the new colour). Mirror the change into design.palette in the config if that colour is there.",
-      "If a text/background pair now fails AA contrast, adjust only the lightness of the derived tone, not Eren's colour, and say so."],
+      "If a text/background pair now fails AA contrast, adjust only the lightness of the derived tone, not Eren's colour, and say so.",
+    ],
   };
 }
 
@@ -195,23 +240,44 @@ function editPages({ deps, slug, draft, custom, body }: EditContext): EditResult
     kind: "plan",
     needsAgent: custom || add.length > 0,
     summary: [add.length ? `eklenen: ${add.join(", ")}` : "", remove.length ? `kaldırılan: ${remove.join(", ")}` : ""].filter(Boolean).join("; "),
-    lines: [`Eren changed the site's pages in the panel. Pages now: ${next.join(", ")}.`,
-      ...(remove.length ? [`Remove: ${remove.join(", ")}. Delete their files (delete_site_file for custom sites), remove them from every navigation, footer, sitemap and internal link.`] : []),
-      ...(add.length ? [`Add: ${add.join(", ")}. Set config.pages to the list above (with sections for template sites). Design the new pages in the existing brand and layout system, with content only from this client's facts. If a page has no facts to fill it (a gallery without photos), do not invent: tell Eren what is needed and do not add that page.`] : [])],
+    lines: [
+      `Eren changed the site's pages in the panel. Pages now: ${next.join(", ")}.`,
+      ...(remove.length
+        ? [
+            `Remove: ${remove.join(", ")}. Delete their files (delete_site_file for custom sites), remove them from every navigation, footer, sitemap and internal link.`,
+          ]
+        : []),
+      ...(add.length
+        ? [
+            `Add: ${add.join(", ")}. Set config.pages to the list above (with sections for template sites). Design the new pages in the existing brand and layout system, with content only from this client's facts. If a page has no facts to fill it (a gallery without photos), do not invent: tell Eren what is needed and do not add that page.`,
+          ]
+        : []),
+    ],
   };
 }
 
 function editServices({ deps, slug, paths, draft, custom, body }: EditContext): EditResult {
   const locale = (draft.i18n?.defaultLocale ?? "en") as Parameters<typeof tools.saveContent>[1]["locale"];
   const list = Array.isArray(body.services) ? body.services : [];
-  const services = list.slice(0, MAX_SERVICES).map((x) => {
-    const o = (x ?? {}) as Record<string, unknown>;
-    const price = typeof o.price === "string" && o.price.trim() ? o.price.trim().slice(0, 40) : undefined;
-    return { title: String(o.title ?? "").trim().slice(0, 60), description: String(o.description ?? "").trim().slice(0, 300), ...(price ? { price } : {}) };
-  }).filter((x) => x.title);
+  const services = list
+    .slice(0, MAX_SERVICES)
+    .map((x) => {
+      const o = (x ?? {}) as Record<string, unknown>;
+      const price = typeof o.price === "string" && o.price.trim() ? o.price.trim().slice(0, 40) : undefined;
+      return {
+        title: String(o.title ?? "")
+          .trim()
+          .slice(0, 60),
+        description: String(o.description ?? "")
+          .trim()
+          .slice(0, 300),
+        ...(price ? { price } : {}),
+      };
+    })
+    .filter((x) => x.title);
   if (services.length === 0) throw new HttpError(400, "En az bir hizmet gerekli.");
   // Keep icons that templates use for the same titles.
-  const existing = ((readJsonIfExists(paths.content(locale)) as { services?: Array<{ title: string; icon?: string }> } | null)?.services ?? []);
+  const existing = (readJsonIfExists(paths.content(locale)) as { services?: Array<{ title: string; icon?: string }> } | null)?.services ?? [];
   const withIcons = services.map((x) => {
     const icon = existing.find((e) => e.title === x.title)?.icon;
     return { ...x, ...(icon ? { icon } : {}) };
@@ -226,10 +292,16 @@ function editServices({ deps, slug, paths, draft, custom, body }: EditContext): 
     kind: "plan",
     needsAgent: custom || others.length > 0,
     summary: `${withIcons.length} hizmet`,
-    lines: [`Eren edited the services and prices in the panel. They are saved in content/${locale}.json; this is the exact list, in order:`,
+    lines: [
+      `Eren edited the services and prices in the panel. They are saved in content/${locale}.json; this is the exact list, in order:`,
       ...withIcons.map((x, i) => `${i + 1}. ${x.title}${x.price ? ` — ${x.price}` : ""}: ${x.description}`),
       ...(others.length ? [`Translate the same list into content for ${others.join(", ")} with save_content (same order and prices).`] : []),
-      ...(custom ? ["Update the site files so every place that lists services or prices (home, services page, any price table) shows exactly this list, in this order, in the existing design."] : [])],
+      ...(custom
+        ? [
+            "Update the site files so every place that lists services or prices (home, services page, any price table) shows exactly this list, in this order, in the existing design.",
+          ]
+        : []),
+    ],
   };
 }
 
@@ -240,9 +312,11 @@ function editForm({ paths }: EditContext): EditResult {
     kind: "plan",
     needsAgent: true,
     summary: "form eklendi",
-    lines: [`Eren set up a contact form service for this client. Add a contact form to the contact page (and remove any note that there is no form): <form action="${form.action}" method="POST">, fields name, email (type=email, required), phone (optional) and message (required), each with a visible label; a hidden honeypot field; a submit button in the brand's style.`,
+    lines: [
+      `Eren set up a contact form service for this client. Add a contact form to the contact page (and remove any note that there is no form): <form action="${form.action}" method="POST">, fields name, email (type=email, required), phone (optional) and message (required), each with a visible label; a hidden honeypot field; a submit button in the brand's style.`,
       ...(form.accessKey ? [`Web3Forms needs <input type="hidden" name="access_key" value="${form.accessKey}">.`] : []),
-      "Keep the phone, WhatsApp and e-mail buttons next to it. Never use any other form address."],
+      "Keep the phone, WhatsApp and e-mail buttons next to it. Never use any other form address.",
+    ],
   };
 }
 
@@ -298,17 +372,20 @@ function pageTexts(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [sl
   }
   const pages = customPages(paths, draft.i18n?.locales ?? []);
   const asked = new URL(req.url ?? "/", "http://x").searchParams.get("page") ?? "home";
-  const page = pages.includes(asked) ? asked : pages[0] ?? "home";
+  const page = pages.includes(asked) ? asked : (pages[0] ?? "home");
   const html = pages.length ? readSiteFile(paths, pageFile(page)).content : "";
   sendJson(res, 200, { source: "site", pages, page, items: htmlTexts(html), otherLocales: (draft.i18n?.locales ?? []).filter((l) => l !== locale) });
 }
 
 function parseChanges(body: Record<string, unknown>): TextChange[] {
   const list = Array.isArray(body.changes) ? body.changes : [];
-  const changes = list.slice(0, 200).map((x) => {
-    const o = (x ?? {}) as Record<string, unknown>;
-    return { id: String(o.id ?? "").slice(0, 120), oldText: String(o.oldText ?? "").slice(0, 4000), newText: String(o.newText ?? "").slice(0, 4000) };
-  }).filter((c) => c.id && c.newText.trim() && c.newText.trim() !== c.oldText.trim());
+  const changes = list
+    .slice(0, 200)
+    .map((x) => {
+      const o = (x ?? {}) as Record<string, unknown>;
+      return { id: String(o.id ?? "").slice(0, 120), oldText: String(o.oldText ?? "").slice(0, 4000), newText: String(o.newText ?? "").slice(0, 4000) };
+    })
+    .filter((c) => c.id && c.newText.trim() && c.newText.trim() !== c.oldText.trim());
   if (changes.length === 0) throw new HttpError(400, "Değişen metin yok.");
   return changes;
 }
@@ -333,14 +410,23 @@ async function editTextsById({ deps, slug, paths, draft, custom, body }: EditCon
     } else {
       let content: unknown = readJsonIfExists(paths.content(locale)) ?? {};
       for (const c of changes) content = setContentText(content, c.id, c.oldText, c.newText);
-      write = () => { tools.saveContent(deps.factory, { slug, locale: locale as Parameters<typeof tools.saveContent>[1]["locale"], content: content as Record<string, unknown>, replace: true }); };
+      write = () => {
+        tools.saveContent(deps.factory, {
+          slug,
+          locale: locale as Parameters<typeof tools.saveContent>[1]["locale"],
+          content: content as Record<string, unknown>,
+          replace: true,
+        });
+      };
     }
   } catch (error) {
     if (error instanceof HttpError) throw error;
     throw new HttpError(409, (error as Error).message);
   }
   const others = (draft.i18n?.locales ?? []).filter((l) => l !== locale);
-  const note = others.length ? `Metinler güncellendi. Diğer dillerdeki (${others.join(", ")}) karşılıkları değişmedi; gerekirse Özel Talep'ten "diğer dilleri güncelle" yazabilirsiniz.` : "Metinler güncellendi.";
+  const note = others.length
+    ? `Metinler güncellendi. Diğer dillerdeki (${others.join(", ")}) karşılıkları değişmedi; gerekirse Özel Talep'ten "diğer dilleri güncelle" yazabilirsiniz.`
+    : "Metinler güncellendi.";
   return { kind: "direct", job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.text, summary, note, write) };
 }
 
@@ -354,18 +440,26 @@ async function editText(ctx: EditContext): Promise<EditResult> {
   const summary = `${page}: "${oldText.slice(0, 40)}" → "${newText.slice(0, 40)}"`;
   // The exact text is on that page: replace it directly (and in the content file, if it is there too).
   if (custom && findInSite(paths, oldText, { html: true, files: pageFiles(page) }) > 0) {
-    return { kind: "direct", job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.text, summary, "Metin güncellendi.", () => {
-      replaceInSite(paths, [[oldText, newText]], { html: true, files: pageFiles(page) });
-      replaceInContentFiles(paths, draft.i18n?.locales ?? [], oldText, newText);
-    }) };
+    return {
+      kind: "direct",
+      job: await rebuildAfterDirectEdit(deps, slug, EDIT_TITLES.text, summary, "Metin güncellendi.", () => {
+        replaceInSite(paths, [[oldText, newText]], { html: true, files: pageFiles(page) });
+        replaceInContentFiles(paths, draft.i18n?.locales ?? [], oldText, newText);
+      }),
+    };
   }
   return {
     kind: "plan",
     needsAgent: true,
     summary,
-    lines: [`Eren wants one text changed on the "${page}" page (all languages if the text exists in several).`,
-      "Current text (as he sees it on the site):", `«${oldText}»`, "New text, exactly as written:", `«${newText}»`,
-      "Find that text (or the closest match on that page) and replace it. If it comes from content/*.json, change it there too. If you cannot find it, change nothing and say so."],
+    lines: [
+      `Eren wants one text changed on the "${page}" page (all languages if the text exists in several).`,
+      "Current text (as he sees it on the site):",
+      `«${oldText}»`,
+      "New text, exactly as written:",
+      `«${newText}»`,
+      "Find that text (or the closest match on that page) and replace it. If it comes from content/*.json, change it there too. If you cannot find it, change nothing and say so.",
+    ],
   };
 }
 

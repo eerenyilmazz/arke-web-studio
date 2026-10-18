@@ -42,7 +42,31 @@ interface Index {
 const cache = new Map<string, Index>();
 
 /** Lowercase words, Turkish letters folded, very short and very common words dropped. */
-const STOP = new Set(["the", "and", "for", "with", "that", "this", "are", "you", "your", "not", "but", "use", "from", "into", "when", "what", "ile", "bir", "için", "ve", "bu", "da", "de"]);
+const STOP = new Set([
+  "the",
+  "and",
+  "for",
+  "with",
+  "that",
+  "this",
+  "are",
+  "you",
+  "your",
+  "not",
+  "but",
+  "use",
+  "from",
+  "into",
+  "when",
+  "what",
+  "ile",
+  "bir",
+  "için",
+  "ve",
+  "bu",
+  "da",
+  "de",
+]);
 export function tokenize(text: string): string[] {
   return text
     .toLowerCase()
@@ -135,7 +159,10 @@ export function searchKnowledge(root: string, query: string, k = 4): Array<Chunk
     if (c.source.startsWith("rules/")) score *= 1.15;
     return { ...c, score };
   });
-  return scored.filter((c) => c.score > 0).sort((a, b) => b.score - a.score).slice(0, Math.min(8, Math.max(1, k)));
+  return scored
+    .filter((c) => c.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.min(8, Math.max(1, k)));
 }
 
 export function knowledgeSize(root: string): number {

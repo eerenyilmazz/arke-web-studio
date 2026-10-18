@@ -4,9 +4,19 @@ import path from "node:path";
 import { safeJoin } from "../lib/paths.js";
 
 const TYPES: Readonly<Record<string, string>> = {
-  ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp",
-  ".avif": "image/avif", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8", ".xml": "application/xml", ".ico": "image/x-icon",
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".webp": "image/webp",
+  ".avif": "image/avif",
+  ".woff2": "font/woff2",
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml",
+  ".ico": "image/x-icon",
 };
 
 /**
@@ -39,6 +49,10 @@ export function serveFile(res: ServerResponse, root: string, urlPath: string): v
     file = notFound;
     status = 404;
   }
-  res.writeHead(status, { "Content-Type": TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+  res.writeHead(status, {
+    "Content-Type": TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+  });
   createReadStream(file).pipe(res);
 }

@@ -6,17 +6,43 @@ import { BUDGET_MODES, PACKAGE_LABELS, PROFILES, summarise } from "../budget.js"
 import { ZodError } from "zod";
 import { LOCALES } from "../../schema/site-config.js";
 import * as tools from "../../tools.js";
-import { HttpError, readJsonBody, sendJson, } from "../http.js";
+import { HttpError, readJsonBody, sendJson } from "../http.js";
 import { readHistory } from "../history.js";
 import { serialiseJob } from "../jobs.js";
-import { type ApiDeps, type Route, JSON_LIMIT, } from "./common.js";
+import { type ApiDeps, type Route, JSON_LIMIT } from "./common.js";
 
 /** Panel-wide endpoints: jobs, settings, usage, profit, backups, Cloudflare status and meta. */
 export const systemRoutes: Route[] = [
   { method: "GET", pattern: /^\/api\/profit$/, handler: (d, _r, res) => sendJson(res, 200, profitSummary(d.factory)) },
-  { method: "GET", pattern: /^\/api\/usage$/, handler: (d, _r, res) => sendJson(res, 200, { ...summarise(d.factory), mode: readSettings(d.factory).budget.mode, modes: BUDGET_MODES.map((m) => ({ id: m, label: PACKAGE_LABELS[m], ...PROFILES[m] })) }) },
-  { method: "GET", pattern: /^\/api\/backups$/, handler: (d, _r, res) => { const dir = readSettings(d.factory).backupDir; sendJson(res, 200, { dir, backups: listBackups(dir) }); } },
-  { method: "POST", pattern: /^\/api\/backups$/, handler: async (d, _r, res) => { try { sendJson(res, 201, await backupNow(d.factory)); } catch (e) { throw new HttpError(400, (e as Error).message); } } },
+  {
+    method: "GET",
+    pattern: /^\/api\/usage$/,
+    handler: (d, _r, res) =>
+      sendJson(res, 200, {
+        ...summarise(d.factory),
+        mode: readSettings(d.factory).budget.mode,
+        modes: BUDGET_MODES.map((m) => ({ id: m, label: PACKAGE_LABELS[m], ...PROFILES[m] })),
+      }),
+  },
+  {
+    method: "GET",
+    pattern: /^\/api\/backups$/,
+    handler: (d, _r, res) => {
+      const dir = readSettings(d.factory).backupDir;
+      sendJson(res, 200, { dir, backups: listBackups(dir) });
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/api\/backups$/,
+    handler: async (d, _r, res) => {
+      try {
+        sendJson(res, 201, await backupNow(d.factory));
+      } catch (e) {
+        throw new HttpError(400, (e as Error).message);
+      }
+    },
+  },
   { method: "GET", pattern: /^\/api\/jobs\/([0-9a-f-]{36})$/, handler: getJob },
   { method: "POST", pattern: /^\/api\/jobs\/([0-9a-f-]{36})\/cancel$/, handler: cancelJob },
   { method: "GET", pattern: /^\/api\/meta$/, handler: meta },
@@ -48,7 +74,23 @@ function meta(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse): void {
 }
 
 /** Rough time a job of each kind takes here: median of recent successful runs across clients, else a default. */
-const DEFAULT_SECONDS: Readonly<Record<string, number>> = { "create-site": 900, "upgrade-template": 900, revise: 240, "fix-build": 300, answers: 180, "design-content": 300, build: 60, deploy: 90, unpublish: 60, concepts: 360, "quick-edit": 180, "brand-board": 300, redesign: 900, "from-library": 600, translate: 600 };
+const DEFAULT_SECONDS: Readonly<Record<string, number>> = {
+  "create-site": 900,
+  "upgrade-template": 900,
+  revise: 240,
+  "fix-build": 300,
+  answers: 180,
+  "design-content": 300,
+  build: 60,
+  deploy: 90,
+  unpublish: 60,
+  concepts: 360,
+  "quick-edit": 180,
+  "brand-board": 300,
+  redesign: 900,
+  "from-library": 600,
+  translate: 600,
+};
 const RECENT_RUNS = 20;
 function typicalSeconds(deps: ApiDeps): Record<string, number> {
   const byKind = new Map<string, number[]>();

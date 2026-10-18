@@ -20,7 +20,11 @@ const escapeHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;")
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Counts occurrences without changing anything (to decide between doing it here or asking the agent). */
-export function findInSite(paths: ClientPaths, needle: string, opts: { html?: boolean; files?: (rel: string) => boolean; caseInsensitive?: boolean } = {}): number {
+export function findInSite(
+  paths: ClientPaths,
+  needle: string,
+  opts: { html?: boolean; files?: (rel: string) => boolean; caseInsensitive?: boolean } = {},
+): number {
   return run(paths, [[needle, needle]], { ...opts, dryRun: true }).counts[0] ?? 0;
 }
 

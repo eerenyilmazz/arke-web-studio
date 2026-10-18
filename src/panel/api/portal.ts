@@ -73,7 +73,8 @@ const STATUSES = new Set(["open", "done"]);
 async function markEntry(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug, kind, id]: string[]): Promise<void> {
   const s = assertSlug(slug!);
   const body = await readJsonBody(req, JSON_LIMIT);
-  const patch: Record<string, unknown> = kind === "intake" ? { used: body.used === true } : { status: STATUSES.has(str(body, "status", { max: 10 }) ?? "") ? body.status : "done" };
+  const patch: Record<string, unknown> =
+    kind === "intake" ? { used: body.used === true } : { status: STATUSES.has(str(body, "status", { max: 10 }) ?? "") ? body.status : "done" };
   try {
     updateEntry(deps.factory, s, kind === "intake" ? "intake" : "comment", id!, patch);
   } catch (error) {

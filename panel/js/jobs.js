@@ -5,12 +5,20 @@ import { render, route, setStatus } from "./router.js";
 
 // ---------------------------------------------------------------- job progress and notifications
 
-export const PHASE_LABELS = { reading: "Bilgileri okuyor", saving: "Bilgileri kaydediyor", design: "Tasarımı araştırıyor", brand: "Markayı tasarlıyor", pages: "Sayfaları yazıyor", checking: "Kontrol ediyor" };
+export const PHASE_LABELS = {
+  reading: "Bilgileri okuyor",
+  saving: "Bilgileri kaydediyor",
+  design: "Tasarımı araştırıyor",
+  brand: "Markayı tasarlıyor",
+  pages: "Sayfaları yazıyor",
+  checking: "Kontrol ediyor",
+};
 
 export const PHASE_ORDER = ["reading", "saving", "design", "brand", "pages", "checking"];
 
 export function fmtDuration(secs) {
-  const m = Math.floor(secs / 60), s = Math.floor(secs % 60);
+  const m = Math.floor(secs / 60),
+    s = Math.floor(secs % 60);
   return m ? `${m} dk ${s.toString().padStart(2, "0")} sn` : `${s} sn`;
 }
 
@@ -18,13 +26,18 @@ export function fmtDuration(secs) {
 export function jobProgress(job) {
   const typical = (state.typical || {})[job.kind];
   const now = PHASE_ORDER.indexOf(job.phase);
-  const el = h("div", { class: "progress", id: "job-progress", "data-started": job.startedAt, "data-typical": typical || "" },
+  const el = h(
+    "div",
+    { class: "progress", id: "job-progress", "data-started": job.startedAt, "data-typical": typical || "" },
     h("ol", { class: "phases" }, ...PHASE_ORDER.map((p, i) => h("li", { class: i < now ? "done" : i === now ? "now" : "" }, PHASE_LABELS[p]))),
-    h("p", { class: "small muted" },
+    h(
+      "p",
+      { class: "small muted" },
       h("span", { id: "job-elapsed", text: `Geçen süre ${fmtDuration((Date.now() - Date.parse(job.startedAt)) / 1000)}` }),
       job.filesWritten ? ` · ${job.filesWritten} dosya yazıldı` : "",
       job.skillsUsed?.length ? ` · skill: ${job.skillsUsed.join(", ")}` : "",
-      typical ? ` · genelde ${fmtDuration(typical)} sürer` : ""),
+      typical ? ` · genelde ${fmtDuration(typical)} sürer` : "",
+    ),
     h("div", { class: "bar" }, h("span", { id: "job-bar" })),
   );
   return el;
@@ -41,14 +54,20 @@ export function chime(ok) {
     const ctx = new AudioContext();
     const notes = ok ? [660, 880] : [440, 330];
     notes.forEach((f, i) => {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.frequency.value = f; o.type = "sine";
+      const o = ctx.createOscillator(),
+        g = ctx.createGain();
+      o.frequency.value = f;
+      o.type = "sine";
       g.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.18);
       g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + i * 0.18 + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.18 + 0.3);
-      o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + i * 0.18); o.stop(ctx.currentTime + i * 0.18 + 0.32);
+      o.connect(g).connect(ctx.destination);
+      o.start(ctx.currentTime + i * 0.18);
+      o.stop(ctx.currentTime + i * 0.18 + 0.32);
     });
-  } catch { /* no audio */ }
+  } catch {
+    /* no audio */
+  }
 }
 
 /** A finished job: sound, a system notification when the panel is in the background, and the tab title. */
@@ -57,12 +76,18 @@ export function announceFinished(job) {
   const name = state.clients.find((c) => c.slug === job.slug)?.name || job.slug;
   chime(ok);
   if (document.hidden && "Notification" in window && Notification.permission === "granted") {
-    new Notification(ok ? `${name}: hazır` : `${name}: tamamlanamadı`, { body: `${job.title} ${ok ? "bitti. Panelde sonucu gör." : "başarısız oldu."}`, tag: job.id });
+    new Notification(ok ? `${name}: hazır` : `${name}: tamamlanamadı`, {
+      body: `${job.title} ${ok ? "bitti. Panelde sonucu gör." : "başarısız oldu."}`,
+      tag: job.id,
+    });
   }
   if (document.hidden) {
     const original = "Site Factory";
     document.title = ok ? `✓ ${name} hazır · ${original}` : `✕ ${name} · ${original}`;
-    const reset = () => { document.title = original; document.removeEventListener("visibilitychange", reset); };
+    const reset = () => {
+      document.title = original;
+      document.removeEventListener("visibilitychange", reset);
+    };
     document.addEventListener("visibilitychange", reset);
   }
 }
@@ -87,7 +112,12 @@ export async function runAgent(slug, kind, payload) {
     job = await api("POST", `/api/clients/${slug}/agent/${kind}`, payload);
   } catch (e) {
     if (e.data?.code === "shared-logo") {
-      const go = await ask({ title: "Logo başka bir müşteriye ait", body: `${e.message}\n\nBilerek aynı logoyu kullanıyorsanız devam edebilirsiniz.`, confirm: "Yine de devam et", danger: true });
+      const go = await ask({
+        title: "Logo başka bir müşteriye ait",
+        body: `${e.message}\n\nBilerek aynı logoyu kullanıyorsanız devam edebilirsiniz.`,
+        confirm: "Yine de devam et",
+        danger: true,
+      });
       if (go) return runAgent(slug, kind, { ...payload, allowSharedLogo: true });
       return false;
     }
@@ -122,9 +152,15 @@ export function startPolling() {
   clearTimeout(state.pollTimer);
   state.pollTimer = setTimeout(async () => {
     const j = state.running;
-    if (!j || j.status !== "running") { state.pollTimer = null; return; }
+    if (!j || j.status !== "running") {
+      state.pollTimer = null;
+      return;
+    }
     const next = await api("GET", `/api/jobs/${j.id}?since=${state.logSince}`).catch(() => null);
-    if (!next) { startPolling(); return; }
+    if (!next) {
+      startPolling();
+      return;
+    }
     const lines = $("#live-lines");
     if (lines && next.log.length) appendLiveLines(lines, next.log);
     state.logSince = next.logTotal;
@@ -144,7 +180,10 @@ export function startPolling() {
     state.running = null;
     state.pollTimer = null;
     setStatus(null);
-    toast(next.status === "succeeded" ? `${next.title}: tamamlandı.` : `${next.title}: ${STATUS_BADGE[next.status]?.[1] || next.status}.`, next.status !== "succeeded");
+    toast(
+      next.status === "succeeded" ? `${next.title}: tamamlandı.` : `${next.title}: ${STATUS_BADGE[next.status]?.[1] || next.status}.`,
+      next.status !== "succeeded",
+    );
     render();
   }, POLL_MS);
 }
