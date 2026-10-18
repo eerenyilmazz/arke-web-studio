@@ -17,6 +17,23 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Rapor: sf-report (1.17.3)
+
+`npm run report -- <klasör>` bütün fabrikanın durumunu tek bir dosyaya yazar (`sf-report-<tarih>.md`). Hiçbir şeyi değiştirmez; token ve anahtarlar dosyaya yazılmaz.
+
+- Kurulum: sürüm, claude/codex/wrangler, Cloudflare değerleri tanımlı mı (değerleri değil), portal, ayarlar.
+- Her müşteri: aşama, son build ve kalite uyarıları, onaylar (kimin verdiği), yayın adresleri ve canlı kontrol, ödeme, portal, son 15 iş (süre, maliyet, özet, hatalar), agent'ın araç çağrıları.
+- Otomatik kontroller: agent hiç yayın yapmadı ya da yasak araç kullanmadı mı, onaylar senin mi, müşteri klasörlerinde token veya portal anahtarı var mı, portalda alınmamış kayıt kaldı mı, ödemesi geciken, açılmayan site, başarısız iş.
+- İnternetsiz: `--no-network` (canlı kontroller atlanır).
+
+Kısayol (bir kez, WSL terminalinde):
+
+```bash
+echo 'sf-report() { (cd ~/projects/site-factory && npm run --silent report -- /mnt/c/Users/eeren/Downloads); }' >> ~/.bashrc && source ~/.bashrc
+```
+
+Sonra `sf-report` yaz; dosya İndirilenler'e düşer.
+
 ## Uçtan uca testler (1.17.2)
 
 `npm run test:e2e` (birkaç dakika; Linux Chromium gerekir, yoksa atlanır):
