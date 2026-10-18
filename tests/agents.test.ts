@@ -14,7 +14,7 @@ import { tempFactory } from "./helpers.js";
 describe("agent per kind of job (Claude Code or Codex)", () => {
   it("follows Eren's per-kind settings, else the package", () => {
     const f = tempFactory();
-    expect(jobGroup("autopilot")).toBe("design");
+    expect(jobGroup("create-site")).toBe("design");
     expect(jobGroup("edit-text")).toBe("edit");
     expect(jobGroup("add-page")).toBe("page");
     expect(resolvePolicy(f, "x-co", "revise")).toMatchObject({ provider: "claude", model: "sonnet" });

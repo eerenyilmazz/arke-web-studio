@@ -258,14 +258,14 @@ describe("single paste box", () => {
   });
 });
 
-describe("prepare site (autopilot)", () => {
+describe("prepare site (create-site job)", () => {
   it("runs one longer agent job with the pasted text, or continues without input", async () => {
     const calls: SpawnCall[] = [];
     const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "Yaptıklarım: ..." }]));
     const json = { ...auth, "Content-Type": "application/json" };
     await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "reinware", businessName: "Reinware", industry: "software development", hostingModel: "managed" }) });
 
-    const first = await fetch(`${base}/api/clients/reinware/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "5 yıldır yazılım yapıyorum. eerenyilmazz1@gmail.com" }) });
+    const first = await fetch(`${base}/api/clients/reinware/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "5 yıldır yazılım yapıyorum. eerenyilmazz1@gmail.com" }) });
     expect(first.status).toBe(202);
     await waitFor(async () => ((await (await fetch(`${base}/api/clients/reinware`, { headers: auth })).json()) as { running: unknown }).running === null);
     const call = calls[0]!;
@@ -277,7 +277,7 @@ describe("prepare site (autopilot)", () => {
     expect(call.stdin).toMatch(/Never deploy and never touch approvals/);
     expect(call.stdin).toMatch(/Eksikler:/);
 
-    const again = await fetch(`${base}/api/clients/reinware/agent/autopilot`, { method: "POST", headers: json, body: "{}" });
+    const again = await fetch(`${base}/api/clients/reinware/agent/create-site`, { method: "POST", headers: json, body: "{}" });
     expect(again.status).toBe(202);
     // No new input: only the earlier paste comes back, marked as earlier information.
     expect(calls[1]!.stdin.match(/\n<client_data>\n/g)).toHaveLength(1);
@@ -343,7 +343,7 @@ describe("research first", () => {
     const json = { ...auth, "Content-Type": "application/json" };
     expect(((await (await fetch(`${base}/api/settings`, { headers: auth })).json()) as { webResearch: boolean }).webResearch).toBe(true);
     await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "web-on", businessName: "Web", industry: "barber shop", hostingModel: "managed" }) });
-    expect((await fetch(`${base}/api/clients/web-on/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Berber, Ankara" }) })).status).toBe(202);
+    expect((await fetch(`${base}/api/clients/web-on/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Berber, Ankara" }) })).status).toBe(202);
     const on = calls[0]!;
     expect(on.args[on.args.indexOf("--allowedTools") + 1]).toMatch(/WebSearch,WebFetch/);
     expect(on.args[on.args.indexOf("--disallowedTools") + 1]).not.toMatch(/WebFetch/);
@@ -356,7 +356,7 @@ describe("research first", () => {
 
     expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ webResearch: false }) })).status).toBe(200);
     expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ webResearch: "yes" }) })).status).toBe(400);
-    await fetch(`${base}/api/clients/web-on/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "x", askFirst: false }) });
+    await fetch(`${base}/api/clients/web-on/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "x", askFirst: false }) });
     const off = calls[1]!;
     expect(off.args[off.args.indexOf("--allowedTools") + 1]).not.toMatch(/WebSearch/);
     expect(off.args[off.args.indexOf("--disallowedTools") + 1]).toMatch(/WebSearch,WebFetch/);
@@ -586,18 +586,18 @@ describe("1.13: archive, texts by id, extra page, logo checks", () => {
     const calls: SpawnCall[] = [];
     const { base, json, factory } = await customCo(calls);
     expect((await fetch(`${base}/api/clients/text-co/agent/blog-post`, { method: "POST", headers: json, body: JSON.stringify({ title: "ab" }) })).status).toBe(400);
-    expect((await fetch(`${base}/api/clients/text-co/agent/client-feedback`, { method: "POST", headers: json, body: JSON.stringify({ ids: ["x"] }) })).status).toBe(400);
+    expect((await fetch(`${base}/api/clients/text-co/agent/portal-comments`, { method: "POST", headers: json, body: JSON.stringify({ ids: ["x"] }) })).status).toBe(400);
     const { clientPaths } = await import("../src/lib/paths.js");
     const { writeFileSync, mkdirSync } = await import("node:fs");
     const fdir = clientPaths(factory.clientsRoot, "text-co").factoryDir;
     mkdirSync(fdir, { recursive: true });
     writeFileSync(`${fdir}/client-feedback.json`, JSON.stringify([{ id: "1-a", at: "2026-10-01", page: "home", text: "Bigger logo please", status: "open" }]));
-    const r = await fetch(`${base}/api/clients/text-co/agent/client-feedback`, { method: "POST", headers: json, body: JSON.stringify({ ids: ["1-a"], text: "injected" }) });
+    const r = await fetch(`${base}/api/clients/text-co/agent/portal-comments`, { method: "POST", headers: json, body: JSON.stringify({ ids: ["1-a"], text: "injected" }) });
     expect(r.status).toBe(202);
     expect(calls[0]!.stdin).toMatch(/<client_data>\n1\. \[home\] Bigger logo please\n<\/client_data>/);
     expect(calls[0]!.stdin).not.toContain("injected");
-    const { clientInbox } = await import("../src/panel/portal.js");
-    expect(clientInbox(factory, "text-co").feedback[0]!.status).toBe("sent");
+    const { portalMessages } = await import("../src/panel/portal.js");
+    expect(portalMessages(factory, "text-co").comments[0]!.status).toBe("sent");
   });
 
   it("stops another client's logo, and marks the brand stale when the logo changes", async () => {
@@ -683,7 +683,7 @@ describe("library fixed places from the panel", () => {
     const nd = await (await fetch(`${ctx.base}/api/clients/new-co`, { headers: ctx.auth })).json() as { startDesign: string | null };
     expect(nd.startDesign).toBe(saved.id);
     tools.updateClientConfig(ctx.factory, { slug: "new-co", patch: { template: "custom" } });
-    const r = await fetch(`${ctx.base}/api/clients/new-co/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Phone +447700900999", libraryId: saved.id }) });
+    const r = await fetch(`${ctx.base}/api/clients/new-co/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Phone +447700900999", libraryId: saved.id }) });
     expect(r.status).toBe(202);
     expect(tools.readSiteFileTool(ctx.factory, { slug: "new-co", path: "index.html" }).content).toContain("New Bakery");
     expect(calls[0]!.stdin + calls[0]!.args.join(" ")).toMatch(/Panel filled: İşletme adı/);
@@ -698,7 +698,7 @@ describe("earlier inputs are kept between agent jobs", () => {
     const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
     const json = { ...auth, "Content-Type": "application/json" };
     await fetch(`${base}/api/clients`, { method: "POST", headers: json, body: JSON.stringify({ slug: "mono-barber", businessName: "Mono", industry: "barber shop", hostingModel: "managed" }) });
-    const first = await fetch(`${base}/api/clients/mono-barber/agent/autopilot`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Saç kesimi 500 TL. Pazartesi–Cumartesi 09:00–22:00." }) });
+    const first = await fetch(`${base}/api/clients/mono-barber/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Saç kesimi 500 TL. Pazartesi–Cumartesi 09:00–22:00." }) });
     expect(first.status).toBe(202);
     await waitFor(async () => ((await (await fetch(`${base}/api/clients/mono-barber`, { headers: auth })).json()) as { running: unknown }).running === null);
     const second = await fetch(`${base}/api/clients/mono-barber/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "E-posta: a@b.co" }) });

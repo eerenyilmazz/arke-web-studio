@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { FACTORY_ROOT, type FactoryConfig } from "../config.js";
@@ -24,9 +24,15 @@ const KV_TITLE = "sf-portal-store";
 const COMPAT_DATE = "2026-06-01";
 const FETCH_TIMEOUT_MS = 15_000;
 const LINKS_FILE = "portal-links.json";
-const INBOX_FILE = "portal-inbox.json";
-const FEEDBACK_FILE = "client-feedback.json";
-const APPROVAL_FILE = "client-approval.json";
+const INTAKE_FILE = "portal-intake.json";
+const COMMENTS_FILE = "portal-comments.json";
+const APPROVAL_FILE = "portal-approval.json";
+/** 1.15.0 names of the same files, moved to the new names the first time they are read. */
+const OLD_NAMES: Readonly<Record<string, string>> = {
+  [INTAKE_FILE]: "portal-inbox.json",
+  [COMMENTS_FILE]: "client-feedback.json",
+  [APPROVAL_FILE]: "client-approval.json",
+};
 
 export interface PortalConfig {
   readonly url: string;
@@ -212,7 +218,7 @@ export interface IntakeEntry {
   readonly used?: boolean;
 }
 
-export interface FeedbackEntry {
+export interface CommentEntry {
   readonly id: string;
   readonly at: string;
   readonly page: string;
@@ -221,19 +227,27 @@ export interface FeedbackEntry {
 }
 
 const fdir = (factory: FactoryConfig, slug: string) => clientPaths(factory.clientsRoot, slug).factoryDir;
+/** A portal file of this client; a file still under its 1.15.0 name is renamed first. */
+function portalFile(factory: FactoryConfig, slug: string, name: string): string {
+  const file = path.join(fdir(factory, slug), name);
+  const old = path.join(fdir(factory, slug), OLD_NAMES[name] ?? name);
+  if (old !== file && !existsSync(file) && existsSync(old)) renameSync(old, file);
+  return file;
+}
+
 const readList = <T>(file: string): T[] => (readJsonIfExists(file) as T[] | undefined) ?? [];
 
-export function clientInbox(factory: FactoryConfig, slug: string) {
+export function portalMessages(factory: FactoryConfig, slug: string) {
   return {
-    intake: readList<IntakeEntry>(path.join(fdir(factory, slug), INBOX_FILE)),
-    feedback: readList<FeedbackEntry>(path.join(fdir(factory, slug), FEEDBACK_FILE)),
-    approval: (readJsonIfExists(path.join(fdir(factory, slug), APPROVAL_FILE)) as { at: string; name: string; previewUrl?: string } | undefined) ?? null,
+    intake: readList<IntakeEntry>(portalFile(factory, slug, INTAKE_FILE)),
+    comments: readList<CommentEntry>(portalFile(factory, slug, COMMENTS_FILE)),
+    approval: (readJsonIfExists(portalFile(factory, slug, APPROVAL_FILE)) as { at: string; name: string; previewUrl?: string } | undefined) ?? null,
   };
 }
 
 /** Marks one entry (an intake used for a job, a comment sent to the agent or done). */
-export function updateEntry(factory: FactoryConfig, slug: string, kind: "intake" | "feedback", id: string, patch: Record<string, unknown>): void {
-  const file = path.join(fdir(factory, slug), kind === "intake" ? INBOX_FILE : FEEDBACK_FILE);
+export function updateEntry(factory: FactoryConfig, slug: string, kind: "intake" | "comment", id: string, patch: Record<string, unknown>): void {
+  const file = portalFile(factory, slug, kind === "intake" ? INTAKE_FILE : COMMENTS_FILE);
   const list = readList<{ id: string }>(file);
   if (!list.some((e) => e.id === id)) throw new Error("Kayıt bulunamadı.");
   writeJson(file, list.map((e) => (e.id === id ? { ...e, ...patch } : e)));
@@ -268,17 +282,17 @@ export async function pullPortal(factory: FactoryConfig, fetcher?: PortalFetch):
         writeFileSync(safeJoin(inbox, name), Buffer.from(await fr.arrayBuffer()));
         saved.push(name);
       }
-      const file = path.join(dir, INBOX_FILE);
+      const file = portalFile(factory, item.slug, INTAKE_FILE);
       const entry: IntakeEntry = { id, at: item.at, answers: (item.answers as IntakeEntry["answers"]) ?? {}, freeText: String(item.freeText ?? ""), files: saved };
       writeJson(file, [...readList<IntakeEntry>(file).filter((e) => e.id !== id), entry]);
       counts.intake += 1;
     } else if (item.type === "comment") {
-      const file = path.join(dir, FEEDBACK_FILE);
-      const entry: FeedbackEntry = { id, at: item.at, page: String(item.page ?? ""), text: String(item.text ?? "").slice(0, 4000), status: "open" };
-      writeJson(file, [...readList<FeedbackEntry>(file).filter((e) => e.id !== id), entry]);
+      const file = portalFile(factory, item.slug, COMMENTS_FILE);
+      const entry: CommentEntry = { id, at: item.at, page: String(item.page ?? ""), text: String(item.text ?? "").slice(0, 4000), status: "open" };
+      writeJson(file, [...readList<CommentEntry>(file).filter((e) => e.id !== id), entry]);
       counts.comments += 1;
     } else if (item.type === "approval") {
-      writeJson(path.join(dir, APPROVAL_FILE), { at: item.at, name: String(item.name ?? "").slice(0, 80), previewUrl: item.previewUrl ?? null });
+      writeJson(portalFile(factory, item.slug, APPROVAL_FILE), { at: item.at, name: String(item.name ?? "").slice(0, 80), previewUrl: item.previewUrl ?? null });
       counts.approvals += 1;
     }
     await call(c, "DELETE", `items/${encodeURIComponent(item.key)}`, undefined, fetcher);

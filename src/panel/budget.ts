@@ -1,11 +1,12 @@
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { withCurrentKind } from "./kinds.js";
 import path from "node:path";
 import type { FactoryConfig } from "../config.js";
 import { readBusiness } from "./business.js";
 import { readSettings, type AgentProvider, type JobGroup } from "./settings.js";
 
 /**
- * Token budget: how much each agent job may spend, decided by a mode (Ekonomik / Dengeli / Premium).
+ * Token budget: how much each agent job may spend, decided by a mode, shown as a package (Temel / Standart / Premium).
  *
  * A mode picks the model per kind of job, the step limit, how the design skills are used, whether the agent
  * researches the web and a token cap per job (the panel stops a job that passes it). Usage of every job is
@@ -31,7 +32,7 @@ export interface AgentPolicy {
 }
 
 /** Jobs that design or write a whole site; everything else is an edit. */
-export const DESIGN_KINDS: ReadonlySet<string> = new Set(["autopilot", "upgrade-template", "concepts", "choose-concept", "redesign", "from-library", "brand-board", "design-content"]);
+export const DESIGN_KINDS: ReadonlySet<string> = new Set(["create-site", "upgrade-template", "concepts", "choose-concept", "redesign", "from-library", "brand-board", "design-content"]);
 
 interface Profile {
   readonly design: { model: string; maxTurns: number; tokenCap: number };
@@ -67,7 +68,8 @@ export const PROFILES: Readonly<Record<BudgetMode, Profile>> = {
   },
 };
 
-export const MODE_LABELS: Readonly<Record<BudgetMode, string>> = { economy: "Ekonomik", balanced: "Dengeli", premium: "Premium" };
+/** Budget modes as Eren and the panel name them: packages (same words as the panel's PACKAGE_NAMES). */
+export const PACKAGE_LABELS: Readonly<Record<BudgetMode, string>> = { economy: "Temel", balanced: "Standart", premium: "Premium" };
 
 /** The client's own mode (set in its business info) wins over the panel-wide one. */
 export function modeFor(factory: FactoryConfig, slug: string): BudgetMode {
@@ -163,7 +165,7 @@ export function readLedger(factory: FactoryConfig): LedgerEntry[] {
   for (const line of readFileSync(f, "utf8").split("\n")) {
     if (!line.trim()) continue;
     try {
-      out.push(JSON.parse(line) as LedgerEntry);
+      out.push(withCurrentKind(JSON.parse(line) as LedgerEntry));
     } catch {
       // torn line after a crash
     }
@@ -203,7 +205,7 @@ export function summarise(factory: FactoryConfig, now = new Date()): UsageSummar
 export function monthlyBlock(factory: FactoryConfig): string | null {
   const s = summarise(factory);
   if (s.monthlyBudget > 0 && s.monthTokens >= s.monthlyBudget) {
-    return `Bu ayın token bütçesi doldu (${(s.monthTokens / M).toFixed(1)}M / ${(s.monthlyBudget / M).toFixed(1)}M). Ayarlar → Bütçe'den artırabilir ya da Ekonomik moda geçebilirsin.`;
+    return `Bu ayın token bütçesi doldu (${(s.monthTokens / M).toFixed(1)}M / ${(s.monthlyBudget / M).toFixed(1)}M). Ayarlar → Kaynak Kullanımı'ndan artırabilir ya da Temel pakete geçebilirsin.`;
   }
   return null;
 }

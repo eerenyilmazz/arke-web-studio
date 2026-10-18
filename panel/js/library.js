@@ -1,6 +1,7 @@
 // Design library, fixed places and library controls.
 import { $, api, ask, guarded, h, ignoreOptional, isBusy, state, toast } from "./core.js";
-import { render, runAgent } from "./shell.js";
+import { runAgent } from "./jobs.js";
+import { render } from "./router.js";
 
 // ---------------------------------------------------------------- design library
 
@@ -8,6 +9,7 @@ import { render, runAgent } from "./shell.js";
 export function words(text) {
   return String(text || "").toLowerCase().replace(/[çğıöşü]/g, (c) => ({ ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u" })[c]).split(/[^a-z0-9]+/).filter((w) => w.length > 2);
 }
+
 /** How well a saved design fits a client: shared words in sector (counts double), tags, name and concept. */
 export function libraryScore(design, industry) {
   const want = new Set(words(industry));
@@ -17,6 +19,7 @@ export function libraryScore(design, industry) {
   for (const w of words([design.name, ...(design.tags || []), design.concept].join(" "))) if (want.has(w)) score += 1;
   return score;
 }
+
 /** Library designs for a client, best fit first, with "önerilen" on those that match its sector. */
 export function rankedDesigns(designs, slug, industry) {
   return designs.filter((x) => x.sourceSlug !== slug).map((x) => ({ ...x, score: libraryScore(x, industry) })).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
@@ -60,7 +63,7 @@ export async function renderLibrary() {
         d.fonts && h("p", { class: "small muted", text: [d.fonts.heading, d.fonts.body].filter(Boolean).join(" / ") }),
         d.concept && h("p", { class: "small", text: d.concept.length > 180 ? `${d.concept.slice(0, 180)}…` : d.concept }),
         d.tags.length > 0 && h("div", { class: "chips" }, ...d.tags.map((t) => h("span", { class: "chip", text: t }))),
-        h("p", { class: "small muted" }, "Kaynak: ", h("a", { href: `#/c/${d.sourceSlug}/marka`, text: d.sourceSlug }), ` · ${new Date(d.createdAt).toLocaleDateString("tr-TR")}`),
+        h("p", { class: "small muted" }, "Kaynak: ", h("a", { href: `#/musteri/${d.sourceSlug}/marka`, text: d.sourceSlug }), ` · ${new Date(d.createdAt).toLocaleDateString("tr-TR")}`),
         h("p", { class: "small muted", text: d.slots?.length ? `${d.slots.length} sabit alan` : "Sabit alan tanımlı değil" }),
         h("button", { class: "btn btn-sm", type: "button", onclick: async () => { state.libEdit = d.id; render(); } }, "Sabit alanları yönet"),
         h("button", { class: "btn btn-sm danger", type: "button", onclick: async () => {

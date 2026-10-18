@@ -1,8 +1,9 @@
 // Client portal: setup card (Settings → Yayın) and the per-client links card (Müşteri Bilgileri).
 import { api, ask, copyButton, guarded, h, isBusy, time, toast } from "./core.js";
-import { render, runAgent } from "./shell.js";
+import { runAgent } from "./jobs.js";
+import { render } from "./router.js";
 
-const KIND_TR = { intake: "Bilgi formu", review: "Yorum ve onay" };
+const LINK_KIND_TR = { intake: "Bilgi formu", review: "Yorum ve onay" };
 
 /** Settings card: one-time setup on Eren's Cloudflare account. The secret is never shown. */
 export function portalSettingsCard() {
@@ -47,7 +48,7 @@ export function portalCard(d) {
     }
     const create = async (kind) => {
       const link = await guarded(() => api("POST", `/api/clients/${slug}/portal/links`, { kind }));
-      if (link) { toast(`${KIND_TR[kind]} linki hazır.`); load(); }
+      if (link) { toast(`${LINK_KIND_TR[kind]} linki hazır.`); load(); }
     };
     const close = async (l) => {
       if (!(await ask({ title: "Link kapatılsın mı?", body: "Müşteri bu linki artık açamaz. Gelmiş olanlar silinmez.", confirm: "Kapat", danger: true }))) return;
@@ -64,11 +65,11 @@ export function portalCard(d) {
       const answers = Object.fromEntries(Object.entries(e.answers).map(([id, a]) => [id, a.answer]));
       if (await runAgent(slug, "answers", { answers, freeText: e.freeText })) mark("intake", e.id, { used: true });
     };
-    const open = p.feedback.filter((f) => f.status === "open");
+    const open = p.comments.filter((f) => f.status === "open");
 
     const links = p.links.length
       ? h("ul", { class: "portal-links" }, ...p.links.map((l) => h("li", { class: "row" },
-          h("strong", { text: KIND_TR[l.kind] }), h("code", { class: "portal-url", text: l.url }), copyButton(l.url, "Linki kopyala"),
+          h("strong", { text: LINK_KIND_TR[l.kind] }), h("code", { class: "portal-url", text: l.url }), copyButton(l.url, "Linki kopyala"),
           h("span", { class: "muted small", text: `${time(l.expiresAt)} tarihine kadar` }),
           h("button", { class: "btn btn-sm", type: "button", onclick: () => close(l) }, "Kapat"))))
       : h("p", { class: "muted small", text: "Henüz link yok." });
@@ -80,13 +81,13 @@ export function portalCard(d) {
       e.files.length ? h("p", { class: "muted small", text: `Dosyalar (Logo ve Görseller'de): ${e.files.join(", ")}` }) : null,
       h("div", { class: "row" }, h("button", { class: "btn btn-sm btn-primary", type: "button", disabled: isBusy(), onclick: () => useIntake(e) }, "Agent'a işlet"))))) : null;
 
-    const feedback = p.feedback.length ? h("div", { class: "stack" },
+    const comments = p.comments.length ? h("div", { class: "stack" },
       h("div", { class: "row", style: "justify-content:space-between" }, h("h3", { text: "Müşteri yorumları" }),
-        open.length ? h("button", { class: "btn btn-sm btn-primary", type: "button", disabled: isBusy(), onclick: async () => { if (await runAgent(slug, "client-feedback", { ids: open.map((f) => f.id) })) load(); } }, `Açık ${open.length} yorumu agent'a ilet`) : null),
-      h("ul", { class: "portal-comments" }, ...p.feedback.slice().reverse().map((f) => h("li", { class: `portal-comment ${f.status}` },
+        open.length ? h("button", { class: "btn btn-sm btn-primary", type: "button", disabled: isBusy(), onclick: async () => { if (await runAgent(slug, "portal-comments", { ids: open.map((f) => f.id) })) load(); } }, `Açık ${open.length} yorumu agent'a ilet`) : null),
+      h("ul", { class: "portal-comments" }, ...p.comments.slice().reverse().map((f) => h("li", { class: `portal-comment ${f.status}` },
         h("div", { class: "row" }, h("strong", { text: f.page || "genel" }), h("span", { class: "muted small", text: time(f.at) }),
           h("span", { class: `badge ${f.status === "open" ? "warn" : "ok"}`, text: f.status === "open" ? "açık" : f.status === "sent" ? "agent'a iletildi" : "çözüldü" }),
-          f.status !== "done" ? h("button", { class: "btn btn-sm", type: "button", onclick: () => mark("feedback", f.id, { status: "done" }) }, "Çözüldü") : null),
+          f.status !== "done" ? h("button", { class: "btn btn-sm", type: "button", onclick: () => mark("comments", f.id, { status: "done" }) }, "Çözüldü") : null),
         h("p", { text: f.text }))))) : null;
 
     const approval = p.approval
@@ -98,7 +99,7 @@ export function portalCard(d) {
         h("button", { class: "btn btn-sm", type: "button", onclick: () => create("intake") }, "Bilgi formu linki oluştur"),
         h("button", { class: "btn btn-sm", type: "button", onclick: () => create("review") }, "Yorum ve onay linki oluştur"),
         h("button", { class: "btn btn-sm", type: "button", style: "margin-inline-start:auto", onclick: (ev) => pull(ev.currentTarget) }, "Gelenleri şimdi al")),
-      approval || "", links, intake || "", feedback || "");
+      approval || "", links, intake || "", comments || "");
   };
   void load();
   return box;

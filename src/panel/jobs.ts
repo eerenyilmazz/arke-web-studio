@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { emptyUsage, MODE_LABELS, usageFrom, weighted, type AgentPolicy, type Usage } from "./budget.js";
+import { emptyUsage, PACKAGE_LABELS, usageFrom, weighted, type AgentPolicy, type Usage } from "./budget.js";
 
 /*
  * Jobs are long-running work started from the panel: agent runs (Claude Code in headless mode) and
@@ -96,7 +96,7 @@ const MAX_AGENT_TURNS = 120;
 /** Custom sites (brand + every page written by hand) need many more tool calls than filling a template. */
 export const MAX_AUTOPILOT_TURNS = 300;
 /** Jobs that may design and write a whole site. */
-const LONG_JOBS: ReadonlySet<string> = new Set(["autopilot", "upgrade-template", "concepts", "choose-concept", "redesign"]);
+const LONG_JOBS: ReadonlySet<string> = new Set(["create-site", "upgrade-template", "concepts", "choose-concept", "redesign"]);
 const MAX_LOG_LINES = 2000;
 const MAX_TEXT = 4000;
 
@@ -294,7 +294,7 @@ export class JobRunner {
     const codex = policy?.provider === "codex";
     job.provider = codex ? "codex" : "claude";
     const engine = codex ? "Codex" : "Claude Code";
-    this.push(job, "info", `Agent başlatıldı: ${engine} (sadece site-factory araçları; shell ve dosya düzenleme kapalı)${policy ? ` · ${MODE_LABELS[policy.mode]} mod, ${policy.model || "varsayılan model"}, en fazla ${Math.round(policy.tokenCap / 1000)}K token` : ""}.`);
+    this.push(job, "info", `Agent başlatıldı: ${engine} (sadece site-factory araçları; shell ve dosya düzenleme kapalı)${policy ? ` · ${PACKAGE_LABELS[policy.mode]} paket, ${policy.model || "varsayılan model"}, en fazla ${Math.round(policy.tokenCap / 1000)}K token` : ""}.`);
     let child: ChildProcess;
     let workDir: string | null = null;
     try {
@@ -380,7 +380,7 @@ export class JobRunner {
     job.tokens = weighted(job.usage);
     if (job.tokenCap && job.tokens > job.tokenCap && job.status === "running" && job.child) {
       job.child.kill("SIGTERM");
-      this.push(job, "error", `Bu işin token tavanı aşıldı (${Math.round(job.tokens / 1000)}K / ${Math.round(job.tokenCap / 1000)}K), iş durduruldu. Yazılanlar duruyor; devam için tekrar başlat ya da Ayarlar → Bütçe'den modu yükselt.`);
+      this.push(job, "error", `Bu işin token tavanı aşıldı (${Math.round(job.tokens / 1000)}K / ${Math.round(job.tokenCap / 1000)}K), iş durduruldu. Yazılanlar duruyor; devam için tekrar başlat ya da Ayarlar → Kaynak Kullanımı'ndan paketi yükselt.`);
       this.finish(job, "failed");
     }
   }

@@ -4,7 +4,8 @@ import { clientRoutes } from "./api/clients.js";
 import type { ApiDeps, Route } from "./api/common.js";
 import { editRoutes } from "./api/edit.js";
 import { libraryRoutes } from "./api/library.js";
-import { opsRoutes } from "./api/ops.js";
+import { publishRoutes } from "./api/publish.js";
+import { systemRoutes } from "./api/system.js";
 import { portalRoutes } from "./api/portal.js";
 import { HttpError } from "./http.js";
 
@@ -17,7 +18,7 @@ export { startTranslation } from "./api/common.js";
 export { normalisePhone } from "./api/edit.js";
 export { safeFileName } from "./api/common.js";
 
-const routes: readonly Route[] = [...clientRoutes, ...libraryRoutes, ...editRoutes, ...agentRoutes, ...opsRoutes, ...portalRoutes];
+const routes: readonly Route[] = [...clientRoutes, ...libraryRoutes, ...editRoutes, ...agentRoutes, ...publishRoutes, ...systemRoutes, ...portalRoutes];
 
 export async function handleApi(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, pathname: string): Promise<void> {
   for (const route of routes) {

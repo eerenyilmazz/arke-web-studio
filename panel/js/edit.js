@@ -2,7 +2,7 @@
 import { PALETTE_TR } from "./brand.js";
 import { api, ask, guarded, h, isBusy, toast } from "./core.js";
 import { quickEditCard, uploadCard } from "./info.js";
-import { jobStarted, runAgent } from "./shell.js";
+import { jobStarted, runAgent } from "./jobs.js";
 
 // ---------------------------------------------------------------- Düzenle: forms instead of chat
 
@@ -111,7 +111,7 @@ function extraPageForm(slug, busy) {
 
 // ---------------------------------------------------------------- texts by id
 
-const KIND_TR = { title: "Sekme başlığı", meta: "Arama açıklaması", alt: "Görsel açıklaması", h1: "Ana başlık", h2: "Başlık", h3: "Alt başlık", h4: "Alt başlık", h5: "Alt başlık", h6: "Alt başlık", p: "Paragraf", li: "Liste", a: "Bağlantı", button: "Buton", span: "Kısa metin", strong: "Vurgu", em: "Vurgu", small: "Küçük metin", label: "Form etiketi", figcaption: "Görsel yazısı", blockquote: "Alıntı", td: "Tablo", th: "Tablo başlığı", dt: "Terim", dd: "Açıklama", field: "Alan" };
+const TEXT_KIND_TR = { title: "Sekme başlığı", meta: "Arama açıklaması", alt: "Görsel açıklaması", h1: "Ana başlık", h2: "Başlık", h3: "Alt başlık", h4: "Alt başlık", h5: "Alt başlık", h6: "Alt başlık", p: "Paragraf", li: "Liste", a: "Bağlantı", button: "Buton", span: "Kısa metin", strong: "Vurgu", em: "Vurgu", small: "Küçük metin", label: "Form etiketi", figcaption: "Görsel yazısı", blockquote: "Alıntı", td: "Tablo", th: "Tablo başlığı", dt: "Terim", dd: "Açıklama", field: "Alan" };
 
 /**
  * Every text of a page, each with its id (h1-1, p-3, meta-description…). Eren edits in place; the panel writes
@@ -129,7 +129,7 @@ async function textEditor(d) {
       const area = h("textarea", { rows: it.text.length > 90 ? 3 : 1, maxlength: 4000, "aria-label": `${it.id} metni` });
       area.value = it.text;
       const row = h("div", { class: "tx-row" },
-        h("div", { class: "tx-meta" }, h("code", { text: it.id }), h("span", { class: "muted small", text: KIND_TR[it.kind] || it.kind })),
+        h("div", { class: "tx-meta" }, h("code", { text: it.id }), h("span", { class: "muted small", text: TEXT_KIND_TR[it.kind] || it.kind })),
         area);
       area.addEventListener("input", () => { row.classList.toggle("changed", area.value.trim() !== it.text.trim()); count(); });
       return { it, area, row };

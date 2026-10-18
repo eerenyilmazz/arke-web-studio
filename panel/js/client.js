@@ -1,12 +1,16 @@
 // Client page: header, status strip, preview, Düzenleme tab and approval dialog.
 import { tabBrand } from "./brand.js";
-import { $, api, avatar, copyButton, fmtTokens, guarded, h, ICON, ignoreOptional, isBusy, LANG_NAMES, OLD_TABS, PACKAGE_TR, state, stepIndex, STEPS, svg, TABS, time, toast } from "./core.js";
+import { archiveClient, deployProduction, openPreview } from "./client-actions.js";
+import { $, api, avatar, copyButton, fmtTokens, guarded, h, ICON, ignoreOptional, isBusy, LANG_NAMES, OLD_TABS, PACKAGE_NAMES, state, stepIndex, STEPS, svg, TABS, time, toast } from "./core.js";
 import { editForm } from "./edit.js";
-import { drawFeed, } from "./feed.js";
-import { infoGuide, renderHome } from "./home.js";
-import { qualityTable, tabInfo, tabProposal, versionsCard } from "./info.js";
+import { drawFeed } from "./feed.js";
+import { renderHome } from "./home.js";
+import { qualityTable, tabInfo, versionsCard } from "./info.js";
+import { runAgent, runTask, startPolling } from "./jobs.js";
 import { rankedDesigns } from "./library.js";
-import { archiveClient, deployProduction, openPreview, render, runAgent, runTask, setStatus, startPolling } from "./shell.js";
+import { infoGuide } from "./new-client.js";
+import { tabProposal } from "./proposal.js";
+import { render, setStatus } from "./router.js";
 
 // ---------------------------------------------------------------- client page
 
@@ -30,7 +34,7 @@ export async function renderClient(view, slug, tab) {
       h("button", { type: "button", class: "danger", onclick: () => archiveClient(slug, stage) }, "Müşteriyi arşivle"),
     ),
   );
-  const usage = d.budget ? `${PACKAGE_TR[d.budget.mode] || ""} paket${d.budget.usage.tokens ? ` · kaynak kullanımı ${fmtTokens(d.budget.usage.tokens)}` : ""}` : "";
+  const usage = d.budget ? `${PACKAGE_NAMES[d.budget.mode] || ""} paket${d.budget.usage.tokens ? ` · kaynak kullanımı ${fmtTokens(d.budget.usage.tokens)}` : ""}` : "";
 
   const body = h("div", { class: "tab-body" });
   view.replaceChildren(
@@ -61,7 +65,7 @@ export async function renderClient(view, slug, tab) {
     h("div", { class: tab === "marka" || tab === "teklif" ? "work wide" : "work" },
       tab === "marka" || tab === "teklif" ? null : previewPane(d),
       h("section", { class: "work-panel", "data-enter": "2" },
-        h("nav", { class: "seg-tabs", "aria-label": "Bölümler" }, ...TABS.map(([id, label]) => h("a", { href: `#/c/${slug}/${id}`, "aria-current": id === tab ? "page" : null, text: label }))),
+        h("nav", { class: "seg-tabs", "aria-label": "Bölümler" }, ...TABS.map(([id, label]) => h("a", { href: `#/musteri/${slug}/${id}`, "aria-current": id === tab ? "page" : null, text: label }))),
         body,
       ),
     ),
@@ -99,7 +103,7 @@ export function nextAction(d) {
   const busy = isBusy();
   const working = busy && state.running.slug === slug;
   const btn = (label, onclick, cls = "btn", disabled = false) => h("button", { class: cls, type: "button", disabled, onclick }, label);
-  const revise = () => { location.hash = `#/c/${slug}/duzenle`; setTimeout(() => $("#composer")?.focus(), 120); };
+  const revise = () => { location.hash = `#/musteri/${slug}/duzenle`; setTimeout(() => $("#composer")?.focus(), 120); };
   if (working) return { text: "İşlem sürüyor. Tamamlandığında bildirim alacaksınız.", actions: [] };
   const PREPARE = ["collecting-answers", "design", "content", "awaiting-content-approval", "build", "awaiting-visual-approval"];
   if (PREPARE.includes(stage)) {
@@ -107,7 +111,7 @@ export function nextAction(d) {
     if (d.distReady && !(approved("content") && approved("visual"))) {
       return { text: "Siteyi inceleyip onaylayınız.", actions: [btn("Onayla", () => approveDialog(d, "site"), "btn btn-ok", busy), btn("Revizyon Talep Et", revise)] };
     }
-    return { text: "Müşteri bilgilerini girip siteyi oluşturunuz.", actions: [btn("Bilgileri Gir", () => { location.hash = `#/c/${slug}/duzenle`; setTimeout(() => $("#prep-text")?.focus(), 120); }, "btn btn-primary")] };
+    return { text: "Müşteri bilgilerini girip siteyi oluşturunuz.", actions: [btn("Bilgileri Gir", () => { location.hash = `#/musteri/${slug}/duzenle`; setTimeout(() => $("#prep-text")?.focus(), 120); }, "btn btn-primary")] };
   }
   const preview = d.lastDeploy && d.lastDeploy.target === "preview" && d.lastDeploy.hash === d.status.contentHash ? d.lastDeploy : null;
   if (stage === "awaiting-production-approval") {
@@ -220,7 +224,7 @@ export function prepareCard(d) {
   const busy = isBusy();
   const working = busy && state.running.slug === slug;
   const draft = (state.drafts[slug] ||= { answers: {}, extras: {}, later: new Set(), freeText: "" });
-  const ranBefore = d.history.some((j) => j.kind === "autopilot");
+  const ranBefore = d.history.some((j) => j.kind === "create-site");
   const box = h("textarea", { id: "prep-text", class: "field big-paste", rows: 8, maxlength: 20000, disabled: working,
     placeholder: ranBefore
       ? "Sorulan eksik bilgileri ya da yeni bilgileri yazınız, ardından \"Siteyi Oluştur\"a tekrar basınız."
@@ -245,7 +249,7 @@ export function prepareCard(d) {
   const startFrom = h("select", { id: "prep-lib", disabled: working }, h("option", { value: "" }, "Başlangıç tasarımı: yeni tasarım"));
   if (d.template === "custom") api("GET", "/api/library").then(({ designs }) => { for (const x of rankedDesigns(designs, slug, d.business.industry)) startFrom.append(h("option", { value: x.id }, `${x.score > 0 ? "★ Önerilen: " : "Kütüphaneden: "}${x.name}${x.sector ? ` · ${x.sector}` : ""}`)); if (d.startDesign) startFrom.value = d.startDesign; }).catch(ignoreOptional);
   const go = async () => {
-    const ok = await runAgent(slug, "autopilot", { freeText: draft.freeText || "", askFirst: askFirst.checked, ...(startFrom.value ? { libraryId: startFrom.value } : {}) });
+    const ok = await runAgent(slug, "create-site", { freeText: draft.freeText || "", askFirst: askFirst.checked, ...(startFrom.value ? { libraryId: startFrom.value } : {}) });
     if (ok) draft.freeText = "";
   };
   return h("section", { class: "card prep", "aria-label": "Siteyi oluştur" },
@@ -262,11 +266,10 @@ export function prepareCard(d) {
       h("button", { class: "btn btn-primary", type: "button", disabled: busy, onclick: go }, ranBefore ? "Devam Et" : "Siteyi Oluştur"),
       h("label", { for: "prep-files", class: "btn", style: working ? "pointer-events:none;opacity:.5" : "" }, "Logo ve Görsel Ekle"), fileInput,
       fileCount,
-      h("a", { href: `#/c/${slug}/bilgiler`, class: "small", style: "margin-inline-start:auto" }, "Müşteriye soru formu gönder"),
+      h("a", { href: `#/musteri/${slug}/bilgiler`, class: "small", style: "margin-inline-start:auto" }, "Müşteriye soru formu gönder"),
     ),
   );
 }
-
 
 // ---------------------------------------------------------------- approval from the panel
 
@@ -321,7 +324,7 @@ export function logoBanner(d) {
   if (d.sharedLogo) {
     return h("div", { class: "notice-bar bad", role: "alert" },
       h("p", {}, h("strong", { text: "Logo başka bir müşteriye ait. " }), h("span", { text: `Bu müşterinin logosu "${d.sharedLogo.name}" müşterisinin logosuyla aynı dosya. Tasarım işleri bu yüzden durdurulur.` })),
-      h("a", { class: "btn btn-sm", href: `#/c/${slug}/bilgiler` }, "Logoyu değiştir"));
+      h("a", { class: "btn btn-sm", href: `#/musteri/${slug}/bilgiler` }, "Logoyu değiştir"));
   }
   if (d.brandStale && d.template === "custom") {
     return h("div", { class: "notice-bar warn" },
@@ -338,5 +341,5 @@ export function paymentBanner(d) {
   if (!b?.paymentDue || b.paymentDue >= today || b.payment === "paid") return null;
   return h("div", { class: "notice-bar bad" },
     h("p", {}, h("strong", { text: "Ödeme gecikti. " }), h("span", { text: `Ödeme günü ${new Date(`${b.paymentDue}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })} idi; durum: ödenmedi.` })),
-    h("a", { class: "btn btn-sm", href: `#/c/${d.status.slug}/bilgiler` }, "İş Takibi ve Yayın"));
+    h("a", { class: "btn btn-sm", href: `#/musteri/${d.status.slug}/bilgiler` }, "İş Takibi ve Yayın"));
 }

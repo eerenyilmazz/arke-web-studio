@@ -1,6 +1,6 @@
 // Settings: publishing, budget, sender, backups, web research.
-import { $, api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODE_TR, MODEL_TR, toast } from "./core.js";
-import { askNotifyPermission, chime } from "./shell.js";
+import { $, api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODEL_TR, PACKAGE_NAMES, toast } from "./core.js";
+import { askNotifyPermission, chime } from "./jobs.js";
 import { portalSettingsCard } from "./portal.js";
 
 // ---------------------------------------------------------------- settings: publishing setup
@@ -58,10 +58,9 @@ export async function renderSettings() {
       group("yedek", "Yedek", backupCard())));
 }
 
-
 /** Budget mode, monthly budget and this month's use. */
 export function budgetCard() {
-  const mode = h("select", { id: "bd-mode" }, ...Object.entries(MODE_TR).map(([k, v]) => h("option", { value: k }, v)));
+  const mode = h("select", { id: "bd-mode" }, ...Object.entries(PACKAGE_NAMES).map(([k, v]) => h("option", { value: k }, v)));
   const monthly = h("input", { id: "bd-month", type: "number", min: 0, step: 1, placeholder: "0 = sınırsız" });
   const meter = h("div", { class: "meter" }, h("span"));
   const stats = h("p", { class: "small", role: "status" });

@@ -252,7 +252,7 @@ export default {
         if (!link || link.kind !== (parts[0] === "f" ? "intake" : "review")) return page(lang, t.gone, `<div class="card"><p>${esc(t.gone)}</p></div>`, null, 404);
         return parts[0] === "f" ? await handleIntake(request, env, parts[1], link, t) : await handleReview(request, env, parts[1], parts[2], link, t);
       }
-      return page("tr", "Site Factory", `<div class="card"><p>${esc(T.tr.gone)}</p></div>`, null, 404);
+      return page("tr", T.tr.gone, `<div class="card"><p>${esc(T.tr.gone)}</p></div>`, null, 404);
     } catch {
       return page("tr", "Hata", `<div class="card"><p>Bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p></div>`, null, 500);
     }

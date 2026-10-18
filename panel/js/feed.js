@@ -1,6 +1,6 @@
 // Agent job blocks and the record of past work.
 import { h, ICON, state, svg, time, usageLine } from "./core.js";
-import { cancelJob, jobProgress } from "./shell.js";
+import { cancelJob, jobProgress } from "./jobs.js";
 
 export function toolChips(names) {
   const counts = new Map();

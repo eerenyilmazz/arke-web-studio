@@ -3,6 +3,7 @@ import path from "node:path";
 import type { FactoryConfig } from "../config.js";
 import { clientPaths } from "../lib/paths.js";
 import type { JobRecord } from "./jobs.js";
+import { withCurrentKind } from "./kinds.js";
 
 /**
  * Conversation history per client, one JSON line per finished job in .factory/jobs.jsonl,
@@ -28,7 +29,7 @@ export function readHistory(factory: FactoryConfig, slug: string): JobRecord[] {
   for (const line of readFileSync(file, "utf8").split("\n").slice(-MAX_SHOWN - 1)) {
     if (!line.trim()) continue;
     try {
-      out.push(JSON.parse(line) as JobRecord);
+      out.push(withCurrentKind(JSON.parse(line) as JobRecord));
     } catch {
       // A torn last line after a crash is skipped, not fatal.
     }
@@ -72,7 +73,7 @@ export function readInputs(factory: FactoryConfig, slug: string): ClientInput[] 
   for (const line of readFileSync(file, "utf8").split("\n")) {
     if (!line.trim()) continue;
     try {
-      all.push(JSON.parse(line) as ClientInput);
+      all.push(withCurrentKind(JSON.parse(line) as ClientInput));
     } catch {
       // torn line after a crash: skipped
     }
@@ -80,7 +81,7 @@ export function readInputs(factory: FactoryConfig, slug: string): ClientInput[] 
   return trim(all);
 }
 
-const KINDS_WITH_INPUT: ReadonlySet<string> = new Set(["autopilot", "revise"]);
+const KINDS_WITH_INPUT: ReadonlySet<string> = new Set(["create-site", "revise"]);
 const PLACEHOLDER_REQUEST = /^Siteyi hazırla/;
 
 function fromHistory(factory: FactoryConfig, slug: string): ClientInput[] {

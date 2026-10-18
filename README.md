@@ -17,6 +17,18 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Tutarlı adlandırma (1.17.0)
+
+Davranış değişmedi; adlar yaptıkları işi söylüyor. Eski kayıtlar, dosyalar ve adresler çalışmaya devam eder.
+
+- **Paketler tek adla:** her yerde Temel / Standart / Premium ("mod", "Ekonomik", "Dengeli" kalktı). Kodda değerler aynı (`economy/balanced/premium`), kayıtlar değişmedi.
+- **İş türleri:** `autopilot` → `create-site` ("Siteyi Oluştur"), `client-feedback` → `portal-comments`. Eski adlarla kaydedilmiş geçmiş, girdiler ve maliyetler yeni adla okunur.
+- **Portal dosyaları** `portal-` ile başlar: `portal-intake.json`, `portal-comments.json`, `portal-approval.json` (gerçek onaylar yine `approvals.json`). 1.15.0 adlarıyla duranlar ilk okunuşta taşınır.
+- **Adresler Türkçe:** `#/yeni`, `#/musteri/<kısa-ad>/<sekme>`. Eski `#/new` ve `#/c/…` linkleri açılır.
+- **Panel kodu (panel/js):** `router.js` (sayfa yönlendirme, kenar çubuğu), `jobs.js` (işleri başlatma ve izleme), `client-actions.js` (önizleme, yayın, kaldırma, arşiv), `business.js` (iş takibi, kâr), `proposal.js` (teklif, iş raporu, aylık rapor), `new-client.js` (yeni müşteri formu); `info.js` yalnızca Müşteri Bilgileri sekmesi, `home.js` yalnızca ana sayfa.
+- **Sunucu (src/panel/api):** `ops.ts` ikiye ayrıldı: `publish.ts` (build, onay, önizleme, yayın, kaldırma) ve `system.ts` (işler, ayarlar, kullanım, kâr, yedek).
+- Portal sayfalarında "Site Factory" adı görünmez.
+
 ## Global pazarlar ve kurallar (1.16.0)
 
 - **Yeni pazarlar:** Türkiye ve İngiltere'ye ek olarak İrlanda, ABD, Almanya, Hollanda. Ortak dil İngilizce: Türkiye dışında sitenin ana dili İngilizce, para birimi ve telefon kodu ülkeye göre. Diğer diller "Site dili"nden eklenir.

@@ -10,6 +10,8 @@ import { FACTORY_ROOT } from "../src/config.js";
  */
 const MISSING_NAME = new Set([
   2304, // Cannot find name
+  2581, // Cannot find name "$" (TypeScript suggests jQuery types)
+  2582, // Cannot find name (TypeScript suggests test-runner types)
   2305, // Module has no exported member
   2552, // Cannot find name, did you mean
   2724, // has no exported member named, did you mean

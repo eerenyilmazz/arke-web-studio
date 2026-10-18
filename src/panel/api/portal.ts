@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { assertSlug } from "../../lib/paths.js";
 import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
-import { clientInbox, closeLink, createLink, listLinks, portalStatus, pullOnce, setupPortal, updateEntry } from "../portal.js";
+import { portalMessages, closeLink, createLink, listLinks, portalStatus, pullOnce, setupPortal, updateEntry } from "../portal.js";
 import { type ApiDeps, type Route, JSON_LIMIT, SLUG } from "./common.js";
 
 /** Client portal: set-up (panel only, never an MCP tool), links per client, and what clients sent. */
@@ -13,7 +13,7 @@ export const portalRoutes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/portal$`), handler: clientPortal },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/portal/links$`), handler: newLink },
   { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}/portal/links/([A-Za-z0-9_-]{32,64})$`), handler: removeLink },
-  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/portal/(intake|feedback)/([\\w:.-]{1,80})$`), handler: markEntry },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/portal/(intake|comments)/([\\w:.-]{1,80})$`), handler: markEntry },
 ];
 
 let settingUp = false;
@@ -43,7 +43,7 @@ async function pull(deps: ApiDeps) {
 function clientPortal(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
-  sendJson(res, 200, { configured: portalStatus().configured, links: listLinks(deps.factory, s), ...clientInbox(deps.factory, s) });
+  sendJson(res, 200, { configured: portalStatus().configured, links: listLinks(deps.factory, s), ...portalMessages(deps.factory, s) });
 }
 
 async function newLink(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
@@ -75,7 +75,7 @@ async function markEntry(deps: ApiDeps, req: IncomingMessage, res: ServerRespons
   const body = await readJsonBody(req, JSON_LIMIT);
   const patch: Record<string, unknown> = kind === "intake" ? { used: body.used === true } : { status: STATUSES.has(str(body, "status", { max: 10 }) ?? "") ? body.status : "done" };
   try {
-    updateEntry(deps.factory, s, kind as "intake" | "feedback", id!, patch);
+    updateEntry(deps.factory, s, kind === "intake" ? "intake" : "comment", id!, patch);
   } catch (error) {
     throw new HttpError(404, (error as Error).message);
   }

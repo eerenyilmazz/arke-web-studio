@@ -2,7 +2,8 @@
 // All text from the server (client data included) is inserted with textContent, never innerHTML.
 // This file only wires the page together; the screens live in ./js/.
 import { $, state, STATUS_POLL_MS } from "./js/core.js";
-import { fmtDuration, refreshStatus, render, renderSidebar } from "./js/shell.js";
+import { fmtDuration } from "./js/jobs.js";
+import { refreshStatus, render, renderSidebar } from "./js/router.js";
 
 // ---------------------------------------------------------------- theme and status
 

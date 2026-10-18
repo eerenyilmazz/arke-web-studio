@@ -108,7 +108,7 @@ const needBrowser = (ctx: { skip: () => void }) => { if (!browser) ctx.skip(); }
 describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
   ui()("renders the dashboard, settings and library without script errors", async (ctx) => {
     needBrowser(ctx);
-    for (const hash of ["#/", "#/ayarlar", "#/kutuphane"]) {
+    for (const hash of ["#/", "#/ayarlar", "#/kutuphane", "#/arsiv", "#/new", "#/c/ui-bakery/teklif"]) {
       const { page, errors } = await open(hash);
       await expect(page.locator("h1").first().textContent()).resolves.toBeTruthy();
       expect(errors, hash).toEqual([]);
@@ -118,13 +118,13 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
 
   ui()("creates a client from the form, with the library design offered for its sector", async (ctx) => {
     needBrowser(ctx);
-    const { page, errors } = await open("#/new");
+    const { page, errors } = await open("#/yeni");
     await page.fill("#nc-name", "Ekmek Evi");
     await page.fill("#nc-industry", "bakery");
     await page.dispatchEvent("#nc-industry", "change");
     await expect.poll(() => page.locator("#nc-design option").allInnerTexts()).toContain("★ UI Fırın · bakery");
     await page.getByRole("button", { name: "Müşteriyi oluştur" }).click();
-    await page.waitForURL(/#\/c\/ekmek-evi/);
+    await page.waitForURL(/#\/musteri\/ekmek-evi/);
     await expect.poll(() => page.locator("h1").first().textContent()).toContain("Ekmek Evi");
     expect(errors).toEqual([]);
     await page.close();
@@ -133,7 +133,7 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
   ui()("opens every client tab and the colour form", async (ctx) => {
     needBrowser(ctx);
     for (const tab of ["duzenle", "marka", "teklif", "bilgiler"]) {
-      const { page, errors } = await open(`#/c/ui-bakery/${tab}`);
+      const { page, errors } = await open(`#/musteri/ui-bakery/${tab}`);
       await expect.poll(() => page.locator("h1").first().textContent()).toContain("UI Bakery");
       if (tab === "duzenle") {
         // The quick forms appear once the site is built.
@@ -147,7 +147,7 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
 
   ui()("puts the content policy before anything in the signature demo", async (ctx) => {
     needBrowser(ctx);
-    const { page, errors } = await open("#/c/ui-bakery/marka");
+    const { page, errors } = await open("#/musteri/ui-bakery/marka");
     const srcdoc = await page.locator("iframe.sig-frame").getAttribute("srcdoc", { timeout: 10_000 });
     expect(srcdoc).toMatch(/^<!doctype html><meta http-equiv="Content-Security-Policy"/);
     expect(srcdoc!.indexOf("Content-Security-Policy")).toBeLessThan(srcdoc!.indexOf("<script>"));
@@ -170,7 +170,7 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
 
   ui()("shows the work report and the agent settings", async (ctx) => {
     needBrowser(ctx);
-    const { page, errors } = await open("#/c/ui-bakery/teklif");
+    const { page, errors } = await open("#/musteri/ui-bakery/teklif");
     await page.getByRole("button", { name: "İş Raporu" }).click({ timeout: 5000 });
     await expect.poll(() => page.locator(".report").count()).toBe(1);
     await page.goto(`${base}/#/ayarlar`);
@@ -182,7 +182,7 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
 
   ui()("prints one clean A4 document: proposal alone, landscape brand board on one page", async (ctx) => {
     needBrowser(ctx);
-    const { page, errors } = await open("#/c/ui-bakery/teklif");
+    const { page, errors } = await open("#/musteri/ui-bakery/teklif");
     await page.evaluate("window.print = () => { window.__printed = true; }");
     await page.getByRole("button", { name: "Yazdır / PDF" }).click();
     await expect.poll(() => page.evaluate("window.__printed === true")).toBe(true);
@@ -200,10 +200,10 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
 
   ui()("shows the monthly report, the client links card and the portal setup", async (ctx) => {
     needBrowser(ctx);
-    const { page, errors } = await open("#/c/ui-bakery/teklif");
+    const { page, errors } = await open("#/musteri/ui-bakery/teklif");
     await page.getByRole("button", { name: "Aylık Rapor" }).click({ timeout: 5000 });
     await expect.poll(() => page.locator(".monthly").count()).toBe(1);
-    await page.goto(`${base}/#/c/ui-bakery/bilgiler`);
+    await page.goto(`${base}/#/musteri/ui-bakery/bilgiler`);
     await page.waitForSelector("#view h1");
     await expect.poll(() => page.locator(".portal-card").textContent()).toContain("portalı kurulmadı");
     await page.goto(`${base}/#/ayarlar`);
@@ -215,7 +215,7 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
 
   ui()("works at phone width", async (ctx) => {
     needBrowser(ctx);
-    const { page, errors } = await open("#/c/ui-bakery/duzenle", { width: 390, height: 844 });
+    const { page, errors } = await open("#/musteri/ui-bakery/duzenle", { width: 390, height: 844 });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(1);
     expect(errors).toEqual([]);

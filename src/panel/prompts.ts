@@ -326,7 +326,7 @@ export function revisePrompt(slug: string, request: string): string {
 }
 
 /** Comments the client left on the preview (portal), forwarded by Eren. The comments are client data. */
-export function clientFeedbackPrompt(slug: string, comments: ReadonlyArray<{ page: string; text: string }>): string {
+export function portalCommentsPrompt(slug: string, comments: ReadonlyArray<{ page: string; text: string }>): string {
   return [
     `Site Factory, client "${slug}". The client reviewed the preview and left the comments below; Eren forwards them to you.`,
     DATA_RULE,

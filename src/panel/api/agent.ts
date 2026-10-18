@@ -1,4 +1,4 @@
-import { clientInbox, updateEntry } from "../portal.js";
+import { portalMessages, updateEntry } from "../portal.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { snapshot } from "../../lib/versions.js";
 import { DESIGN_KINDS, resolvePolicy } from "../budget.js";
@@ -10,7 +10,7 @@ import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
 import { appendInput, readInputs } from "../history.js";
 import { serialiseJob } from "../jobs.js";
-import { addPagePrompt, blogPostPrompt, clientFeedbackPrompt, translatePrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "../prompts.js";
+import { addPagePrompt, blogPostPrompt, portalCommentsPrompt, translatePrompt, fromLibraryPrompt, redesignPrompt, answersPrompt, autopilotPrompt, brandBoardPrompt, chooseConceptPrompt, conceptsPrompt, designContentPrompt, earlierInputsBlock, fixBuildPrompt, revisePrompt, upgradeTemplatePrompt, type AnswersInput } from "../prompts.js";
 import { OPTION_IDS } from "../../lib/custom-site.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, MAX_TEXT, asHttp, launchAgent, inboxFiles, stringRecord, isQa } from "./common.js";
 import { filledNote } from "./library.js";
@@ -83,7 +83,7 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     };
   },
 
-  autopilot: async (ctx) => {
+  "create-site": async (ctx) => {
     const { deps, slug, body } = ctx;
     const pasted: AnswersInput = {
       answers: stringRecord(body.answers),
@@ -185,13 +185,13 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
   },
 
   /** Open portal comments, read from the client's folder by id (never text from the request). */
-  "client-feedback": ({ deps, slug, body }) => {
+  "portal-comments": ({ deps, slug, body }) => {
     const ids = Array.isArray(body.ids) ? body.ids.filter((x): x is string => typeof x === "string").slice(0, 30) : [];
-    const chosen = clientInbox(deps.factory, slug).feedback.filter((f) => ids.includes(f.id) && f.status === "open");
+    const chosen = portalMessages(deps.factory, slug).comments.filter((f) => ids.includes(f.id) && f.status === "open");
     if (chosen.length === 0) throw new HttpError(400, "İletilecek açık yorum yok.");
     return {
-      afterStart: () => { for (const f of chosen) updateEntry(deps.factory, slug, "feedback", f.id, { status: "sent" }); },
-      prompt: clientFeedbackPrompt(slug, chosen),
+      afterStart: () => { for (const f of chosen) updateEntry(deps.factory, slug, "comment", f.id, { status: "sent" }); },
+      prompt: portalCommentsPrompt(slug, chosen),
       input: chosen.map((c) => `Müşteri yorumu (${c.page || "genel"}): ${c.text}`).join("\n"),
       title: "Müşteri yorumları",
       request: `Müşterinin ${chosen.length} yorumunu uygula.`,

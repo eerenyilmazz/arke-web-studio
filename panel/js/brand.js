@@ -1,19 +1,22 @@
 // Brand board (Marka Kimliği).
 import { api, ask, guarded, h, isBusy, printDoc, toast } from "./core.js";
-import { conceptsCard } from "./info.js";
+import { runAgent } from "./jobs.js";
 import { libraryControls } from "./library.js";
-import { runAgent } from "./shell.js";
+import { conceptsCard } from "./proposal.js";
 
 // ---------------------------------------------------------------- brand board (Marka Atölyesi)
 
 export const PALETTE_TR = { primary: "Ana renk", secondary: "İkincil", accent: "Vurgu", background: "Zemin", text: "Yazı" };
+
 export const BOARD_MISSING_TR = [
   [/^tagline/, "Slogan"],
   [/^signature:/, "İmza hareketi (adı ve fikri)"],
   [/signature\.html/, "İmza hareketinin canlı demosu"],
   [/^typeSample/, "Tipografi örneği"],
 ];
+
 export const FONT_NAME = /^[A-Za-z0-9 ]{2,60}$/;
+
 export const HEX6 = /^#[0-9a-f]{6}$/i;
 
 /** Relative luminance, to pick readable text on a brand colour. */
@@ -21,6 +24,7 @@ export function luminance(hex) {
   const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 }
+
 /** Dark or light text, whichever has the higher contrast on this colour. */
 export function inkOn(hex) {
   const l = luminance(hex);
@@ -37,6 +41,7 @@ export function loadBoardFonts(names) {
   if (document.querySelector(`link[data-board-fonts="${CSS.escape(href)}"]`)) return;
   document.head.append(h("link", { rel: "stylesheet", href, "data-board-fonts": href }));
 }
+
 export const fontStack = (name, fallback) => (typeof name === "string" && FONT_NAME.test(name) ? `"${name}", ${fallback}` : fallback);
 
 /**
@@ -173,7 +178,7 @@ function boardNotes(v, b, slug) {
     ? h("p", { class: "notice small", text: `Eksik: ${[...new Set(v.missing)].join(", ")}. Agent mevcut markayı bozmadan tamamlar.` })
     : !v.custom ? h("p", { class: "muted small", text: "Bu site şablonla yapıldı: kartta şablonun renkleri ve yazı tipleri var. Özel logo, slogan ve imza hareketi için 'Serbest tasarıma geç'." }) : null;
   const logoNote = v.custom && !b.clientLogo
-    ? h("p", { class: "muted small" }, "Bu logo sistem tarafından tasarlandı. Müşterinin kendi logosu varsa ", h("a", { href: `#/c/${slug}/bilgiler`, text: "Müşteri Bilgileri" }), " sekmesinden yükleyip \"Logo olarak kullan\"ı seçiniz, ardından \"Marka Kimliğiyle Yeniden Tasarla\"yı kullanınız.")
+    ? h("p", { class: "muted small" }, "Bu logo sistem tarafından tasarlandı. Müşterinin kendi logosu varsa ", h("a", { href: `#/musteri/${slug}/bilgiler`, text: "Müşteri Bilgileri" }), " sekmesinden yükleyip \"Logo olarak kullan\"ı seçiniz, ardından \"Marka Kimliğiyle Yeniden Tasarla\"yı kullanınız.")
     : null;
   return [notice, logoNote];
 }

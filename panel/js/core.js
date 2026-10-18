@@ -1,5 +1,4 @@
-
-
+// Shared constants and helpers: stages, packages, DOM helpers, the API call, dialogs and printing.
 
 export const STAGES = [
   { id: "collecting-answers", label: "Cevaplar", long: "Cevaplar toplanıyor" },
@@ -12,9 +11,12 @@ export const STAGES = [
   { id: "ready-to-deploy", label: "Yayın onayı", long: "Yayına hazır" },
   { id: "live", label: "Yayında", long: "Yayında" },
 ];
+
 export const TABS = [["duzenle", "Düzenleme"], ["marka", "Marka Kimliği"], ["teklif", "Teklif"], ["bilgiler", "Müşteri Bilgileri"]];
+
 /** Old tab links (bookmarks, earlier versions) land on the tab that now holds that content. */
 export const OLD_TABS = { sohbet: "duzenle", akis: "duzenle", site: "duzenle", build: "duzenle", yayin: "bilgiler", sorular: "bilgiler", cevaplar: "bilgiler", metinler: "bilgiler" };
+
 /** Four steps the operator thinks in; the nine internal stages map onto them. */
 export const STEPS = [
   { label: "Müşteri Bilgileri", stages: ["collecting-answers"] },
@@ -22,6 +24,7 @@ export const STEPS = [
   { label: "Onay Bekleniyor", stages: ["awaiting-content-approval", "awaiting-visual-approval", "awaiting-production-approval", "ready-to-deploy"] },
   { label: "Yayında", stages: ["live"] },
 ];
+
 /** Plain status per stage for lists and cards. tone: who acts next (you / client / agent / done). */
 export const PLAIN = {
   "collecting-answers": { text: "Bilgi bekleniyor", tone: "client" },
@@ -35,12 +38,19 @@ export const PLAIN = {
   live: { text: "Yayında", tone: "done" },
   unreadable: { text: "Dosya okunamadı", tone: "bad" },
 };
+
 export function plainOf(stage) { return PLAIN[stage] || { text: stage, tone: "you" }; }
+
 export function stepIndex(stage) { const i = STEPS.findIndex((s) => s.stages.includes(stage)); return i < 0 ? 0 : i; }
+
 export const LANG_NAMES = { en: "İngilizce", tr: "Türkçe", de: "Almanca", fr: "Fransızca", es: "İspanyolca", it: "İtalyanca", pl: "Lehçe", ar: "Arapça" };
+
 export const APPROVAL_NAMES = { content: "İçerik", visual: "Görsel", production: "Yayın" };
+
 export const AVATAR_COLORS = ["#5b2333", "#1d4e89", "#2c6e8f", "#6b7a2e", "#8a4b16", "#6a3d8f", "#2f6b52", "#8f2d56"];
+
 export const POLL_MS = 1500;
+
 export const STATUS_POLL_MS = 5000;
 
 export const state = { clients: [], detail: null, running: null, logSince: 0, pollTimer: null, drafts: {}, composer: {}, search: "" };
@@ -59,6 +69,7 @@ export function h(tag, attrs = {}, ...children) {
   for (const c of children.flat()) if (c !== null && c !== undefined && c !== false && c !== "") el.append(c instanceof Node ? c : document.createTextNode(String(c)));
   return el;
 }
+
 export const $ = (sel) => document.querySelector(sel);
 
 export function svg(paths, size = 16, strokeWidth = 2) {
@@ -71,6 +82,7 @@ export function svg(paths, size = 16, strokeWidth = 2) {
   }
   return el;
 }
+
 export const ICON = {
   spark: ["M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"],
   send: ["M12 19V5M5 12l7-7 7 7"],
@@ -122,30 +134,38 @@ export function initials(text) {
   const words = text.replace(/[^\p{L}\p{N}\s-]/gu, " ").split(/[\s-]+/).filter(Boolean);
   return ((words[0]?.[0] || "?") + (words[1]?.[0] || "")).toUpperCase();
 }
+
 export function avatarColor(slug) {
   let n = 0;
   for (const ch of slug) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
   return AVATAR_COLORS[n % AVATAR_COLORS.length];
 }
+
 export function avatar(slug, label, large = false, live = false) {
   return h("span", { class: large ? "avatar lg" : "avatar", style: `background:${avatarColor(slug)}`, "aria-hidden": "true" }, initials(label), live && h("span", { class: "live" }));
 }
+
 export function time(iso) {
   const d = new Date(iso);
   const today = new Date().toDateString() === d.toDateString();
   return today ? d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }) : d.toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
-export const stageInfo = (id) => STAGES.find((s) => s.id === id) || { id, label: id, long: id };
-export const isBusy = () => Boolean(state.running && state.running.status === "running");
 
+export const stageInfo = (id) => STAGES.find((s) => s.id === id) || { id, label: id, long: id };
+
+export const isBusy = () => Boolean(state.running && state.running.status === "running");
 
 // ---------------------------------------------------------------- budget
 
-export const MODE_TR = { economy: "Temel", balanced: "Standart", premium: "Premium" };
-export const PACKAGE_TR = MODE_TR;
+/** The three packages (budget modes economy / balanced / premium in the code) as Eren and his clients see them. */
+export const PACKAGE_NAMES = { economy: "Temel", balanced: "Standart", premium: "Premium" };
+
 export const fmtTokens = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n || 0));
+
 export const MODEL_TR = { opus: "en güçlü model", sonnet: "dengeli model", haiku: "hızlı model" };
+
 export const usageLevel = (n) => (n < 150_000 ? "düşük" : n < 1_000_000 ? "orta" : "yüksek");
+
 export const usageLine = (job) => job.tokens ? h("span", { class: "usage", title: `${fmtTokens(job.tokens)} birim (önbellekten okunan 1/10 sayılır)${job.usage?.costUsd ? ` · tahmini ~$${job.usage.costUsd.toFixed(2)}` : ""}` }, `Kaynak: ${usageLevel(job.tokens)}${job.model ? ` · ${MODEL_TR[job.model] || job.model}` : ""}`) : null;
 
 /**

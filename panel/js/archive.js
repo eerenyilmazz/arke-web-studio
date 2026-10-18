@@ -1,6 +1,6 @@
 // Archived clients: see them, bring one back, or delete it for good.
 import { api, ask, guarded, h, time, toast } from "./core.js";
-import { loadClients, render } from "./shell.js";
+import { loadClients, render } from "./router.js";
 
 export async function renderArchive() {
   const data = await guarded(() => api("GET", "/api/archive"));
@@ -19,7 +19,7 @@ export async function renderArchive() {
         h("button", { class: "btn", type: "button", disabled: a.slugTaken, onclick: async () => {
           if (!(await ask({ title: "Geri getir", body: `"${a.name}" müşteri listesine geri döner; dosyaları ve sürümleri olduğu gibi gelir.`, confirm: "Geri getir" }))) return;
           const r = await guarded(() => api("POST", `/api/archive/${a.id}/restore`));
-          if (r) { toast(`${a.name} geri getirildi.`); await loadClients(); location.hash = `#/c/${r.slug}`; }
+          if (r) { toast(`${a.name} geri getirildi.`); await loadClients(); location.hash = `#/musteri/${r.slug}`; }
         } }, "Geri getir"),
         h("button", { class: "btn btn-danger", type: "button", onclick: async () => {
           const yes = await ask({ title: "Kalıcı olarak sil", body: `"${a.name}" ve bütün sürüm geçmişi, yüklenen dosyaları kalıcı olarak silinecek. Bu işlem geri alınamaz.\n\nCloudflare'deki yayın silinmez; yayındaysa önce kaldırın.`, confirm: "Kalıcı sil", danger: true, typeToConfirm: a.slug });
