@@ -1,4 +1,5 @@
 // Settings: publishing, budget, sender, backups, web research.
+import { getLang, LANGS, locale, setLang } from "./i18n.js";
 import { $, api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODEL_TR, PACKAGE_NAMES, toast } from "./core.js";
 import { askNotifyPermission, chime } from "./jobs.js";
 import { portalSettingsCard } from "./portal.js";
@@ -153,7 +154,7 @@ export async function renderSettings() {
     h(
       "div",
       { class: "settings stack" },
-      group("genel", "Genel", senderCard(), notifications, approvalCode),
+      group("genel", "Genel", languageCard(), senderCard(), notifications, approvalCode),
       group("kullanim", "Kaynak Kullanımı", budgetCard(), agentsCard(), profitSettingsCard(), webResearchCard()),
       group("yayin", "Yayın", cloudflare, portalSettingsCard()),
       group("yedek", "Yedek", backupCard()),
@@ -274,6 +275,16 @@ export function backupCard() {
   const dir = h("input", { id: "bk-dir", placeholder: "/mnt/c/Users/eeren/OneDrive/SiteFactory-Yedek", maxlength: 400 });
   const list = h("ul", { class: "files" });
   const status = h("p", { class: "small", role: "status" });
+  /** Unpacks the backup in a temporary folder and checks every client in it; the real folders are not touched. */
+  const verify = async (file, btn) => {
+    btn.disabled = true;
+    status.textContent = "Yedek açılıp kontrol ediliyor…";
+    const r = await guarded(() => api("POST", `/api/backups/${encodeURIComponent(file)}/verify`));
+    btn.disabled = false;
+    if (!r) return (status.textContent = "");
+    status.className = `small ${r.ok ? "ok-text" : "err"}`;
+    status.textContent = r.ok ? `Yedek sağlam: ${r.clients.length} müşteri, ${r.files} dosya geri yüklenebilir.` : `Yedekte sorun var: ${r.problems.join(" ")}`;
+  };
   const load = () =>
     api("GET", "/api/backups")
       .then((r) => {
@@ -286,7 +297,8 @@ export function backupCard() {
                 "li",
                 {},
                 h("span", { text: b.file }),
-                h("span", { class: "muted", text: `${(b.bytes / 1048576).toFixed(1)} MB · ${new Date(b.at).toLocaleString("tr-TR")}` }),
+                h("span", { class: "muted", text: `${(b.bytes / 1048576).toFixed(1)} MB · ${new Date(b.at).toLocaleString(locale())}` }),
+                h("button", { class: "btn btn-sm", type: "button", onclick: (e) => verify(b.file, e.currentTarget) }, "Geri yüklenebilir mi?"),
               ),
             ),
         );
@@ -331,6 +343,33 @@ export function backupCard() {
     h("div", { class: "row" }, h("button", { class: "btn btn-primary", type: "submit" }, "Kaydet"), now),
     status,
     list,
+  );
+}
+
+/** Panel language. Client sites keep their own languages; the agent writes its notes to Eren in this language. */
+export function languageCard() {
+  const select = h("select", { id: "panel-lang", disabled: true }, ...Object.entries(LANGS).map(([k, v]) => h("option", { value: k, "data-no-i18n": "" }, v)));
+  select.value = getLang();
+  select.disabled = false;
+  select.addEventListener("change", async () => {
+    select.disabled = true;
+    const s = await guarded(() => api("PUT", "/api/settings", { panelLanguage: select.value }));
+    select.disabled = false;
+    if (!s) return;
+    setLang(s.panelLanguage);
+    // Texts already on the page were changed in place; a reload draws everything in the new language.
+    location.reload();
+  });
+  return h(
+    "section",
+    { class: "card stack" },
+    h("h2", { text: "Panel dili" }),
+    h("p", {
+      class: "muted small",
+      text: "Panelin ve agent'ın sana yazdığı notların dili. Müşteri sitelerinin dili değişmez; o, müşterinin bilgilerindeki site dilidir.",
+    }),
+    h("label", { for: "panel-lang" }, "Dil"),
+    select,
   );
 }
 

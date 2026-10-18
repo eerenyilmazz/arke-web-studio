@@ -1,4 +1,5 @@
 // Design library, fixed places and library controls.
+import { locale } from "./i18n.js";
 import { $, api, ask, guarded, h, ignoreOptional, isBusy, state, toast } from "./core.js";
 import { runAgent } from "./jobs.js";
 import { render } from "./router.js";
@@ -129,7 +130,7 @@ export async function renderLibrary() {
                   { class: "small muted" },
                   "Kaynak: ",
                   h("a", { href: `#/musteri/${d.sourceSlug}/marka`, text: d.sourceSlug }),
-                  ` · ${new Date(d.createdAt).toLocaleDateString("tr-TR")}`,
+                  ` · ${new Date(d.createdAt).toLocaleDateString(locale())}`,
                 ),
                 h("p", { class: "small muted", text: d.slots?.length ? `${d.slots.length} sabit alan` : "Sabit alan tanımlı değil" }),
                 h(

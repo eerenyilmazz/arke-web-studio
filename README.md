@@ -17,6 +17,21 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## İkinci dil, geri alma, yedek kontrolü (1.18.0)
+
+- **Panel İngilizce de olabilir:** Ayarlar → Genel → Panel dili. Seçim sunucuda saklanır, sayfa yeni dilde yeniden açılır. Müşteri verileri (agent'ın yazdıkları, portal cevapları ve yorumları, sitedeki metinler) çevrilmez. Panel İngilizceyken agent da sana özetlerini ve sorularını İngilizce yazar; sitelerin dili değişmez.
+- **Müşteri soruları müşterinin dilinde:** Türkçe siteli müşteriye soru formu ve portal bilgi formu Türkçe, diğerlerine İngilizce gider.
+- **Canlı siteyi geri al:** Müşteri Bilgileri → Yayın → "Önceki sürüme dön". Cloudflare'deki bir önceki yayın saniyeler içinde geri gelir; bilgisayardaki dosyalar değişmez. Canlı site için müşterinin kısa adını yazarak onaylarsın. Sadece panelden; agent'ın böyle bir aracı yok. Geri almalar `sf-report`'ta uyarı olarak görünür.
+- **Yedek gerçekten açılıyor mu:** Ayarlar → Yedek'te her yedeğin yanında "Geri yüklenebilir mi?" Yedek geçici bir klasöre açılır, her müşteri kontrol edilir, klasör silinir.
+- **Yedekten geri yükleme** (her zaman yeni bir klasöre; var olanın üzerine asla yazmaz):
+
+```bash
+cd ~/projects/site-factory
+npm run restore-backup -- /mnt/c/Users/eeren/OneDrive/SiteFactory-Yedek/site-factory-yedek-….tar.gz ~/geri-yuklenen
+```
+
+- **Kim yaptı:** Her iş ve yayın kaydında bilgisayardaki kullanıcı adı (`by`) tutulur; ileride ekip olursa kimin ne yaptığı görünür.
+
 ## Rapor: sf-report (1.17.3)
 
 `npm run report -- <klasör>` bütün fabrikanın durumunu tek bir dosyaya yazar (`sf-report-<tarih>.md`). Hiçbir şeyi değiştirmez; token ve anahtarlar dosyaya yazılmaz.

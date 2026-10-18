@@ -32,6 +32,8 @@ const AgentRouteSchema = z
 export const SettingsSchema = z.object({
   /** The agent may search the web and read pages (business research, sector examples). */
   webResearch: z.boolean().default(true),
+  /** Language of the panel and of the agent's notes to Eren; client sites keep their own languages. */
+  panelLanguage: z.enum(["tr", "en"]).default("tr"),
   /** Who the proposal (Teklif) is from. */
   sender: z
     .object({

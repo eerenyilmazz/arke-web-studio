@@ -1,4 +1,5 @@
 // Shared constants and helpers: stages, packages, DOM helpers, the API call, dialogs and printing.
+import { locale } from "./i18n.js";
 
 export const STAGES = [
   { id: "collecting-answers", label: "Cevaplar", long: "Cevaplar toplanıyor" },
@@ -199,8 +200,8 @@ export function time(iso) {
   const d = new Date(iso);
   const today = new Date().toDateString() === d.toDateString();
   return today
-    ? d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })
-    : d.toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    ? d.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleString(locale(), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
 export const stageInfo = (id) => STAGES.find((s) => s.id === id) || { id, label: id, long: id };

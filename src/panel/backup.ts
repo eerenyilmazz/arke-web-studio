@@ -1,5 +1,6 @@
 import { execFile } from "node:child_process";
-import { existsSync, readdirSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import type { FactoryConfig } from "../config.js";
@@ -81,4 +82,77 @@ export function autoBackup(
     (r) => log(`Yedek alındı: ${r.file}`),
     (e: Error) => log(`Yedek alınamadı: ${e.message}`),
   );
+}
+
+export interface BackupCheck {
+  readonly ok: boolean;
+  /** Clients found in the backup (folders with a readable site.config.json). */
+  readonly clients: string[];
+  readonly files: number;
+  readonly problems: string[];
+}
+
+const BACKUP_NAME = /^site-factory-yedek-[0-9-]+\.tar\.gz$/;
+
+/** A backup file in the chosen folder, by name only (no paths from the request). */
+function backupPath(factory: FactoryConfig, file: string): string {
+  if (!BACKUP_NAME.test(file)) throw new Error("Geçersiz yedek adı.");
+  const full = path.join(checkBackupDir(readSettings(factory).backupDir, factory), file);
+  if (!existsSync(full)) throw new Error("Yedek bulunamadı.");
+  return full;
+}
+
+function countFiles(dir: string): number {
+  return readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile()).length;
+}
+
+/** Looks at an extracted backup: the clients folder, each client's config, the settings file. */
+function inspect(root: string, clientsName: string): BackupCheck {
+  const problems: string[] = [];
+  const clientsDir = path.join(root, clientsName);
+  if (!existsSync(clientsDir)) return { ok: false, clients: [], files: 0, problems: [`Yedekte "${clientsName}" klasörü yok.`] };
+  const clients: string[] = [];
+  for (const e of readdirSync(clientsDir, { withFileTypes: true })) {
+    if (!e.isDirectory() || e.name.startsWith("_") || e.name.startsWith(".")) continue;
+    const cfg = path.join(clientsDir, e.name, "site.config.json");
+    if (!existsSync(cfg)) continue;
+    try {
+      JSON.parse(readFileSync(cfg, "utf8"));
+      clients.push(e.name);
+    } catch {
+      problems.push(`${e.name}: site.config.json okunamıyor.`);
+    }
+    if (!existsSync(path.join(clientsDir, e.name, ".git"))) problems.push(`${e.name}: sürüm geçmişi (.git) yok.`);
+  }
+  return { ok: problems.length === 0, clients: clients.sort(), files: countFiles(root), problems };
+}
+
+/**
+ * Proves a backup can be restored: unpacks it into a temporary folder, checks every client in it, and removes the
+ * folder again. Nothing in the real client folders is touched.
+ */
+export async function verifyBackup(factory: FactoryConfig, file: string): Promise<BackupCheck> {
+  const archive = backupPath(factory, file);
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "sf-backup-check-"));
+  try {
+    await run("tar", ["-xzf", archive, "-C", tmp], { timeout: 10 * 60 * 1000 });
+    return inspect(tmp, path.basename(path.resolve(factory.clientsRoot)));
+  } catch (error) {
+    return { ok: false, clients: [], files: 0, problems: [`Yedek açılamadı: ${(error as Error).message.slice(0, 200)}`] };
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Unpacks a backup into a NEW folder (it must not exist), never over the current clients. To switch to the
+ * restored copy, Eren renames the folders himself (the README explains it); until then nothing changes.
+ */
+export async function restoreBackup(factory: FactoryConfig, archive: string, target: string): Promise<BackupCheck & { folder: string }> {
+  const dest = path.resolve(target);
+  if (existsSync(dest)) throw new Error("Hedef klasör zaten var. Var olan hiçbir şeyin üzerine yazılmaz; yeni bir klasör adı ver.");
+  if (!BACKUP_NAME.test(path.basename(archive)) || !existsSync(archive)) throw new Error("Yedek dosyası bulunamadı.");
+  mkdirSync(dest, { recursive: true });
+  await run("tar", ["-xzf", path.resolve(archive), "-C", dest], { timeout: 10 * 60 * 1000 });
+  return { ...inspect(dest, path.basename(path.resolve(factory.clientsRoot))), folder: dest };
 }

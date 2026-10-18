@@ -8,6 +8,7 @@ import { run } from "../lib/exec.js";
 import { readJsonIfExists, writeJson } from "../lib/files.js";
 import { clientPaths, safeJoin } from "../lib/paths.js";
 import { QUESTIONS } from "../schema/questions.js";
+import { localizedQuestion } from "../schema/questions-tr.js";
 import * as tools from "../tools.js";
 
 /**
@@ -187,15 +188,14 @@ const PAGE_LABELS: Readonly<Record<string, Record<string, string>>> = {
 
 const MAX_QUESTIONS = 25;
 
-/** Client questions for the intake form: the questionnaire's client questions (the questionnaire is English). */
-function intakeQuestions(): Array<{ id: string; text: string; hint?: string }> {
+/** Client questions for the intake form, in the client's language (Turkish or English). */
+function intakeQuestions(lang: string): Array<{ id: string; text: string; hint?: string }> {
   return QUESTIONS.filter((q) => q.audience === "client" && q.round !== "later")
     .slice(0, MAX_QUESTIONS)
-    .map((q) => ({
-      id: q.id,
-      text: q.text,
-      ...(q.hint ? { hint: q.hint } : {}),
-    }));
+    .map((q) => {
+      const l = localizedQuestion(q, lang);
+      return { id: q.id, text: l.text, ...(l.hint ? { hint: l.hint } : {}) };
+    });
 }
 
 /** A new link for this client: the details form, or the preview with comments and approval. */
@@ -222,7 +222,7 @@ export async function createLink(factory: FactoryConfig, slug: string, kind: "in
     expiresAt,
     maxSubmissions: kind === "intake" ? 10 : 100,
     ...(kind === "intake"
-      ? { questions: intakeQuestions() }
+      ? { questions: intakeQuestions(lang) }
       : { previewUrl, pages: [...(draft.pages ?? ["home"]), "other"].map((p) => ({ id: p, label: labels[p] ?? p })) }),
   };
   await call(c, "PUT", `links/${token}`, record, fetcher);

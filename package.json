@@ -1,6 +1,6 @@
 {
   "name": "site-factory",
-  "version": "1.17.3",
+  "version": "1.18.0",
   "private": true,
   "description": "MCP server + rules for producing small-business showcase websites from a fixed template and a validated config.",
   "type": "module",
@@ -16,10 +16,11 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:e2e": "vitest run tests/e2e.test.ts tests/e2e-portal.test.ts",
+    "test:e2e": "vitest run tests/e2e.test.ts tests/e2e-portal.test.ts tests/e2e-i18n.test.ts",
     "schema": "tsx src/cli/export-schema.ts",
     "approve": "tsx src/cli/approve.ts",
     "report": "tsx src/cli/report.ts",
+    "restore-backup": "tsx src/cli/restore-backup.ts",
     "panel": "npm run build && node dist/panel/server.js",
     "lint": "biome lint",
     "format": "biome format --write src panel/js panel/app.js portal tests scripts"

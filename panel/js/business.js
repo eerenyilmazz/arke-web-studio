@@ -1,4 +1,5 @@
 // Business tracking: price, payment, due date, costs and profit for one client.
+import { locale } from "./i18n.js";
 import { api, fmtTokens, guarded, h, PACKAGE_NAMES, toast } from "./core.js";
 import { loadClients } from "./router.js";
 
@@ -8,19 +9,19 @@ const MARKET_CURRENCY = { TR: "TRY", GB: "GBP", US: "USD" };
 
 export const CURRENCY_SIGNS = { TRY: "₺", GBP: "£", EUR: "€", USD: "$" };
 
-export const money = (n, cur) => `${CURRENCY_SIGNS[cur] || ""}${Number(n).toLocaleString("tr-TR", { maximumFractionDigits: 2 })}`;
+export const money = (n, cur) => `${CURRENCY_SIGNS[cur] || ""}${Number(n).toLocaleString(locale(), { maximumFractionDigits: 2 })}`;
 
 /** One line for a client card: price, payment and delivery date (red when late and unpaid). */
 export function businessLine(b) {
   if (!b) return null;
   const parts = [];
-  if (b.price != null) parts.push(`${CURRENCY_SIGNS[b.currency] || ""}${Number(b.price).toLocaleString("tr-TR")}`);
+  if (b.price != null) parts.push(`${CURRENCY_SIGNS[b.currency] || ""}${Number(b.price).toLocaleString(locale())}`);
   parts.push(PAYMENT_LABELS[b.payment] || b.payment);
   let late = false;
   if (b.deadline) {
     const due = new Date(`${b.deadline}T23:59:59`);
     late = due < new Date() && b.payment !== "paid";
-    parts.push(`Teslim ${due.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })}`);
+    parts.push(`Teslim ${due.toLocaleDateString(locale(), { day: "numeric", month: "short" })}`);
   }
   return h("span", { class: `biz ${late ? "late" : ""} pay-${b.payment}`, text: parts.join(" · ") });
 }

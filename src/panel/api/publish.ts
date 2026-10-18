@@ -15,6 +15,7 @@ export const publishRoutes: Route[] = [
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/build$`), handler: startBuild },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/deploy$`), handler: startDeploy },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/unpublish$`), handler: startUnpublish },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/rollback$`), handler: startRollback },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/preview$`), handler: showPreview },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/approve$`), handler: approveFromPanel },
 ];
@@ -143,4 +144,29 @@ function showPreview(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, 
   const paths = clientPaths(deps.factory.clientsRoot, assertSlug(slug!));
   if (!existsSync(path.join(paths.distDir, "index.html"))) throw new HttpError(409, "Henüz build yok. Önce build alın.");
   sendJson(res, 200, { url: deps.preview.show(paths.distDir) });
+}
+
+/** Puts the previous Cloudflare version of the preview or live site back (live needs the slug typed). */
+async function startRollback(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const body = await readJsonBody(req, JSON_LIMIT);
+  const target = body.target === "production" ? "production" : body.target === "preview" ? "preview" : null;
+  if (!target) throw new HttpError(400, "Hedef preview ya da production olmalı.");
+  if (target === "production" && body.confirm !== s) throw new HttpError(400, "Canlı siteyi geri almak için müşterinin kısa adını (slug) aynen yazın.");
+  const label = target === "production" ? "canlı site" : "önizleme";
+  const job = runOrConflict(() =>
+    deps.jobs.startTask(
+      s,
+      "rollback",
+      `Önceki sürüme dön: ${label}`,
+      async (log) => {
+        log("Cloudflare'de önceki sürüm geri getiriliyor…");
+        const r = await tools.rollback(deps.factory, { slug: s, target, by: os.userInfo().username });
+        return `${r.worker} bir önceki sürüme döndü. Bilgisayarındaki dosyalar değişmedi; düzeltip yeniden yayınlayabilirsin.`;
+      },
+      `${label[0]!.toUpperCase()}${label.slice(1)} bir önceki sürüme dönsün.`,
+    ),
+  );
+  sendJson(res, 202, serialiseJob(job));
 }

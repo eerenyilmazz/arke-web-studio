@@ -72,7 +72,7 @@ export function inline(text) {
 }
 
 export function richText(text) {
-  const root = h("div", { class: "summary rich" });
+  const root = h("div", { class: "summary rich", "data-no-i18n": "" });
   let list = null;
   let depth = 0;
   for (const raw of text.split("\n")) {
@@ -114,7 +114,7 @@ export function appendLiveLines(container, lines) {
       chips.append(h("span", { class: "tool", text: line.text.split("(")[0] }));
     } else if (line.kind === "error") container.append(h("p", { class: "err", text: line.text }));
     else if (line.kind === "result") container.append(richText(line.text));
-    else container.append(h("p", { class: line.kind === "agent" ? "agent" : "info", text: line.text }));
+    else container.append(h("p", { class: line.kind === "agent" ? "agent" : "info", text: line.text, "data-no-i18n": line.kind === "agent" ? "" : null }));
   }
 }
 

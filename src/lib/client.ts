@@ -25,6 +25,8 @@ export interface DeployRecord {
   readonly at: string;
   readonly target: "preview" | "production";
   readonly url: string | null;
+  /** Who published (added in 1.18.0; older records have none). */
+  readonly by?: string;
 }
 
 export type Stage =

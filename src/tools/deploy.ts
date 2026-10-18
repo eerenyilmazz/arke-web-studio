@@ -117,15 +117,22 @@ function recordDeploy(paths: { lastDeploy: string; factoryDir: string }, record:
   writeJson(deploysFile, { ...deploys, [record.target]: { url: address, at: record.at } });
 }
 
+/** The Worker a target publishes to: the production name, or the same name with "-preview". */
+function workerFor(config: { slug: string; hosting: { workerName?: string | null } }, target: "preview" | "production"): string {
+  const base = config.hosting.workerName ?? `sf-${config.slug}`;
+  return target === "preview" ? `${base}${PREVIEW_SUFFIX}` : base;
+}
+
 /**
- * Takes a site off Cloudflare (deletes its Worker: the preview one or the live one). Panel only: this is not an
- * MCP tool, so the agent cannot call it. The client's files, versions and approvals stay; publishing again works.
- * `runner` is replaceable for tests.
+ * Runs one wrangler command on a client's Worker by name, in an empty folder (so no wrangler config can change
+ * which Worker is meant), with the client's Cloudflare credentials and the token hidden from any output.
  */
-export async function undeploy(factory: FactoryConfig, args: { slug: string; target: "preview" | "production" }, runner: typeof run = run) {
-  const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
-  const baseWorker = config.hosting.workerName ?? `sf-${config.slug}`;
-  const workerName = args.target === "preview" ? `${baseWorker}${PREVIEW_SUFFIX}` : baseWorker;
+async function wranglerOnWorker(
+  factory: FactoryConfig,
+  config: { slug: string; hosting: { model: "managed" | "client" } },
+  args: readonly string[],
+  runner: typeof run,
+): Promise<{ code: number | null; output: string }> {
   const creds = cloudflareCredentials(config.hosting.model, config.slug);
   if (!creds) {
     throw new FactoryError(
@@ -137,33 +144,66 @@ export async function undeploy(factory: FactoryConfig, args: { slug: string; tar
   }
   const wranglerJs = path.join(FACTORY_ROOT, "node_modules", "wrangler", "bin", "wrangler.js");
   if (!existsSync(wranglerJs)) throw new FactoryError("wrangler is not installed.", "Run npm install in the factory folder.");
-  // An empty folder, so no wrangler config can change which Worker is meant: only the name given here counts.
-  const cwd = mkdtempSync(path.join(os.tmpdir(), "sf-undeploy-"));
+  const cwd = mkdtempSync(path.join(os.tmpdir(), "sf-wrangler-"));
   try {
-    // --force: no interactive question (the panel already asked Eren).
-    const res = await runner(process.execPath, [wranglerJs, "delete", workerName, "--force"], {
+    const res = await runner(process.execPath, [wranglerJs, ...args], {
       cwd,
       timeoutMs: factory.limits.deployTimeoutMs,
       env: { CLOUDFLARE_API_TOKEN: creds.token, CLOUDFLARE_ACCOUNT_ID: creds.accountId, WRANGLER_SEND_METRICS: "false" },
       secrets: [creds.token],
     });
-    const output = `${res.stdout}\n${res.stderr}`;
-    // Already gone (deleted in the Cloudflare dashboard, or never published) is the wanted end state.
-    const missing = /10007|does not exist|not found/i.test(output);
-    if (res.code !== 0 && !missing)
-      throw new FactoryError(`wrangler exited with ${res.code}:\n${output.slice(-1500)}`, "Check the token has Workers Scripts: Edit.");
-    const last = readJsonIfExists(paths.lastDeploy) as DeployRecord | undefined;
-    if (last?.target === args.target) rmSync(paths.lastDeploy, { force: true });
-    const deploysFile = path.join(paths.factoryDir, DEPLOYS_FILE);
-    const deploys = readJsonIfExists(deploysFile) as Record<string, unknown> | undefined;
-    if (deploys && args.target in deploys) {
-      delete deploys[args.target];
-      writeJson(deploysFile, deploys);
-    }
-    return { target: args.target, worker: workerName, alreadyRemoved: res.code !== 0 && missing };
+    return { code: res.code, output: `${res.stdout}\n${res.stderr}` };
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }
+}
+
+/**
+ * Removes a client's preview or live Worker from Cloudflare. The client's files, versions and approvals stay;
+ * it can be published again. Panel only, never an MCP tool.
+ */
+export async function undeploy(factory: FactoryConfig, args: { slug: string; target: "preview" | "production" }, runner: typeof run = run) {
+  const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
+  const workerName = workerFor(config, args.target);
+  // --force: no interactive question (the panel already asked Eren).
+  const { code, output } = await wranglerOnWorker(factory, config, ["delete", workerName, "--force"], runner);
+  // Already gone (deleted in the Cloudflare dashboard, or never published) is the wanted end state.
+  const missing = /10007|does not exist|not found/i.test(output);
+  if (code !== 0 && !missing) throw new FactoryError(`wrangler exited with ${code}:\n${output.slice(-1500)}`, "Check the token has Workers Scripts: Edit.");
+  const last = readJsonIfExists(paths.lastDeploy) as DeployRecord | undefined;
+  if (last?.target === args.target) rmSync(paths.lastDeploy, { force: true });
+  const deploysFile = path.join(paths.factoryDir, DEPLOYS_FILE);
+  const deploys = readJsonIfExists(deploysFile) as Record<string, unknown> | undefined;
+  if (deploys && args.target in deploys) {
+    delete deploys[args.target];
+    writeJson(deploysFile, deploys);
+  }
+  return { target: args.target, worker: workerName, alreadyRemoved: code !== 0 && missing };
+}
+
+/**
+ * Puts the version that was live before the last publish back on the client's Worker (Cloudflare keeps the
+ * earlier versions). For a publish that went wrong: the site returns to its previous state within seconds.
+ * The files on this machine do not change; deploys.json notes the rollback so the report can say the live site
+ * is older than the files. Panel only, never an MCP tool.
+ */
+export async function rollback(factory: FactoryConfig, args: { slug: string; target: "preview" | "production"; by: string }, runner: typeof run = run) {
+  const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
+  const workerName = workerFor(config, args.target);
+  const message = `Site Factory: rolled back by ${args.by}`.slice(0, 100);
+  // No version id: wrangler takes the version before the current one. --yes: the panel already asked Eren.
+  const { code, output } = await wranglerOnWorker(factory, config, ["rollback", "--name", workerName, "--message", message, "--yes"], runner);
+  if (code !== 0) {
+    const hint = /no previous|only one|at least two|cannot rollback/i.test(output)
+      ? "There is no earlier version of this site on Cloudflare to go back to."
+      : "Check the token has Workers Scripts: Edit.";
+    throw new FactoryError(`wrangler exited with ${code}:\n${output.slice(-1500)}`, hint);
+  }
+  const deploysFile = path.join(paths.factoryDir, DEPLOYS_FILE);
+  const deploys = (readJsonIfExists(deploysFile) as Record<string, Record<string, unknown>> | undefined) ?? {};
+  const at = new Date().toISOString();
+  writeJson(deploysFile, { ...deploys, [args.target]: { ...(deploys[args.target] ?? {}), rolledBackAt: at, rolledBackBy: args.by } });
+  return { target: args.target, worker: workerName, at };
 }
 
 /** Which Cloudflare settings are present (never their values), for the panel's setup page. */

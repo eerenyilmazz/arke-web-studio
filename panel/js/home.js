@@ -1,4 +1,5 @@
 // Home dashboard: one card per client with its next step, earnings and overdue payments.
+import { locale } from "./i18n.js";
 import { businessLine, CURRENCY_SIGNS } from "./business.js";
 import { api, avatar, h, ICON, isBusy, plainOf, state, stepIndex, STEPS, svg } from "./core.js";
 import { render } from "./router.js";
@@ -155,7 +156,7 @@ export function nextHint(c, tone) {
   }
 }
 
-const fmtMoney = (n, cur) => `${CURRENCY_SIGNS[cur] || ""}${Number(n).toLocaleString("tr-TR", { maximumFractionDigits: 0 })}`;
+const fmtMoney = (n, cur) => `${CURRENCY_SIGNS[cur] || ""}${Number(n).toLocaleString(locale(), { maximumFractionDigits: 0 })}`;
 
 /** Price, own costs, agent cost and profit across clients, per currency (folded; loads after the page). */
 function profitSummaryCard() {
@@ -239,7 +240,7 @@ function overdueCard() {
           i ? ", " : "",
           h("a", {
             href: `#/musteri/${c.slug}/bilgiler`,
-            text: `${c.name || c.slug} (${new Date(`${c.business.paymentDue}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })})`,
+            text: `${c.name || c.slug} (${new Date(`${c.business.paymentDue}T12:00:00`).toLocaleDateString(locale(), { day: "numeric", month: "short" })})`,
           }),
         ])
         .flat(),

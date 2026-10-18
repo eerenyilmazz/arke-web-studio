@@ -40,7 +40,8 @@ export function portalSettingsCard() {
         class: "muted small",
         text: "Müşteriye bir link gönderirsiniz: bilgilerini ve fotoğraflarını bir formdan yollar ya da önizlemeye bakıp yorum yazar ve onaylar. Gelenler 5 dakikada bir panele alınır. Cloudflare'in ücretsiz planında çalışır (günde 1.000 gönderime kadar).",
       }),
-      st.configured && h("p", { class: "small" }, "Adres: ", h("code", { text: st.url }), " · kuruldu: ", time(st.at)),
+      // replaceChildren() writes false as the text "false"; an empty string adds nothing visible.
+      st.configured ? h("p", { class: "small" }, "Adres: ", h("code", { text: st.url }), " · kuruldu: ", time(st.at)) : "",
       h(
         "ol",
         { class: "setup-steps" },
@@ -156,8 +157,12 @@ export function portalCard(d) {
                   `${time(e.at)} · ${Object.keys(e.answers).length} cevap${e.files.length ? `, ${e.files.length} dosya` : ""}`,
                   e.used ? h("span", { class: "badge ok", text: "işlendi" }) : null,
                 ),
-                h("dl", { class: "portal-kv" }, ...Object.values(e.answers).flatMap((a) => [h("dt", { text: a.question }), h("dd", { text: a.answer })])),
-                e.freeText ? h("p", { class: "portal-free", text: e.freeText }) : null,
+                h(
+                  "dl",
+                  { class: "portal-kv", "data-no-i18n": "" },
+                  ...Object.values(e.answers).flatMap((a) => [h("dt", { text: a.question }), h("dd", { text: a.answer })]),
+                ),
+                e.freeText ? h("p", { class: "portal-free", text: e.freeText, "data-no-i18n": "" }) : null,
                 e.files.length ? h("p", { class: "muted small", text: `Dosyalar (Logo ve Görseller'de): ${e.files.join(", ")}` }) : null,
                 h(
                   "div",
@@ -215,7 +220,7 @@ export function portalCard(d) {
                       ? h("button", { class: "btn btn-sm", type: "button", onclick: () => mark("comments", f.id, { status: "done" }) }, "Çözüldü")
                       : null,
                   ),
-                  h("p", { text: f.text }),
+                  h("p", { text: f.text, "data-no-i18n": "" }),
                 ),
               ),
           ),

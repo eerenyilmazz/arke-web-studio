@@ -1,4 +1,5 @@
 // Documents for the client: design concepts, the proposal, the work report and the monthly report.
+import { locale } from "./i18n.js";
 import { CURRENCY_SIGNS } from "./business.js";
 import { api, ask, fmtTokens, guarded, h, isBusy, LANG_NAMES, printDoc, state } from "./core.js";
 import { PAGE_TR } from "./edit.js";
@@ -147,6 +148,9 @@ const KIND_LABEL = {
   build: "Siteyi oluşturma",
   deploy: "Yayın",
   unpublish: "Yayından kaldırma",
+  rollback: "Önceki sürüme dönüş",
+  "blog-post": "Blog yazısı",
+  "portal-comments": "Müşteri yorumları",
   "quick-edit": "İletişim bilgileri",
 };
 
@@ -174,7 +178,7 @@ export function workReport(d) {
         h("p", {
           class: "p-meta",
           text: records.length
-            ? `${new Date(records[0].startedAt).toLocaleDateString("tr-TR")} – ${new Date(records[records.length - 1].endedAt).toLocaleDateString("tr-TR")} · ${records.length} iş`
+            ? `${new Date(records[0].startedAt).toLocaleDateString(locale())} – ${new Date(records[records.length - 1].endedAt).toLocaleDateString(locale())} · ${records.length} iş`
             : "Henüz tamamlanmış iş yok.",
         }),
       ),
@@ -195,7 +199,7 @@ export function workReport(d) {
               h(
                 "tr",
                 {},
-                h("td", { text: new Date(r.endedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" }) }),
+                h("td", { text: new Date(r.endedAt).toLocaleDateString(locale(), { day: "numeric", month: "short" }) }),
                 h(
                   "td",
                   {},
@@ -251,7 +255,7 @@ async function monthlyReport(d) {
       return h(
         "option",
         { value: `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}` },
-        m.toLocaleDateString("tr-TR", { month: "long", year: "numeric" }),
+        m.toLocaleDateString(locale(), { month: "long", year: "numeric" }),
       );
     }),
   );
@@ -275,7 +279,10 @@ async function monthlyReport(d) {
           {},
           h("span", { class: "p-kicker", text: "Aylık bakım raporu" }),
           h("h1", { text: d.business.name || slug }),
-          h("p", { class: "p-meta", text: `${monthName} · hazırlanma ${now.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}` }),
+          h("p", {
+            class: "p-meta",
+            text: `${monthName} · hazırlanma ${now.toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" })}`,
+          }),
         ),
       ),
       h(
@@ -316,7 +323,7 @@ async function monthlyReport(d) {
                 h(
                   "li",
                   {},
-                  h("strong", { text: `${new Date(r.endedAt).toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} · ${label(r)}: ` }),
+                  h("strong", { text: `${new Date(r.endedAt).toLocaleDateString(locale(), { day: "numeric", month: "short" })} · ${label(r)}: ` }),
                   (r.summary || r.request || r.title || "").slice(0, 260),
                 ),
               ),
@@ -344,7 +351,7 @@ async function monthlyReport(d) {
                 h("th", { text: "Son kontrol" }),
                 h("td", {
                   text: health.checks.at
-                    ? `${new Date(health.checks.at).toLocaleDateString("tr-TR")} · ${health.checks.pass} geçti, ${health.checks.warn} uyarı, ${health.checks.fail} hata`
+                    ? `${new Date(health.checks.at).toLocaleDateString(locale())} · ${health.checks.pass} geçti, ${health.checks.warn} uyarı, ${health.checks.fail} hata`
                     : "Henüz kontrol yok",
                 }),
               ),
@@ -395,7 +402,7 @@ async function proposalSheet(body, d, switcher) {
   const b = d.businessTracking || {};
   const today = new Date();
   const no = `T-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}-${slug.slice(0, 6).toUpperCase()}`;
-  const price = b.price != null ? `${CURRENCY_SIGNS[b.currency] || ""}${Number(b.price).toLocaleString("tr-TR")}` : "Belirtilecek";
+  const price = b.price != null ? `${CURRENCY_SIGNS[b.currency] || ""}${Number(b.price).toLocaleString(locale())}` : "Belirtilecek";
   const palette = Object.entries(brand?.brand?.palette || d.design?.palette || {}).filter(([, v]) => /^#[0-9a-f]{6}$/i.test(String(v)));
   const logo = brand?.clientLogo || (brand?.logoSvg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(brand.logoSvg)}` : null);
   // Editable on screen before printing (not saved): Eren adjusts wording per client.
@@ -411,7 +418,7 @@ async function proposalSheet(body, d, switcher) {
         {},
         h("span", { class: "p-kicker", text: "Web sitesi teklifi" }),
         h("h1", { text: d.business.name || slug }),
-        h("p", { class: "p-meta", text: `${no} · ${today.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}` }),
+        h("p", { class: "p-meta", text: `${no} · ${today.toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" })}` }),
       ),
       logo && h("img", { class: "p-logo", src: logo, alt: "" }),
     ),
@@ -451,7 +458,7 @@ async function proposalSheet(body, d, switcher) {
           h("th", { text: "Teslim" }),
           h("td", {
             text: b.deadline
-              ? new Date(`${b.deadline}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })
+              ? new Date(`${b.deadline}T12:00:00`).toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" })
               : "Onaydan sonra belirlenir",
           }),
         ),

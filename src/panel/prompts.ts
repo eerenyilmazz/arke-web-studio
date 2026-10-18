@@ -42,7 +42,14 @@ export const CODEX_NOTE =
   "You are running in Codex. You have no shell and cannot read or write files directly: your only tools are the site-factory MCP tools (get_client_status, site_map, read_site_file, read_site_file_part, write_site_file, edit_site_file, build_site, search_design_knowledge, save_content, update_client_config and the others it lists), plus view_image for an image at an absolute path (the logo, the screenshots build_site lists). Where these instructions say mcp__site-factory__<name>, call the site-factory tool <name>. Where they say to read rules or skills, use search_design_knowledge instead. Where they say Read for an image, use view_image.";
 
 /** Fills in the parts of a prompt that depend on the budget mode and the agent. */
-export function finalPrompt(prompt: string, opts: { skills: "none" | "search" | "full"; screenshots: boolean; provider?: "claude" | "codex" }): string {
+/** Added when the panel is in English: only Eren's notes change language, never the site texts. */
+export const ENGLISH_NOTES =
+  "Eren reads the panel in English: write your summaries, questions and notes for Eren in English. The site texts stay in the site's own languages.";
+
+export function finalPrompt(
+  prompt: string,
+  opts: { skills: "none" | "search" | "full"; screenshots: boolean; provider?: "claude" | "codex"; panelLanguage?: "tr" | "en" },
+): string {
   const designJob = prompt.includes(SKILLS_STEP);
   let out = prompt.split(SKILLS_STEP).join(SKILLS_TEXT[opts.skills]);
   // Design jobs on custom sites write one language; a separate, cheaper job translates afterwards.
@@ -50,6 +57,7 @@ export function finalPrompt(prompt: string, opts: { skills: "none" | "search" | 
     out +=
       "\nCustom sites: write the pages in the default language only (i18n.defaultLocale); the other languages are added afterwards by a separate translation job, so do not write <locale>/ pages.";
   if (!opts.screenshots) out += "\nBudget: do not open the screenshot images that build_site lists (Economy mode); judge the layout from the code.";
+  if (opts.panelLanguage === "en") out += `\n${ENGLISH_NOTES}`;
   if (opts.provider === "codex") out = `${CODEX_NOTE}\n${out}`;
   return out;
 }

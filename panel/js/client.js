@@ -1,4 +1,5 @@
 // Client page: header, status strip, preview, Düzenleme tab and approval dialog.
+import { locale } from "./i18n.js";
 import { tabBrand } from "./brand.js";
 import { archiveClient, deployProduction, openPreview } from "./client-actions.js";
 import {
@@ -658,7 +659,7 @@ export function paymentBanner(d) {
       {},
       h("strong", { text: "Ödeme gecikti. " }),
       h("span", {
-        text: `Ödeme günü ${new Date(`${b.paymentDue}T12:00:00`).toLocaleDateString("tr-TR", { day: "numeric", month: "long" })} idi; durum: ödenmedi.`,
+        text: `Ödeme günü ${new Date(`${b.paymentDue}T12:00:00`).toLocaleDateString(locale(), { day: "numeric", month: "long" })} idi; durum: ödenmedi.`,
       }),
     ),
     h("a", { class: "btn btn-sm", href: `#/musteri/${d.status.slug}/bilgiler` }, "İş Takibi ve Yayın"),

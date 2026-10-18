@@ -58,3 +58,16 @@ export async function archiveClient(slug, stage) {
     location.hash = "#/";
   }
 }
+
+/** The previous Cloudflare version back on the preview or live site; the live one asks for the slug. */
+export async function rollbackSite(slug, target) {
+  const live = target === "production";
+  const yes = await ask({
+    title: live ? "Canlı siteyi önceki sürüme döndür" : "Önizlemeyi önceki sürüme döndür",
+    body: `${live ? "Canlı sitede" : "Önizlemede"} bir önceki yayın geri gelir (birkaç saniye sürer). Bilgisayarındaki dosyalar değişmez; düzelttikten sonra yeniden yayınlayabilirsin.`,
+    confirm: "Önceki sürüme dön",
+    danger: live,
+    ...(live ? { typeToConfirm: slug } : {}),
+  });
+  if (yes) runTask(slug, "rollback", { target, ...(live ? { confirm: slug } : {}) });
+}

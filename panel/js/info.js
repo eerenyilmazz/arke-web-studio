@@ -1,6 +1,6 @@
 // The Müşteri Bilgileri tab: links, missing facts, texts, files, approvals, publishing and questionnaires.
 import { businessForm } from "./business.js";
-import { deployProduction, unpublish } from "./client-actions.js";
+import { deployProduction, rollbackSite, unpublish } from "./client-actions.js";
 import { approveDialog } from "./client.js";
 import { api, APPROVAL_NAMES, ask, copyButton, guarded, h, isBusy, LANG_NAMES, state, time, toast } from "./core.js";
 import { jobStarted, runAgent, runTask } from "./jobs.js";
@@ -155,7 +155,7 @@ export function tabQuestions(body, d, { compact = false } = {}) {
       h("h2", { text: "Müşteriye gidecek soru formu" }),
       h("p", {
         class: "muted",
-        text: "1. tur: 10 temel soru. 2. tur: sadece eksik kalanlar, sektöre özel sorular ve 'ileride ilginizi çekebilir' listesi. Form İngilizce; müşteriye siz gönderirsiniz.",
+        text: "1. tur: 10 temel soru. 2. tur: sadece eksik kalanlar, sektöre özel sorular ve 'ileride ilginizi çekebilir' listesi. Form müşterinin dilindedir (site dili); müşteriye siz gönderirsiniz.",
       }),
       h("label", { for: "reply-by" }, "Son cevap tarihi (isteğe bağlı)", replyBy),
       h(
@@ -200,7 +200,7 @@ export async function tabAnswers(body, d, { compact = false } = {}) {
       h(
         "label",
         { for: `a-${item.id}` },
-        item.text,
+        h("span", { "data-no-i18n": "" }, item.text),
         item.required ? h("span", { class: "req", text: "gerekli" }) : null,
         item.example || item.hint
           ? h("span", { class: "help", text: [item.example && `Örnek: ${item.example}`, item.hint].filter(Boolean).join(" · ") })
@@ -228,9 +228,10 @@ export async function tabAnswers(body, d, { compact = false } = {}) {
   free.placeholder =
     "Müşterinin e-postasını, WhatsApp mesajını ya da kendi notlarını olduğu gibi yapıştır. Sıra, dil ve biçim önemli değil.\n\nÖr: Kuaför, adı Bella Hair. Kadın kesim 35£, boya 60£'dan başlıyor. Tel 07700 900123, Kingston'da. Renkleri pembe-gri olsun. Instagram @bellahair";
 
+  // DOM append() writes null as the text "null"; an empty string adds nothing visible.
   body.append(
     compact
-      ? null
+      ? ""
       : h(
           "section",
           { class: "card stack" },
@@ -242,7 +243,7 @@ export async function tabAnswers(body, d, { compact = false } = {}) {
           h("label", { for: "free", class: "sr-only" }, "Müşteri bilgileri"),
           free,
         ),
-    compact ? null : uploadCard(slug, d.inbox, d.assets, d.logo),
+    compact ? "" : uploadCard(slug, d.inbox, d.assets, d.logo),
     h(
       "details",
       { class: "card" },
@@ -419,7 +420,10 @@ export function tabContent(body, d) {
       ["İletişim", c.contact ? `${c.contact.title}\n${c.contact.intro}` : ""],
       ["SEO", c.seo?.home ? `${c.seo.home.title}\n${c.seo.home.description}` : ""],
     ].filter(([, v]) => v);
-    section.append(h("h3", { text: LANG_NAMES[locale] || locale }), h("dl", {}, ...rows.flatMap(([k, v]) => [h("dt", { text: k }), h("dd", { text: v })])));
+    section.append(
+      h("h3", { text: LANG_NAMES[locale] || locale }),
+      h("dl", {}, ...rows.flatMap(([k, v]) => [h("dt", { text: k }), h("dd", { text: v, "data-no-i18n": "" })])),
+    );
   }
   body.append(section);
 }
@@ -692,6 +696,21 @@ export function tabPublish(body, d) {
           { class: "row" },
           h("button", { class: "btn", type: "button", disabled: busy, onclick: () => unpublish(slug, "preview") }, "Önizlemeyi kaldır"),
           h("button", { class: "btn btn-danger", type: "button", disabled: busy, onclick: () => unpublish(slug, "production") }, "Canlı siteyi kaldır"),
+        ),
+      ),
+      h(
+        "details",
+        { class: "rollback" },
+        h("summary", { class: "small", text: "Önceki sürüme dön" }),
+        h("p", {
+          class: "muted small",
+          text: "Son yayın bir sorun çıkardıysa Cloudflare'deki bir önceki sürümü birkaç saniyede geri getirir. Bilgisayarındaki dosyalar değişmez.",
+        }),
+        h(
+          "div",
+          { class: "row" },
+          h("button", { class: "btn", type: "button", disabled: busy, onclick: () => rollbackSite(slug, "preview") }, "Önizlemeyi geri al"),
+          h("button", { class: "btn btn-danger", type: "button", disabled: busy, onclick: () => rollbackSite(slug, "production") }, "Canlı siteyi geri al"),
         ),
       ),
     ),

@@ -11,6 +11,7 @@ import * as tools from "../../tools.js";
 import { HttpError } from "../http.js";
 import { type JobRunner } from "../jobs.js";
 import { TOOLS_NOTE, finalPrompt, translatePrompt } from "../prompts.js";
+import { readSettings } from "../settings.js";
 import { ensureBaseKit } from "../../lib/custom-site.js";
 import { FACTORY_ROOT } from "../../config.js";
 import type { PreviewServer } from "../preview.js";
@@ -103,7 +104,10 @@ export function launchAgent(deps: ApiDeps, slug: string, kind: string, title: st
   if ((readDraftConfig(clientPaths(deps.factory.clientsRoot, slug)) as { template?: string }).template === "custom") {
     ensureBaseKit(clientPaths(deps.factory.clientsRoot, slug), path.join(FACTORY_ROOT, "rules", "site-kit", "base.css"));
   }
-  const text = finalPrompt(prompt.startsWith(TOOLS_NOTE) ? prompt : `${TOOLS_NOTE}\n${prompt}`, policy);
+  const text = finalPrompt(prompt.startsWith(TOOLS_NOTE) ? prompt : `${TOOLS_NOTE}\n${prompt}`, {
+    ...policy,
+    panelLanguage: readSettings(deps.factory).panelLanguage,
+  });
   return runOrConflict(() => deps.jobs.startAgent(slug, kind, title, text, request, policy));
 }
 

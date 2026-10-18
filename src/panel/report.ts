@@ -212,11 +212,15 @@ async function deployPart(c: Ctx): Promise<void> {
   const { factory, slug, paths, lines, add, fetcher } = c;
   // Deploys and live checks.
   const deploys = (readJsonIfExists(path.join(paths.factoryDir, tools.DEPLOYS_FILE)) ?? {}) as Partial<
-    Record<"preview" | "production", { url?: string | null; at?: string }>
+    Record<"preview" | "production", { url?: string | null; at?: string; rolledBackAt?: string; rolledBackBy?: string }>
   >;
   for (const target of ["preview", "production"] as const) {
     const d = deploys[target];
-    if (d) lines.push(`- Yayın (${target}): ${d.url ?? "adres yok"} · ${fmtDate(d.at)}`);
+    if (d)
+      lines.push(
+        `- Yayın (${target}): ${d.url ?? "adres yok"} · ${fmtDate(d.at)}${d.rolledBackAt ? ` · önceki sürüme döndü ${fmtDate(d.rolledBackAt)} (${d.rolledBackBy ?? "?"})` : ""}`,
+      );
+    if (d?.rolledBackAt) add("warn", `${target} sitesi önceki sürüme döndürülmüş; yayındaki site bilgisayardaki dosyalardan eski. Düzeltip yeniden yayınla.`);
   }
   if (deploys.production && !c.valid?.production)
     add("warn", "Canlı yayın var ama şu anki içerik için yayın onayı yok (site yayından sonra değişmiş olabilir).");

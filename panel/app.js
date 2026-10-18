@@ -1,7 +1,8 @@
 // Site Factory panel. Plain browser JS, ES modules, no build step.
 // All text from the server (client data included) is inserted with textContent, never innerHTML.
 // This file only wires the page together; the screens live in ./js/.
-import { $, state, STATUS_POLL_MS } from "./js/core.js";
+import { $, api, state, STATUS_POLL_MS } from "./js/core.js";
+import { rememberedLang, setLang } from "./js/i18n.js";
 import { fmtDuration } from "./js/jobs.js";
 import { refreshStatus, render, renderSidebar } from "./js/router.js";
 
@@ -46,6 +47,10 @@ setInterval(() => {
 // ---------------------------------------------------------------- start
 
 (async () => {
+  // Language first, so the first screen is drawn in it: this browser's last choice, then the saved setting.
+  setLang(rememberedLang());
+  const settings = await api("GET", "/api/settings").catch(() => null);
+  if (settings?.panelLanguage) setLang(settings.panelLanguage);
   await refreshStatus();
   render();
 })();

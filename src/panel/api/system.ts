@@ -1,7 +1,7 @@
 import { profitSummary } from "../profit.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readSettings, writeSettings } from "../settings.js";
-import { backupNow, checkBackupDir, listBackups } from "../backup.js";
+import { backupNow, checkBackupDir, listBackups, verifyBackup } from "../backup.js";
 import { BUDGET_MODES, PACKAGE_LABELS, PROFILES, summarise } from "../budget.js";
 import { ZodError } from "zod";
 import { LOCALES } from "../../schema/site-config.js";
@@ -38,6 +38,17 @@ export const systemRoutes: Route[] = [
     handler: async (d, _r, res) => {
       try {
         sendJson(res, 201, await backupNow(d.factory));
+      } catch (e) {
+        throw new HttpError(400, (e as Error).message);
+      }
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/api\/backups\/(site-factory-yedek-[0-9-]+\.tar\.gz)\/verify$/,
+    handler: async (d, _r, res, [file]) => {
+      try {
+        sendJson(res, 200, await verifyBackup(d.factory, file!));
       } catch (e) {
         throw new HttpError(400, (e as Error).message);
       }
@@ -84,6 +95,7 @@ const DEFAULT_SECONDS: Readonly<Record<string, number>> = {
   build: 60,
   deploy: 90,
   unpublish: 60,
+  rollback: 30,
   concepts: 360,
   "quick-edit": 180,
   "brand-board": 300,

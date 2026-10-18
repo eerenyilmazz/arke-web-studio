@@ -114,6 +114,7 @@ function conceptCard(v) {
     h("p", {
       class: "concept-text",
       style: `font-family:${v.heading}`,
+      "data-no-i18n": v.brand.concept ? "" : null,
       text: v.brand.concept || (v.custom ? "Konsept henüz yazılmadı." : "Şablon sitelerde marka konsepti yok; renkler ve yazı tipleri şablondan gelir."),
     }),
     h(

@@ -20,6 +20,8 @@ export interface LogLine {
 }
 
 export interface Job {
+  /** Who started it (the computer's user name), so records stay attributable when more people use the factory. */
+  readonly by?: string;
   /** Which agent ran it (agent jobs only). */
   provider?: "claude" | "codex";
   readonly id: string;
@@ -226,6 +228,7 @@ export function agentEnv(parent: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 /** What is kept of a finished job (the full log is not): enough to show it in the conversation later. */
 export interface JobRecord {
   readonly id: string;
+  readonly by?: string;
   readonly kind: string;
   readonly title: string;
   readonly request?: string;
@@ -261,6 +264,7 @@ export function toRecord(job: Job): JobRecord {
       .slice(-MAX_RECORD_ERRORS),
     ...(job.usage ? { usage: job.usage, tokens: job.tokens ?? weighted(job.usage), model: job.model, mode: job.mode } : {}),
     ...(job.provider ? { provider: job.provider } : {}),
+    ...(job.by ? { by: job.by } : {}),
   };
 }
 
@@ -296,7 +300,17 @@ export class JobRunner {
   private create(slug: string, kind: string, title: string, request?: string): Job {
     const active = this.running();
     if (active) throw new Error(`Şu an başka bir iş çalışıyor: "${active.title}" (${active.slug}). Bitmesini bekleyin.`);
-    const job: Job = { id: randomUUID(), slug, kind, title, ...(request ? { request } : {}), startedAt: new Date().toISOString(), status: "running", log: [] };
+    const job: Job = {
+      id: randomUUID(),
+      slug,
+      kind,
+      title,
+      ...(request ? { request } : {}),
+      by: os.userInfo().username,
+      startedAt: new Date().toISOString(),
+      status: "running",
+      log: [],
+    };
     this.jobs.set(job.id, job);
     return job;
   }

@@ -76,6 +76,24 @@ describe("client portal", () => {
     expect((await visit(`${URL_BASE}/f/${"n".repeat(32)}`)).status).toBe(404);
   });
 
+  it("shows a Turkish client the form in Turkish, an English one in English", async () => {
+    await tools.createClient(factory, {
+      slug: "gul-kafe",
+      businessName: "Gül Kafe",
+      industry: "kafe",
+      hostingModel: "managed",
+      template: "custom",
+      country: "TR",
+    });
+    const tr = await (await visit((await createLink(factory, "gul-kafe", "intake", fetcher)).url)).text();
+    expect(tr).toContain('<html lang="tr"');
+    expect(tr).toContain("İşletmenizin adı");
+    expect(tr).not.toContain("What is your business name");
+    const en = await (await visit((await createLink(factory, "rose-cafe", "intake", fetcher)).url)).text();
+    expect(en).toContain('<html lang="en"');
+    expect(en).not.toContain("İşletmenizin adı");
+  });
+
   it("takes the intake form with an image, and the panel collects it into the client's folder", async () => {
     const link = await createLink(factory, "rose-cafe", "intake", fetcher);
     expect(link.url).toBe(`${URL_BASE}/f/${link.token}`);

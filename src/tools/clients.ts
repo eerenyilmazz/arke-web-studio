@@ -134,6 +134,7 @@ export function questionnaireFor(factory: FactoryConfig, args: { slug: string; r
       round: args.round,
       openIds,
       replyBy: args.replyBy,
+      lang: (draft as { i18n?: { defaultLocale?: string } }).i18n?.defaultLocale ?? "en",
     }),
   };
 }
