@@ -139,7 +139,7 @@ export async function jobStarted(job) {
   state.running = job;
   setStatus(job);
   const r = route();
-  if (r.slug === job.slug && r.tab !== "akis") location.hash = `#/musteri/${job.slug}/akis`;
+  if (r.slug === job.slug && r.tab !== "duzenle") location.hash = `#/musteri/${job.slug}/duzenle`; // the job feed is on Düzenleme
   else await render();
 }
 

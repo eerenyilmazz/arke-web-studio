@@ -114,7 +114,7 @@ export function renderNew() {
         if (!res) return;
         toast("Müşteri oluşturuldu.");
         const text = info.value.trim();
-        location.hash = `#/musteri/${res.slug}/sohbet`;
+        location.hash = `#/musteri/${res.slug}/duzenle`;
         if (!text) return;
         await runAgent(res.slug, "create-site", { freeText: text, ...(startDesign.value ? { libraryId: startDesign.value } : {}) });
       },

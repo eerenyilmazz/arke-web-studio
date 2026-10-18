@@ -52,7 +52,8 @@ bash scripts/link-skills.sh
 npm ci --no-fund --no-audit
 npm run build >/dev/null
 for t in templates/*/; do [[ -f "$t/package.json" ]] && (cd "$t" && npm ci --no-fund --no-audit); done
-npm test --silent
+# The end-to-end tests (a few minutes) are left out here; run them with: npm run test:e2e
+SF_E2E=off npm test --silent
 
 if [[ -d .git ]]; then git add -A && git commit -qm "Update to $TO" && echo "  committed: Update to $TO"; fi
 echo

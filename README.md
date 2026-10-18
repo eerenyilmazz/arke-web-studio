@@ -17,6 +17,16 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Uçtan uca testler (1.17.2)
+
+`npm run test:e2e` (birkaç dakika; Linux Chromium gerekir, yoksa atlanır):
+
+- **Site akışı (gerçek tarayıcıda):** yeni müşteri formu → agent işi siteyi gerçek MCP sunucusu üzerinden yazar ve build alır → onay kodu (önce yanlış kod reddedilir) → deneme yayını (wrangler `--dry-run`, hiçbir şey yüklenmez) → özel talep siteyi değiştirir, build yenilenir, onay sıfırlanır → her işte geri dönülecek sürüm kalır.
+- **Müşteri portalı (Cloudflare'in kendi çalışma ortamında, workerd + yerel KV):** linkler → müşteri telefon ekranında formu ve fotoğrafı gönderir (sahte "resim" atılır) → panel toplar, foto gelen kutusuna düşer → cevaplar agent'a gider → önizlemeye yorum ve onay → yorumlar agent'a veri olarak gider (yayın yapılmaz) → link kapatılınca açılmaz, portalda veri kalmaz.
+- Model yerine sabit senaryolu sahte bir agent çalışır (`tests/e2e/fake-agent.ts`). Ortamına Cloudflare değişkeni sızarsa ya da tehlikeli araçlar kapalı değilse işi başarısız sayar; bu kontrolün kendisi de test edilir.
+- Güncelleme script'i bu testleri atlar (hızlı kalsın diye); diğer bütün testler yine çalışır.
+- Düzeltme: iş başlayınca panel eski "akis" adresi yerine Düzenleme sekmesine gider (gereksiz yeniden çizim kalktı).
+
 ## Kod kalitesi (1.17.1)
 
 Davranış değişmedi.

@@ -74,6 +74,11 @@ export const COMPLETE_CONTENT = {
 
 /** A small custom site that passes the build (brand, motion, reduced motion, logo, contact page). */
 export function writePassingCustomSite(f: FactoryConfig, slug: string, name: string): void {
+  for (const [p, content] of Object.entries(passingSiteFiles(name))) writeSiteFileTool(f, { slug, path: p, content });
+}
+
+/** The files of that site, by path inside site/ (the e2e test's fake agent writes them through the MCP server). */
+export function passingSiteFiles(name: string): Record<string, string> {
   const brand = {
     concept: "Bread from a wood oven: crust, flour dust and warm mornings.",
     personality: ["warm", "honest"],
@@ -98,11 +103,12 @@ export function writePassingCustomSite(f: FactoryConfig, slug: string, name: str
 <title>${esc(title)}</title><meta name="description" content="Bread baked every morning in a wood oven.">
 <link rel="stylesheet" href="/css/site.css"><link rel="icon" href="/brand/logo.svg"></head>
 <body><header><a href="/"><img src="/brand/logo.svg" alt="${esc(name)}"></a></header><main>${body}</main></body></html>`;
-  const w = (p: string, content: string) => writeSiteFileTool(f, { slug, path: p, content });
-  w("brand/brand.json", JSON.stringify(brand));
-  w("brand/logo.svg", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A4B16"/></svg>');
-  w("css/site.css", css);
-  w("index.html", page(name, `<h1 class="dough-rise">${esc(name)}</h1><div data-anim="flour-dust"></div><a href="/contact/">Contact</a>`));
-  w("contact/index.html", page(`Contact | ${name}`, "<h1>Contact</h1>"));
-  w("404.html", page(`Not found | ${name}`, "<h1>Not found</h1>"));
+  return {
+    "brand/brand.json": JSON.stringify(brand),
+    "brand/logo.svg": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A4B16"/></svg>',
+    "css/site.css": css,
+    "index.html": page(name, `<h1 class="dough-rise">${esc(name)}</h1><div data-anim="flour-dust"></div><a href="/contact/">Contact</a>`),
+    "contact/index.html": page(`Contact | ${name}`, "<h1>Contact</h1>"),
+    "404.html": page(`Not found | ${name}`, "<h1>Not found</h1>"),
+  };
 }
