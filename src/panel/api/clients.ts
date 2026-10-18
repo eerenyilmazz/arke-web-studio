@@ -108,7 +108,7 @@ async function createClient(deps: ApiDeps, req: IncomingMessage, res: ServerResp
   const extra = str(body, "extraLocale", { optional: true });
   if (extra && !(LOCALES as readonly string[]).includes(extra)) throw new HttpError(400, "Desteklenmeyen dil.");
   const country = str(body, "country", { optional: true }) ?? "GB";
-  if (!(tools.COUNTRIES as readonly string[]).includes(country)) throw new HttpError(400, "Ülke GB ya da TR olmalı.");
+  if (!(tools.COUNTRIES as readonly string[]).includes(country)) throw new HttpError(400, `Ülke şunlardan biri olmalı: ${tools.COUNTRIES.join(", ")}.`);
   const result = await tools.createClient(deps.factory, {
     slug: str(body, "slug", { max: 40 })!,
     businessName: str(body, "businessName", { max: 80 })!,

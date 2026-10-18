@@ -1,13 +1,18 @@
 # Site Factory: agent instructions
 
-You run a small production line that turns a client's answers into a finished showcase website.
-**You never write site code for a client.** You write config, content and images through the
-`site-factory` MCP tools; a fixed template turns them into the site.
+You run a small production line that turns a client's answers into a finished showcase website. You change a client
+only through the `site-factory` MCP tools, never by editing files directly. There are two kinds of site:
+
+- **Custom sites** (`template: "custom"`, the default for new clients): you design the brand and write the whole site
+  (HTML, CSS, JS, SVG) with the site-file tools, following `rules/custom-site.md`.
+- **Template sites** (`corporate-v1`, `corporate-v2`, older clients): you write only config, content and images; the
+  fixed template builds the site. Never write code for them.
 
 Eren is the operator. He talks to you, sends questionnaires to clients and gives approvals.
-His brother handles sales and payment. Clients are small businesses in the UK or Turkey; the client's
-country (set when the client is created) decides the main language, currency and time zone: UK sites in
-UK English (GBP, Europe/London), Turkish sites in Turkish (TRY, Europe/Istanbul).
+Clients can be in any market; most are in Turkey or English-speaking countries. **English is the shared language**:
+the site's main language is English everywhere except Turkey (Turkish). The client's market (`business.country`)
+decides language, spelling, currency, formats and the legal minimum: read `rules/markets.md`. For findability
+(titles, local facts, structured data, images) follow `rules/local-seo.md`.
 
 ## The flow
 
@@ -16,7 +21,7 @@ Always call `get_client_status` when unsure; its `nextStep` is authoritative.
 1. **Start**: ask Eren only the internal questions (hosting: `managed` or `client`; an extra language if already known). Propose a slug (`willow-thread`). `create_client`.
 2. **Round 1**: `generate_questionnaire` round 1. Give Eren the plain text to send. Stop and wait.
 3. **Answers arrive** (Eren pastes them): map every answer with `update_client_config` / `save_content` / `save_asset`.
-   - Normalise before saving: phone numbers to `+44…`, lowercase emails and domains, hex colours.
+   - Normalise before saving: phone numbers to the international form (`+44…`, `+90…`), lowercase emails and domains, hex colours.
    - "Please suggest" means you choose and mark it in your summary for Eren.
    - An answer that fits no field goes into `unmapped` with a note. Never drop an answer silently.
    - Ticked "later" items go into `laterInterests` (ids like `later-qr-code`).
@@ -37,7 +42,7 @@ Changes after launch use the same path: edit config/content, build, approvals, d
 
 ## Custom sites (template "custom", the default for new clients)
 
-There is no template: you design the brand identity and write the whole site yourself with the site-file tools, following `rules/custom-site.md` (read it completely first). Steps 3–6 of the flow still apply (facts in config and content first); step 5 becomes "brand identity", step 6 also writes the pages. Every custom brand has a complete brand board (tagline, signature motion with its own demo page, type specimen). Load the design skills in `.claude/skills/` (impeccable, taste-skill, UI UX Pro Max) for judgement; where they conflict with the factory rules, the factory rules win. Template sites (`corporate-v1`, `corporate-v2`) stay as they are: never write code for them.
+There is no template: you design the brand identity and write the whole site yourself with the site-file tools, following `rules/custom-site.md`. Steps 3–6 of the flow still apply (facts in config and content first); step 5 becomes "brand identity", step 6 also writes the pages. Every custom brand has a complete brand board (tagline, signature motion with its own demo page, type specimen). For design judgement use `search_design_knowledge` (it searches the rules and the design skills: Impeccable, taste-skill and, when installed, UI UX Pro Max); where a skill conflicts with the factory rules, the factory rules win. The skills' scripts and browser tools do not run here.
 
 ## Hard rules
 
@@ -54,11 +59,16 @@ There is no template: you design the brand identity and write the whole site you
 
 ## Writing content
 
-- Write each locale natively: UK English for `en` (plain and specific, no hype words like "cutting-edge", "world-class", "unleash"), natural everyday Turkish for `tr` (no translated-sounding phrases, no "en iyi", "kaliteli hizmet" clichés). Prices in the client's currency (₺ for Turkey).
-- Headlines say what the business does and for whom. One clear call to action per page.
+The full rules are in `rules/markets.md` (Writing). In short:
+
+- Write each locale natively in the market's spelling (UK or US English, everyday Turkish); never word-for-word.
+- No hype or clichés ("cutting-edge", "world-class"; "en iyi", "kaliteli hizmet"). Specific facts instead.
+- Headlines say what the business does, for whom and where. One clear call to action per page.
+- Prices, dates, hours and phone numbers in the market's format.
 - Every image needs real alt text describing the image, not "image of".
 - Respect field limits (SEO title ≤ 60, description ≤ 160 characters).
-- Legal footer: show company name, number and registered address when the client is a limited company.
+- Legal: company details in the footer for companies; a privacy notice (KVKK Aydınlatma Metni in Turkey) when the
+  site has a form; an Impressum in Germany. Missing legal facts: ask Eren.
 
 ## Working on templates (only when Eren asks)
 

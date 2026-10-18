@@ -95,11 +95,13 @@ export function renderNew() {
   slug.addEventListener("input", () => (slugTouched = true));
   const industry = h("input", { type: "text", id: "nc-industry", required: true, maxlength: 60, placeholder: "ör. hair salon, family law solicitor" });
   const info = h("textarea", { id: "nc-info", rows: 12, class: "field", maxlength: 20000, placeholder: "Ör: Erkek kuaförü, Mono. Saç kesimi 500 TL, sakal 300 TL. Ankara Sincan, 0534 985 63 19. Siyah-beyaz renkler." });
-  const MAIN = { GB: "en", TR: "tr" };
-  const country = h("select", { id: "nc-country" }, h("option", { value: "TR" }, "Türkiye (Türkçe, ₺)"), h("option", { value: "GB" }, "İngiltere (İngilizce, £)"));
+  // Main language: Turkish in Turkey, English everywhere else (extra languages are chosen below).
+  const MARKET_OPTIONS = [["TR", "Türkiye (Türkçe, ₺)"], ["GB", "İngiltere (İngilizce, £)"], ["IE", "İrlanda (İngilizce, €)"], ["US", "ABD (İngilizce, $)"], ["DE", "Almanya (İngilizce, €)"], ["NL", "Hollanda (İngilizce, €)"]];
+  const MAIN = { TR: "tr" };
+  const country = h("select", { id: "nc-country" }, ...MARKET_OPTIONS.map(([v, l]) => h("option", { value: v }, l)));
   const lang = h("select", { id: "nc-lang" });
   const fillLangs = () => {
-    const main = MAIN[country.value];
+    const main = MAIN[country.value] || "en";
     lang.replaceChildren(h("option", { value: "" }, `Sadece ${LANG_NAMES[main]}`), ...Object.entries(LANG_NAMES).filter(([k]) => k !== main).map(([k, v]) => h("option", { value: k }, `${LANG_NAMES[main]} + ${v}`)));
   };
   country.addEventListener("change", fillLangs);

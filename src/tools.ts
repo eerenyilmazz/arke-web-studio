@@ -15,7 +15,7 @@ import { assertSlug, clientPaths, safeJoin } from "./lib/paths.js";
 import { checkInputs, checkOutput, renderReport, type CheckResult } from "./lib/quality.js";
 import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, editSiteFile, fileProblems, readSiteFileAround, siteMap, deleteSiteFile, isCustom, listSiteFiles, readSiteFile, writeSiteFile } from "./lib/custom-site.js";
 import { takeScreenshots } from "./lib/screenshots.js";
-import { checkSeo } from "./lib/seo.js";
+import { checkImages, checkLegal, checkSeo } from "./lib/seo.js";
 import { searchKnowledge } from "./lib/knowledge.js";
 import { effectiveFormAction } from "./lib/form.js";
 import { buildQuestionnaire } from "./lib/questionnaire.js";
@@ -58,11 +58,19 @@ export function listClients(factory: FactoryConfig) {
 }
 
 /** Where the client is: decides the site's main language, currency and time zone. */
-export const COUNTRIES = ["GB", "TR"] as const;
+/**
+ * Markets a client can be in. The site's main language is English everywhere except Turkey (English is the shared
+ * language; other languages are added as extra locales). Rules per market: rules/markets.md.
+ */
+export const COUNTRIES = ["GB", "TR", "IE", "US", "DE", "NL"] as const;
 export type Country = (typeof COUNTRIES)[number];
-const MARKETS: Readonly<Record<Country, { locale: Locale; timezone: string; currency: string }>> = {
-  GB: { locale: "en", timezone: "Europe/London", currency: "GBP" },
-  TR: { locale: "tr", timezone: "Europe/Istanbul", currency: "TRY" },
+export const MARKETS: Readonly<Record<Country, { locale: Locale; timezone: string; currency: string; callingCode: string }>> = {
+  GB: { locale: "en", timezone: "Europe/London", currency: "GBP", callingCode: "+44" },
+  TR: { locale: "tr", timezone: "Europe/Istanbul", currency: "TRY", callingCode: "+90" },
+  IE: { locale: "en", timezone: "Europe/Dublin", currency: "EUR", callingCode: "+353" },
+  US: { locale: "en", timezone: "America/New_York", currency: "USD", callingCode: "+1" },
+  DE: { locale: "en", timezone: "Europe/Berlin", currency: "EUR", callingCode: "+49" },
+  NL: { locale: "en", timezone: "Europe/Amsterdam", currency: "EUR", callingCode: "+31" },
 };
 
 export async function createClient(
@@ -319,6 +327,7 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
         results.push(...checkBrand(paths.distDir, config.brand.logo));
         results.push(...checkLibraryLeftovers(paths.distDir, paths.factoryDir));
         results.push(checkSeo(paths.distDir, { name: config.business.name, phone: config.contact.phone ?? null, domain: config.site.domain ?? null }));
+        results.push(checkImages(paths.distDir), checkLegal(paths.distDir, config.business.country));
         results.push(await takeScreenshots(paths.distDir, path.join(paths.factoryDir, "shots")));
       }
     }

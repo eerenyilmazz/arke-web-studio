@@ -1,5 +1,10 @@
 # Site Factory: build specification
 
+> **Historical.** This is the original build plan (MCP server, approvals, Astro templates). The factory has grown
+> since: custom sites (`rules/custom-site.md`), the panel, the client portal and the market rules
+> (`rules/markets.md`). For how things work today, read `AGENTS.md`, `rules/` and `README.md`; where this file
+> disagrees with them, they win. Agents do not need this file.
+
 What to build so that the flow in `AGENTS.md` works. Build in this order, run the tests after each step,
 and stop for Eren's review at the end of each step.
 

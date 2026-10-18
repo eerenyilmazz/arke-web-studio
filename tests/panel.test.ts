@@ -751,6 +751,10 @@ describe("quick edit", () => {
     expect(normalisePhone("07700 900123", "GB")).toBe("+447700900123");
     expect(normalisePhone("+90 (506) 101-81-82", "TR")).toBe("+905061018182");
     expect(normalisePhone("00447700900123", "TR")).toBe("+447700900123");
+    expect(normalisePhone("087 123 4567", "IE")).toBe("+353871234567");
+    expect(normalisePhone("030 1234567", "DE")).toBe("+49301234567");
+    expect(normalisePhone("(212) 555-0142", "US")).toBe("+12125550142");
+    expect(normalisePhone("0612345678", "XX")).toBe("0612345678"); // unknown market: kept as typed
   });
 });
 

@@ -4,6 +4,10 @@ Small-business sites that look trustworthy, load fast and do not look AI-generat
 Combines the useful parts of UI UX Pro Max (sector-matched systems) and Impeccable (anti-patterns).
 When the two disagree, this file wins.
 
+Which parts apply: **Choosing a design**, **Must pass**, **Palette**, **Colours the client names**, **Typography**
+and **Avoid** apply to every site. **Personality and motif** and the content fields under it are for the
+`corporate-v2` template only (older clients); custom sites follow `rules/custom-site.md` instead.
+
 ## Choosing a design
 
 1. Start from the sector: a solicitor needs calm trust, a restaurant appetite, a salon style. Use `generate_design_system` output as the starting point.
@@ -11,7 +15,7 @@ When the two disagree, this file wins.
 3. Choose `design.personality` and `design.motif` (corporate-v2, see below). Section `variants` only matter for corporate-v1 sites.
 4. Write down in your summary *why* you chose the style, in one sentence.
 
-## Personality and motif (corporate-v2)
+## Personality and motif (corporate-v2 template only)
 
 The personality sets the whole layout (hero, services, quotes, call to action); the palette and fonts make it the client's own.
 

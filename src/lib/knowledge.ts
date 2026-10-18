@@ -9,6 +9,17 @@ import path from "node:path";
  * Vendor skills (UI UX Pro Max) are included when they were copied into .claude/skills by link-skills.sh.
  */
 const SOURCES = ["rules", ".claude/skills"];
+/**
+ * Skill files that never apply to a static small-business site (native apps, the skill's own tooling and setup,
+ * app onboarding, image generation): left out so searches return design knowledge, not noise.
+ */
+const EXCLUDED = [
+  /(^|\/)(LICENSE|NOTICE|README|CHANGELOG)\.md$/i,
+  /\/evals\//,
+  /impeccable\/reference\/(android|ios|adapt\.native|audit\.native|craft|doctor|document|extract|generate|hooks|init|live|live-setup|mode-operate|operate|onboard|region-map|routing|visualize)\.md$/,
+  /impeccable\/reference\/degraded\//,
+];
+export const isExcluded = (source: string) => EXCLUDED.some((r) => r.test(source));
 const MAX_FILE_BYTES = 200_000;
 const MAX_CHUNK = 1400;
 const K1 = 1.4;
@@ -87,7 +98,10 @@ export function chunkMarkdown(source: string, text: string): Chunk[] {
 function build(root: string): Index {
   const chunks: Chunk[] = [];
   for (const s of SOURCES) {
-    for (const f of markdownFiles(path.join(root, s))) chunks.push(...chunkMarkdown(path.relative(root, f).split(path.sep).join("/"), readFileSync(f, "utf8")));
+    for (const f of markdownFiles(path.join(root, s))) {
+      const source = path.relative(root, f).split(path.sep).join("/");
+      if (!isExcluded(source)) chunks.push(...chunkMarkdown(source, readFileSync(f, "utf8")));
+    }
   }
   const terms = chunks.map((c) => {
     const m = new Map<string, number>();

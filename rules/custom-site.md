@@ -17,7 +17,10 @@ Before designing, load the design skills in `.claude/skills/` with the Skill too
 - **design-taste-frontend** (taste-skill): art direction for public pages, composition and the no-slop house style.
 - **ui-ux-pro-max** and **brand** (when installed): sector palettes, font pairings, brand identity structure.
 
-Their scripts, browser tools and image generation are not available here (no shell); read their references instead.
+Their scripts, browser tools and image generation are not available here (no shell). Do not load their reference
+files whole: ask `search_design_knowledge` for the passage you need (e.g. "hero composition bakery", "dark palette
+contrast") or read one specific reference. The skills' setup steps (context scripts, PRODUCT.md, DESIGN.md) do not
+apply here: skip them.
 When a skill disagrees with this file, **this file wins**: plain HTML/CSS/JS only (no React, Tailwind builds, CDNs
 or npm packages), no generated images, no external resources except Google Fonts, and the brand board below.
 
@@ -26,7 +29,8 @@ or npm packages), no generated images, no external resources except Google Fonts
 `get_client_status`, then read `site.config.json` facts and `content/<locale>.json` (save content first if it is
 missing; it is the single source of facts). Run `generate_design_system` for a sector starting point.
 Never invent facts (prices, years, reviews, awards, addresses). Copy for visitors is written in the site's
-languages; if Eren wrote notes in Turkish, translate them.
+languages; if Eren wrote notes in Turkish, translate them. The market rules (`rules/markets.md`: language, spelling,
+formats, legal pages) and `rules/local-seo.md` (titles, local facts, JSON-LD, images) apply to every page you write.
 
 ## Step 1: brand identity (required, before any page)
 
@@ -168,6 +172,7 @@ css/site.css       the brand layer only: set --c-bg --c-surface --c-ink --c-mute
 js/site.js         (shared by all pages; small, no frameworks)
 index.html         about/index.html    services/index.html   gallery/index.html   contact/index.html
 404.html           robots.txt          sitemap.xml (only when site.domain is set)
+privacy/index.html (gizlilik/ on Turkish-only sites) when there is a form; impressum/index.html in Germany
 <locale>/…         the same pages for each extra locale (default locale at the root)
 ```
 

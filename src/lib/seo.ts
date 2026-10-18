@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import type { CheckResult } from "./quality.js";
 
@@ -65,4 +65,46 @@ export function checkSeo(distDir: string, facts: SeoFacts): CheckResult {
   return missing.length
     ? { name, status: "warn", detail: missing.slice(0, 12).join("; ") + (missing.length > 12 ? ` (+${missing.length - 12} more)` : "") }
     : { name, status: "pass", detail: "JSON-LD, sitemap, robots, titles and previews in place." };
+}
+
+const IMAGE_FILE = /\.(png|jpe?g|webp|avif|gif)$/i;
+const MAX_IMAGE_KB = 500;
+const MAX_IMAGES_LISTED = 5;
+
+/** Photos are most of a page's weight (rules/local-seo.md, Images). A warning names the heaviest ones. */
+export function checkImages(distDir: string): CheckResult {
+  const name = "Image weight and size attributes";
+  if (!existsSync(path.join(distDir, "index.html"))) return { name, status: "skip", detail: "No build output." };
+  const heavy = readdirSync(distDir, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile() && IMAGE_FILE.test(e.name))
+    .map((e) => ({ rel: path.relative(distDir, path.join(e.parentPath, e.name)).split(path.sep).join("/"), kb: Math.round(statSync(path.join(e.parentPath, e.name)).size / 1024) }))
+    .filter((f) => f.kb > MAX_IMAGE_KB)
+    .sort((a, b) => b.kb - a.kb);
+  const unsized = htmlFiles(distDir).flatMap((file) => {
+    const html = readFileSync(file, "utf8");
+    const count = [...html.matchAll(/<img\b[^>]*>/gi)].filter((m) => !/\bwidth\s*=/i.test(m[0]) || !/\bheight\s*=/i.test(m[0])).length;
+    return count ? [`${path.relative(distDir, file).split(path.sep).join("/")}: ${count} <img> without width/height`] : [];
+  });
+  const notes = [
+    ...heavy.slice(0, MAX_IMAGES_LISTED).map((f) => `${f.rel} is ${f.kb} KB (aim under 300 KB; ask Eren for a smaller file)`),
+    ...unsized.slice(0, MAX_IMAGES_LISTED),
+  ];
+  return notes.length ? { name, status: "warn", detail: notes.join("; ") } : { name, status: "pass", detail: `All images under ${MAX_IMAGE_KB} KB, sizes set.` };
+}
+
+const PRIVACY_LINK = /href=["'][^"']*(privacy|gizlilik|kvkk|aydinlatma|datenschutz)[^"']*["']/i;
+const IMPRESSUM_LINK = /href=["'][^"']*impressum[^"']*["']/i;
+
+/** The legal minimum per market (rules/markets.md): a privacy notice with a form, an Impressum in Germany. */
+export function checkLegal(distDir: string, country: string): CheckResult {
+  const name = "Legal pages for the market";
+  if (!existsSync(path.join(distDir, "index.html"))) return { name, status: "skip", detail: "No build output." };
+  const pages = htmlFiles(distDir).map((f) => ({ rel: path.relative(distDir, f).split(path.sep).join("/"), html: readFileSync(f, "utf8") }));
+  const missing: string[] = [];
+  const withForm = pages.filter((p) => /<form\b/i.test(p.html));
+  if (withForm.length && !withForm.every((p) => PRIVACY_LINK.test(p.html))) {
+    missing.push(country === "TR" ? "a page with a form has no link to the KVKK Aydınlatma Metni" : "a page with a form has no link to the privacy notice");
+  }
+  if (country === "DE" && !IMPRESSUM_LINK.test(pages.find((p) => p.rel === "index.html")?.html ?? "")) missing.push("no Impressum link (required in Germany)");
+  return missing.length ? { name, status: "warn", detail: `${missing.join("; ")} (rules/markets.md)` } : { name, status: "pass", detail: "Privacy and legal links in place for this market." };
 }

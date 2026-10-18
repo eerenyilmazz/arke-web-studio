@@ -80,7 +80,7 @@ function registerClientTools(server: McpServer, factory: FactoryConfig): void {
         industry: z.string().min(2).max(60).describe("Short sector name in English, e.g. 'hair salon', 'family law solicitor'"),
         hostingModel: z.enum(["managed", "client"]).describe("managed = our Cloudflare account; client = the client's own. Ask Eren."),
         extraLocale: z.enum(LOCALES).optional().describe("Second language, only if the client asked for one"),
-        country: z.enum(tools.COUNTRIES).optional().describe("GB (default) or TR"),
+        country: z.enum(tools.COUNTRIES).optional().describe("Market: GB (default), TR, IE, US, DE or NL. Main language English, Turkish for TR (rules/markets.md)"),
         template: z.string().regex(SLUG_PATTERN).optional(),
       },
     },

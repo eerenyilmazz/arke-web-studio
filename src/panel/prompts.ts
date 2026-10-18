@@ -113,7 +113,7 @@ function clientDataLines(slug: string, input: AnswersInput): string[] {
 
 /** Custom sites (template "custom"): the agent designs the brand and writes the site itself. */
 const CUSTOM_STEP =
-  '4b. If the config template is "custom": read rules/custom-site.md completely, ' + SKILLS_STEP + ' Write the pages in the default language only; other languages in i18n.locales are added afterwards by a separate, cheaper translation step, so do not write <locale>/ pages. Then design the brand identity first (site/brand/brand.json and site/brand/logo.svg; if the client sent a logo (an inbox file named or looking like a logo; Read shows images), save it with save_asset kind logo, set brand.logo, and build the brand from that logo as rules/custom-site.md says instead of drawing one; if saving it fails, stop and ask Eren, never draw a replacement, with signature animations that come from what this business makes, plus the brand board: tagline, signature motion with brand/signature.html, typeSample), then write every page with write_site_file. After build_site, Read the screenshots it lists (phone and desktop) and fix what looks wrong. If the site already exists, update only what the new information changes.';
+  '4b. If the config template is "custom": read rules/custom-site.md completely, then rules/markets.md and rules/local-seo.md, ' + SKILLS_STEP + ' Write the pages in the default language only; other languages in i18n.locales are added afterwards by a separate, cheaper translation step, so do not write <locale>/ pages. Then design the brand identity first (site/brand/brand.json and site/brand/logo.svg; if the client sent a logo (an inbox file named or looking like a logo; Read shows images), save it with save_asset kind logo, set brand.logo, and build the brand from that logo as rules/custom-site.md says instead of drawing one; if saving it fails, stop and ask Eren, never draw a replacement, with signature animations that come from what this business makes, plus the brand board: tagline, signature motion with brand/signature.html, typeSample), then write every page with write_site_file. After build_site, Read the screenshots it lists (phone and desktop) and fix what looks wrong. If the site already exists, update only what the new information changes.';
 
 /** Colours named anywhere in the client's text (any language) are their brand colours, not a suggestion. */
 const COLOUR_RULE =
@@ -212,7 +212,7 @@ export function upgradeTemplatePrompt(slug: string, template: string): string {
       `Site Factory, client "${slug}". Eren wants this site redesigned from scratch as a custom site.`,
       COLOUR_RULE,
       '1. update_client_config: set "template" to "custom". Keep all facts, palette and content.',
-      `2. Read rules/custom-site.md completely. ${SKILLS_STEP} Design the brand identity first (site/brand/brand.json, site/brand/logo.svg) with signature animations that come from what this business makes, then write every page with write_site_file.`,
+      `2. Read rules/custom-site.md completely, then rules/markets.md and rules/local-seo.md. ${SKILLS_STEP} Design the brand identity first (site/brand/brand.json, site/brand/logo.svg) with signature animations that come from what this business makes, then write every page with write_site_file.`,
       "3. build_site. If checks fail, fix the site files and build again (at most 3 attempts).",
       "Do not deploy. Approvals reset; Eren approves the new site himself.",
       SUMMARY_RULE,

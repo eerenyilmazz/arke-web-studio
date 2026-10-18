@@ -26,8 +26,12 @@ export const editRoutes: Route[] = [
 export function normalisePhone(raw: string, country: string): string {
   let n = raw.replace(/[\s().-]/g, "");
   if (n.startsWith("00")) n = `+${n.slice(2)}`;
-  if (!n.startsWith("+") && n.startsWith("0")) n = `${country === "TR" ? "+90" : "+44"}${n.slice(1)}`;
-  if (!n.startsWith("+") && /^\d{10,13}$/.test(n)) n = `+${n}`;
+  // A national number ("0…") gets the market's calling code; unknown markets keep the number as typed.
+  const code = tools.MARKETS[country as tools.Country]?.callingCode;
+  if (!n.startsWith("+") && n.startsWith("0") && code) n = `${code}${n.slice(1)}`;
+  // US numbers are written without a leading 0: ten digits are a national number.
+  if (country === "US" && /^1?\d{10}$/.test(n)) n = `+1${n.slice(-10)}`;
+  if (!n.startsWith("+") && /^[1-9]\d{9,12}$/.test(n)) n = `+${n}`;
   return n;
 }
 

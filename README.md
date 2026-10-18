@@ -1,6 +1,6 @@
 # Site Factory
 
-Küçük işletmelere (İngiltere) tanıtım sitesi üreten MCP server + kurallar.
+Küçük işletmelere (her ülkede; çoğunlukla Türkiye ve İngilizce konuşulan ülkeler) tanıtım sitesi üreten MCP server + kurallar.
 Agent soruları üretir, cevapları doğrulanmış config'e işler, sabit bir şablon siteyi üretir,
 kalite kontrolünden geçirir ve onaylarından sonra Cloudflare'e yayınlar.
 
@@ -16,6 +16,14 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 ```
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
+
+## Global pazarlar ve kurallar (1.16.0)
+
+- **Yeni pazarlar:** Türkiye ve İngiltere'ye ek olarak İrlanda, ABD, Almanya, Hollanda. Ortak dil İngilizce: Türkiye dışında sitenin ana dili İngilizce, para birimi ve telefon kodu ülkeye göre. Diğer diller "Site dili"nden eklenir.
+- **`rules/markets.md`:** ülkeye göre yazım (UK/US İngilizcesi, Türkçe), fiyat, tarih ve saat biçimi, yasal minimum: formu olan sitede gizlilik metni (Türkiye'de KVKK Aydınlatma Metni), Almanya'da Impressum. Hukuki tavsiye değildir; müşteriye kontrol ettirin.
+- **`rules/local-seo.md`:** yerel arama (ad/adres/telefon her yerde aynı), sayfa başlıkları, JSON-LD, yapay zekâ araması, görsel boyutları.
+- **Yeni build uyarıları:** "Gizlilik ve yasal sayfalar" (form var ama gizlilik linki yok; Almanya'da Impressum yok) ve "Görsel boyutları" (500 KB üstü görseller, boyutu yazılmamış `<img>`). Uyarıdır, yayını engellemez.
+- Kurallar temizlendi: `AGENTS.md`'deki çelişki giderildi, eski şablon kuralları işaretlendi, `SPEC.md` tarihsel olarak işaretlendi, tasarım aramasından iOS/Android ve skill kurulum sayfaları çıkarıldı.
 
 ## Müşteri portalı, ödeme, aylık rapor, blog, SEO (1.15.0)
 

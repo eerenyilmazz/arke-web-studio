@@ -6,6 +6,7 @@ import { portalCard } from "./portal.js";
 import { deployProduction, jobStarted, loadClients, render, runAgent, runTask, unpublish } from "./shell.js";
 
 export const PAYMENT_LABELS = { none: "Teklif verilmedi", quoted: "Teklif verildi", deposit: "Kapora alındı", paid: "Ödendi" };
+const MARKET_CURRENCY = { TR: "TRY", GB: "GBP", US: "USD" };
 export const CURRENCY_SIGNS = { TRY: "₺", GBP: "£", EUR: "€", USD: "$" };
 
 /** One line for a client card: price, payment and delivery date (red when late and unpaid). */
@@ -38,7 +39,7 @@ export function profitLine(p) {
 
 export function businessForm(d) {
   const slug = d.status.slug;
-  const b = d.businessTracking || { price: null, currency: d.country === "TR" ? "TRY" : "GBP", payment: "none", deadline: null, note: "" };
+  const b = d.businessTracking || { price: null, currency: MARKET_CURRENCY[d.country] || "EUR", payment: "none", deadline: null, note: "" };
   const price = h("input", { id: "biz-price", type: "number", min: 0, step: "50", value: b.price ?? "" });
   const currency = h("select", { id: "biz-cur" }, ...Object.entries(CURRENCY_SIGNS).map(([k, v]) => h("option", { value: k, selected: k === b.currency }, `${v} ${k}`)));
   const payment = h("select", { id: "biz-pay" }, ...Object.entries(PAYMENT_LABELS).map(([k, v]) => h("option", { value: k, selected: k === b.payment }, v)));
@@ -580,6 +581,9 @@ export const CHECK_NAMES = [
   [/^Fonts have lowercase/, "Yazı tipi"],
   [/^Impeccable/, "Tasarım kontrolü (Impeccable)"],
   [/^Inputs unchanged/, "Oluştururken değişiklik olmadı"],
+  [/^Search and AI visibility/, "Arama ve yapay zekâ görünürlüğü"],
+  [/^Image weight/, "Görsel boyutları"],
+  [/^Legal pages for the market/, "Gizlilik ve yasal sayfalar"],
 ];
 
 export function qualityTable(md) {
