@@ -50,6 +50,9 @@ async function main(): Promise<void> {
   for (const tool of ["Bash", "Edit", "Write", "mcp__site-factory__deploy"]) {
     if (!denied.split(",").includes(tool)) finish(false, `BOUNDARY: ${tool} is not denied (${denied.slice(0, 80)})`);
   }
+  const sources = process.argv[process.argv.indexOf("--setting-sources") + 1];
+  if (!process.argv.includes("--setting-sources") || sources !== "project,local")
+    finish(false, `BOUNDARY: user settings (hooks, plugins) are not shut out (${sources ?? "no --setting-sources"})`);
   const slug = /client "([a-z0-9-]+)"/.exec(prompt)?.[1];
   if (!slug) finish(false, "No client in the prompt.");
 

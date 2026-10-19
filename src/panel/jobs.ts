@@ -130,6 +130,10 @@ export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false, read
     "--mcp-config",
     ".mcp.json",
     "--strict-mcp-config",
+    // Only the factory's own settings (.claude/settings.json + settings.local.json): hooks, permissions and plugins
+    // from Eren's user settings (~/.claude, e.g. a code-graph tool's PreToolUse hooks) never run in an agent job.
+    "--setting-sources",
+    "project,local",
     "--allowedTools",
     [...AGENT_ALLOWED_TOOLS, ...(web ? WEB_TOOLS : [])].join(","),
     "--disallowedTools",

@@ -112,3 +112,11 @@ describe("merge", () => {
     expect(({} as Record<string, unknown>).x).toBeUndefined();
   });
 });
+
+describe("agent jobs ignore Eren's user settings", () => {
+  it("loads only the factory's settings, so user hooks and plugins never run in a job", async () => {
+    const { claudeArgs } = await import("../src/panel/jobs.js");
+    const args = claudeArgs(10, false, []);
+    expect(args[args.indexOf("--setting-sources") + 1]).toBe("project,local");
+  });
+});

@@ -17,6 +17,22 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Kod haritası: graphify (1.18.2, sadece senin Claude Code'un için)
+
+[graphify](https://github.com/Graphify-Labs/graphify) projenin fonksiyon, modül ve bağımlılıklarını bir grafiğe çıkarır; Claude Code dosya dosya okumak yerine önce grafiğe bakar. Site agent'ı için değil, senin geliştirme oturumların için.
+
+Kurulum (bir kez, WSL):
+
+```bash
+pipx install graphifyy        # paket adı iki y ile; pipx yoksa: sudo apt install pipx && pipx ensurepath
+graphify install              # skill'i ~/.claude/skills/graphify'a kopyalar
+```
+
+Sonra Claude Code'u `~/projects/site-factory` içinde aç ve `/graphify .` yaz. Çıktı `graphify-out/` klasörüne gider (git'e girmez, güncellemede silinmez).
+
+**Yapma:** proje içinde `graphify claude install` ya da `--project` ile kurulum. Bu, projenin `.claude/settings.json` dosyasına (agent'ın sandbox ve yasak ayarları) hook ekler.
+Agent işleri artık sadece fabrikanın kendi ayarlarıyla çalışır (`--setting-sources project,local`); senin kullanıcı ayarlarındaki hook ve eklentiler agent'a geçmez.
+
 ## Hareket skill'i: animate (1.18.1)
 
 Emil Kowalski'nin **animate** skill'i (MIT) `.claude/skills/animate` içinde, değiştirilmeden (kaynak ve sürüm: `UPSTREAM`).

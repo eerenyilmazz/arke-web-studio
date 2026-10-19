@@ -5,7 +5,7 @@
 #   bash scripts/update.sh /mnt/c/Users/<you>/Downloads/site-factory-X.Y.Z.zip [install-folder]
 # The install folder defaults to ~/projects/site-factory.
 #
-# Kept as they are: client folders (../sf-clients), the inbox, .claude/settings.local.json, vendor/,
+# Kept as they are: client folders (../sf-clients), the inbox, .claude/settings.local.json, vendor/, graphify-out/,
 # node_modules/ and git history. Everything else in the install folder is replaced by the release. Before copying, the current state is committed so the update
 # can be undone with: git -C ~/projects/site-factory reset --hard HEAD~1
 set -euo pipefail
@@ -39,7 +39,7 @@ for t in templates/*/; do
   name="$(basename "$t")"
   [[ -d "$t/node_modules" ]] && mv "$t/node_modules" "$KEEP/templates/$name-node_modules"
 done
-find . -mindepth 1 -maxdepth 1 ! -name .git ! -name node_modules ! -name vendor -exec rm -rf {} +
+find . -mindepth 1 -maxdepth 1 ! -name .git ! -name node_modules ! -name vendor ! -name graphify-out -exec rm -rf {} +
 cp -a "$NEW/." .
 [[ -f "$KEEP/settings.local.json" ]] && cp "$KEEP/settings.local.json" .claude/settings.local.json
 for kept in "$KEEP"/templates/*-node_modules; do
