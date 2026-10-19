@@ -246,6 +246,39 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     }
   });
 
+  ui()("folds errors the agent got past, and offers to continue a request stopped at its cap", async (ctx) => {
+    needBrowser(ctx);
+    const { appendHistory } = await import("../src/panel/history.js");
+    const at = (m: number) => new Date(Date.UTC(2026, 9, 19, 10, m)).toISOString();
+    const base = { tools: [], title: "Değişiklik isteği", kind: "revise" };
+    appendHistory(factory, "ui-bakery", {
+      ...base,
+      id: "ok-1",
+      startedAt: at(0),
+      endedAt: at(1),
+      status: "succeeded",
+      summary: "Bitti.",
+      request: "Başlığı kısalt.",
+      errors: ["Nothing saved. Unknown field(s): whatsapp.enabled"],
+    });
+    appendHistory(factory, "ui-bakery", {
+      ...base,
+      id: "cap-1",
+      startedAt: at(2),
+      endedAt: at(3),
+      status: "failed",
+      request: "Bütün siteyi yeni markaya çevir.",
+      errors: ["Bu işin token tavanı aşıldı (404K / 400K), iş durduruldu."],
+    });
+    const { page, errors } = await open("#/musteri/ui-bakery/duzenle");
+    await page.waitForSelector(".job-errors");
+    expect(await page.locator(".job-errors").getAttribute("open")).toBeNull();
+    expect(await page.locator(".job-errors summary").textContent()).toContain("1 hata");
+    expect(await page.getByRole("button", { name: "Kaldığı yerden devam et" }).count()).toBe(1);
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
   ui()("analysis: one row per client, sorts by a column, filters and downloads a CSV", async (ctx) => {
     needBrowser(ctx);
     const { page, errors } = await open("#/analiz");

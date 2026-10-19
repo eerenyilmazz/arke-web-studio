@@ -191,7 +191,7 @@ export function updateClientConfig(
     }
     throw new FactoryError(`"${key}" cannot be changed.`, key === "meta" ? "Use the `unmapped` and `laterInterests` arguments instead." : undefined);
   }
-  assertNoUnknownKeys(findUnknownKeys(SiteConfigSchema, patch));
+  assertNoUnknownKeys(findUnknownKeys(SiteConfigSchema, patch, "", true));
   const merged = deepMerge(before, patch) as Record<string, unknown>;
   dropOrphanSections(merged, patch);
 
@@ -221,7 +221,7 @@ export function saveContent(factory: FactoryConfig, args: { slug: string; locale
     throw new FactoryError(`Locale "${args.locale}" is not in i18n.locales (${locales.join(", ")}).`, "Add it with update_client_config first.");
   }
   const file = paths.content(args.locale);
-  assertNoUnknownKeys(findUnknownKeys(ContentSchema, args.content));
+  assertNoUnknownKeys(findUnknownKeys(ContentSchema, args.content, "", true));
   const existing = args.replace ? {} : (readJsonIfExists(file) ?? {});
   const merged = deepMerge(existing, args.content);
   const result = validateDraft(ContentSchema, merged);

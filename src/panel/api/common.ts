@@ -5,7 +5,8 @@ import type { FactoryConfig } from "../../config.js";
 import type { ApprovalGate } from "../approval-gate.js";
 import { snapshot } from "../../lib/versions.js";
 import { monthlyBlock, resolvePolicy } from "../budget.js";
-import { readDraftConfig } from "../../lib/client.js";
+import { type BuildRecord, readDraftConfig } from "../../lib/client.js";
+import { readJsonIfExists } from "../../lib/files.js";
 import { clientPaths, safeJoin } from "../../lib/paths.js";
 import * as tools from "../../tools.js";
 import { HttpError } from "../http.js";
@@ -114,11 +115,20 @@ export function launchAgent(deps: ApiDeps, slug: string, kind: string, title: st
   return runOrConflict(() => deps.jobs.startAgent(slug, kind, title, text, request, policy));
 }
 
+/** The client's last build, or null. Written by build_site in .factory/ (the panel reads it, the agent cannot write it). */
+export function lastBuildOf(deps: ApiDeps, slug: string): BuildRecord | null {
+  return (readJsonIfExists(clientPaths(deps.factory.clientsRoot, slug).buildRecord) as BuildRecord | undefined) ?? null;
+}
+
 /**
  * After a design job: when the site has more than one language, the other languages are added by a separate
  * translation job on the cheaper model, instead of the design job writing every page twice.
+ * Only when that design job ended with a passing build (`since` = its start): a job that stopped to ask Eren
+ * questions has no finished pages yet, and translating them would spend tokens on text that is about to change.
  */
-export function startTranslation(deps: ApiDeps, slug: string) {
+export function startTranslation(deps: ApiDeps, slug: string, since: string | null = null) {
+  const build = lastBuildOf(deps, slug);
+  if (!build?.passed || (since !== null && build.at < since)) return null;
   const paths = clientPaths(deps.factory.clientsRoot, slug);
   const draft = readDraftConfig(paths) as { template?: string; i18n?: { defaultLocale?: string; locales?: string[] } };
   const locales = draft.i18n?.locales ?? [];

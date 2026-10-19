@@ -267,8 +267,15 @@ describe("design library", () => {
   it("saves a design without the client's logo, starts another client from it, and fails while the source's facts remain", async () => {
     const { f } = await customClient();
     writeGoodSite(f);
+    tools.updateClientConfig(f, {
+      slug: SLUG,
+      patch: { integrations: { bookingUrl: "https://cal.com/willow/intro" }, social: { instagram: "https://www.instagram.com/willowthread/" } },
+    });
     const lib = await import("../src/panel/library.js");
     const meta = lib.saveToLibrary(f, SLUG, { name: "Kavanoz düzeni", tags: ["sıcak"] });
+    // Booking and social links are the source's too, matched as they appear in text (no https://, no www.).
+    expect(meta.forbidden).toContain("cal.com/willow/intro");
+    expect(meta.forbidden).toContain("instagram.com/willowthread");
     expect(meta.id).toBe("kavanoz-duzeni");
     expect(meta.forbidden).toContain("Willow & Thread");
     expect(meta.forbidden).toContain("hello@willow.co.uk");
@@ -299,7 +306,7 @@ describe("design library", () => {
 
     const applied = lib.applyLibraryDesign(f, "other-shop", meta.id);
     expect(applied.filled.find((x) => x.field === "name")?.count).toBeGreaterThan(0);
-    expect(applied.missing).toEqual(["Adres"]);
+    expect(applied.missing).toEqual(["Instagram", "Adres"]); // the new client has no Instagram account yet
     // The panel put the new name in place itself (escaped in markup).
     expect(tools.readSiteFileTool(f, { slug: "other-shop", path: "index.html" }).content).toContain("Other Shop");
     expect(tools.readSiteFileTool(f, { slug: "other-shop", path: "index.html" }).content).not.toContain("Willow");

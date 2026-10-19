@@ -707,6 +707,7 @@ export const EN = {
     Hollanda: "Netherlands",
     "Sayfa ağırlığı: ortalama sayfa + sitenin ortak CSS ve JS dosyaları (görseller hariç). Lighthouse puanı ölçülmez.":
       "Page weight: the average page plus the site's shared CSS and JS files (images not included). Lighthouse scores are not measured.",
+    "Kaldığı yerden devam et": "Continue where it stopped",
     "Duruma göre": "By status",
     "Sektöre göre": "By sector",
     "Etikete göre": "By tag",
@@ -1117,6 +1118,7 @@ export const EN = {
     "Müşteri kaydedildi.": "Client saved.",
   },
   patterns: [
+    ["Yolda {} hata oldu, agent devam etti", "{} errors on the way; the agent carried on"],
     ["{} geçti · {} uyarı · {} hata", "{} passed · {} warnings · {} errors"],
     ["{} ({} başarısız)", "{} ({} failed)"],
     ["Ciro ({})", "Revenue ({})"],

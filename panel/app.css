@@ -1110,3 +1110,5 @@ body[data-view="home"] #clients { display: none; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 :where(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea):focus-visible { border-color: var(--ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); }
 .data-table thead button:focus-visible { outline-color: var(--ink); }
+.job-errors > summary { cursor: pointer; font-size: .85rem; color: var(--ink-3); }
+.job-errors[open] > summary { margin-bottom: .3rem; }

@@ -61,7 +61,7 @@ export function createPanel(opts: PanelOptions): Panel {
       if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) {
         setTimeout(() => {
           try {
-            startTranslation(deps, slug);
+            startTranslation(deps, slug, record.startedAt);
           } catch {
             /* the operator can start it again */
           }

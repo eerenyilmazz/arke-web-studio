@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { AGENT_DENIED_READS, AGENT_DENIED_TOOLS } from "../src/panel/jobs.js";
 import { createPanel, type Panel } from "../src/panel/server.js";
 import * as tools from "../src/tools.js";
+import { clientPaths } from "../src/lib/paths.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, PNG_1PX, installStubTemplate, tempFactory } from "./helpers.js";
 
 const KEY = "k".repeat(64);
@@ -896,6 +897,13 @@ describe("1.14: profit, translation job, agent settings", () => {
     expect(profit.totals.TRY?.price).toBe(8000);
     const detail = (await (await fetch(`${base}/api/clients/two-lang`, { headers: auth })).json()) as { profit: { price: number } };
     expect(detail.profit.price).toBe(8000);
+    // Not before the site has built: there are no finished pages to translate yet.
+    const early = await fetch(`${base}/api/clients/two-lang/agent/translate`, { method: "POST", headers: json, body: "{}" });
+    expect(early.status).toBe(409);
+    expect(((await early.json()) as { error: string }).error).toMatch(/Önce site tamamlanmalı/);
+    const build = clientPaths(factory.clientsRoot, "two-lang").buildRecord;
+    mkdirSync(path.dirname(build), { recursive: true });
+    writeFileSync(build, JSON.stringify({ hash: "h", at: new Date().toISOString(), passed: true, failures: [] }));
     const tr = await fetch(`${base}/api/clients/two-lang/agent/translate`, { method: "POST", headers: json, body: "{}" });
     expect(tr.status).toBe(202);
     expect(calls[0]!.stdin).toMatch(/Add these languages: en/);
@@ -908,6 +916,39 @@ describe("1.14: profit, translation job, agent settings", () => {
         })
       ).status,
     ).toBe(400);
+  });
+});
+
+describe("translation after a design job", () => {
+  it("starts only when the design job ended with a passing build, not when it stopped to ask questions", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth, factory } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "Eksikler: logo?" }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "ask-first", businessName: "Ask First", industry: "software", hostingModel: "managed", country: "TR", extraLocale: "en" }),
+    });
+    tools.updateClientConfig(factory, { slug: "ask-first", patch: { template: "custom" } });
+    const paths = clientPaths(factory.clientsRoot, "ask-first");
+    mkdirSync(path.join(paths.root, "site"), { recursive: true });
+    writeFileSync(path.join(paths.root, "site", "index.html"), "<!doctype html><title>x</title>"); // e.g. a library design's files
+    const idle = () =>
+      waitFor(async () => ((await (await fetch(`${base}/api/clients/ask-first`, { headers: auth })).json()) as { running: unknown }).running === null);
+
+    await fetch(`${base}/api/clients/ask-first/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Yazılım firması." }) });
+    await idle();
+    await new Promise((r) => setTimeout(r, 600));
+    expect(calls).toHaveLength(1); // no build in that job: no translation
+
+    // A design job that built the site: the translation follows.
+    // (The record is written ahead, dated just after the job's start, as build_site inside that job would.)
+    mkdirSync(path.dirname(paths.buildRecord), { recursive: true });
+    writeFileSync(paths.buildRecord, JSON.stringify({ hash: "h", at: new Date(Date.now() + 1000).toISOString(), passed: true, failures: [] }));
+    await fetch(`${base}/api/clients/ask-first/agent/create-site`, { method: "POST", headers: json, body: "{}" });
+    await idle();
+    await waitFor(async () => calls.length === 3);
+    expect(calls[2]!.stdin).toMatch(/Add these languages: en/);
   });
 });
 

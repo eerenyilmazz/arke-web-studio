@@ -43,8 +43,8 @@ export function buildEnv(clientDir: string, outDir: string): Record<string, stri
 export function assertNoUnknownKeys(unknown: readonly string[]): void {
   if (unknown.length === 0) return;
   throw new FactoryError(
-    `Nothing saved. Unknown field(s): ${unknown.slice(0, 10).join(", ")}`,
-    "Check the spelling against schema/*.schema.json. Answers that fit no field go in `unmapped`.",
+    `Nothing saved. Unknown field(s): ${unknown.slice(0, 6).join("; ")}`,
+    "Use only the fields listed for that place (schema/*.schema.json has the details). Facts that fit no field go in `unmapped`; a setting the schema does not have (an on/off switch, a description) cannot be stored.",
   );
 }
 

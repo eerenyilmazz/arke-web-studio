@@ -28,6 +28,10 @@ describe("unknown fields are rejected, not silently saved", () => {
     const { f, paths } = await readyClient();
     const before = readFileSync(paths.config, "utf8");
     expect(() => tools.updateClientConfig(f, { slug: SLUG, patch: { contakt: { email: "a@b.co.uk" } } })).toThrow(/Unknown field\(s\): contakt/);
+    // The error names the fields that do exist there, so the agent's next try is right (no second guess).
+    expect(() => tools.updateClientConfig(f, { slug: SLUG, patch: { whatsapp: { enabled: true } } })).toThrow(
+      /whatsapp\.enabled \(fields there: number, floatingButton\)/,
+    );
     expect(() => tools.updateClientConfig(f, { slug: SLUG, patch: { contact: { emial: "a@b.co.uk" } } })).toThrow(/contact\.emial/);
     expect(readFileSync(paths.config, "utf8")).toBe(before);
   });

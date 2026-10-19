@@ -91,13 +91,30 @@ function forbiddenStrings(draft: Record<string, unknown>): string[] {
     contact?: Record<string, unknown>;
     whatsapp?: { number?: string | null };
     site?: { domain?: string | null };
+    social?: Record<string, unknown>;
+    integrations?: { bookingUrl?: string | null };
+    legal?: { companyName?: string | null; companyNumber?: string | null };
   };
-  const values = [d.business?.name, d.site?.domain, d.whatsapp?.number, ...Object.values(d.contact ?? {})];
+  const values = [
+    d.business?.name,
+    d.site?.domain,
+    d.whatsapp?.number,
+    ...Object.values(d.contact ?? {}),
+    // Links and company details are that business's too (a booking page, social accounts, its registered name).
+    ...Object.values(d.social ?? {}),
+    d.integrations?.bookingUrl,
+    d.legal?.companyName,
+    d.legal?.companyNumber,
+  ];
   const out = new Set<string>();
   for (const v of values) {
     if (typeof v !== "string") continue;
-    const t = v.trim();
-    if (t.length >= MIN_FORBIDDEN && !/^https?:\/\/(www\.)?(google|maps|yandex|goo\.gl)/i.test(t)) out.add(t);
+    // Links are matched without https:// and www., the way they also appear in a page's text.
+    const t = v
+      .trim()
+      .replace(/^https?:\/\/(www\.)?/i, "")
+      .replace(/\/$/, "");
+    if (t.length >= MIN_FORBIDDEN && !/^(google\.|maps\.|yandex\.|goo\.gl)/i.test(t)) out.add(t);
     // Phone numbers also appear without the +country prefix or spaces.
     if (/^\+\d{8,15}$/.test(t)) out.add(t.slice(-7));
   }
@@ -325,7 +342,16 @@ export function applyLibraryDesign(factory: FactoryConfig, slug: string, id: str
 
   // A forbidden string that is part of this client's own values (same street, same first word) is not a leftover.
   const own = SLOT_KEYS.map((f) => slotValue(draft, f)).filter((v): v is string => Boolean(v));
-  const forbidden = entry.forbidden.filter((t) => !own.some((v) => v.includes(t)));
+  // The source client's facts as they are today (when it still exists), so designs saved before a fact was
+  // listed here are covered too.
+  const sourceNow = (() => {
+    try {
+      return forbiddenStrings(readDraftConfig(clientPaths(factory.clientsRoot, entry.sourceSlug)));
+    } catch {
+      return [];
+    }
+  })();
+  const forbidden = [...new Set([...entry.forbidden, ...sourceNow])].filter((t) => !own.some((v) => v.includes(t)));
   writeJson(path.join(paths.factoryDir, LIBRARY_SOURCE_FILE), {
     id: entry.id,
     name: entry.name,

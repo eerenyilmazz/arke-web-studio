@@ -17,6 +17,14 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## rreinware denemesinden çıkan düzeltmeler (1.23.2)
+
+- **Çeviri boşa çalışmaz:** Tasarım işi bitince otomatik çeviri yalnızca o iş siteyi başarıyla derlediyse başlar. Agent soru sorup durduysa çeviri başlamaz (önceden kütüphane dosyaları yüzünden başlıyor, boşa kaynak harcıyordu). "Diğer dilleri güncelle" de geçen bir derleme yoksa açıklamayla reddedilir.
+- **Yanlış alan adı tahmini azalır:** Agent var olmayan bir alana yazmaya çalışınca hata, o yerde hangi alanların olduğunu da söyler (ör. `whatsapp.enabled (fields there: number, floatingButton)`); aynı hatayı tekrar tekrar deneyip token harcamaz.
+- **Kütüphane tasarımı başka işletmenin bilgilerini taşımaz:** Randevu bağlantısı, sosyal hesaplar ve şirket unvanı/numarası da "kaynağa ait" sayılır; site bunlar dururken derlenmez. Agent'a fiyatların, saatlerin, yorumların ve vaka çalışmalarının da kaynak işletmeye ait olduğu, taşınmayacağı söylenir. Daha önce kaydedilmiş tasarımlar için de geçerli (kaynak müşterinin bugünkü bilgileri okunur).
+- **Takılmalar başarısızlık gibi görünmez:** Biten bir işte agent'ın aşıp geçtiği hatalar (yanlış alan, açılmayan site) katlanmış "Yolda N hata oldu, agent devam etti" satırında durur; başarısız işte açık görünür.
+- **Token tavanında kalan talep tek tuşla sürer:** Tavanda duran bir değişiklik isteğinin altında "Kaldığı yerden devam et" düğmesi var; agent yapılmış olanı tekrar yapmaz, kalan adımları tamamlar.
+
 ## Ekran denetimi düzeltmeleri (1.23.1)
 
 Her ekran (ana ekran, Analiz, Kütüphane, Arşiv, Ayarlar, Yeni Müşteri'nin adımları, müşteri sekmeleri, menü ve onay penceresi) iki temada, masaüstünde ve telefonda denetlendi; bundan sonra her güncellemede otomatik denetlenir (tests/ui-audit.test.ts: yazı kontrastı WCAG AA, çalışan animasyon yok, yana kayma yok, kutusundan taşan yazı yok, script hatası yok).

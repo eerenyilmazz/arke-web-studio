@@ -1,11 +1,19 @@
 // Agent job blocks and the record of past work.
 import { h, ICON, state, svg, time, usageLine } from "./core.js";
-import { cancelJob, jobProgress } from "./jobs.js";
+import { cancelJob, jobProgress, runAgent } from "./jobs.js";
 
 export function toolChips(names) {
   const counts = new Map();
   for (const n of names) counts.set(n, (counts.get(n) || 0) + 1);
   return h("div", { class: "tools" }, ...[...counts].map(([n, c]) => h("span", { class: "tool", text: c > 1 ? `${n} ×${c}` : n })));
+}
+
+/** The request for continuing a change request that stopped at its cap. */
+export function continueText(request) {
+  return `Bu talep token tavanında yarıda kaldı; yazılanlar duruyor. Yapılmış olanı yeniden yapma: önce site_map ve get_client_status ile neyin bittiğine bak, sonra yalnızca kalan adımları tamamla ve build al.\n\nÖnceki talep:\n${request}`.slice(
+    0,
+    19_000,
+  );
 }
 
 export const STATUS_BADGE = { succeeded: ["ok", "tamamlandı"], failed: ["bad", "başarısız"], cancelled: ["skip", "iptal"], running: ["accent", "çalışıyor"] };
@@ -32,7 +40,33 @@ export function agentBlock(job, live) {
     const used = usageLine(job);
     if (used) parts.push(used);
     if (job.summary) parts.push(richText(job.summary));
-    for (const e of job.errors || []) parts.push(h("p", { class: "err", text: e }));
+    const errs = job.errors || [];
+    // A finished job's tool errors were stumbles the agent got past (a wrong field name, a site that did not
+    // open): folded, so they do not read as a failure. A failed job shows them open.
+    if (errs.length && job.status === "succeeded")
+      parts.push(
+        h(
+          "details",
+          { class: "job-errors" },
+          h("summary", { text: `Yolda ${errs.length} hata oldu, agent devam etti` }),
+          ...errs.map((e) => h("p", { class: "err", text: e })),
+        ),
+      );
+    else for (const e of errs) parts.push(h("p", { class: "err", text: e }));
+    // A change request stopped at its token cap: one press continues it, without redoing what was already written.
+    const slug = state.detail?.status?.slug;
+    if (job.status === "failed" && job.kind === "revise" && job.request && slug && errs.some((e) => e.includes("token tavanı")))
+      parts.push(
+        h(
+          "div",
+          { class: "row" },
+          h(
+            "button",
+            { type: "button", class: "btn btn-sm", onclick: () => runAgent(slug, "revise", { request: continueText(job.request) }) },
+            "Kaldığı yerden devam et",
+          ),
+        ),
+      );
   }
   return h(
     "div",

@@ -30,7 +30,7 @@ import {
   type AnswersInput,
 } from "../prompts.js";
 import { OPTION_IDS } from "../../lib/custom-site.js";
-import { type ApiDeps, type Route, SLUG, JSON_LIMIT, MAX_TEXT, asHttp, launchAgent, inboxFiles, stringRecord, isQa } from "./common.js";
+import { type ApiDeps, type Route, SLUG, JSON_LIMIT, MAX_TEXT, asHttp, launchAgent, inboxFiles, stringRecord, isQa, lastBuildOf } from "./common.js";
 import { filledNote } from "./library.js";
 
 /**
@@ -228,6 +228,12 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     const locales = draft.i18n?.locales ?? [];
     const def = draft.i18n?.defaultLocale ?? locales[0] ?? "en";
     if (locales.length < 2) throw new HttpError(400, "Bu sitede tek dil var.");
+    // Translating pages that never built (missing config, unanswered questions) spends tokens on text that will change.
+    if (!lastBuildOf(ctx.deps, ctx.slug)?.passed)
+      throw new HttpError(
+        409,
+        "Önce site tamamlanmalı: son derleme geçmedi ya da hiç yapılmadı. Siteyi oluşturun ya da hataları düzeltin, sonra diğer dilleri güncelleyin.",
+      );
     const others = locales.filter((l) => l !== def);
     return {
       prompt: translatePrompt(ctx.slug, def, locales),
