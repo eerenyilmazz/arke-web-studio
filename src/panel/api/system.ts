@@ -1,3 +1,4 @@
+import { clientAnalytics } from "../analytics.js";
 import { profitSummary } from "../profit.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readSettings, writeSettings } from "../settings.js";
@@ -14,6 +15,11 @@ import { type ApiDeps, type Route, JSON_LIMIT } from "./common.js";
 /** Panel-wide endpoints: jobs, settings, usage, profit, backups, Cloudflare status and meta. */
 export const systemRoutes: Route[] = [
   { method: "GET", pattern: /^\/api\/profit$/, handler: (d, _r, res) => sendJson(res, 200, profitSummary(d.factory)) },
+  {
+    method: "GET",
+    pattern: /^\/api\/analytics$/,
+    handler: (d, _r, res) => sendJson(res, 200, { generatedAt: new Date().toISOString(), rows: clientAnalytics(d.factory) }),
+  },
   {
     method: "GET",
     pattern: /^\/api\/usage$/,

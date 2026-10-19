@@ -67,8 +67,6 @@ export const LANG_NAMES = { en: "İngilizce", tr: "Türkçe", de: "Almanca", fr:
 
 export const APPROVAL_NAMES = { content: "İçerik", visual: "Görsel", production: "Yayın" };
 
-export const AVATAR_COLORS = ["#5b2333", "#1d4e89", "#2c6e8f", "#6b7a2e", "#8a4b16", "#6a3d8f", "#2f6b52", "#8f2d56"];
-
 export const POLL_MS = 1500;
 
 export const STATUS_POLL_MS = 5000;
@@ -181,19 +179,8 @@ export function initials(text) {
   return ((words[0]?.[0] || "?") + (words[1]?.[0] || "")).toUpperCase();
 }
 
-export function avatarColor(slug) {
-  let n = 0;
-  for (const ch of slug) n = (n * 31 + ch.charCodeAt(0)) >>> 0;
-  return AVATAR_COLORS[n % AVATAR_COLORS.length];
-}
-
-export function avatar(slug, label, large = false, live = false) {
-  return h(
-    "span",
-    { class: large ? "avatar lg" : "avatar", style: `background:${avatarColor(slug)}`, "aria-hidden": "true" },
-    initials(label),
-    live && h("span", { class: "live" }),
-  );
+export function avatar(_slug, label, large = false, live = false) {
+  return h("span", { class: large ? "avatar lg" : "avatar", "aria-hidden": "true" }, initials(label), live && h("span", { class: "live" }));
 }
 
 export function time(iso) {

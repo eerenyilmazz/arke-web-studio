@@ -1,7 +1,7 @@
 // Home dashboard: one card per client with its next step, earnings and overdue payments.
 import { locale } from "./i18n.js";
 import { businessLine, CURRENCY_SIGNS } from "./business.js";
-import { api, avatar, h, ICON, isBusy, plainOf, state, stepIndex, STEPS, svg } from "./core.js";
+import { api, avatar, h, isBusy, plainOf, state, stepIndex, STEPS } from "./core.js";
 import { render } from "./router.js";
 
 // ---------------------------------------------------------------- home and new client
@@ -100,8 +100,8 @@ export function renderHome() {
     h(
       "div",
       { class: "dash-head" },
+      // One "Yeni Müşteri" for the whole panel: the one at the top of the rail.
       h("div", {}, h("h1", { text: "Müşteriler" }), h("p", { class: "muted", text: "İşlem bekleyen müşteriler üstte listelenir." })),
-      h("a", { class: "btn btn-primary btn-lg", href: "#/yeni" }, svg(ICON.plus, 18, 2.4), "Yeni Müşteri"),
     ),
     h(
       "div",
@@ -125,10 +125,19 @@ export function renderHome() {
         "div",
         { class: "group" },
         k && h("h2", { class: "group-title", text: `${k} (${list.length})` }),
-        h("div", { class: "client-cards" }, ...list.map(card)),
+        h("div", { class: "client-cards" }, tableHead(), ...list.map(card)),
       ),
     ),
     visible.length === 0 && h("p", { class: "muted", text: "Bu filtrede müşteri yok." }),
+  );
+}
+
+/** Column names over the client rows (each row also carries its own text, so this is for the eye only). */
+function tableHead() {
+  return h(
+    "div",
+    { class: "client-table-head", "aria-hidden": "true" },
+    ...["Müşteri", "Durum", "Sektör", "İlerleme", "Sıradaki adım", "Ücret"].map((t) => h("span", { text: t })),
   );
 }
 

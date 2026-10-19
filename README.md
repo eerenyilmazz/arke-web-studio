@@ -17,6 +17,22 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Yeni panel görünümü ve Analiz ekranı (1.23.0)
+
+Görünüm (sadece CSS ve küçük çizim değişiklikleri; işlevler, adresler ve API aynı):
+- Tema "Grafit ve hardal": neredeyse siyah-beyaz; tek renk hardal ve yalnızca "şimdi yapılacak" şeylerde (Yeni Müşteri, Onayla, seçili sekme, onayını bekleyen müşteriler). Diğer durumlar sakin: agent çalışırken mor, müşteriden bilgi beklerken gri-mavi, yayında yeşil, hata kırmızı.
+- Ana ekran bir kontrol masası: müşteriler tek tabloda satır satır (durum, sektör, ilerleme, sıradaki adım, ücret); dört büyük kutu yerine tek satır sayaç. Tek "Yeni Müşteri" düğmesi (kenar çubuğunda); ana ekranda kenar çubuğundaki müşteri listesi gizlenir.
+- Müşteri ekranında sekmeler alt çizgili, adlar kesilmez. Avatarlar nötr gri.
+- Animasyonlar kaldırıldı (sayfa açılış kayması, kart yükselmesi, logo zıplaması, yanıp sönen noktalar, tıklama küçülmesi). Kalan: kısa renk geçişleri, bildirim ve onay penceresinin hafifçe belirmesi.
+- Yazı tipi Public Sans, panelin içinde (panel/fonts, OFL lisansı). Google Fonts bağlantısı yok; internet yokken de aynı görünür.
+
+Analiz ekranı (menüde **Analiz**, yalnızca okur, hiçbir şeyi değiştirmez):
+- Her müşteri tek satır: durum, sektör, ülke, diller, paket, ekstralar, fiyat, ödeme, teslim, gider, agent maliyeti, kâr, iş sayısı (başarısızlar), agent süresi, son iş, yayına kadar geçen gün, kontrol sonuçları, sayfa sayısı, sayfa ağırlığı, görseller, en büyük görsel, yayın.
+- Sütun başlığına tıklayınca sıralar; arama, durum, ülke, paket, ödeme, sektör, etiket filtreleri; "Gecikenler" ve "Kontrol hatası olanlar". Filtreler tarayıcıda hatırlanır.
+- Üstte özet: müşteri, yayında, para birimine göre ciro ve kâr (kârı hesaplanamayanlar sayılmaz, "1/2 müşteri" diye yazar), agent maliyeti, başarısız iş oranı, ortalama yayına kadar gün, geciken teslim ve ödeme. Altta para birimine göre toplamlar; para birimleri hiç karışmaz.
+- "CSV indir": görünen satırlar, Excel'de Türkçe harflerle açılır.
+- Performans dürüst ölçülür: sayfa ağırlığı (ortalama sayfa + ortak CSS/JS, görseller hariç), görsel sayısı ve boyutu, en büyük görsel; ağır olanlar kırmızı. Lighthouse puanı ölçülmediği için gösterilmez.
+
 ## Yeni müşteri: logo ve fotoğraflar ilk adımda (1.19.0)
 
 - Yeni Müşteri formu üç adım: **1. İşletme**, **2. Logo ve fotoğraflar**, **3. Müşteriden gelen bilgiler**. Altta "Oluşturunca: …" satırı butona basınca ne olacağını söyler.

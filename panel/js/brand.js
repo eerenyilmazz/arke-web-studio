@@ -82,9 +82,9 @@ function brandView(b) {
     brand,
     palette,
     fonts,
-    heading: fontStack(fonts.heading, "Geist, sans-serif"),
-    bodyFont: fontStack(fonts.body, "Geist, sans-serif"),
-    monoFont: fontStack(mono, '"Geist Mono", ui-monospace, monospace'),
+    heading: fontStack(fonts.heading, "Public Sans, sans-serif"),
+    bodyFont: fontStack(fonts.body, "Public Sans, sans-serif"),
+    monoFont: fontStack(mono, "ui-monospace, monospace"),
     main: palette[0]?.hex || "#F58255",
     // The client's own logo wins over a drawn one; both are shown as images (nothing in them can run).
     logoUri: b.clientLogo || (b.logoSvg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(b.logoSvg)}` : null),

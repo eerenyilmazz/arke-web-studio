@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createServer } from "node:http";
@@ -236,9 +236,33 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
 
   ui()("works at phone width", async (ctx) => {
     needBrowser(ctx);
-    const { page, errors } = await open("#/musteri/ui-bakery/duzenle", { width: 390, height: 844 });
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow).toBeLessThanOrEqual(1);
+    for (const hash of ["#/musteri/ui-bakery/duzenle", "#/", "#/analiz"]) {
+      const { page, errors } = await open(hash, { width: 390, height: 844 });
+      await page.waitForTimeout(300);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(overflow, hash).toBeLessThanOrEqual(1);
+      expect(errors).toEqual([]);
+      await page.close();
+    }
+  });
+
+  ui()("analysis: one row per client, sorts by a column, filters and downloads a CSV", async (ctx) => {
+    needBrowser(ctx);
+    const { page, errors } = await open("#/analiz");
+    await page.waitForSelector(".data-table tbody tr");
+    const rows = await page.locator(".data-table tbody tr").count();
+    expect(rows).toBeGreaterThan(0);
+    await page.locator(".data-table thead button", { hasText: "Müşteri" }).click();
+    expect(await page.locator(".data-table thead th[aria-sort]").textContent()).toBe("Müşteri");
+    await page.fill("#an-q", "zzz-no-such-client");
+    await expect.poll(() => page.locator(".analytics-body").textContent()).toContain("Bu filtrede müşteri yok.");
+    await page.fill("#an-q", "");
+    await page.waitForSelector(".data-table tbody tr");
+    const [download] = await Promise.all([page.waitForEvent("download"), page.click("#an-csv")]);
+    const csv = readFileSync((await download.path())!, "utf8");
+    expect(csv).not.toContain("[object");
+    expect(csv.split("\n")[0]).toContain("Müşteri");
+    expect(download.suggestedFilename()).toMatch(/^site-factory-analiz-\d{4}-\d{2}-\d{2}\.csv$/);
     expect(errors).toEqual([]);
     await page.close();
   });

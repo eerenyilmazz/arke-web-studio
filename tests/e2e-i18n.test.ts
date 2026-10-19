@@ -19,6 +19,7 @@ const SCREENS = [
   "#/yeni",
   "#/kutuphane",
   "#/arsiv",
+  "#/analiz",
   "#/ayarlar",
   `#/musteri/${SLUG}/duzenle`,
   `#/musteri/${SLUG}/marka`,

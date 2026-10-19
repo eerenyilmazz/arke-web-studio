@@ -1,4 +1,5 @@
 // Routing, the status pill and the client list in the sidebar.
+import { renderAnalytics } from "./analytics.js";
 import { renderArchive } from "./archive.js";
 import { renderClient } from "./client.js";
 import { $, api, avatar, guarded, h, isBusy, OLD_TABS, plainOf, state } from "./core.js";
@@ -42,6 +43,7 @@ export function route() {
   if (parts[0] === "ayarlar") return { view: "settings" };
   if (parts[0] === "kutuphane") return { view: "library" };
   if (parts[0] === "arsiv") return { view: "archive" };
+  if (parts[0] === "analiz") return { view: "analytics" };
   if ((parts[0] === "musteri" || parts[0] === "c") && parts[1]) return { view: "client", slug: parts[1], tab: OLD_TABS[parts[2]] || parts[2] || "sohbet" };
   return { view: "home" };
 }
@@ -50,10 +52,12 @@ export async function render() {
   await loadClients();
   const r = route();
   const view = $("#view");
+  document.body.dataset.view = r.view; // the home table already lists every client, so the rail hides its list there
   for (const a of document.querySelectorAll(".main-nav a")) {
     const on =
       (a.dataset.nav === "home" && (r.view === "home" || r.view === "client" || r.view === "new")) ||
       (a.dataset.nav === "library" && r.view === "library") ||
+      (a.dataset.nav === "analytics" && r.view === "analytics") ||
       (a.dataset.nav === "archive" && r.view === "archive") ||
       (a.dataset.nav === "settings" && r.view === "settings");
     a.toggleAttribute("aria-current", on);
@@ -67,6 +71,7 @@ export async function render() {
   else if (r.view === "settings") view.replaceChildren(await renderSettings());
   else if (r.view === "library") view.replaceChildren(await renderLibrary());
   else if (r.view === "archive") view.replaceChildren(await renderArchive());
+  else if (r.view === "analytics") view.replaceChildren(await renderAnalytics());
   else if (r.view === "client") await renderClient(view, r.slug, r.tab);
   else view.replaceChildren(renderHome());
 }
