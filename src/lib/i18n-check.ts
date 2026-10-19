@@ -87,7 +87,12 @@ export function checkLanguages(distDir: string, defaultLocale: string, locales: 
   }
 
   const name = "Languages (every page translated, language links to the same page)";
-  if (problems.length) return { name, status: "fail", detail: [...new Set(problems)].slice(0, 12).join("; ") };
+  if (problems.length)
+    return {
+      name,
+      status: "fail",
+      detail: `${[...new Set(problems)].slice(0, 12).join("; ")}. Design jobs write the default language only; the translation job ("Diğer dilleri güncelle") writes every <locale>/ page.`,
+    };
   if (pending.length)
     return { name, status: "warn", detail: `${pending.join(", ")} not written yet: the translation job adds ${pending.length > 1 ? "them" : "it"}.` };
   return { name, status: "pass", detail: `${others.join(", ")}: ${basePages.length} page(s) each, links in place` };

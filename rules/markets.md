@@ -84,3 +84,36 @@ that he should have the client check them.
 - Never invent facts, numbers, reviews, awards or years. Missing → leave out and ask Eren.
 - Every image has alt text in the page's language describing what is in it.
 - Field limits: SEO title ≤ 60 characters, meta description ≤ 160.
+
+## Standard words
+
+The same words for the same things on every site, so menus, buttons and forms read naturally and the two
+languages match. Use these unless the business has its own word (a restaurant's "Menü", a salon's "Fiyatlar").
+
+| Thing | Turkish | English (UK) |
+|---|---|---|
+| Home | Ana sayfa | Home |
+| About | Hakkımızda | About us |
+| Services / products | Hizmetler / Ürünler | Services / Products |
+| Prices | Fiyatlar | Prices |
+| Gallery | Galeri | Gallery |
+| Blog | Blog | Blog |
+| Contact | İletişim | Contact |
+| Main action: call | Hemen arayın | Call us |
+| Main action: write | WhatsApp'tan yazın | Message us on WhatsApp |
+| Main action: book | Randevu alın | Book online |
+| Get directions | Yol tarifi alın | Get directions |
+| Opening hours | Çalışma saatleri | Opening hours |
+| Closed | Kapalı | Closed |
+| Address | Adres | Address |
+| Form: name / phone / message / send | Adınız / Telefonunuz / Mesajınız / Gönder | Your name / Phone / Message / Send |
+| Form sent | Mesajınız iletildi, en kısa sürede dönüş yapacağız. | Thanks, we will get back to you soon. |
+| Skip link | İçeriğe geç | Skip to content |
+| Menu button | Menü | Menu |
+| Theme toggle labels | Koyu temaya geç / Açık temaya geç | Switch to dark theme / Switch to light theme |
+| Language link | EN / TR (with `hreflang` and `lang`) | TR / EN |
+| Privacy page | Gizlilik / KVKK Aydınlatma Metni | Privacy notice |
+| 404 | Sayfa bulunamadı · Ana sayfaya dönün | Page not found · Back to the home page |
+
+In US English use the US spelling and "Contact us", "Book now" where it reads more naturally; never mix the two.
+

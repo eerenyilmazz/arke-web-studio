@@ -516,7 +516,7 @@ body.agent-busy .brand-mark .f3 { animation-delay: .4s; }
 .check input { margin-top: .25rem; width: 1.05rem; height: 1.05rem; accent-color: var(--accent); flex: none; }
 
 .files.thumbs { list-style: none; padding: 0; margin: .8rem 0 0; display: grid; gap: .5rem; }
-.files.thumbs li { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: .8rem; padding: .5rem; border: 1px solid var(--line); border-radius: 10px; }
+.files.thumbs li { display: grid; grid-template-columns: 56px 1fr auto auto; align-items: center; gap: .8rem; padding: .5rem; border: 1px solid var(--line); border-radius: 10px; }
 .files.thumbs li.is-logo { border-color: var(--accent); background: var(--accent-soft); }
 .files.thumbs img { width: 56px; height: 40px; object-fit: contain; background: var(--logo-paper); border-radius: 6px; border: 1px solid var(--line); }
 .files.thumbs .meta { display: grid; min-width: 0; }

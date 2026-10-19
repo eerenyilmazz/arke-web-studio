@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FACTORY_ROOT } from "../src/config.js";
 import { clientPaths } from "../src/lib/paths.js";
-import { CODE, apiGet, type Browser, type FakePanel, findBrowser, jobDone, launchBrowser, openPanel, startPanel } from "./e2e/harness.js";
+import { CODE, apiGet, type Browser, type FakePanel, findBrowser, idle, jobDone, launchBrowser, openPanel, startPanel } from "./e2e/harness.js";
 import { PNG_1PX, tempFactory } from "./helpers.js";
 
 /**
@@ -110,6 +110,7 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     const hashBefore = (await apiGet<Detail>(base, `/api/clients/${SLUG}`)).status.contentHash;
     await page.goto(`${base}/#/musteri/${SLUG}/duzenle`);
     await page.waitForSelector("#composer");
+    await idle(base);
     await page.fill("#composer", "Ana başlığı 'Sourdough baked at dawn' yapın.");
     await page.press("#composer", "Control+Enter");
     await expect.poll(() => page.inputValue("#composer")).toBe(""); // the box is emptied once the request is sent

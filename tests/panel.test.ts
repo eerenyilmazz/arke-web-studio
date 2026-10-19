@@ -1113,3 +1113,42 @@ describe("extras in Business Tracking", () => {
     expect((await put([{ id: "nope" }])).status).toBe(400);
   });
 });
+
+describe("removing a logo and deleting images", () => {
+  it("takes the logo off without deleting it, and deletes only images nothing uses", async () => {
+    const { base, auth } = await start();
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "logo-co", businessName: "Logo Co", industry: "bakery", hostingModel: "managed" }),
+    });
+    const { PNG_1PX } = await import("./helpers.js");
+    const up = (name: string) =>
+      fetch(`${base}/api/clients/logo-co/inbox/${name}`, { method: "PUT", headers: { ...auth, "Content-Type": "application/octet-stream" }, body: PNG_1PX });
+    expect((await up("logo.png")).status).toBe(201);
+    expect((await up("extra.png")).status).toBe(201);
+    const set = (await (
+      await fetch(`${base}/api/clients/logo-co/logo`, { method: "POST", headers: json, body: JSON.stringify({ name: "logo.png", from: "inbox" }) })
+    ).json()) as {
+      logo: string;
+    };
+    const assetName = set.logo.slice("assets/".length);
+    const del = (where: string, name: string) => fetch(`${base}/api/clients/logo-co/${where}/${encodeURIComponent(name)}`, { method: "DELETE", headers: auth });
+    const refused = await del("assets", assetName);
+    expect(refused.status).toBe(409); // still the logo
+    expect(((await refused.json()) as { error: string }).error).toMatch(/Logoyu kaldır/);
+
+    expect((await fetch(`${base}/api/clients/logo-co/logo`, { method: "DELETE", headers: auth })).status).toBe(200);
+    const detail = (await (await fetch(`${base}/api/clients/logo-co`, { headers: auth })).json()) as { logo: string | null; assets: Array<{ name: string }> };
+    expect(detail.logo).toBeNull();
+    expect(detail.assets.map((a) => a.name)).toContain(assetName); // the file stays
+
+    const gone = await del("assets", assetName);
+    expect(gone.status).toBe(200);
+    expect(((await gone.json()) as { assets: unknown[] }).assets).toEqual([]);
+    expect((await del("inbox", "extra.png")).status).toBe(200);
+    expect((await del("inbox", "extra.png")).status).toBe(404);
+    expect((await del("inbox", "..%2F..%2Fsite.config.json")).status).toBeGreaterThanOrEqual(400);
+  });
+});

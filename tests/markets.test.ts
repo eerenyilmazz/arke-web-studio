@@ -104,3 +104,30 @@ describe("market-specific quality notes", () => {
     expect(all).not.toMatch(/business name not found/);
   });
 });
+
+describe("design and language rules (1.21.0)", () => {
+  it("no section quota, meaningful labels only, legacy template rules kept out of design searches", async () => {
+    const { readFileSync, mkdtempSync, writeFileSync } = await import("node:fs");
+    const os = await import("node:os");
+    const pathMod = await import("node:path");
+    const { FACTORY_ROOT } = await import("../src/config.js");
+    const { designDepth } = await import("../src/lib/custom-site.js");
+    const { isExcluded, searchKnowledge } = await import("../src/lib/knowledge.js");
+    const rules = readFileSync(pathMod.join(FACTORY_ROOT, "rules", "custom-site.md"), "utf8");
+    expect(rules).toMatch(/Never a label above every heading/);
+    expect(rules).toMatch(/No minimum number of sections/);
+    expect(rules).toMatch(/never write a `<locale>\/` page in a design job/);
+
+    const dist = mkdtempSync(pathMod.join(os.tmpdir(), "sf-depth-"));
+    writeFileSync(
+      pathMod.join(dist, "index.html"),
+      '<main><section class="hero"><svg class="sig-x"></svg><img src="/brand/logo.svg"></section><section><svg></svg></section></main>',
+    );
+    const depth = designDepth(dist, ":root{--wrap: 80rem}", { signature: { id: "sig-x" } } as never);
+    expect(depth.status).toBe("pass"); // two sections are fine now
+
+    expect(isExcluded("rules/legacy-templates.md")).toBe(true);
+    const hits = searchKnowledge(FACTORY_ROOT, "standard words menu button opening hours Turkish English", 5);
+    expect(hits.some((h) => h.source === "rules/markets.md")).toBe(true);
+  });
+});

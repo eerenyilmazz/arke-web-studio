@@ -521,8 +521,8 @@ export function readBrandBoard(paths: ClientPaths, template: string, clientLogo:
   return { source: "custom", brand, logoSvg: read(LOGO_FILE), signatureHtml: read(SIGNATURE_FILE), clientLogo: own, missing };
 }
 
-const MIN_HOME_SECTIONS = 5;
-const MIN_HOME_SVGS = 2;
+/** Drawn graphics on the home page besides the logo: one with a purpose is enough (no filler decoration). */
+const MIN_HOME_SVGS = 1;
 const MIN_LAYOUT_WIDTH_PX = 1100;
 const REM_PX = 16;
 
@@ -538,12 +538,11 @@ export function designDepth(distDir: string, code: string, brand: Brand): CheckR
   const out: string[] = [];
   const sig = brand.signature?.id;
   if (sig && !firstBlock.includes(sig)) out.push(`the signature motion "${sig}" is not in the home page's first section (the hero)`);
+  // No minimum number of sections: a count only produced filler. Each section must earn its place (rules).
   const sections = (main.match(/<section\b/gi) ?? []).length;
-  if (sections < MIN_HOME_SECTIONS)
-    out.push(`home page has ${sections} sections (at least ${MIN_HOME_SECTIONS}: hero, a composed brand section, services, story or process, contact)`);
   const svgs = (home.match(/<svg\b/gi) ?? []).length + (home.match(/<img[^>]+\.svg/gi) ?? []).length;
   if (svgs < MIN_HOME_SVGS + 1)
-    out.push("home page has almost no drawn graphics: use the mark and the brand's visual language as illustrations, not only text");
+    out.push("home page has no drawn graphic besides the logo: draw the product, the craft or the place in the brand's visual language");
   // Container widths: max-width declarations (not media queries) and width-like custom properties (--wrap: 76rem).
   const css = code.replace(/@media[^{]*/gi, "");
   const px = (m: RegExpMatchArray) => Number(m[1]) * (m[2]!.toLowerCase() === "rem" ? REM_PX : 1);

@@ -24,6 +24,18 @@ Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git 
 - Bilgi yapıştırılmış ama logo seçilmemişse iş başlamadan sorulur: "Yazı logosuyla başla" ya da "Önce logo ekleyeceğim". Böylece logosuz yapılıp sonra yeniden tasarlanan iş (ve harcanan kaynak) olmaz.
 - Logo başka bir müşterinin logosuyla aynıysa önce onay istenir; onaylanmazsa tasarım işi başlamaz.
 
+## Tasarım ve dil kuralları gözden geçirildi (1.21.0)
+
+- Başlık üstü "No. 01 · …" etiketleri artık zorunlu değil, yasak: etiket sadece gerçek bir bilgi taşıyorsa (fiyat, süre, sıra, ürün kodu).
+- Ana sayfada "en az 5 bölüm" şartı kalktı (dolgu bölüm üretiyordu); her bölüm ekranı içerikle doldurmalı, yarım boş bölüm yok.
+- Dekor sadece bir işe yarıyorsa: anlamsız nokta, şekil, yarım daire yok. Ana sayfada logodan başka en az bir anlamlı çizim yeter.
+- Bölümler arası boşluk yaklaşık yarıya indi (fabrikanın base.css'i; var olan sitelere bir sonraki agent işinde gelir).
+- Agent ekran görüntülerine bir kontrol listesiyle bakar: telefonda menü katlı mı, yazı taşıyor mu, sabit buton bir şeyi örtüyor mu, dekor taşıyor mu.
+- Tasarım işi başka dilde sayfa yazmaz; yarım çeviri derlemeyi durdurur ve mesaj çeviri işini gösterir.
+- `rules/markets.md` → "Standard words": menü, buton ve form kelimelerinin Türkçe/İngilizce standart listesi.
+- Eski şablon kuralları `rules/legacy-templates.md` dosyasına taşındı; tasarım aramalarına karışmaz.
+- **Logo ve Görseller:** "Logoyu kaldır" (dosya kalır, sonraki tasarımda yazı logosu çizilir) ve her görselde ✕ ile silme. Logo, içerikte ya da sayfalarda kullanılan görsel silinmez (nedeni yazılır); silinen kayıtlı görsel Sürüm Geçmişi'nden geri gelir.
+
 ## Hazır site parçaları ve dil kontrolleri (1.20.0)
 
 - **Fabrika parçaları:** tema düğmesi (güneş/ay ikonlu, hangi temaya geçeceğini söyler, seçimi hatırlar) ve telefon menüsü (48rem altında katlanır) `js/kit.js` + `css/base.css` olarak her siteye kopyalanır; agent kendisi yazmaz. Fabrika güncellenince bu iki dosya bir sonraki agent işinde siteye yenisi olarak gelir (elle yazılmış bir base.css'e dokunulmaz).

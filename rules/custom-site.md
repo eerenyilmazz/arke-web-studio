@@ -152,13 +152,16 @@ however clean. Every custom site has all of these, designed for its own business
    trade, drawn in SVG or the client's best photo) takes 40–60% of the hero and plays the signature motion at full
    size on load. Not an underline under a heading. The headline is set large in the heading font (clamp up to
    5–7rem) with the tagline.
-2. **A label system ("marka etiketi").** Small labels in a mono or condensed face that carry codes from the
-   business's world: a barber's `No. 01 · Saç kesimi · 30 dk`, a pickle maker's batch `P-024 / 2 kg`, a builder's
-   drawing number. Use them on cards, section starts and prices, consistently. They replace generic eyebrows.
+2. **Labels only where they carry a fact.** Small labels in a mono or condensed face for real codes and values from
+   the business's world: a price, a duration (`30 dk`), a step number in a real process, a batch or product code.
+   **Never a label above every heading** ("No. 01 · Neden biz" on each section is the generated look); most
+   headings stand alone.
 3. **At least one composed section** in the board's spirit: cards of unequal sizes (bento), overlapping layers or a
    photo breaking its frame, with one card in a full brand colour carrying the mark or a big number from real facts.
-4. **The mark as a graphic.** The logo mark returns large: a watermark behind a section, a divider, a stamp on a
-   card, a loader. Draw at least two brand illustrations on the home page (inline SVG in the visual language).
+4. **Drawings with a purpose.** At least one drawn illustration on the home page that shows the product, the craft
+   or the place (inline SVG in the visual language); the mark may return once as a stamp or watermark. Every
+   decoration must do a job (divide, guide the eye, show something); no dots, connectors, blobs or half-shapes for
+   their own sake. When in doubt, leave it out.
 5. **Use the screen.** Containers around 1200–1360px, full-bleed colour bands, generous but intentional spacing.
    A 900px column in the middle of a 1920px screen reads as unfinished.
 6. **Every page has a designed page hero** (title, a label, a piece of the visual language), not just an `h1`.
@@ -166,8 +169,13 @@ however clean. Every custom site has all of these, designed for its own business
    that stagger; nothing moves without a reason, everything calms under `prefers-reduced-motion`.
 8. **Both themes are designed**: the dark look is built from the palette (like the board), not inverted colours.
 
-The build's "Design depth" check warns when the home page has no signature in the hero, fewer than five sections,
-almost no drawn graphics or a narrow layout. Treat that warning as a failure to fix.
+9. **Every section earns its place.** No minimum number of sections: hero, what they sell, why them, how to reach
+   them is often enough. Each section fills its width with content (text with an illustration, a list, prices,
+   a quote); never a heading and one sentence on a half-empty screen. Two sections of the same shape do not follow
+   each other.
+
+The build's "Design depth" check warns when the home page has no signature in the hero, no drawing besides the
+logo, or a narrow layout. Treat that warning as a failure to fix.
 
 ## Step 3: write the site
 
@@ -229,10 +237,12 @@ saved theme applies before the first paint:
 
 ### Languages
 
-The design job writes the default language only. The translation job writes every other language as
+The design job writes the default language only: **never write a `<locale>/` page in a design job**, not even a
+short home page; a half translation fails the build. The translation job writes every other language as
 `<locale>/<same path>`, and on every page the language link (`hreflang`) goes to **the same page** in the other
 language, never to its home page; links inside a translation stay in that language. The build fails on a
-half-translated site, a language link to another page or a link out of the language.
+half-translated site, a language link to another page or a link out of the language. Menu, button and form words
+use the standard terms in `rules/markets.md` ("Standard words").
 
 ### Layout hygiene
 
@@ -259,9 +269,13 @@ do not exist, `<form>`, missing `404.html` or viewport meta, missing alt, lang o
 ## Step 4: build, read, fix
 
 `build_site` also saves a phone and a desktop screenshot of the home page when a browser is available (check
-"Screenshots"): **Read both images** and judge them like a designer: overlapping or cut-off text, empty or
-unbalanced areas, unreadable contrast, a hero without the signature visual, a layout that looks plain. Fix what you
-see, then build again and look once more.
+"Screenshots"). **Read both images** and go through this list; fix every "no", build again and look once more:
+
+- Phone: the menu is folded into the menu button (one header row); no text is cut off or runs off the screen;
+  buttons are full size; a fixed button (WhatsApp, booking) covers nothing.
+- Both: no decoration sits over text or sticks out of its section; no half-empty section; the gap between
+  sections looks even and not huge; the hero shows the signature visual; text is readable on its background.
+- Desktop: the layout uses the width (no narrow column in the middle); cards in a row line up.
 
 Then read every failed check and the Impeccable warnings (contrast, cramped padding, tells of generated
 design) and fix them in the files. Build again; stop after 3 failed builds and report.

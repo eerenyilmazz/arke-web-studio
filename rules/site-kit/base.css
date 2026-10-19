@@ -17,7 +17,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* Layout */
 .wrap { width: 100%; max-width: var(--wrap); margin-inline: auto; padding-inline: var(--gap); }
-.section { padding-block: clamp(3.5rem, 8vw, 7rem); }
+.section { padding-block: clamp(2.5rem, 5vw, 4.5rem); }
+.section + .section { padding-top: clamp(1.5rem, 3vw, 2.5rem); }
 .grid { display: grid; gap: var(--gap); grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--min, 16rem)), 1fr)); }
 .stack > * + * { margin-top: var(--space, 1rem); }
 .cluster { display: flex; flex-wrap: wrap; gap: var(--space, .75rem); align-items: center; }

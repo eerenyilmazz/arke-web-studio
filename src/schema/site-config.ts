@@ -35,7 +35,7 @@ export const SECTIONS = [
 ] as const;
 export const TONES = ["formal", "friendly", "premium", "energetic", "calm"] as const;
 export const VARIANTS = ["a", "b", "c"] as const;
-/** Overall character of a corporate-v2 site, chosen by sector (see rules/design-rules.md). */
+/** Overall character of a corporate-v2 site, chosen by sector (see rules/legacy-templates.md). */
 export const PERSONALITIES = ["bold", "premium", "friendly"] as const;
 /** Animated sector illustrations in corporate-v2. "abstract" fits any sector; "none" turns motion off. */
 export const DARK_MODES = ["auto", "off"] as const;

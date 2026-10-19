@@ -26,7 +26,7 @@ Always call `get_client_status` when unsure; its `nextStep` is authoritative.
    - An answer that fits no field goes into `unmapped` with a note. Never drop an answer silently.
    - Ticked "later" items go into `laterInterests` (ids like `later-qr-code`).
 4. **Round 2**: if `get_client_status` still lists open questions, `generate_questionnaire` round 2. Repeat 3.
-5. **Design**: `generate_design_system`, then choose palette, fonts, style, personality and motif following `rules/design-rules.md`. Client brand colours win; adjust shades only to pass contrast. Save under `design`.
+5. **Design**: `generate_design_system`, then choose palette, fonts and style following `rules/design-rules.md` (personality and motif for template sites: `rules/legacy-templates.md`). Client brand colours win; adjust shades only to pass contrast. Save under `design`.
 6. **Content**: write all text with `save_content` for every locale (same number of services, gallery items, etc. in each). Use the client's words; tighten, do not invent facts, prices, awards or reviews.
 7. **Content approval**: show Eren a short summary (pages, sections, key texts, anything you chose for the client). He approves himself.
 8. **Build**: `build_site`. If checks fail, fix config/content and build again. After 3 failed attempts, stop and report.

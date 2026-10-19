@@ -1029,8 +1029,22 @@ export const EN = {
     "Her işte en güçlü model; tasarım skill'leri tamamen yüklenir, en çok kaynak harcanır.":
       "Strongest model for every job; the design skills are loaded in full; uses the most resources.",
     Paket: "Package",
+    "Logoyu kaldır": "Remove logo",
+    "Logo kaldırılsın mı?": "Remove the logo?",
+    "Bu dosya artık logo olarak kullanılmaz; bir sonraki tasarım işinde agent işletme adıyla bir yazı logosu çizer. Dosya silinmez, görseller arasında kalır.":
+      "This file is no longer used as the logo; in the next design job the agent draws a wordmark from the business name. The file is not deleted; it stays among the images.",
+    "Logo kaldırıldı. Markayı yazı logosuyla yenilemek için Marka Kimliği → 'Marka Kimliğiyle Yeniden Tasarla'.":
+      "Logo removed. To refresh the brand with a wordmark: Brand Identity → 'Redesign with the Brand Identity'.",
+    "Dosya silinsin mi?": "Delete the file?",
+    "Dosya silindi.": "File deleted.",
+    "Bu dosya müşterinin logosu. Önce 'Logoyu kaldır'a basın.": "This file is the client's logo. Press 'Remove logo' first.",
+    "Bu görsel içerikte (ör. galeride) kullanılıyor. Önce oradan çıkarın.": "This image is used in the content (e.g. the gallery). Remove it there first.",
+    "Bu görsel sitenin sayfalarında kullanılıyor. Önce agent'a sayfalardan kaldırmasını söyleyin (ya da yeni tasarımda kalkar).":
+      "This image is used on the site's pages. Ask the agent to remove it from the pages first (or it goes with a new design).",
   },
   patterns: [
+    ["{} silinecek.", "{} will be deleted."],
+    ["{} dosyasını sil", "Delete {}"],
     ["{} fiyatı", "{} price"],
     ["Toplam: {} (site {} + ek seçenekler {})", "Total: {} (site {} + extras {})"],
     ["Toplam: {}", "Total: {}"],

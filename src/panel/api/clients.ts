@@ -1,6 +1,6 @@
 import { clientProfit } from "../profit.js";
 import { siteHealth } from "../health.js";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { approvalState, APPROVAL_KINDS } from "../../lib/approvals.js";
@@ -47,6 +47,8 @@ export const clientRoutes: Route[] = [
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/inbox/([^/]{1,120})$`), handler: uploadInbox },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/(inbox|assets)/([^/]{1,120})$`), handler: serveClientImage },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/logo$`), handler: setLogo },
+  { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}/logo$`), handler: removeLogo },
+  { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}/(inbox|assets)/([^/]{1,120})$`), handler: deleteClientImage },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/versions$`), handler: versions },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/concepts$`), handler: concepts },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/brand$`), handler: brandBoard },
@@ -335,6 +337,68 @@ async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse,
     `Eren set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom-site.md); never draw a replacement.`,
   );
   sendJson(res, 200, { logo: relPath });
+}
+
+/**
+ * Eren takes the logo off (a wrong or unwanted file): brand.logo is cleared and the next design job draws a
+ * wordmark. The file stays among the images; deleting it is a separate, explicit step.
+ */
+async function removeLogo(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  if (deps.jobs.running()?.slug === s) throw new HttpError(409, "Agent bu müşteride çalışıyor; bitince tekrar dene.");
+  const previous = (readDraftConfig(clientPaths(deps.factory.clientsRoot, s)) as { brand?: { logo?: string | null } }).brand?.logo ?? null;
+  if (!previous) {
+    sendJson(res, 200, { logo: null });
+    return;
+  }
+  await snapshot(clientPaths(deps.factory.clientsRoot, s).root, "Önce: logo kaldırıldı").catch(() => null);
+  tools.updateClientConfig(deps.factory, { slug: s, patch: { brand: { logo: null } } });
+  markBrandStale(deps.factory, s, "");
+  appendInput(
+    deps.factory,
+    s,
+    "logo",
+    `Eren removed the client's logo (${previous}) in the panel. Do not use that file as the logo any more; draw a wordmark (brand/logo.svg) from the business name in the next design job.`,
+  );
+  sendJson(res, 200, { logo: null });
+}
+
+/** Where a file is still used: the logo, the content (gallery) or a page of the site. Null when it is free to go. */
+function imageInUse(deps: ApiDeps, slug: string, where: string, name: string): string | null {
+  const paths = clientPaths(deps.factory.clientsRoot, slug);
+  if (where !== "assets") return null;
+  const rel = `assets/${name}`;
+  if ((readDraftConfig(paths) as { brand?: { logo?: string | null } }).brand?.logo === rel) return "Bu dosya müşterinin logosu. Önce 'Logoyu kaldır'a basın.";
+  const contentDir = path.dirname(paths.content("en"));
+  const inContent =
+    existsSync(contentDir) && readdirSync(contentDir).some((f) => f.endsWith(".json") && readFileSync(path.join(contentDir, f), "utf8").includes(rel));
+  if (inContent) return "Bu görsel içerikte (ör. galeride) kullanılıyor. Önce oradan çıkarın.";
+  const site = path.join(paths.root, "site");
+  const inSite =
+    existsSync(site) &&
+    readdirSync(site, { recursive: true, withFileTypes: true }).some(
+      (e) => e.isFile() && /\.(html|css)$/.test(e.name) && readFileSync(path.join(e.parentPath, e.name), "utf8").includes(`/${rel}`),
+    );
+  if (inSite) return "Bu görsel sitenin sayfalarında kullanılıyor. Önce agent'a sayfalardan kaldırmasını söyleyin (ya da yeni tasarımda kalkar).";
+  return null;
+}
+
+/** Deletes an uploaded or saved image that nothing uses any more (a wrong upload, a duplicate). */
+async function deleteClientImage(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug, where, rawName]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  if (deps.jobs.running()?.slug === s) throw new HttpError(409, "Agent bu müşteride çalışıyor; bitince tekrar dene.");
+  const name = safeFileName(decodeURIComponent(rawName!));
+  const dir = where === "inbox" ? safeJoin(deps.factory.inboxDir, s) : clientPaths(deps.factory.clientsRoot, s).assetsDir;
+  const file = safeJoin(dir, name);
+  if (!existsSync(file)) throw new HttpError(404, "Dosya yok.");
+  const used = imageInUse(deps, s, where!, name);
+  if (used) throw new HttpError(409, used);
+  // A saved image can be brought back from Versions (inbox uploads are not versioned: they are not the site yet).
+  if (where === "assets") await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${name} silindi`).catch(() => null);
+  rmSync(file);
+  sendJson(res, 200, { inbox: inboxFiles(deps.factory, s), assets: assetFiles(clientPaths(deps.factory.clientsRoot, s).assetsDir) });
 }
 
 function existingQuestionnaires(dir: string): number[] {

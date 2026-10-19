@@ -306,7 +306,12 @@ export function uploadCard(slug, inbox, assets = [], logo = null) {
           h("img", { src: `/api/clients/${slug}/${f.from}/${encodeURIComponent(f.name)}`, alt: "", loading: "lazy" }),
           h("div", { class: "meta" }, h("span", { text: f.name }), h("span", { class: "muted small", text: `${Math.ceil(f.bytes / 1024)} KB · ${f.state}` })),
           isLogo
-            ? h("span", { class: "badge ok", text: "Müşteri logosu" })
+            ? h(
+                "span",
+                { class: "row nowrap" },
+                h("span", { class: "badge ok", text: "Müşteri logosu" }),
+                h("button", { class: "btn btn-sm", type: "button", disabled: isBusy(), onclick: () => removeLogo() }, "Logoyu kaldır"),
+              )
             : h(
                 "button",
                 {
@@ -348,9 +353,38 @@ export function uploadCard(slug, inbox, assets = [], logo = null) {
                 },
                 "Logo olarak kullan",
               ),
+          isLogo
+            ? null
+            : h(
+                "button",
+                { class: "icon-btn", type: "button", disabled: isBusy(), "aria-label": `${f.name} dosyasını sil`, onclick: () => removeFile(f) },
+                "✕",
+              ),
         );
       }),
     );
+  };
+  const removeLogo = async () => {
+    const sure = await ask({
+      title: "Logo kaldırılsın mı?",
+      body: "Bu dosya artık logo olarak kullanılmaz; bir sonraki tasarım işinde agent işletme adıyla bir yazı logosu çizer. Dosya silinmez, görseller arasında kalır.",
+      confirm: "Logoyu kaldır",
+    });
+    if (!sure) return;
+    const r = await guarded(() => api("DELETE", `/api/clients/${slug}/logo`));
+    if (!r) return;
+    current = { ...current, logo: null };
+    draw();
+    toast("Logo kaldırıldı. Markayı yazı logosuyla yenilemek için Marka Kimliği → 'Marka Kimliğiyle Yeniden Tasarla'.");
+  };
+  const removeFile = async (f) => {
+    const sure = await ask({ title: "Dosya silinsin mi?", body: `${f.name} silinecek.`, confirm: "Sil", danger: true });
+    if (!sure) return;
+    const r = await guarded(() => api("DELETE", `/api/clients/${slug}/${f.from}/${encodeURIComponent(f.name)}`));
+    if (!r) return;
+    current = { ...current, inbox: r.inbox, assets: r.assets };
+    draw();
+    toast("Dosya silindi.");
   };
   draw();
   const input = h("input", { type: "file", multiple: true, accept: "image/png,image/jpeg,image/webp,image/avif,image/svg+xml", id: "files", class: "sr-only" });

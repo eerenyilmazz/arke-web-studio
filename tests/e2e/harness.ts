@@ -134,5 +134,20 @@ export async function jobDone(base: string, slug: string, kind: string, count: n
     if (runs.length >= count) return runs.at(-1)!;
     await new Promise((r) => setTimeout(r, POLL_MS));
   }
-  throw new Error(`${kind} job did not finish`);
+  const meta = await apiGet<{ running: { kind: string; status: string } | null }>(base, "/api/meta");
+  const d = await apiGet<{ history: JobRecordView[] }>(base, `/api/clients/${slug}`);
+  throw new Error(
+    `${kind} job did not finish (running: ${JSON.stringify(meta.running)}; finished: ${d.history.map((j) => `${j.kind}/${j.status}`).join(", ")})`,
+  );
+}
+
+/** Waits until no job runs, so the next job the test starts is not refused as "another job is running". */
+export async function idle(base: string): Promise<void> {
+  const end = Date.now() + JOB_MS;
+  while (Date.now() < end) {
+    const m = await apiGet<{ running: { status: string } | null }>(base, "/api/meta");
+    if (!m.running || m.running.status !== "running") return;
+    await new Promise((r) => setTimeout(r, POLL_MS));
+  }
+  throw new Error("a job kept running");
 }

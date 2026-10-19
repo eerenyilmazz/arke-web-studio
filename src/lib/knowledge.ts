@@ -18,6 +18,7 @@ const EXCLUDED = [
   /\/evals\//,
   /impeccable\/reference\/(android|ios|adapt\.native|audit\.native|craft|doctor|document|extract|generate|hooks|init|live|live-setup|mode-operate|operate|onboard|region-map|routing|visualize)\.md$/,
   /impeccable\/reference\/degraded\//,
+  /^rules\/legacy-templates\.md$/, // old template sites: read directly when needed, never mixed into design searches
 ];
 export const isExcluded = (source: string) => EXCLUDED.some((r) => r.test(source));
 const MAX_FILE_BYTES = 200_000;
