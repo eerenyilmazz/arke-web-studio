@@ -106,7 +106,18 @@ describe("Impeccable findings", () => {
       ]),
     );
     expect(warn.status).toBe("warn");
-    expect(warn.detail).toBe("3 finding(s): cream-palette ×2, side-tab ×1");
+    expect(warn.detail).toMatch(/^3 finding\(s\): cream-palette ×2, side-tab ×1\. Where: /);
+    // Each finding says where it is, grouped across pages, so the agent can find it.
+    const placed = summariseImpeccable(
+      JSON.stringify([
+        { antipattern: "gray-on-color", severity: "warning", file: "/d/about/index.html", snippet: "text #b9c0d0 on bg #172544" },
+        { antipattern: "gray-on-color", severity: "warning", file: "/d/blog/index.html", snippet: "text #b9c0d0 on bg #172544" },
+        { antipattern: "cramped-padding", severity: "warning", file: "/d/css/site.css", line: 42, snippet: ".ticket { padding: 4px }" },
+      ]),
+      "/d",
+    );
+    expect(placed.detail).toContain("gray-on-color: text #b9c0d0 on bg #172544 · about/, blog/");
+    expect(placed.detail).toContain("cramped-padding: .ticket { padding: 4px } (line 42) · css/site.css");
     expect(summariseImpeccable(JSON.stringify([{ antipattern: "x", severity: "error" }])).status).toBe("fail");
     expect(summariseImpeccable("not json").status).toBe("warn");
     expect(summariseImpeccable("[]").status).toBe("pass");

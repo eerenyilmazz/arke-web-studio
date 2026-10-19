@@ -38,7 +38,7 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
         results.push(...checkCustomCode(paths.distDir, effectiveFormAction(paths.factoryDir)));
         results.push(...checkBrand(paths.distDir, config.brand.logo));
         results.push(...checkLibraryLeftovers(paths.distDir, paths.factoryDir));
-        const languages = checkLanguages(paths.distDir, config.i18n.defaultLocale, config.i18n.locales);
+        const languages = checkLanguages(paths.distDir, config.i18n.defaultLocale, config.i18n.locales, config.site.domain ?? null);
         if (languages) results.push(languages);
         results.push(checkKitParts(paths.distDir));
         results.push(checkSeo(paths.distDir, { name: config.business.name, phone: config.contact.phone ?? null, domain: config.site.domain ?? null }));
@@ -109,7 +109,7 @@ async function runImpeccable(distDir: string, prior: CheckResult[]): Promise<Che
   // Exit 0 = clean, 2 = findings (warnings included), 1 = could not scan.
   if (res.code === 0) return { name: "Impeccable design lint", status: "pass", detail: "No findings." };
   if (res.code !== 2) return { name: "Impeccable design lint", status: "warn", detail: `Could not scan: ${res.stderr.slice(-300)}` };
-  return summariseImpeccable(res.stdout);
+  return summariseImpeccable(res.stdout, distDir);
 }
 
 const IMPECCABLE_MAX_OUTPUT = 2_000_000;
@@ -117,13 +117,36 @@ const IMPECCABLE_MAX_OUTPUT = 2_000_000;
 interface ImpeccableFinding {
   readonly antipattern?: string;
   readonly severity?: string;
+  /** Absolute path of the page or stylesheet, a line (0 when unknown) and what was measured ("text #b9c0d0 on bg #172544"). */
+  readonly file?: string;
+  readonly line?: number;
+  readonly snippet?: string;
+}
+
+/** How many distinct places the build lists, so the agent can find them without the detail growing without end. */
+const IMPECCABLE_MAX_PLACES = 20;
+
+/**
+ * Where each finding is: the same measurement on several pages is one line ("gray-on-color: text #b9c0d0 on bg
+ * #172544 · about/, blog/"), so the agent can search the CSS for the exact colours or snippet instead of guessing.
+ */
+function impeccablePlaces(findings: readonly ImpeccableFinding[], distDir: string | null): string {
+  const groups = new Map<string, Set<string>>();
+  for (const f of findings) {
+    const where = f.file ? (distDir ? path.relative(distDir, f.file) : path.basename(f.file)) : "?";
+    const page = where.replace(/index\.html$/, "") || "/";
+    const key = `${f.antipattern ?? "unknown"}: ${(f.snippet ?? "").slice(0, 120)}${f.line ? ` (line ${f.line})` : ""}`;
+    (groups.get(key) ?? groups.set(key, new Set()).get(key)!).add(page);
+  }
+  const lines = [...groups].map(([k, pages]) => `${k} · ${[...pages].slice(0, 4).join(", ")}${pages.size > 4 ? ` +${pages.size - 4}` : ""}`);
+  return lines.slice(0, IMPECCABLE_MAX_PLACES).join("; ") + (lines.length > IMPECCABLE_MAX_PLACES ? `; …and ${lines.length - IMPECCABLE_MAX_PLACES} more` : "");
 }
 
 /**
  * Design findings are advice, not proof the site is broken: warnings are reported (and the agent can act
  * on them), only findings marked "error" fail the build.
  */
-export function summariseImpeccable(stdout: string): CheckResult {
+export function summariseImpeccable(stdout: string, distDir: string | null = null): CheckResult {
   let findings: ImpeccableFinding[];
   try {
     const parsed: unknown = JSON.parse(stdout);
@@ -142,6 +165,8 @@ export function summariseImpeccable(stdout: string): CheckResult {
   return {
     name: "Impeccable design lint",
     status: errors > 0 ? "fail" : findings.length > 0 ? "warn" : "pass",
-    detail: findings.length ? `${findings.length} finding(s)${errors ? `, ${errors} error(s)` : ""}: ${top}` : "No findings.",
+    detail: findings.length
+      ? `${findings.length} finding(s)${errors ? `, ${errors} error(s)` : ""}: ${top}. Where: ${impeccablePlaces(findings, distDir)}`
+      : "No findings.",
   };
 }

@@ -24,6 +24,12 @@ Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git 
 - Bilgi yapıştırılmış ama logo seçilmemişse iş başlamadan sorulur: "Yazı logosuyla başla" ya da "Önce logo ekleyeceğim". Böylece logosuz yapılıp sonra yeniden tasarlanan iş (ve harcanan kaynak) olmaz.
 - Logo başka bir müşterinin logosuyla aynıysa önce onay istenir; onaylanmazsa tasarım işi başlamaz.
 
+## Tasarım uyarılarının yeri, dil linkleri (1.21.1)
+
+- Impeccable tasarım uyarıları artık nerede olduklarını da söylüyor (sayfa ya da dosya, satır ve ölçülen değer, ör. "gray-on-color: text #b9c0d0 on bg #172544 · about/, blog/"). Agent uyarıların yerini tahmin etmek zorunda kalmıyor.
+- Dil düğmesinde tam adres (https://alanadi/en/about/) kullanılabiliyor; sitenin kendi alan adıysa aynı sayfa sayılır.
+- Çeviri işi 404 sayfasını ve imza hareketi demosunu çevirmiyor.
+
 ## Tasarım ve dil kuralları gözden geçirildi (1.21.0)
 
 - Başlık üstü "No. 01 · …" etiketleri artık zorunlu değil, yasak: etiket sadece gerçek bir bilgi taşıyorsa (fiyat, süre, sıra, ürün kodu).

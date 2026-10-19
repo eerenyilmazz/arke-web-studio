@@ -23,7 +23,10 @@ export function pageUrl(rel: string, locale = ""): string {
 }
 
 /** The page a site-internal href points to, as a path under dist ("about/index.html"), or null for files/outside. */
-function targetPage(href: string): string | null {
+function targetPage(raw: string, domain: string | null = null): string | null {
+  // A full address on the site's own domain (https://arkelabs.dev/en/about/) is the same page as /en/about/.
+  const own = domain ? new RegExp(`^https?://(www\\.)?${domain.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=/|$)`, "i") : null;
+  const href = own ? raw.replace(own, "") || "/" : raw;
   if (!href.startsWith("/") || href.startsWith("//")) return null;
   const clean = href.split(/[?#]/)[0]!;
   if (clean.endsWith("/")) return `${clean.slice(1)}index.html`;
@@ -40,7 +43,7 @@ function htmlPages(dir: string): string[] {
 const anchors = (html: string) => [...html.matchAll(/<a\b[^>]*>/gi)].map((m) => m[0]);
 const attr = (tag: string, name: string) => new RegExp(`\\s${name}=["']([^"']*)["']`, "i").exec(tag)?.[1] ?? null;
 
-export function checkLanguages(distDir: string, defaultLocale: string, locales: readonly string[]): CheckResult | null {
+export function checkLanguages(distDir: string, defaultLocale: string, locales: readonly string[], domain: string | null = null): CheckResult | null {
   const others = locales.filter((l) => l !== defaultLocale);
   if (others.length === 0 || !existsSync(distDir)) return null;
   const all = htmlPages(distDir);
@@ -73,13 +76,13 @@ export function checkLanguages(distDir: string, defaultLocale: string, locales: 
       const lang = attr(a, "hreflang");
       if (lang && lang !== from && locales.includes(lang)) {
         const want = counterpart(rel, from, lang);
-        if (exists.has(want) && targetPage(href) !== want)
+        if (exists.has(want) && targetPage(href, domain) !== want)
           problems.push(`${pageUrl(rel)}: the ${lang.toUpperCase()} link goes to ${href}, not ${pageUrl(want)}`);
         continue;
       }
       // Inside a translation, menu and text links stay in that language when the translated page exists.
       if (from !== defaultLocale) {
-        const target = targetPage(href);
+        const target = targetPage(href, domain);
         if (target && !target.startsWith(`${from}/`) && !SKIP.test(target) && exists.has(`${from}/${target}`))
           problems.push(`${pageUrl(rel)}: links to ${href} (default language) instead of ${pageUrl(target, from)}`);
       }

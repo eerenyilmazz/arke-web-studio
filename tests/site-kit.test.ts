@@ -65,6 +65,17 @@ describe("language check on built pages", () => {
   });
 });
 
+describe("language links with the full address", () => {
+  it("accepts https://<site domain>/en/about/ as the same page as /en/about/", () => {
+    const pages = {
+      "index.html": page(header('<a href="https://www.arkelabs.dev/en/" hreflang="en">EN</a>')),
+      "en/index.html": page(header('<a href="https://arkelabs.dev/" hreflang="tr">TR</a>', "/en/")),
+    };
+    expect(checkLanguages(dist(pages), "tr", ["tr", "en"], "arkelabs.dev")?.status).toBe("pass");
+    expect(checkLanguages(dist(pages), "tr", ["tr", "en"], null)?.status).toBe("fail"); // without a domain it cannot tell
+  });
+});
+
 describe("factory parts", () => {
   it("requires kit.js where a toggle is used and the phone menu for long menus", () => {
     const toggle = '<button data-theme-toggle class="theme-toggle"></button>';
