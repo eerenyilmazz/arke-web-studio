@@ -152,6 +152,9 @@ however clean. Every custom site has all of these, designed for its own business
    trade, drawn in SVG or the client's best photo) takes 40–60% of the hero and plays the signature motion at full
    size on load. Not an underline under a heading. The headline is set large in the heading font (clamp up to
    5–7rem) with the tagline.
+   **Calm is not plain**: the first screen carries the brand at full strength in both themes (a full-colour or
+   dark field from the palette, or the signature visual large); a white page with a small drawing reads as
+   unfinished. The restraint rules below are about decoration, not about the hero.
 2. **Labels only where they carry a fact.** Small labels in a mono or condensed face for real codes and values from
    the business's world: a price, a duration (`30 dk`), a step number in a real process, a batch or product code.
    **Never a label above every heading** ("No. 01 · Neden biz" on each section is the generated look); most

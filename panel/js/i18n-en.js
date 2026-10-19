@@ -1041,6 +1041,8 @@ export const EN = {
     "Bu görsel içerikte (ör. galeride) kullanılıyor. Önce oradan çıkarın.": "This image is used in the content (e.g. the gallery). Remove it there first.",
     "Bu görsel sitenin sayfalarında kullanılıyor. Önce agent'a sayfalardan kaldırmasını söyleyin (ya da yeni tasarımda kalkar).":
       "This image is used on the site's pages. Ask the agent to remove it from the pages first (or it goes with a new design).",
+    "İş bilgileri kaydedildi. Paket bundan sonraki işlerde geçerli; mevcut site kendiliğinden değişmez. Yeni paketle tasarım için Marka Kimliği → 'Marka Kimliğiyle Yeniden Tasarla'.":
+      "Business details saved. The package applies to the next jobs; the current site does not change by itself. For a design with the new package: Brand Identity → 'Redesign with the Brand Identity'.",
   },
   patterns: [
     ["{} silinecek.", "{} will be deleted."],

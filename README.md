@@ -24,6 +24,12 @@ Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git 
 - Bilgi yapıştırılmış ama logo seçilmemişse iş başlamadan sorulur: "Yazı logosuyla başla" ya da "Önce logo ekleyeceğim". Böylece logosuz yapılıp sonra yeniden tasarlanan iş (ve harcanan kaynak) olmaz.
 - Logo başka bir müşterinin logosuyla aynıysa önce onay istenir; onaylanmazsa tasarım işi başlamaz.
 
+## Para birimi kontrolü, paket ipucu (1.21.2)
+
+- Yeni derleme kontrolü: sayfalarda müşterinin para birimi dışında bir işaretle yazılmış tutar (ör. Türk müşteride "£100,000") derlemeyi durdurur; her dilde fiyatlar içerikteki para birimiyle kalır.
+- İş Takibi'nde paket değişince panel söyler: paket sonraki işlerde geçerli, mevcut site kendiliğinden değişmez; yeni paketle tasarım için "Marka Kimliğiyle Yeniden Tasarla".
+- Kural: ilk ekran markayı iki temada da tam güçte taşır (sade ≠ boş); sadelik kuralları süs için, hero için değil.
+
 ## Tasarım uyarılarının yeri, dil linkleri (1.21.1)
 
 - Impeccable tasarım uyarıları artık nerede olduklarını da söylüyor (sayfa ya da dosya, satır ve ölçülen değer, ör. "gray-on-color: text #b9c0d0 on bg #172544 · about/, blog/"). Agent uyarıların yerini tahmin etmek zorunda kalmıyor.

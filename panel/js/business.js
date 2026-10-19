@@ -129,7 +129,13 @@ export function businessForm(d) {
           }),
         );
         if (r) {
-          toast("İş bilgileri kaydedildi.");
+          // A package only changes how the next jobs run; the site as it is stays the same until a design job.
+          const packageChanged = (b.budgetMode || "") !== bmode.value;
+          toast(
+            packageChanged
+              ? "İş bilgileri kaydedildi. Paket bundan sonraki işlerde geçerli; mevcut site kendiliğinden değişmez. Yeni paketle tasarım için Marka Kimliği → 'Marka Kimliğiyle Yeniden Tasarla'."
+              : "İş bilgileri kaydedildi.",
+          );
           loadClients();
         }
       },

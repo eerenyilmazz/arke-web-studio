@@ -155,3 +155,16 @@ describe("kit.js in a real browser", () => {
     }
   });
 });
+
+describe("prices in the client's currency", () => {
+  it("fails a page that shows another currency's sign before or after an amount", async () => {
+    const { checkCurrency } = await import("../src/lib/currency-check.js");
+    expect(checkCurrency(dist({ "index.html": page("<p>From ₺100.000</p><p>25.000 TL</p>") }), "TRY").status).toBe("pass");
+    const wrong = checkCurrency(dist({ "en/index.html": page("<p class=big>£100,000</p><p>From ₺100,000</p>") }), "TRY");
+    expect(wrong.status).toBe("fail");
+    expect(wrong.detail).toContain('en/index.html: "£1');
+    expect(checkCurrency(dist({ "index.html": page("<p>100 €</p>") }), "GBP").status).toBe("fail");
+    // Code samples and scripts are not prices.
+    expect(checkCurrency(dist({ "index.html": page("<pre>const $1 = 2</pre><script>var a='$5'</script><p>£40</p>") }), "GBP").status).toBe("pass");
+  });
+});
