@@ -24,6 +24,14 @@ Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git 
 - Bilgi yapıştırılmış ama logo seçilmemişse iş başlamadan sorulur: "Yazı logosuyla başla" ya da "Önce logo ekleyeceğim". Böylece logosuz yapılıp sonra yeniden tasarlanan iş (ve harcanan kaynak) olmaz.
 - Logo başka bir müşterinin logosuyla aynıysa önce onay istenir; onaylanmazsa tasarım işi başlamaz.
 
+## Panel görünümü cilalandı (1.22.1)
+
+Impeccable'ın "polish" adımıyla, panel bir iş aracı olduğu için "Operate" kurallarıyla (taste-skill tanıtım sayfaları için, panel ekranlarına uygulanmaz):
+- Tüm alanlar tek tip: sayı, tarih, fiyat kutuları ve açılır listeler artık tarayıcının varsayılan görünümüne düşmüyor; açılır listelerde tek tip ok, odakta yumuşak halka, devre dışıyken gri.
+- Düğmeler: basınca küçük bir tepki; devre dışı düğmeler (ör. "Arşivle" yazılmadan) soluk kırmızı yerine nötr gri.
+- Onay pencereleri kısa bir geçişle açılıyor; yazılması gereken kelime küçük bir etiket olarak görünüyor.
+- Ayarlar ve kenar çubuğundaki büyük harfli mono etiketler normal başlık oldu; seçim rengi ve kaydırma çubuğu panel renklerinde.
+
 ## Yeni müşteri adım adım (1.22.0)
 
 - Yeni Müşteri artık 5 adımlı: **1. İşletme**, **2. Paket ve fiyat** (paket, site fiyatı, teslim tarihi, ek seçenekler ve fiyatları), **3. Logo ve fotoğraflar**, **4. Bilgiler**, **5. Özet ve başlat**.

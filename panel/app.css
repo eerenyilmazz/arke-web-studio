@@ -934,3 +934,73 @@ span.chip { cursor: default; }
 .nc-final { justify-content: flex-end; gap: .6rem; flex-wrap: wrap; }
 .nc-wizard .two > label { display: grid; gap: .35rem; align-content: start; }
 .nc-wizard .two input { width: 100%; }
+
+/* ---------- 1.23: one control system (Impeccable polish, Operate mode) ----------
+ * Every field the panel draws gets the same look, so a control added later (a number, a date, a price box)
+ * never falls back to the browser's default. Zero specificity (:where), so the older per-form rules above still
+ * set their own widths and margins. */
+:where(input:not([type]), input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="number"], input[type="date"], input[type="password"], input[type="search"]:not(#search):not(.lib-search), select, textarea.field) {
+  font: inherit;
+  color: var(--ink);
+  background-color: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  padding: 0.55rem 0.7rem;
+  min-height: 2.6rem;
+  caret-color: var(--accent);
+  transition: border-color var(--t-hover) ease, box-shadow var(--t-hover) ease;
+}
+:where(input, select, textarea):hover:not(:disabled):not(:focus) { border-color: color-mix(in srgb, var(--ink-3) 70%, var(--line-strong)); }
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+:where(input, select, textarea):disabled { background-color: var(--surface-2); color: var(--ink-3); cursor: not-allowed; }
+::placeholder { color: var(--ink-3); opacity: 1; }
+input[type="number"] { font-variant-numeric: tabular-nums; }
+/* Selects: one drawn chevron in the ink colour instead of each browser's own arrow. */
+select {
+  appearance: none;
+  padding-inline-end: 2.2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position: calc(100% - 1.05rem) 50%, calc(100% - 0.72rem) 50%;
+  background-size: 0.36rem 0.36rem, 0.36rem 0.36rem;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width: 1.05rem; height: 1.05rem; }
+
+/* Buttons: a short press, and one disabled look for every kind (a faded red read as a broken colour). */
+.btn, .chip, .icon-btn { transition: background-color var(--t-hover) ease, border-color var(--t-hover) ease, color var(--t-hover) ease, transform var(--t-press) var(--ease-out); }
+.btn:active:not(:disabled), .icon-btn:active { transform: scale(0.97); }
+.btn:disabled, .btn-primary:disabled, .btn-danger-solid:disabled { opacity: 1; background: var(--surface-2); border-color: var(--line); color: var(--ink-3); filter: none; }
+
+/* Dialogs: the phrase to type sits as a small chip, not a full-width bar; the dialog arrives with a short fade. */
+.ask-dialog label code, .approve-dialog label code { justify-self: start; padding: 0.15rem 0.45rem; font-size: 0.85rem; }
+.ask-dialog .ask-actions, .approve-dialog .row:last-child { justify-content: flex-end; }
+.ask-dialog[open], .approve-dialog[open] { animation: dialog-in var(--t-ui) var(--ease-out); }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } }
+
+/* Browser surfaces in the panel's own colours. */
+::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+html { scrollbar-color: var(--line-strong) transparent; }
+td, .price, .p-big, .meter, .mono { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-dialog[open], .approve-dialog[open] { animation: none; }
+  .btn:active:not(:disabled), .icon-btn:active { transform: none; }
+}
+
+/* Group titles are headings, not mono capital eyebrows (Impeccable: no kicker above a heading, no mono costume). */
+.sidebar .group-title { font: 600 0.8rem/1.2 Geist, ui-sans-serif, system-ui, sans-serif; letter-spacing: 0; text-transform: none; color: var(--rail-ink-2); }
+.settings-title { font: 650 1.02rem/1.3 Geist, ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.005em; text-transform: none; color: var(--ink); margin: 0.4rem 0 0.75rem; }
+/* The drawn select chevron survives the per-form "background" shorthands above. */
+body select:not([multiple]):not([size]) {
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position: calc(100% - 1.05rem) 50%, calc(100% - 0.72rem) 50%;
+  background-size: 0.36rem 0.36rem, 0.36rem 0.36rem;
+  background-repeat: no-repeat;
+  padding-inline-end: 2.2rem;
+}
+.brand small { font-family: Geist, ui-sans-serif, system-ui, sans-serif; font-size: 0.74rem; letter-spacing: 0; }
