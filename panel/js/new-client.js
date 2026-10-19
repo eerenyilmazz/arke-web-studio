@@ -1,6 +1,7 @@
 // The new-client form and the what-to-paste guide.
 import { api, ask, guarded, h, ignoreOptional, LANG_NAMES, PACKAGE_NAMES, toast } from "./core.js";
-import { addonsEditor } from "./addons.js";
+import { addonLabel, addonsEditor } from "./addons.js";
+import { locale } from "./i18n.js";
 import { runAgent } from "./jobs.js";
 import { rankedDesigns } from "./library.js";
 
@@ -80,7 +81,6 @@ function mediaPicker(onChange) {
   const el = h(
     "section",
     { class: "card stack nc-media" },
-    h("h2", { class: "nc-title", text: "2. Logo ve fotoğraflar" }),
     h("p", { class: "help", text: "İsteğe bağlı. PNG, JPG, WebP, AVIF ya da SVG." }),
     h("div", { class: "nc-field" }, h("span", { class: "nc-label", text: "Logo" }), logoInput, logoBox),
     h("div", { class: "nc-field" }, h("span", { class: "nc-label", text: "Fotoğraflar" }), photoInput, photoBox),
@@ -161,6 +161,134 @@ function marketFields() {
   return { country, lang };
 }
 
+const MARKET_CURRENCY = { TR: "TRY", GB: "GBP", IE: "EUR", DE: "EUR", NL: "EUR", US: "USD" };
+const SIGNS = { TRY: "₺", GBP: "£", EUR: "€", USD: "$" };
+const LABEL_HOSTING = { managed: "Bizim Cloudflare hesabımız", client: "Müşterinin kendi hesabı" };
+
+/** The library design picker, shown only when the library has designs; best fit for the typed sector first. */
+function libraryField(industry) {
+  const select = h("select", { id: "nc-design" }, h("option", { value: "" }, "Yeni tasarım (kütüphane kullanma)"));
+  let designs = [];
+  const fill = () => {
+    const keep = select.value;
+    select.replaceChildren(
+      h("option", { value: "" }, "Yeni tasarım (kütüphane kullanma)"),
+      ...rankedDesigns(designs, "", industry.value).map((x) =>
+        h("option", { value: x.id }, `${x.score > 0 ? "★ " : ""}${x.name}${x.sector ? ` · ${x.sector}` : ""}`),
+      ),
+    );
+    select.value = keep;
+  };
+  const el = h(
+    "label",
+    { for: "nc-design", hidden: true },
+    "Başlangıç tasarımı (isteğe bağlı)",
+    h("span", {
+      class: "help",
+      text: "Kütüphanedeki bir tasarımdan başlanır. Sabit alanlar (ad, telefon, e-posta…) panel tarafından doldurulur; agent yalnızca kalan metinleri ve markayı uyarlar.",
+    }),
+    select,
+  );
+  api("GET", "/api/library")
+    .then((r) => {
+      designs = r.designs;
+      fill();
+      el.hidden = designs.length === 0;
+    })
+    .catch(ignoreOptional);
+  industry.addEventListener("change", fill);
+  return { select, el, label: () => select.selectedOptions[0]?.textContent || "" };
+}
+
+/** Step 2's fields: the site price, a delivery date and the extras with their prices (currency from the market). */
+function pricingFields(country, lang, currency) {
+  const price = h("input", { id: "nc-price", type: "number", min: 0, step: "50", placeholder: "ör. 18000" });
+  const deadline = h("input", { id: "nc-deadline", type: "date" });
+  let extras = addonsEditor([], { prices: true, skip: ["language"], idPrefix: "nc-ad", currencySign: SIGNS[currency()] });
+  const extrasBox = h("div", {}, extras.el);
+  const langPrice = h("input", { id: "nc-lang-price", type: "number", min: 0, step: "any", placeholder: "Fiyat", "aria-label": "İkinci dil fiyatı" });
+  const langRow = h(
+    "div",
+    { class: "addon-row" },
+    h("span", { class: "check" }, h("span", {}, h("strong", { text: "İkinci dil" }), h("span", { class: "help", text: "" }))),
+    h("span", { class: "row nowrap addon-price" }, langPrice, h("span", { class: "muted lang-sign" })),
+  );
+  const showLangRow = () => {
+    langRow.hidden = !lang.value;
+    langRow.querySelector(".lang-sign").textContent = SIGNS[currency()];
+    langRow.querySelector(".help").textContent = lang.value ? `${LANG_NAMES[lang.value]} (1. adımda seçildi)` : "";
+  };
+  lang.addEventListener("change", showLangRow);
+  country.addEventListener("change", () => {
+    // The currency follows the market; the extras keep their ticks.
+    const chosen = extras.value();
+    extras = addonsEditor(chosen, { prices: true, skip: ["language"], idPrefix: "nc-ad", currencySign: SIGNS[currency()] });
+    extrasBox.replaceChildren(extras.el);
+    showLangRow();
+  });
+  const soldExtras = () => [
+    ...(lang.value ? [{ id: "language", price: langPrice.value === "" ? null : Number(langPrice.value), value: lang.value }] : []),
+    ...extras.value(),
+  ];
+  const total = () => (price.value === "" ? null : Number(price.value) + soldExtras().reduce((t, a) => t + (a.price || 0), 0));
+  return { price, deadline, langRow, extrasBox, soldExtras, total, showLangRow };
+}
+
+/** The last step: everything chosen so far, what is missing and what each button does. */
+function reviewStep(box, f, submit) {
+  const { name, industry, country, lang, pkg, library, media, info, hosting, soldExtras, total, money, deadline } = f;
+  const logo = media.logo();
+  const photos = media.photos();
+  const text = info.value.trim();
+  const sold = soldExtras();
+  const rows = [
+    ["İşletme", `${name.value.trim()} · ${industry.value.trim()}`],
+    ["Ülke ve dil", `${country.selectedOptions[0]?.textContent} · ${lang.selectedOptions[0]?.textContent}`],
+    ["Barındırma", LABEL_HOSTING[hosting()]],
+    ["Paket", pkg.select.selectedOptions[0]?.textContent],
+    [
+      "Ek seçenekler",
+      sold.length
+        ? sold.map((a) => `${addonLabel(a.id)}${a.value ? ` (${LANG_NAMES[a.value]})` : ""}${a.price ? ` ${money(a.price)}` : ""}`).join(", ")
+        : "Yok (tek tema, WhatsApp ve randevu düğmesi yok)",
+    ],
+    ["Fiyat", total() === null ? "Girilmedi (sonra İş Takibi'nde)" : `Toplam ${money(total())}`],
+    ["Teslim", deadline.value || "Girilmedi"],
+    ["Logo", logo ? logo.name : "Yok: agent işletme adıyla bir yazı logosu tasarlar"],
+    ["Fotoğraflar", photos.length ? `${photos.length} fotoğraf` : "Yok: fotoğraf uydurulmaz, çizim kullanılır"],
+    ["Bilgiler", text ? `${text.length} karakter` : "Yok"],
+    ...(library.select.value ? [["Başlangıç tasarımı", library.label()]] : []),
+  ];
+  const warnings = [
+    !logo && text ? "Logo yok. Logo sonra gelirse markayı yeniden tasarlamak ayrı bir iş olur." : null,
+    !text ? "Bilgi yok: site şimdi başlatılamaz. Müşteri kaydedilir; bilgi gelince Düzenleme'den başlatırsınız." : null,
+  ].filter(Boolean);
+  box.replaceChildren(
+    h(
+      "dl",
+      { class: "nc-summary-list" },
+      ...rows.flatMap(([k, v]) => [h("dt", { text: k }), h("dd", { text: v, "data-no-i18n": k === "İşletme" ? "" : null })]),
+    ),
+    ...warnings.map((w) => h("p", { class: "notice small", text: w })),
+    h(
+      "div",
+      { class: "row nc-final" },
+      h("button", { class: "btn", type: "button", id: "nc-save", onclick: () => submit(false) }, "Kaydet, siteyi sonra başlat"),
+      h(
+        "button",
+        { class: "btn btn-primary btn-lg", type: "button", id: "nc-start", disabled: !text, onclick: () => submit(true) },
+        "Kaydet ve siteyi yapmaya başla",
+      ),
+    ),
+    h("p", { class: "help", text: "Kaynak sadece 'siteyi yapmaya başla' ile harcanır. Kaydetmek ücretsizdir." }),
+  );
+}
+
+/**
+ * New client, step by step: business, package and price, logo and photos, information, then a summary. Nothing is
+ * saved and no resources are used until the last step, where Eren sees everything and decides whether the site
+ * starts now or later.
+ */
 export function renderNew() {
   const name = h("input", { type: "text", id: "nc-name", required: true, maxlength: 80, autocomplete: "off" });
   const slug = h("input", { type: "text", id: "nc-slug", required: true, maxlength: 40, pattern: "[a-z0-9][a-z0-9-]{1,38}[a-z0-9]" });
@@ -179,132 +307,30 @@ export function renderNew() {
   });
   const { country, lang } = marketFields();
   const pkg = packageField();
-  // Optional start design from the library; best fit for the typed sector first.
-  const startDesign = h("select", { id: "nc-design" }, h("option", { value: "" }, "Yeni tasarım (kütüphane kullanma)"));
-  let libDesigns = [];
-  const fillDesigns = () => {
-    const keep = startDesign.value;
-    startDesign.replaceChildren(
-      h("option", { value: "" }, "Yeni tasarım (kütüphane kullanma)"),
-      ...rankedDesigns(libDesigns, "", industry.value).map((x) =>
-        h("option", { value: x.id }, `${x.score > 0 ? "★ " : ""}${x.name}${x.sector ? ` · ${x.sector}` : ""}`),
-      ),
-    );
-    startDesign.value = keep;
-  };
-  api("GET", "/api/library")
-    .then(({ designs }) => {
-      libDesigns = designs;
-      fillDesigns();
-      designRow.hidden = designs.length === 0;
-    })
-    .catch(ignoreOptional);
-  industry.addEventListener("change", fillDesigns);
-  const designRow = h(
-    "label",
-    { for: "nc-design", hidden: true },
-    "Başlangıç tasarımı (isteğe bağlı)",
-    h("span", {
-      class: "help",
-      text: "Kütüphanedeki bir tasarımdan başlanır. Sabit alanlar (ad, telefon, e-posta…) panel tarafından doldurulur; agent yalnızca kalan metinleri ve markayı uyarlar.",
-    }),
-    startDesign,
-  );
-
-  // Two columns on wide screens: who the business is on the left, what the client sent on the right.
+  const library = libraryField(industry);
   const hostingChoice = h(
     "div",
     { class: "seg-choice", role: "radiogroup", "aria-label": "Barındırma" },
-    h("label", {}, h("input", { type: "radio", name: "hosting", value: "managed", checked: true }), h("span", { text: "Bizim Cloudflare hesabımız" })),
-    h("label", {}, h("input", { type: "radio", name: "hosting", value: "client" }), h("span", { text: "Müşterinin kendi hesabı" })),
-  );
-  // Extras the client asked for: the agent builds exactly these (the second language comes from "Site dili").
-  const extras = addonsEditor([], { skip: ["language"], idPrefix: "nc-ad" });
-  const MARKET_CURRENCY = { TR: "TRY", GB: "GBP", IE: "EUR", DE: "EUR", NL: "EUR", US: "USD" };
-  const soldExtras = () => [...(lang.value ? [{ id: "language", price: null, value: lang.value }] : []), ...extras.value()];
-  // What pressing the button will do, kept up to date as the form is filled.
-  const summary = h("p", { class: "small muted nc-summary", role: "status" });
-  let media = null;
-  const showSummary = () => {
-    if (!media) return; // the picker draws once while it is being built
-    const parts = [];
-    const l = media.logo();
-    const n = media.photos().length;
-    if (l) parts.push("logo yüklenir");
-    if (n) parts.push(`${n} fotoğraf yüklenir`);
-    parts.push(info.value.trim() ? "site hemen hazırlanmaya başlar" : "site bilgi gelince hazırlanır");
-    summary.textContent = `Oluşturunca: ${parts.join(", ")}.`;
-  };
-  media = mediaPicker(() => showSummary());
-  info.addEventListener("input", showSummary);
-  showSummary();
-  const form = h(
-    "form",
-    {
-      class: "new-client",
-      onsubmit: async (e) => {
-        e.preventDefault();
-        const text = info.value.trim();
-        const logo = media.logo();
-        const photos = media.photos();
-        // Decided here, before any resources are spent: a design made without the logo has to be redone later.
-        if (text && !logo) {
-          const go = await ask({
-            title: "Logo yüklenmedi",
-            body: `Agent işletme adıyla bir yazı logosu tasarlar ve markayı ona göre kurar. Logo sonra gelirse markayı yeniden tasarlamak ayrı bir iş olur.${photos.length ? "" : "\n\nFotoğraf da yok: fotoğraf uydurulmaz, çizim ve şekiller kullanılır."}`,
-            confirm: "Yazı logosuyla başla",
-            cancel: "Önce logo ekleyeceğim",
-          });
-          if (!go) {
-            media.focusLogo();
-            return;
-          }
-        }
-        const hosting = form.querySelector("input[name=hosting]:checked")?.value;
-        const res = await guarded(() =>
-          api("POST", "/api/clients", {
-            businessName: name.value.trim(),
-            slug: slug.value.trim(),
-            industry: industry.value.trim(),
-            hostingModel: hosting,
-            country: country.value,
-            extraLocale: lang.value || undefined,
-            ...(startDesign.value ? { startDesign: startDesign.value } : {}),
-          }),
-        );
-        if (!res) return;
-        // Recorded before any job, so the very first design already follows what was sold (prices come later).
-        await guarded(() =>
-          api("PUT", `/api/clients/${res.slug}/business`, {
-            currency: MARKET_CURRENCY[country.value] || "EUR",
-            addons: soldExtras(),
-            budgetMode: pkg.select.value,
-          }),
-        );
-        const mediaOk = await uploadMedia(res.slug, logo, photos);
-        toast("Müşteri oluşturuldu.");
-        location.hash = `#/musteri/${res.slug}/duzenle`;
-        // Without the right logo no design job starts; the client page shows what to fix.
-        if (!text || !mediaOk) return;
-        await runAgent(res.slug, "create-site", { freeText: text, ...(startDesign.value ? { libraryId: startDesign.value } : {}) });
-      },
-    },
-    h(
-      "header",
-      { class: "nc-head" },
-      h("h1", { text: "Yeni Müşteri" }),
-      h("p", {
-        class: "muted",
-        text: "Üç adım: işletmeyi tanımlayın, varsa logo ve fotoğrafları seçin, müşteriden gelen bilgileri yapıştırın. Bilgi yapıştırırsanız site hemen hazırlanmaya başlar.",
-      }),
+    ...Object.entries(LABEL_HOSTING).map(([v, l]) =>
+      h("label", {}, h("input", { type: "radio", name: "hosting", value: v, checked: v === "managed" }), h("span", { text: l })),
     ),
-    h(
-      "div",
-      { class: "nc-col" },
-      h(
-        "section",
-        { class: "card stack nc-business" },
-        h("h2", { class: "nc-title", text: "1. İşletme" }),
+  );
+  const hosting = () => hostingChoice.querySelector("input:checked")?.value || "managed";
+  const currency = () => MARKET_CURRENCY[country.value] || "EUR";
+  const pricing = pricingFields(country, lang, currency);
+  const { price, deadline } = pricing;
+  const soldExtras = pricing.soldExtras;
+  const total = pricing.total;
+  const money = (n) => `${SIGNS[currency()]}${Number(n).toLocaleString(locale())}`;
+  // The summary is drawn on the last step, so the picker needs no change hook here.
+  const media = mediaPicker(() => undefined);
+
+  const steps = [
+    {
+      title: "İşletme",
+      el: h(
+        "div",
+        { class: "stack" },
         h(
           "div",
           { class: "two" },
@@ -320,34 +346,141 @@ export function renderNew() {
         ),
         h("div", { class: "two" }, h("label", { for: "nc-country" }, "Ülke", country), h("label", { for: "nc-lang" }, "Site dili", lang)),
         h("div", { class: "nc-field" }, h("span", { class: "nc-label", text: "Barındırma" }), hostingChoice),
+        library.el,
+      ),
+      fields: [name, slug, industry],
+    },
+    {
+      title: "Paket ve fiyat",
+      el: h(
+        "div",
+        { class: "stack" },
         pkg.el,
+        h(
+          "div",
+          { class: "two" },
+          h("label", { for: "nc-price" }, "Site fiyatı (isteğe bağlı)", price),
+          h("label", { for: "nc-deadline" }, "Teslim tarihi (isteğe bağlı)", deadline),
+        ),
         h(
           "div",
           { class: "nc-field" },
           h("span", { class: "nc-label", text: "Ek seçenekler" }),
-          h("span", { class: "help", text: "Müşteri ne istediyse işaretleyin; agent sadece bunları yapar. Fiyatları sonra İş Takibi'nde girersiniz." }),
-          extras.el,
+          h("span", { class: "help", text: "Müşteri ne istediyse işaretleyin ve fiyatını yazın; agent sadece bunları yapar, teklifte ayrı satır olur." }),
+          pricing.langRow,
+          pricing.extrasBox,
         ),
-        designRow,
       ),
-    ),
-    h(
-      "div",
-      { class: "nc-col" },
-      media.el,
-      h(
-        "section",
-        { class: "card stack nc-info" },
-        h("h2", { class: "nc-title", text: "3. Müşteriden gelen bilgiler" }),
-        h("label", { for: "nc-info", class: "sr-only" }, "Elindeki bilgiler"),
-        h("p", { class: "help", text: "İsteğe bağlı. Doldurursanız site hemen hazırlanmaya başlar; eksik bilgi olursa size sorulur." }),
+      fields: [price],
+    },
+    { title: "Logo ve fotoğraflar", el: media.el, fields: [] },
+    {
+      title: "Bilgiler",
+      el: h(
+        "div",
+        { class: "stack" },
+        h("label", { for: "nc-info" }, "Müşteriden gelen bilgiler"),
+        h("p", {
+          class: "help",
+          text: "Müşterinin e-postasını, WhatsApp mesajını ya da kendi notlarını yapıştırın. Eksik bilgi olursa agent size sorar; uydurmaz.",
+        }),
         info,
         infoGuide(info),
       ),
+      fields: [],
+    },
+    { title: "Özet ve başlat", el: h("div", { class: "stack nc-review" }), fields: [] },
+  ];
+
+  const drawReview = () =>
+    reviewStep(steps[4].el, { name, industry, country, lang, pkg, library, media, info, hosting, soldExtras, total, money, deadline }, submit);
+  let current = 0;
+  const stepper = h("ol", { class: "nc-steps", "aria-label": "Adımlar" });
+  const body = h("section", { class: "card stack nc-step" });
+  const back = h("button", { class: "btn", type: "button", onclick: () => go(current - 1) }, "Geri");
+  const next = h("button", { class: "btn btn-primary", type: "button", id: "nc-next", onclick: () => go(current + 1) }, "İleri");
+  const valid = (i) => steps[i].fields.every((f) => f.checkValidity());
+  const go = (i) => {
+    if (i < 0 || i >= steps.length) return;
+    // Forward only through valid steps; back is always allowed.
+    for (let k = current; k < i; k++) {
+      if (!valid(k)) {
+        current = k;
+        draw();
+        steps[k].fields.find((f) => !f.checkValidity())?.reportValidity();
+        return;
+      }
+    }
+    current = i;
+    draw();
+  };
+  const draw = () => {
+    if (current === 4) drawReview();
+    stepper.replaceChildren(
+      ...steps.map((s, i) =>
+        h(
+          "li",
+          { class: i === current ? "is-current" : i < current ? "is-done" : "" },
+          h(
+            "button",
+            { type: "button", onclick: () => go(i), "aria-current": i === current ? "step" : null },
+            h("span", { class: "nc-step-no", text: String(i + 1) }),
+            s.title,
+          ),
+        ),
+      ),
+    );
+    body.replaceChildren(h("h2", { class: "nc-title", text: `${current + 1}. ${steps[current].title}` }), steps[current].el);
+    back.hidden = current === 0;
+    next.hidden = current === steps.length - 1;
+  };
+
+  const submit = async (start) => {
+    const res = await guarded(() =>
+      api("POST", "/api/clients", {
+        businessName: name.value.trim(),
+        slug: slug.value.trim(),
+        industry: industry.value.trim(),
+        hostingModel: hosting(),
+        country: country.value,
+        extraLocale: lang.value || undefined,
+        ...(library.select.value ? { startDesign: library.select.value } : {}),
+      }),
+    );
+    if (!res) return;
+    await guarded(() =>
+      api("PUT", `/api/clients/${res.slug}/business`, {
+        price: price.value === "" ? null : Number(price.value),
+        currency: currency(),
+        deadline: deadline.value || null,
+        payment: price.value === "" ? "none" : "quoted",
+        addons: soldExtras(),
+        budgetMode: pkg.select.value,
+      }),
+    );
+    const mediaOk = await uploadMedia(res.slug, media.logo(), media.photos());
+    toast("Müşteri kaydedildi.");
+    location.hash = `#/musteri/${res.slug}/duzenle`;
+    // Without the right logo no design job starts; the client page shows what to fix.
+    if (!start || !mediaOk) return;
+    await runAgent(res.slug, "create-site", { freeText: info.value.trim(), ...(library.select.value ? { libraryId: library.select.value } : {}) });
+  };
+
+  pricing.showLangRow();
+  draw();
+  return h(
+    "form",
+    { class: "new-client nc-wizard", onsubmit: (e) => e.preventDefault() },
+    h(
+      "header",
+      { class: "nc-head" },
+      h("h1", { text: "Yeni Müşteri" }),
+      h("p", { class: "muted", text: "Adım adım doldurun; her şey netleşince son adımda siteyi başlatın. O ana kadar hiç kaynak harcanmaz." }),
     ),
-    h("footer", { class: "nc-foot" }, summary, h("button", { class: "btn btn-primary btn-lg", type: "submit" }, "Müşteriyi oluştur")),
+    stepper,
+    body,
+    h("footer", { class: "nc-foot" }, back, next),
   );
-  return form;
 }
 
 // ---------------------------------------------------------------- what to paste

@@ -24,6 +24,13 @@ Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git 
 - Bilgi yapıştırılmış ama logo seçilmemişse iş başlamadan sorulur: "Yazı logosuyla başla" ya da "Önce logo ekleyeceğim". Böylece logosuz yapılıp sonra yeniden tasarlanan iş (ve harcanan kaynak) olmaz.
 - Logo başka bir müşterinin logosuyla aynıysa önce onay istenir; onaylanmazsa tasarım işi başlamaz.
 
+## Yeni müşteri adım adım (1.22.0)
+
+- Yeni Müşteri artık 5 adımlı: **1. İşletme**, **2. Paket ve fiyat** (paket, site fiyatı, teslim tarihi, ek seçenekler ve fiyatları), **3. Logo ve fotoğraflar**, **4. Bilgiler**, **5. Özet ve başlat**.
+- Son adıma kadar hiçbir şey kaydedilmez ve hiç kaynak harcanmaz. Özet her şeyi gösterir (toplam fiyat, logo var mı, eksikler) ve iki seçenek sunar: "Kaydet, siteyi sonra başlat" (ücretsiz) ya da "Kaydet ve siteyi yapmaya başla".
+- Bilgi girilmediyse site başlatılamaz, sadece kaydedilir. Fiyat girildiyse ödeme durumu "Teklif verildi" olarak kaydedilir.
+- 1.21.2 ile gelenler de bu sürümde: para birimi kontrolü, paket değişince ipucu, ilk ekran kuralı.
+
 ## Para birimi kontrolü, paket ipucu (1.21.2)
 
 - Yeni derleme kontrolü: sayfalarda müşterinin para birimi dışında bir işaretle yazılmış tutar (ör. Türk müşteride "£100,000") derlemeyi durdurur; her dilde fiyatlar içerikteki para birimiyle kalır.

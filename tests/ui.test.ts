@@ -141,7 +141,10 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     await page.fill("#nc-industry", "bakery");
     await page.dispatchEvent("#nc-industry", "change");
     await expect.poll(() => page.locator("#nc-design option").allInnerTexts()).toContain("★ UI Fırın · bakery");
-    await page.getByRole("button", { name: "Müşteriyi oluştur" }).click();
+    // Nothing is saved until the last step; with no information the site cannot start yet, only be saved.
+    for (let i = 0; i < 4; i++) await page.click("#nc-next");
+    expect(await page.locator("#nc-start").isDisabled()).toBe(true);
+    await page.click("#nc-save");
     await page.waitForURL(/#\/musteri\/ekmek-evi/);
     await expect.poll(() => page.locator("h1").first().textContent()).toContain("Ekmek Evi");
     expect(errors).toEqual([]);

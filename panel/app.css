@@ -917,3 +917,20 @@ span.chip { cursor: default; }
 .addon-row .check input { margin-top: .2rem; accent-color: var(--accent); }
 .addon-row select { width: auto; }
 .addon-price input { width: 7rem; }
+
+/* New client wizard */
+.nc-wizard { grid-template-columns: minmax(0, 1fr); max-width: 52rem; }
+.nc-steps { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; margin: 0; }
+.nc-steps button { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .75rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); font: inherit; font-size: .88rem; cursor: pointer; }
+.nc-step-no { display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 999px; background: var(--line); font-size: .75rem; font-weight: 700; }
+.nc-steps .is-current button { border-color: var(--accent); color: var(--ink); font-weight: 600; }
+.nc-steps .is-current .nc-step-no { background: var(--accent); color: var(--accent-ink, #fff); }
+.nc-steps .is-done .nc-step-no { background: var(--accent-soft); color: var(--accent-text); }
+.nc-step { margin: 0; }
+.nc-wizard .nc-foot { justify-content: space-between; }
+.nc-summary-list { display: grid; grid-template-columns: minmax(8rem, max-content) 1fr; gap: .45rem 1rem; margin: 0; }
+.nc-summary-list dt { color: var(--ink-2); font-size: .9rem; }
+.nc-summary-list dd { margin: 0; overflow-wrap: anywhere; }
+.nc-final { justify-content: flex-end; gap: .6rem; flex-wrap: wrap; }
+.nc-wizard .two > label { display: grid; gap: .35rem; align-content: start; }
+.nc-wizard .two input { width: 100%; }

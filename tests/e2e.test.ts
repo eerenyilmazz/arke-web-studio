@@ -52,27 +52,42 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     const { base } = fp;
     const { page, errors } = await openPanel(browser, base, "#/yeni");
 
-    // 1. The new-client form starts the site job with what was pasted.
+    // 1. The new-client wizard: business, package and price, logo and photos, information, then the summary.
+    const next = () => page.click("#nc-next");
     await page.fill("#nc-name", "Ekmek Evi");
     await page.fill("#nc-industry", "bakery");
     await page.selectOption("#nc-country", "GB");
-    await page.fill("#nc-info", "Family bakery in Leeds. Sourdough £4.50. Phone 0113 496 0000.");
-    // Extras the client asked for: recorded before the first job, so the design follows them.
-    await page.check("#nc-ad-theme");
-    await page.check("#nc-ad-whatsapp");
+    await next();
+    // Package, price and the extras the client asked for: recorded before the first job, so the design follows them.
     await page.selectOption("#nc-package", "premium");
-    // Step 2: the logo and a photo are chosen in the form and uploaded once the client exists (no "no logo" question).
+    await page.fill("#nc-price", "900");
+    await page.check("#nc-ad-theme");
+    await page.fill("#nc-ad-theme-price", "150");
+    await page.check("#nc-ad-whatsapp");
+    await next();
+    // The logo and a photo are uploaded once the client exists.
     await page.setInputFiles("#nc-logo", { name: "ekmek-logo.png", mimeType: "image/png", buffer: PNG_1PX });
     await page.setInputFiles("#nc-photos", { name: "loaves.png", mimeType: "image/png", buffer: PNG_1PX });
-    await expect.poll(() => page.locator(".nc-summary").textContent()).toContain("logo yüklenir, 1 fotoğraf yüklenir");
-    await page.getByRole("button", { name: "Müşteriyi oluştur" }).click();
+    await next();
+    await page.fill("#nc-info", "Family bakery in Leeds. Sourdough £4.50. Phone 0113 496 0000.");
+    await next();
+    // The summary shows everything before anything is saved or spent.
+    const review = page.locator(".nc-review");
+    await expect.poll(() => review.textContent()).toContain("Toplam £1.050");
+    expect(await review.textContent()).toContain("ekmek-logo.png");
+    expect(await review.textContent()).toContain("Premium");
+    await page.click("#nc-start");
     await page.waitForURL(new RegExp(`#/musteri/${SLUG}`));
     const created = await jobDone(base, SLUG, "create-site", 1);
     expect(created.status, created.summary).toBe("succeeded");
     expect(created.summary).toContain("Family bakery in Leeds"); // the pasted text reached the agent as client data
     const paths = clientPaths(factory.clientsRoot, SLUG);
-    const biz = await apiGet<{ businessTracking: { currency: string; budgetMode: string; addons: Array<{ id: string }> } }>(base, `/api/clients/${SLUG}`);
+    const biz = await apiGet<{ businessTracking: { currency: string; budgetMode: string; price: number; payment: string; addons: Array<{ id: string }> } }>(
+      base,
+      `/api/clients/${SLUG}`,
+    );
     expect(biz.businessTracking.budgetMode).toBe("premium"); // chosen in the form, before the first job
+    expect(biz.businessTracking).toMatchObject({ price: 900, payment: "quoted" });
     expect(biz.businessTracking.currency).toBe("GBP");
     expect(biz.businessTracking.addons.map((a) => a.id).sort()).toEqual(["theme", "whatsapp"]);
     // Set as the client's logo before the job started (saved into assets; the scripted agent then rewrites the config).
