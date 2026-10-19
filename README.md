@@ -17,6 +17,14 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Ekran denetimi düzeltmeleri (1.23.1)
+
+Her ekran (ana ekran, Analiz, Kütüphane, Arşiv, Ayarlar, Yeni Müşteri'nin adımları, müşteri sekmeleri, menü ve onay penceresi) iki temada, masaüstünde ve telefonda denetlendi; bundan sonra her güncellemede otomatik denetlenir (tests/ui-audit.test.ts: yazı kontrastı WCAG AA, çalışan animasyon yok, yana kayma yok, kutusundan taşan yazı yok, script hatası yok).
+- Telefonda kenar çubuğu tek satır oldu: Yeni Müşteri + yana kaydırılan menü; müşteri listesi telefonda gizli (ana ekrandaki tablo zaten gösteriyor). Sayfalar artık bir ekran dolusu menüyle başlamıyor.
+- Yeni Müşteri'de telefondaki Geri/İleri çubuğu yazıların üstüne binmiyor; logo/fotoğraf adımında kutu içinde kutu kalktı.
+- Koyu temada seçili müşterinin alt yazısı daha okunur. Klavye odağı her temada belirgin (mürekkep rengi çerçeve + hardal hale).
+- Müşteri menüsündeki seçenekler tek satır; teklifte "Ek seçenekler" başlığının üstünde boşluk.
+
 ## Yeni panel görünümü ve Analiz ekranı (1.23.0)
 
 Görünüm (sadece CSS ve küçük çizim değişiklikleri; işlevler, adresler ve API aynı):
