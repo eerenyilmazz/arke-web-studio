@@ -24,6 +24,15 @@ Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git 
 - Bilgi yapıştırılmış ama logo seçilmemişse iş başlamadan sorulur: "Yazı logosuyla başla" ya da "Önce logo ekleyeceğim". Böylece logosuz yapılıp sonra yeniden tasarlanan iş (ve harcanan kaynak) olmaz.
 - Logo başka bir müşterinin logosuyla aynıysa önce onay istenir; onaylanmazsa tasarım işi başlamaz.
 
+## Hazır site parçaları ve dil kontrolleri (1.20.0)
+
+- **Fabrika parçaları:** tema düğmesi (güneş/ay ikonlu, hangi temaya geçeceğini söyler, seçimi hatırlar) ve telefon menüsü (48rem altında katlanır) `js/kit.js` + `css/base.css` olarak her siteye kopyalanır; agent kendisi yazmaz. Fabrika güncellenince bu iki dosya bir sonraki agent işinde siteye yenisi olarak gelir (elle yazılmış bir base.css'e dokunulmaz).
+- **Yeni derleme kontrolleri:**
+  - Dil: yarım çeviri, başka sayfaya giden dil düğmesi (Hakkımızda → /en/ yerine /en/about/ olmalı) ve çeviri içinden varsayılan dile kaçan link derlemeyi durdurur. Çeviri hiç yazılmadıysa sadece uyarı (çeviri işi tasarımdan sonra çalışır).
+  - Parçalar: tema düğmesi ya da menü düğmesi olup `kit.js` yüklemeyen sayfa derlemeyi durdurur; 4'ten fazla menü linki olup telefon menüsü olmayan sayfa uyarı verir.
+- **Kurallar:** sabit butonlar (`float-btn`) içeriği örtmez; dekor bölüm dışına taşmaz; ızgara ile altındaki düğme arasında boşluk; yarım boş ekran yok.
+- Var olan bir siteyi düzeltmek: Düzenleme → "Diğer dilleri güncelle", sonra "Siteyi yeniden oluştur", kontrol hata verirse "Hataları agent düzeltsin".
+
 ## Paket seçimi en başta, talep kutusu düzeltmesi (1.19.1)
 
 - Yeni Müşteri'nin 1. adımında **Paket** (Varsayılan / Temel / Standart / Premium) seçilir; ilk tasarım işi bu paketle çalışır. Sonra İş Takibi'nden değiştirilebilir.

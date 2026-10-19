@@ -9,6 +9,8 @@ import { checkInputs, checkOutput, renderReport, type CheckResult } from "../lib
 import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, isCustom } from "../lib/custom-site.js";
 import { takeScreenshots } from "../lib/screenshots.js";
 import { checkImages, checkLegal, checkSeo } from "../lib/seo.js";
+import { checkLanguages } from "../lib/i18n-check.js";
+import { checkKitParts } from "../lib/kit-check.js";
 import { effectiveFormAction } from "../lib/form.js";
 import { buildEnv } from "./shared.js";
 
@@ -36,6 +38,9 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
         results.push(...checkCustomCode(paths.distDir, effectiveFormAction(paths.factoryDir)));
         results.push(...checkBrand(paths.distDir, config.brand.logo));
         results.push(...checkLibraryLeftovers(paths.distDir, paths.factoryDir));
+        const languages = checkLanguages(paths.distDir, config.i18n.defaultLocale, config.i18n.locales);
+        if (languages) results.push(languages);
+        results.push(checkKitParts(paths.distDir));
         results.push(checkSeo(paths.distDir, { name: config.business.name, phone: config.contact.phone ?? null, domain: config.site.domain ?? null }));
         results.push(checkImages(paths.distDir), checkLegal(paths.distDir, config.business.country));
         results.push(await takeScreenshots(paths.distDir, path.join(paths.factoryDir, "shots")));

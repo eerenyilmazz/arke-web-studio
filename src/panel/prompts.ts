@@ -291,6 +291,7 @@ export function translatePrompt(slug: string, defaultLocale: string, locales: re
     `Site Factory, client "${slug}". The site is finished in "${defaultLocale}". Add these languages: ${others.join(", ")}.`,
     "1. get_client_status, then site_map. Every page at the root is the default language.",
     `2. For each language and each page: read the default page once (read_site_file) and write the translated page at <locale>/<same path> with write_site_file: identical markup, classes and scripts; translate visible text, alt texts, <title>, meta description and Open Graph; set <html lang>; keep links inside the same language (/${others[0] ?? "xx"}/…); keep prices, phone numbers, addresses and names as they are.`,
+    "   On every page the language link (hreflang) must go to the same page in the other language (/about/ ↔ /en/about/), never to its home page; fix the default-language pages too where they point elsewhere. Translate every page the default language has; the build fails on a half-translated site.",
     "3. Add or update the language links in the header of every page (all languages) and the hreflang alternates when site.domain is set, using edit_site_file.",
     "4. save_content for each new locale with the same items, translated.",
     "5. build_site and fix failed checks with edit_site_file (at most 3 builds). Do not deploy. Do not change the design, colours or layout.",

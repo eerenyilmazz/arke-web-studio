@@ -44,7 +44,7 @@ const INSTRUCTIONS: Readonly<Record<AddonId, { included: (a: Addon) => string; e
     excluded: "One language only: no language switch.",
   },
   theme: {
-    included: () => "Light and dark theme: design both from the palette, follow prefers-color-scheme and add a toggle that remembers the choice.",
+    included: () => "Light and dark theme: design both from the palette and use the factory's theme toggle (rules/custom-site.md, Factory parts).",
     excluded: "One theme only: design the site in a single (light or dark) look that suits the brand; no theme toggle and no prefers-color-scheme switch.",
   },
   blog: {
@@ -53,7 +53,7 @@ const INSTRUCTIONS: Readonly<Record<AddonId, { included: (a: Addon) => string; e
   },
   whatsapp: {
     included: () =>
-      "A WhatsApp button (floating, with the pre-filled message if there is one) using whatsapp.number. If there is no number, leave it out and ask Eren for it.",
+      "A WhatsApp button (class float-btn, with the pre-filled message if there is one) using whatsapp.number. If there is no number, leave it out and ask Eren for it.",
     excluded: "No WhatsApp button (a WhatsApp link in the contact details is fine when there is a number).",
   },
   booking: {

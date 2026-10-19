@@ -395,12 +395,35 @@ export const SIGNATURE_FILE = "brand/signature.html";
 /** The factory's brand-neutral base stylesheet, copied into every custom site so the agent does not write it. */
 export const BASE_CSS = "css/base.css";
 
+/** The factory's small script for the theme toggle and the phone menu (rules/site-kit/kit.js). */
+export const KIT_JS = "js/kit.js";
+/** The first line of the factory's base stylesheet: a file starting with it is the factory's to update. */
+const KIT_MARKER = "Site Factory base layer";
+
+/**
+ * Copies the factory's parts into a custom site: css/base.css and js/kit.js. Both are factory-owned (the agent must
+ * not rewrite them), so a newer factory version replaces them; a base.css without the factory's header (written by
+ * hand) is left alone. Returns whether anything was written.
+ */
 export function ensureBaseKit(paths: ClientPaths, kitFile: string): boolean {
-  const dest = path.join(siteDir(paths), BASE_CSS);
-  if (existsSync(dest) || !existsSync(kitFile)) return false;
-  mkdirSync(path.dirname(dest), { recursive: true });
-  writeFileSync(dest, readFileSync(kitFile, "utf8"));
-  return true;
+  let wrote = false;
+  const parts: Array<[string, string]> = [
+    [BASE_CSS, kitFile],
+    [KIT_JS, path.join(path.dirname(kitFile), "kit.js")],
+  ];
+  for (const [rel, src] of parts) {
+    if (!existsSync(src)) continue;
+    const dest = path.join(siteDir(paths), rel);
+    const next = readFileSync(src, "utf8");
+    if (existsSync(dest)) {
+      const now = readFileSync(dest, "utf8");
+      if (now === next || (rel === BASE_CSS && !now.includes(KIT_MARKER))) continue;
+    }
+    mkdirSync(path.dirname(dest), { recursive: true });
+    writeFileSync(dest, next);
+    wrote = true;
+  }
+  return wrote;
 }
 /** Written by the panel when a site starts from a library design: the source client's facts (see panel/library.ts). */
 export const LIBRARY_SOURCE_FILE = "library-source.json";

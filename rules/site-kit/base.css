@@ -35,6 +35,32 @@ button, input, select, textarea { font: inherit; color: inherit; }
 input:not([type="checkbox"]):not([type="radio"]), select, textarea { display: block; width: 100%; min-height: 44px; padding: .65rem .8rem; border: 1px solid var(--c-line, #ccc); border-radius: 10px; background: var(--c-surface, #fff); }
 label { display: grid; gap: .3rem; font-weight: 600; }
 
+/* Factory parts driven by /js/kit.js (markup in rules/custom-site.md) */
+/* Theme toggle: shows the icon of the theme a press switches to. */
+.theme-toggle { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--c-line, currentColor); border-radius: 999px; background: transparent; color: inherit; cursor: pointer; }
+.theme-toggle svg { width: 20px; height: 20px; }
+.theme-toggle .icon-sun { display: none; }
+:root[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+:root[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-toggle .icon-sun { display: block; }
+  :root:not([data-theme="light"]) .theme-toggle .icon-moon { display: none; }
+}
+/* Phone menu: the nav folds into the button below 48rem. */
+.nav-toggle { display: none; width: 44px; height: 44px; padding: 0; border: 1px solid var(--c-line, currentColor); border-radius: 10px; background: transparent; color: inherit; cursor: pointer; }
+.nav-toggle svg { width: 22px; height: 22px; margin: auto; }
+@media (max-width: 48rem) {
+  .nav-toggle { display: inline-grid; place-items: center; }
+  [data-nav] { display: none; }
+  [data-nav][data-nav-open] { display: flex; flex-direction: column; align-items: stretch; position: absolute; inset-inline: 0; top: 100%; z-index: 50; padding: var(--gap); gap: .25rem; background: var(--c-bg, #fff); border-bottom: 1px solid var(--c-line, #ccc); box-shadow: 0 12px 24px rgb(0 0 0 / .12); }
+  [data-nav][data-nav-open] a { padding: .75rem .5rem; }
+}
+/* A fixed button (WhatsApp, booking) never covers the end of the page. */
+body:has(.float-btn) { padding-bottom: 5.5rem; }
+.float-btn { position: fixed; right: max(1rem, env(safe-area-inset-right)); bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 40; }
+/* Decoration stays inside its section: no sideways scroll, no shapes over the next block. */
+.section { position: relative; overflow-x: clip; }
+
 /* Motion safety: everything calms down for visitors who ask for less motion. */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

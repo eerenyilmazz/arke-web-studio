@@ -205,8 +205,43 @@ Only the pages listed in `config.pages`. Every page:
 - Semantic HTML (`header`, `nav`, `main`, `section`, `footer`), one `h1` per page, a skip link, visible keyboard focus,
   AA contrast (4.5:1 text, 3:1 large text and UI), alt text that describes each image, tap targets ≥ 44 px.
 - Responsive from 360 px to 1600 px; check the layout in your head at 375, 768 and 1440.
-- **Light and dark**: follow `prefers-color-scheme` and offer a toggle that remembers the choice in `localStorage`.
-  Build the dark palette from the brand colours.
+- **Light and dark**: build the dark palette from the brand colours (`:root[data-theme="dark"]` and
+  `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {…} }`). The toggle is the factory's part,
+  never hand-written (see "Factory parts" below). A single-theme site (when the extras say so) has neither.
+
+### Factory parts (do not write your own)
+
+`css/base.css` and `js/kit.js` are copied into every site by the factory and updated by it; never edit them. Every
+page loads `<script src="/js/kit.js" defer></script>` and, in `<head>` before the stylesheets, this one line so the
+saved theme applies before the first paint:
+`<script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>`
+
+- **Theme toggle** (in the header):
+  `<button type="button" class="theme-toggle" data-theme-toggle data-label-dark="Koyu temaya geç" data-label-light="Açık temaya geç" aria-label="Koyu temaya geç"><svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">…</svg><svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">…</svg></button>`
+  with simple stroke icons (`fill="none" stroke="currentColor"`) and labels in the page's language. No emoji or
+  symbol characters (◐ ☀) as icons: many fonts do not have them.
+- **Phone menu**: when the header has more than 4 links, add
+  `<button type="button" class="nav-toggle" data-nav-toggle aria-controls="site-nav" aria-expanded="false" aria-label="Menü">`
+  (a three-line icon) and give the nav `id="site-nav" data-nav`; the header needs `position: relative`. Below 48rem
+  the menu folds into the button. The build warns when a long menu has no phone menu.
+- **Fixed buttons** (WhatsApp, booking) get `class="float-btn"`: the page then keeps room at the bottom so the
+  button never covers the last content.
+
+### Languages
+
+The design job writes the default language only. The translation job writes every other language as
+`<locale>/<same path>`, and on every page the language link (`hreflang`) goes to **the same page** in the other
+language, never to its home page; links inside a translation stay in that language. The build fails on a
+half-translated site, a language link to another page or a link out of the language.
+
+### Layout hygiene
+
+- Decorative shapes stay inside their section (`.section` clips sideways overflow); none sits half off the page or
+  behind the next block's text.
+- Space between a grid and the button under it (at least `var(--gap)`); no stray dots, connectors or lines on cards
+  unless they mean something.
+- Section spacing comes from `.section`; no extra empty blocks. A section with text only on one side uses the other
+  side for an illustration, a list or a quote, or narrows the column; never a half-empty screen.
 
 Animation rules:
 
