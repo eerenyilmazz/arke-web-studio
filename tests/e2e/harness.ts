@@ -1,7 +1,8 @@
 import { execFileSync, spawn as nodeSpawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import os from "node:os";
 import path from "node:path";
 import type { FactoryConfig } from "../../src/config.js";
 import { FACTORY_ROOT } from "../../src/config.js";
@@ -18,10 +19,28 @@ const FAKE_AGENT = path.join(FACTORY_ROOT, "tests", "e2e", "fake-agent.ts");
 const JOB_MS = 120_000;
 const POLL_MS = 300;
 
+/** The newest Chromium that `npx playwright-core install chromium` downloaded (the README's step for WSL), or null. */
+export function playwrightCacheBrowser(): string | null {
+  const cache = path.join(os.homedir(), ".cache", "ms-playwright");
+  if (!existsSync(cache)) return null;
+  for (const dir of readdirSync(cache)
+    .filter((d) => d.startsWith("chromium-"))
+    .sort()
+    .reverse()) {
+    for (const sub of ["chrome-linux64/chrome", "chrome-linux/chrome"]) {
+      const exe = path.join(cache, dir, sub);
+      if (existsSync(exe)) return exe;
+    }
+  }
+  return null;
+}
+
 /** A Linux Chromium for Playwright, or null (then the e2e tests are skipped). SF_E2E=off skips them on purpose. */
 export function findBrowser(): string | null {
   if (process.env.SF_E2E === "off" || process.env.SF_UI_TESTS === "off") return null;
   if (existsSync("/opt/pw-browsers/chromium")) return "/opt/pw-browsers/chromium";
+  const cached = playwrightCacheBrowser();
+  if (cached) return cached;
   for (const c of ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"]) {
     try {
       const p = execFileSync("sh", ["-c", `command -v ${c}`], { encoding: "utf8" }).trim();

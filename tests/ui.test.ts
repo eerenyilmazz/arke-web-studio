@@ -6,6 +6,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createPanel, type Panel } from "../src/panel/server.js";
+import { playwrightCacheBrowser } from "./e2e/harness.js";
 import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory, writePassingCustomSite } from "./helpers.js";
 
@@ -25,6 +26,8 @@ function findLinuxBrowser(): string | null {
   const env = process.env.SF_BROWSER;
   if (env && !env.endsWith(".exe") && existsSync(env)) return env;
   if (existsSync("/opt/pw-browsers/chromium")) return "/opt/pw-browsers/chromium";
+  const cached = playwrightCacheBrowser();
+  if (cached) return cached;
   for (const c of LINUX_BROWSERS) {
     try {
       const p = execFileSync("sh", ["-c", `command -v ${c}`], { encoding: "utf8" }).trim();

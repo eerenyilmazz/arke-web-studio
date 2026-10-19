@@ -17,6 +17,17 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## İzin kuralları ve tarayıcı testleri (1.18.3)
+
+- `.claude/settings.json`: işe yaramayan `Write(...)` yasakları kaldırıldı; Claude Code'a göre dosya yasakları sadece `Edit(...)` ile işler ve `Edit` Write'ı da kapsar. Koruma aynı (müşteri klasörleri, `.factory`). Kendi `.claude/settings.local.json` dosyandaki `Write(...)` satırını da silebilirsin; `Edit(...)` satırı kalmalı.
+- Tarayıcılı testler (UI, uçtan uca) WSL'de çalışsın diye bir kez:
+
+```bash
+cd ~/projects/site-factory
+npx playwright-core install chromium
+sudo npx playwright-core install-deps chromium
+```
+
 ## Kod haritası: graphify (1.18.2, sadece senin Claude Code'un için)
 
 [graphify](https://github.com/Graphify-Labs/graphify) projenin fonksiyon, modül ve bağımlılıklarını bir grafiğe çıkarır; Claude Code dosya dosya okumak yerine önce grafiğe bakar. Site agent'ı için değil, senin geliştirme oturumların için.

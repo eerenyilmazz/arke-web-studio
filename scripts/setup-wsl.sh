@@ -78,13 +78,12 @@ if [[ -f "$LOCAL_SETTINGS" ]]; then
 elif $CHECK_ONLY; then
   note "would create .claude/settings.local.json for $CLIENTS_DIR"
 else
-  # '//' = absolute path in Claude Code permission rules.
+  # '//' = absolute path in Claude Code permission rules. An Edit rule covers every file-writing tool (Write too).
   cat > "$LOCAL_SETTINGS" <<JSON
 {
   "permissions": {
     "deny": [
-      "Edit(/$CLIENTS_DIR/**)",
-      "Write(/$CLIENTS_DIR/**)"
+      "Edit(/$CLIENTS_DIR/**)"
     ]
   }
 }

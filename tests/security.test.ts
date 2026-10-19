@@ -120,3 +120,14 @@ describe("agent jobs ignore Eren's user settings", () => {
     expect(args[args.indexOf("--setting-sources") + 1]).toBe("project,local");
   });
 });
+
+describe("the factory's own permission rules", () => {
+  it("protects client folders and .factory with Edit rules (they cover Write too), with no dead Write rules", async () => {
+    const { readFileSync } = await import("node:fs");
+    const settings = JSON.parse(readFileSync(path.join(import.meta.dirname, "..", ".claude", "settings.json"), "utf8"));
+    const deny: string[] = settings.permissions.deny;
+    expect(deny).toEqual(expect.arrayContaining(["Edit(../sf-clients/**)", "Edit(**/.factory/**)"]));
+    expect(deny.filter((r) => /^Write\(/.test(r))).toEqual([]);
+    expect(settings.sandbox.enabled).toBe(true);
+  });
+});

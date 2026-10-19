@@ -11,9 +11,7 @@
       "Bash(wrangler:*)",
       "Bash(npx wrangler:*)",
       "Edit(../sf-clients/**)",
-      "Write(../sf-clients/**)",
       "Edit(**/.factory/**)",
-      "Write(**/.factory/**)",
       "Read(./.env)",
       "Read(./.env.*)"
     ]
