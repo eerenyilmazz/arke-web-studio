@@ -12,6 +12,8 @@ import { HttpError } from "../http.js";
 import { type JobRunner } from "../jobs.js";
 import { TOOLS_NOTE, finalPrompt, translatePrompt } from "../prompts.js";
 import { readSettings } from "../settings.js";
+import { addonsNote } from "../addons.js";
+import { readBusiness } from "../business.js";
 import { ensureBaseKit } from "../../lib/custom-site.js";
 import { FACTORY_ROOT } from "../../config.js";
 import type { PreviewServer } from "../preview.js";
@@ -107,6 +109,7 @@ export function launchAgent(deps: ApiDeps, slug: string, kind: string, title: st
   const text = finalPrompt(prompt.startsWith(TOOLS_NOTE) ? prompt : `${TOOLS_NOTE}\n${prompt}`, {
     ...policy,
     panelLanguage: readSettings(deps.factory).panelLanguage,
+    addons: addonsNote(readBusiness(deps.factory, slug)?.addons),
   });
   return runOrConflict(() => deps.jobs.startAgent(slug, kind, title, text, request, policy));
 }

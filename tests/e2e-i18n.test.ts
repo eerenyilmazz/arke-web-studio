@@ -52,6 +52,8 @@ describe("panel in English", { timeout: 300_000 }, () => {
     await page.selectOption("#nc-country", "GB");
     await page.fill("#nc-info", "Family bakery in Leeds. Sourdough £4.50. Phone 0113 496 0000.");
     await page.getByRole("button", { name: "Müşteriyi oluştur" }).click();
+    // No logo chosen: the panel asks before any design work starts.
+    await page.locator(".ask-dialog").getByRole("button", { name: "Yazı logosuyla başla" }).click();
     await page.waitForURL(new RegExp(`#/musteri/${SLUG}`));
     expect((await jobDone(base, SLUG, "create-site", 1)).status).toBe("succeeded");
 

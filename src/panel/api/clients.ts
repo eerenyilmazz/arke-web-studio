@@ -5,7 +5,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { approvalState, APPROVAL_KINDS } from "../../lib/approvals.js";
 import { listVersions, restoreVersion, snapshot } from "../../lib/versions.js";
-import { readBusiness, writeBusiness } from "../business.js";
+import { type Business, readBusiness, writeBusiness } from "../business.js";
 import { modeFor, summarise } from "../budget.js";
 import { readStartDesign, setStartDesign } from "../library.js";
 import { ZodError } from "zod";
@@ -102,12 +102,27 @@ function listClients(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse):
   sendJson(res, 200, { clients: clients.map((c) => ({ ...c, business: c.stage === "unreadable" ? null : readBusiness(deps.factory, c.slug) })) });
 }
 
+/**
+ * A second language sold as an extra is added to the site's languages (additive only: un-ticking it never removes
+ * a language or its pages; that stays a deliberate edit).
+ */
+function addSoldLanguage(deps: ApiDeps, slug: string, addons: Business["addons"]): void {
+  const code = addons?.find((a) => a.id === "language")?.value;
+  if (!code) return;
+  const i18n = (readDraftConfig(clientPaths(deps.factory.clientsRoot, slug)) as { i18n?: { defaultLocale?: string; locales?: string[] } }).i18n;
+  const locales = i18n?.locales ?? [];
+  if (locales.includes(code) || i18n?.defaultLocale === code) return;
+  tools.updateClientConfig(deps.factory, { slug, patch: { i18n: { locales: [...locales, code] } } });
+}
+
 async function saveBusiness(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
   const body = await readJsonBody(req, JSON_LIMIT);
   try {
-    sendJson(res, 200, writeBusiness(deps.factory, s, body));
+    const saved = writeBusiness(deps.factory, s, body);
+    addSoldLanguage(deps, s, saved.addons);
+    sendJson(res, 200, saved);
   } catch (error) {
     if (error instanceof ZodError) throw new HttpError(400, `Geçersiz bilgi: ${error.issues.map((i) => i.path.join(".")).join(", ")}`);
     throw error;

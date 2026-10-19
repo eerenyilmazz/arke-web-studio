@@ -9,6 +9,13 @@ The bar: a small business owner opens the site and says "this is us". Not a them
 
 ---
 
+## What Eren sold (extras)
+
+When the prompt has a "What Eren sold to this client" list, it decides five things and wins over this file on
+them: a second language and its switch, light/dark theme and its toggle, a blog, a WhatsApp button, an online
+booking button. Build what is included and nothing that is not (a single-theme site has no toggle and no
+`prefers-color-scheme` switch). Without that list (clients from before extras existed), build as this file says.
+
 ## Design skills
 
 Before designing, load the design skills in `.claude/skills/` with the Skill tool and use their judgement:

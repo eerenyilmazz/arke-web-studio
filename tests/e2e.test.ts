@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FACTORY_ROOT } from "../src/config.js";
 import { clientPaths } from "../src/lib/paths.js";
 import { CODE, apiGet, type Browser, type FakePanel, findBrowser, jobDone, launchBrowser, openPanel, startPanel } from "./e2e/harness.js";
-import { tempFactory } from "./helpers.js";
+import { PNG_1PX, tempFactory } from "./helpers.js";
 
 /**
  * End to end, in a real browser, the way Eren works: new client from the form → the agent job builds the site
@@ -57,11 +57,27 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     await page.fill("#nc-industry", "bakery");
     await page.selectOption("#nc-country", "GB");
     await page.fill("#nc-info", "Family bakery in Leeds. Sourdough £4.50. Phone 0113 496 0000.");
+    // Extras the client asked for: recorded before the first job, so the design follows them.
+    await page.check("#nc-ad-theme");
+    await page.check("#nc-ad-whatsapp");
+    // Step 2: the logo and a photo are chosen in the form and uploaded once the client exists (no "no logo" question).
+    await page.setInputFiles("#nc-logo", { name: "ekmek-logo.png", mimeType: "image/png", buffer: PNG_1PX });
+    await page.setInputFiles("#nc-photos", { name: "loaves.png", mimeType: "image/png", buffer: PNG_1PX });
+    await expect.poll(() => page.locator(".nc-summary").textContent()).toContain("logo yüklenir, 1 fotoğraf yüklenir");
     await page.getByRole("button", { name: "Müşteriyi oluştur" }).click();
     await page.waitForURL(new RegExp(`#/musteri/${SLUG}`));
     const created = await jobDone(base, SLUG, "create-site", 1);
     expect(created.status, created.summary).toBe("succeeded");
     expect(created.summary).toContain("Family bakery in Leeds"); // the pasted text reached the agent as client data
+    const paths = clientPaths(factory.clientsRoot, SLUG);
+    const biz = await apiGet<{ businessTracking: { currency: string; addons: Array<{ id: string }> } }>(base, `/api/clients/${SLUG}`);
+    expect(biz.businessTracking.currency).toBe("GBP");
+    expect(biz.businessTracking.addons.map((a) => a.id).sort()).toEqual(["theme", "whatsapp"]);
+    // Set as the client's logo before the job started (saved into assets; the scripted agent then rewrites the config).
+    const { assets } = await apiGet<{ assets: Array<{ name: string }> }>(base, `/api/clients/${SLUG}`);
+    expect(assets.length).toBe(1);
+    expect(existsSync(path.join(paths.assetsDir, assets[0]!.name))).toBe(true);
+    expect(existsSync(path.join(factory.inboxDir, SLUG, "loaves.png"))).toBe(true); // the photo waits for the agent
     expect(fp.agentRuns[0]!.args).toContain("--disallowedTools");
     expect(existsSync(path.join(clientPaths(factory.clientsRoot, SLUG).distDir, "index.html"))).toBe(true);
 

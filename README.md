@@ -17,6 +17,25 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Yeni müşteri: logo ve fotoğraflar ilk adımda (1.19.0)
+
+- Yeni Müşteri formu üç adım: **1. İşletme**, **2. Logo ve fotoğraflar**, **3. Müşteriden gelen bilgiler**. Altta "Oluşturunca: …" satırı butona basınca ne olacağını söyler.
+- Logo seçilirse müşteri oluşturulur oluşturulmaz logo olarak kaydedilir ve marka ondan çıkarılır; fotoğraflar agent'a gider.
+- Bilgi yapıştırılmış ama logo seçilmemişse iş başlamadan sorulur: "Yazı logosuyla başla" ya da "Önce logo ekleyeceğim". Böylece logosuz yapılıp sonra yeniden tasarlanan iş (ve harcanan kaynak) olmaz.
+- Logo başka bir müşterinin logosuyla aynıysa önce onay istenir; onaylanmazsa tasarım işi başlamaz.
+
+## Yeni müşteri adımları ve ek seçenekler (1.19.0)
+
+- **Yeni Müşteri** üç adım: 1. İşletme (ek seçenekler dahil), 2. Logo ve fotoğraflar, 3. Müşteriden gelen bilgiler. Altta "Oluşturunca: …" ne olacağını söyler.
+  - Logo seçilirse müşteri oluşturulur oluşturulmaz logo olarak kaydedilir, marka ondan çıkarılır; fotoğraflar agent'a gider.
+  - Bilgi var ama logo yoksa iş başlamadan sorulur: "Yazı logosuyla başla" ya da "Önce logo ekleyeceğim".
+- **Ek seçenekler**: ikinci dil, koyu/açık tema, blog, WhatsApp butonu, online randevu.
+  - Yeni müşteride işaretlenir; İş Takibi'nde her birine fiyat girilir. Toplam = site fiyatı + ek seçenekler; kâr da bunu kullanır.
+  - Teklif PDF'inde "Ek seçenekler" listesi ve fiyat dökümü (Site, her ek, Toplam) çıkar.
+  - Agent sadece seçilenleri yapar (ör. tema seçilmediyse tek tema, düğme yok). Ek seçenek kaydı olmayan eski müşterilerde agent önceki gibi çalışır; İş Takibi'ni açıp kaydetmek bunu değiştirmez, sadece ek seçeneklere dokununca kayıt oluşur.
+  - İkinci dil seçilince sitenin dillerine eklenir; işaret kaldırılınca dil silinmez.
+- Kalite: şirket numarası uyarısı sadece İngiltere ve İrlanda'da; 404 ve imza demosunda işletme adı aranmaz. Rapordaki boş "agent:" satırı düzeldi.
+
 ## İzin kuralları ve tarayıcı testleri (1.18.3)
 
 - `.claude/settings.json`: işe yaramayan `Write(...)` yasakları kaldırıldı; Claude Code'a göre dosya yasakları sadece `Edit(...)` ile işler ve `Edit` Write'ı da kapsar. Koruma aynı (müşteri klasörleri, `.factory`). Kendi `.claude/settings.local.json` dosyandaki `Write(...)` satırını da silebilirsin; `Edit(...)` satırı kalmalı.

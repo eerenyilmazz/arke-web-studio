@@ -48,7 +48,7 @@ export const ENGLISH_NOTES =
 
 export function finalPrompt(
   prompt: string,
-  opts: { skills: "none" | "search" | "full"; screenshots: boolean; provider?: "claude" | "codex"; panelLanguage?: "tr" | "en" },
+  opts: { skills: "none" | "search" | "full"; screenshots: boolean; provider?: "claude" | "codex"; panelLanguage?: "tr" | "en"; addons?: string | null },
 ): string {
   const designJob = prompt.includes(SKILLS_STEP);
   let out = prompt.split(SKILLS_STEP).join(SKILLS_TEXT[opts.skills]);
@@ -57,6 +57,7 @@ export function finalPrompt(
     out +=
       "\nCustom sites: write the pages in the default language only (i18n.defaultLocale); the other languages are added afterwards by a separate translation job, so do not write <locale>/ pages.";
   if (!opts.screenshots) out += "\nBudget: do not open the screenshot images that build_site lists (Economy mode); judge the layout from the code.";
+  if (opts.addons) out += `\n${opts.addons}`;
   if (opts.panelLanguage === "en") out += `\n${ENGLISH_NOTES}`;
   if (opts.provider === "codex") out = `${CODEX_NOTE}\n${out}`;
   return out;

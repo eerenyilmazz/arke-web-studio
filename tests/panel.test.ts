@@ -1,7 +1,7 @@
 import { EventEmitter } from "node:events";
 import { createServer, request } from "node:http";
 import type { AddressInfo } from "node:net";
-import { existsSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 import type { ChildProcess, SpawnOptions } from "node:child_process";
@@ -1090,5 +1090,26 @@ describe("business tracking", () => {
       clients: { slug: string; name: string; business: { price: number; payment: string } }[];
     };
     expect(list.clients[0]).toMatchObject({ slug: "uzunoglu", name: "Uzunoğlu", business: { price: 4000, payment: "deposit" } });
+  });
+});
+
+describe("extras in Business Tracking", () => {
+  it("adds a sold second language to the site's languages, and never removes one", async () => {
+    const { base, auth, factory } = await start();
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "two-lang", businessName: "Two Lang", industry: "bakery", hostingModel: "managed" }),
+    });
+    const put = (addons: unknown) =>
+      fetch(`${base}/api/clients/two-lang/business`, { method: "PUT", headers: json, body: JSON.stringify({ price: 900, addons }) });
+    expect((await put([{ id: "language", value: "de", price: 200 }])).status).toBe(200);
+    const locales = () =>
+      (JSON.parse(readFileSync(path.join(factory.clientsRoot, "two-lang", "site.config.json"), "utf8")) as { i18n: { locales: string[] } }).i18n.locales;
+    expect(locales()).toEqual(["en", "de"]);
+    expect((await put([])).status).toBe(200);
+    expect(locales()).toEqual(["en", "de"]); // un-ticking keeps the language and its pages
+    expect((await put([{ id: "nope" }])).status).toBe(400);
   });
 });

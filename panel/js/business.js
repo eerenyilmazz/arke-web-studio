@@ -1,6 +1,7 @@
 // Business tracking: price, payment, due date, costs and profit for one client.
 import { locale } from "./i18n.js";
 import { api, fmtTokens, guarded, h, PACKAGE_NAMES, toast } from "./core.js";
+import { addonsEditor } from "./addons.js";
 import { loadClients } from "./router.js";
 
 export const PAYMENT_LABELS = { none: "Teklif verilmedi", quoted: "Teklif verildi", deposit: "Kapora alındı", paid: "Ödendi" };
@@ -79,6 +80,25 @@ export function businessForm(d) {
     costRows.append(row);
   };
   (b.costs || []).forEach((c) => addCost(c));
+  // Extras: a client from before extras existed has none recorded; the list is saved only once Eren touches it,
+  // so opening and saving the form never changes what the agent builds for that client.
+  const mainLang = d.defaultLocale || (d.country === "TR" ? "tr" : "en");
+  const extras = addonsEditor(b.addons || [], { prices: true, currencySign: CURRENCY_SIGNS[b.currency] || "", mainLang, idPrefix: "biz-ad" });
+  let extrasTouched = Boolean(b.addons);
+  const total = h("p", { class: "small", role: "status" });
+  const showTotal = () => {
+    const base = price.value === "" ? null : Number(price.value);
+    const sum = extras.value().reduce((t, a) => t + (a.price || 0), 0);
+    total.textContent =
+      base === null
+        ? ""
+        : `Toplam: ${money(base + sum, currency.value)}${sum ? ` (site ${money(base, currency.value)} + ek seçenekler ${money(sum, currency.value)})` : ""}`;
+  };
+  extras.el.addEventListener("change", () => ((extrasTouched = true), showTotal()));
+  extras.el.addEventListener("input", showTotal);
+  price.addEventListener("input", showTotal);
+  currency.addEventListener("change", showTotal);
+  showTotal();
   const form = h(
     "form",
     {
@@ -105,6 +125,7 @@ export function businessForm(d) {
                 return { label: l.value.trim(), amount: Number(a.value || 0) };
               })
               .filter((c) => c.label && c.amount > 0),
+            ...(extrasTouched ? { addons: extras.value() } : {}),
           }),
         );
         if (r) {
@@ -116,7 +137,7 @@ export function businessForm(d) {
     h(
       "div",
       { class: "biz-grid" },
-      h("label", { for: "biz-price" }, "Fiyat", h("div", { class: "row nowrap" }, price, currency)),
+      h("label", { for: "biz-price" }, "Site fiyatı", h("div", { class: "row nowrap" }, price, currency)),
       h("label", { for: "biz-pay" }, "Ödeme", payment),
       h("label", { for: "biz-date" }, "Teslim tarihi", deadline),
       h("label", { for: "biz-due" }, "Ödeme günü", due),
@@ -128,6 +149,19 @@ export function businessForm(d) {
       { for: "biz-mode" },
       `Paket${d.budget ? ` (şimdiye kadar ${fmtTokens(d.budget.usage.tokens)} birim, ${d.budget.usage.jobs} işlem)` : ""}`,
       bmode,
+    ),
+    h(
+      "div",
+      { class: "stack-sm" },
+      h("span", { class: "nc-label", text: "Ek seçenekler" }),
+      h("p", {
+        class: "help",
+        text: b.addons
+          ? "Agent sadece seçilenleri yapar; fiyatlar teklifte ayrı satır olarak çıkar."
+          : "Bu müşteri için henüz seçilmedi: agent önceki gibi çalışır. Seçtiğinizde sadece seçilenleri yapar.",
+      }),
+      extras.el,
+      total,
     ),
     h(
       "div",

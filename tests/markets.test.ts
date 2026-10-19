@@ -59,3 +59,48 @@ describe("markets", () => {
     expect(searchKnowledge(FACTORY_ROOT, "KVKK aydinlatma metni form", 3)[0]!.source).toBe("rules/markets.md");
   });
 });
+
+describe("market-specific quality notes", () => {
+  it("asks for a company number only in the UK and Ireland, and skips the name check on 404 and the motion demo", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+    const os = await import("node:os");
+    const pathMod = await import("node:path");
+    const { checkInputs, checkOutput } = await import("../src/lib/quality.js");
+    const tools = await import("../src/tools.js");
+    const { clientPaths } = await import("../src/lib/paths.js");
+    const { readDraftConfig } = await import("../src/lib/client.js");
+    const { COMPLETE_CONTENT, COMPLETE_PATCH, tempFactory } = await import("./helpers.js");
+    const f = tempFactory();
+    const configFor = async (country: "TR" | "GB" | "IE" | "US") => {
+      const slug = `q-${country.toLowerCase()}`;
+      await tools.createClient(f, { slug, businessName: "Gul Kafe", industry: "cafe", hostingModel: "managed", country });
+      tools.updateClientConfig(f, { slug, patch: COMPLETE_PATCH });
+      return { root: clientPaths(f.clientsRoot, slug).root, config: readDraftConfig(clientPaths(f.clientsRoot, slug)) as never };
+    };
+    const legal = async (country: "TR" | "GB" | "IE" | "US") => {
+      const { root, config } = await configFor(country);
+      return checkInputs(
+        root,
+        { ...(config as object), legal: { ...(config as { legal: object }).legal, companyNumber: null } } as never,
+        {
+          en: { gallery: [], testimonials: [], faq: [], ...COMPLETE_CONTENT },
+        } as never,
+      ).find((r) => r.name === "Legal details");
+    };
+    const base = { business: { name: "Gul Kafe" } };
+    expect(await legal("TR")).toBeUndefined();
+    expect(await legal("US")).toBeUndefined();
+    expect((await legal("GB"))?.detail).toMatch(/UK limited companies/);
+    expect((await legal("IE"))?.detail).toMatch(/CRO/);
+
+    const dist = mkdtempSync(pathMod.join(os.tmpdir(), "sf-dist-"));
+    const page = (title: string, body: string) =>
+      `<!doctype html><html lang="tr"><head><title>${title}</title><meta name="description" content="x"></head><body>${body}</body></html>`;
+    writeFileSync(pathMod.join(dist, "index.html"), page("Gul Kafe", "Gul Kafe"));
+    writeFileSync(pathMod.join(dist, "404.html"), page("Bulunamadı", "Sayfa yok"));
+    mkdirSync(pathMod.join(dist, "brand"));
+    writeFileSync(pathMod.join(dist, "brand", "signature.html"), page("İmza", "demo"));
+    const all = JSON.stringify(checkOutput(dist, base as never));
+    expect(all).not.toMatch(/business name not found/);
+  });
+});

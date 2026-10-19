@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { FactoryConfig } from "../config.js";
 import { readJsonIfExists, writeJson } from "../lib/files.js";
 import { clientPaths } from "../lib/paths.js";
+import { AddonsSchema } from "./addons.js";
 
 /**
  * Sales tracking per client (quote, payment, delivery date, a note), for Eren and his brother.
@@ -38,6 +39,8 @@ export const BusinessSchema = z.object({
     .default([]),
   /** This client's budget mode; empty = the panel-wide one. */
   budgetMode: z.enum(["", "economy", "balanced", "premium"]).default(""),
+  /** Extras sold on top of the base site; absent = a client from before extras existed (agent works as before). */
+  addons: AddonsSchema.optional(),
 });
 export type Business = z.infer<typeof BusinessSchema> & { updatedAt?: string };
 

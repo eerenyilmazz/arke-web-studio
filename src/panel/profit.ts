@@ -1,3 +1,4 @@
+import { addonsTotal } from "./addons.js";
 import type { FactoryConfig } from "../config.js";
 import { readBusiness } from "./business.js";
 import { readLedger, type LedgerEntry } from "./budget.js";
@@ -42,7 +43,8 @@ export function clientProfit(factory: FactoryConfig, slug: string, name = slug, 
   const rate = currency === "USD" ? 1 : s.usdRates[currency as "TRY" | "GBP" | "EUR"] || 0;
   const agentCost = rate > 0 ? round2(agentUsd * rate) : agentUsd === 0 ? 0 : null;
   const extraCosts = round2((b?.costs ?? []).reduce((sum, c) => sum + c.amount, 0));
-  const price = b?.price ?? null;
+  // The proposal total: the base price plus the extras sold.
+  const price = b?.price != null ? round2(b.price + addonsTotal(b.addons)) : null;
   return {
     slug,
     name,

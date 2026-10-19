@@ -95,11 +95,21 @@ export function checkInputs(clientRoot: string, config: SiteConfig, content: Rec
       detail: config.contact.formRecipient ?? `${config.contact.email} (public email)`,
     });
   }
-  if (config.legal.companyNumber === null) {
-    results.push({ name: "Legal details", status: "warn", detail: "No company number. Fine for sole traders; UK limited companies must show it." });
+  // A company number is a UK/Irish rule; Turkish and other markets have their own legal check (checkLegal in seo.ts).
+  const country = (config.business as { country?: string }).country ?? "GB";
+  if (config.legal.companyNumber === null && COMPANY_NUMBER_RULE[country]) {
+    results.push({ name: "Legal details", status: "warn", detail: COMPANY_NUMBER_RULE[country] });
   }
   return results;
 }
+
+const COMPANY_NUMBER_RULE: Readonly<Record<string, string>> = {
+  GB: "No company number. Fine for sole traders; UK limited companies must show it.",
+  IE: "No company number. Fine for sole traders; Irish companies must show their CRO number.",
+};
+
+/** Pages that need not carry the business name: the error page and the standalone signature-motion demo. */
+const NAME_EXEMPT = /^(404\.html$|brand\/)/;
 
 const LEAK_PATTERNS: ReadonlyArray<[RegExp, string]> = [
   [/lorem ipsum/i, "placeholder text (lorem ipsum)"],
@@ -132,7 +142,11 @@ export function checkOutput(distDir: string, config: SiteConfig): CheckResult[] 
       const text = html.replace(/<script[\s\S]*?<\/script>/gi, "");
       if (pattern.test(text)) problems.push(`${rel}: ${label}`);
     }
-    if (!html.includes(config.business.name.replace(/&/g, "&amp;")) && !html.includes(config.business.name)) {
+    if (
+      !NAME_EXEMPT.test(rel.split(path.sep).join("/")) &&
+      !html.includes(config.business.name.replace(/&/g, "&amp;")) &&
+      !html.includes(config.business.name)
+    ) {
       warnings.push(`${rel}: business name not found`);
     }
   }

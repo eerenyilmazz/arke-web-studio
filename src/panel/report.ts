@@ -321,11 +321,11 @@ export async function buildReport(factory: FactoryConfig, opts: ReportOptions): 
     `- Tarih: ${fmtDate(new Date().toISOString())} · sürüm ${factoryVersion()} · Node ${process.version} · ${os.platform()} ${os.release()}`,
     `- Araçlar: claude ${tryVersion("claude", ["--version"])} · codex ${tryVersion("codex", ["--version"])} · wrangler ${existsSync(path.join(FACTORY_ROOT, "node_modules", "wrangler")) ? "kurulu" : "yok"}`,
     `- Cloudflare: token ${yes(cf.token)} · hesap kimliği ${yes(cf.account)} · portal ${portal ? `kurulu (${new URL(portal.url).host})` : "kurulmadı"}`,
-    `- Ayarlar: paket ${PACKAGE_LABELS[settings.budget.mode]} · internet araştırması ${settings.webResearch ? "açık" : "kapalı"} · agent: ${Object.entries(
-      settings.agents ?? {},
-    )
-      .map(([g, a]) => `${g} ${a.provider || "paket"}${a.model ? `/${a.model}` : ""}`)
-      .join(", ")}`,
+    `- Ayarlar: paket ${PACKAGE_LABELS[settings.budget.mode]} · internet araştırması ${settings.webResearch ? "açık" : "kapalı"} · agent: ${
+      Object.entries(settings.agents ?? {})
+        .map(([g, a]) => `${g} ${a.provider || "paket"}${a.model ? `/${a.model}` : ""}`)
+        .join(", ") || "paket varsayılanı"
+    }`,
     "",
   ];
   if (!cf.token || !cf.account) add("warn", "kurulum", "Cloudflare token ya da hesap kimliği terminal ortamında yok; yayın yapılamaz.");
