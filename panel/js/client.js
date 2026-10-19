@@ -378,9 +378,14 @@ export function requestCard(d) {
       composer.focus();
       return;
     }
-    if (await runAgent(slug, "revise", { request: text })) {
-      state.composer[slug] = "";
-      composer.value = "";
+    // Cleared before the job starts: starting it redraws the page, and the new box is filled from state.
+    // If the job does not start, the text comes back so nothing typed is lost.
+    state.composer[slug] = "";
+    composer.value = "";
+    if (!(await runAgent(slug, "revise", { request: text }))) {
+      state.composer[slug] = text;
+      const box = $("#composer");
+      if (box) box.value = text;
     }
   };
   composer.addEventListener("keydown", (e) => {

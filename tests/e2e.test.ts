@@ -60,6 +60,7 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     // Extras the client asked for: recorded before the first job, so the design follows them.
     await page.check("#nc-ad-theme");
     await page.check("#nc-ad-whatsapp");
+    await page.selectOption("#nc-package", "premium");
     // Step 2: the logo and a photo are chosen in the form and uploaded once the client exists (no "no logo" question).
     await page.setInputFiles("#nc-logo", { name: "ekmek-logo.png", mimeType: "image/png", buffer: PNG_1PX });
     await page.setInputFiles("#nc-photos", { name: "loaves.png", mimeType: "image/png", buffer: PNG_1PX });
@@ -70,7 +71,8 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     expect(created.status, created.summary).toBe("succeeded");
     expect(created.summary).toContain("Family bakery in Leeds"); // the pasted text reached the agent as client data
     const paths = clientPaths(factory.clientsRoot, SLUG);
-    const biz = await apiGet<{ businessTracking: { currency: string; addons: Array<{ id: string }> } }>(base, `/api/clients/${SLUG}`);
+    const biz = await apiGet<{ businessTracking: { currency: string; budgetMode: string; addons: Array<{ id: string }> } }>(base, `/api/clients/${SLUG}`);
+    expect(biz.businessTracking.budgetMode).toBe("premium"); // chosen in the form, before the first job
     expect(biz.businessTracking.currency).toBe("GBP");
     expect(biz.businessTracking.addons.map((a) => a.id).sort()).toEqual(["theme", "whatsapp"]);
     // Set as the client's logo before the job started (saved into assets; the scripted agent then rewrites the config).
@@ -110,6 +112,7 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     await page.waitForSelector("#composer");
     await page.fill("#composer", "Ana başlığı 'Sourdough baked at dawn' yapın.");
     await page.press("#composer", "Control+Enter");
+    await expect.poll(() => page.inputValue("#composer")).toBe(""); // the box is emptied once the request is sent
     const revised = await jobDone(base, SLUG, "revise", 1);
     expect(revised.status, revised.summary).toBe("succeeded");
     expect(readFileSync(path.join(clientPaths(factory.clientsRoot, SLUG).distDir, "index.html"), "utf8")).toContain("Sourdough baked at dawn");

@@ -1,5 +1,5 @@
 // The new-client form and the what-to-paste guide.
-import { api, ask, guarded, h, ignoreOptional, LANG_NAMES, toast } from "./core.js";
+import { api, ask, guarded, h, ignoreOptional, LANG_NAMES, PACKAGE_NAMES, toast } from "./core.js";
 import { addonsEditor } from "./addons.js";
 import { runAgent } from "./jobs.js";
 import { rankedDesigns } from "./library.js";
@@ -113,6 +113,27 @@ async function uploadMedia(slug, logo, photos) {
   }
 }
 
+/** What each package means for this client's jobs (src/panel/budget.ts PROFILES), in one line each. */
+const PACKAGE_HINTS = {
+  "": "Ayarlar'daki varsayılan paket kullanılır.",
+  economy: "En az kaynak: hızlı model, internet araştırması yok, ekran görüntülerine bakılmaz.",
+  balanced: "Tasarımda en güçlü model ve araştırma; tasarım skill'lerinde sadece arama yapılır.",
+  premium: "Her işte en güçlü model; tasarım skill'leri tamamen yüklenir, en çok kaynak harcanır.",
+};
+
+/** The client's package, chosen before the first job so that job already runs with it. */
+function packageField() {
+  const select = h(
+    "select",
+    { id: "nc-package" },
+    h("option", { value: "" }, "Varsayılan (Ayarlar)"),
+    ...Object.entries(PACKAGE_NAMES).map(([k, v]) => h("option", { value: k }, v)),
+  );
+  const hint = h("span", { class: "help", text: PACKAGE_HINTS[""] });
+  select.addEventListener("change", () => (hint.textContent = PACKAGE_HINTS[select.value] ?? ""));
+  return { select, el: h("label", { for: "nc-package" }, "Paket", hint, select) };
+}
+
 /** Country and site language: the main language is Turkish in Turkey, English elsewhere; one extra may be added. */
 function marketFields() {
   const MARKET_OPTIONS = [
@@ -157,6 +178,7 @@ export function renderNew() {
     placeholder: "Ör: Erkek kuaförü, Mono. Saç kesimi 500 TL, sakal 300 TL. Ankara Sincan, 0534 985 63 19. Siyah-beyaz renkler.",
   });
   const { country, lang } = marketFields();
+  const pkg = packageField();
   // Optional start design from the library; best fit for the typed sector first.
   const startDesign = h("select", { id: "nc-design" }, h("option", { value: "" }, "Yeni tasarım (kütüphane kullanma)"));
   let libDesigns = [];
@@ -252,7 +274,13 @@ export function renderNew() {
         );
         if (!res) return;
         // Recorded before any job, so the very first design already follows what was sold (prices come later).
-        await guarded(() => api("PUT", `/api/clients/${res.slug}/business`, { currency: MARKET_CURRENCY[country.value] || "EUR", addons: soldExtras() }));
+        await guarded(() =>
+          api("PUT", `/api/clients/${res.slug}/business`, {
+            currency: MARKET_CURRENCY[country.value] || "EUR",
+            addons: soldExtras(),
+            budgetMode: pkg.select.value,
+          }),
+        );
         const mediaOk = await uploadMedia(res.slug, logo, photos);
         toast("Müşteri oluşturuldu.");
         location.hash = `#/musteri/${res.slug}/duzenle`;
@@ -292,6 +320,7 @@ export function renderNew() {
         ),
         h("div", { class: "two" }, h("label", { for: "nc-country" }, "Ülke", country), h("label", { for: "nc-lang" }, "Site dili", lang)),
         h("div", { class: "nc-field" }, h("span", { class: "nc-label", text: "Barındırma" }), hostingChoice),
+        pkg.el,
         h(
           "div",
           { class: "nc-field" },

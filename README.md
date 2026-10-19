@@ -24,6 +24,11 @@ Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git 
 - Bilgi yapıştırılmış ama logo seçilmemişse iş başlamadan sorulur: "Yazı logosuyla başla" ya da "Önce logo ekleyeceğim". Böylece logosuz yapılıp sonra yeniden tasarlanan iş (ve harcanan kaynak) olmaz.
 - Logo başka bir müşterinin logosuyla aynıysa önce onay istenir; onaylanmazsa tasarım işi başlamaz.
 
+## Paket seçimi en başta, talep kutusu düzeltmesi (1.19.1)
+
+- Yeni Müşteri'nin 1. adımında **Paket** (Varsayılan / Temel / Standart / Premium) seçilir; ilk tasarım işi bu paketle çalışır. Sonra İş Takibi'nden değiştirilebilir.
+- Özel Talep kutusu, talep gönderilince artık boşalıyor (iş başlamazsa yazılan geri gelir).
+
 ## Yeni müşteri adımları ve ek seçenekler (1.19.0)
 
 - **Yeni Müşteri** üç adım: 1. İşletme (ek seçenekler dahil), 2. Logo ve fotoğraflar, 3. Müşteriden gelen bilgiler. Altta "Oluşturunca: …" ne olacağını söyler.

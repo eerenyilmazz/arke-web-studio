@@ -1020,6 +1020,15 @@ export const EN = {
     Site: "Site",
     "Telefon, tablet ve bilgisayarda düzgün görünüm": "Looks right on phone, tablet and computer",
     "Telefon ve e-postayla tek dokunuşla iletişim": "One-tap contact by phone and email",
+    "Varsayılan (Ayarlar)": "Default (Settings)",
+    "Ayarlar'daki varsayılan paket kullanılır.": "The default package from Settings is used.",
+    "En az kaynak: hızlı model, internet araştırması yok, ekran görüntülerine bakılmaz.":
+      "Fewest resources: fast model, no web research, screenshots are not looked at.",
+    "Tasarımda en güçlü model ve araştırma; tasarım skill'lerinde sadece arama yapılır.":
+      "Strongest model and research for design; the design skills are only searched.",
+    "Her işte en güçlü model; tasarım skill'leri tamamen yüklenir, en çok kaynak harcanır.":
+      "Strongest model for every job; the design skills are loaded in full; uses the most resources.",
+    Paket: "Package",
   },
   patterns: [
     ["{} fiyatı", "{} price"],
