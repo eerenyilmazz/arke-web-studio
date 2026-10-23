@@ -157,9 +157,25 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
       const { page, errors } = await open(`#/musteri/ui-bakery/${tab}`);
       await expect.poll(() => page.locator("h1").first().textContent()).toContain("UI Bakery");
       if (tab === "duzenle") {
-        // The quick forms appear once the site is built.
-        await page.locator(".qchip").first().click({ timeout: 5000 });
-        await expect.poll(() => page.locator("form").count()).toBeGreaterThan(0);
+        // The quick-edit list appears once the site is built; a row opens its editor, the back link the list again.
+        await page.locator('.qe-row[data-edit="colors"]').click({ timeout: 5000 });
+        await page.waitForSelector(".qe-editor .qe-foot");
+        await page.click(".qe-back");
+        await expect.poll(() => page.locator(".qe-row").count()).toBe(7);
+        // The action bar counts changes, blocks a nameless row and "Vazgeç" puts everything back.
+        await page.locator('.qe-row[data-edit="services"]').click();
+        const apply = page.locator(".qe-foot .btn-primary");
+        expect(await apply.isDisabled()).toBe(true);
+        await page.locator(".qe-toolbar .btn").click();
+        await page.locator(".svc-item").last().locator(".svc-price").fill("£20");
+        await expect.poll(() => page.locator(".qe-status").textContent()).toBe("Adı boş bir satır var");
+        expect(await apply.isDisabled()).toBe(true);
+        await page.locator(".svc-item").last().locator(".svc-title").fill("Sourdough class");
+        await expect.poll(() => page.locator(".qe-status").textContent()).toBe("1 değişiklik");
+        expect(await apply.isDisabled()).toBe(false);
+        await page.locator(".qe-foot .btn-ghost").click();
+        await expect.poll(() => page.locator(".qe-status").textContent()).toBe("Değişiklik yok");
+        await page.click(".qe-back");
       }
       expect(errors, tab).toEqual([]);
       await page.close();

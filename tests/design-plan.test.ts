@@ -1,4 +1,4 @@
-import { rmSync,  mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { rmSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";

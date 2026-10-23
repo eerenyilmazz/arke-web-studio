@@ -2,6 +2,34 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.2.0: Hızlı Düzenleme, Yeni Müşteri ve Ayarlar yeniden tasarlandı
+
+**Hızlı Düzenleme**
+- Düğme yığını yerine sitenin bugünkü hâlini gösteren bir liste: renk örnekleri, açık sayfalar, hizmet sayısı, telefon ve e-posta, form durumu, logo.
+- Satıra tıklayınca düzenleyici aynı kartta açılır ("← Hızlı Düzenleme" ile dönülür). Her düzenleyicinin altında aynı çubuk: kaç değişiklik var, "Vazgeç", uygula. Değişiklik yoksa ya da bir hata varsa uygula kapalı.
+- **Renk Paleti:** renk kartları, kodu elle yazma, her renkte eskiye dönme, canlı önizleme (başlık, paragraf, buton) ve okunurluk ölçümü (kontrast oranı).
+- **Sayfalar:** her sayfa için açma/kapama düğmesi ve kısa açıklama; "eklenecek" / "kaldırılacak" etiketleri. Siteye özel ek sayfalar artık listede ve uygulayınca kaybolmuyor. Ek sayfa ve blog yazısı açılır kapanır bölümlerde.
+- **Hizmetler ve Fiyatlar:** sürükleyerek ya da oklarla sıralama, sıra numarası, adı boş satır ve 12 sınırı uyarısı.
+- **Metin:** sayfa seçimi, arama, "sadece değişenler" süzgeci, sekme başlığı (60) ve arama açıklaması (160) için uzunluk sayacı, metin başına geri alma.
+- **İletişim Bilgileri:** gruplu alanlar, e-posta ve telefon denetimi, değişen alan işareti.
+- **İletişim Formu:** üç adımlı durum (servisi aç, adresi kaydet, siteye ekle), adres yazılırken servis tanınıyor (Formspree, Getform, FormSubmit, Web3Forms); erişim anahtarı yalnızca Web3Forms'ta isteniyor; adres kaldırılabiliyor.
+- **Logo ve Görseller:** logo alanı, görsellerin ızgara hâlinde durumu (Sitede / Bekliyor), sürükle-bırak yükleme. Müşteri Bilgileri'ndeki görseller de aynı görünümde.
+
+**Yeni Müşteri**
+- Solda adımlar ve her adımda girilenlerin özeti (ad ve sektör, paket ve toplam, logo ve fotoğraf sayısı, metin uzunluğu); altında siteyi başlatmak için eksikler.
+- Adımlar başlıklı bölümlere ayrıldı. Sektör için örnek düğmeleri; barındırma ve paket açıklamalı kartlarla seçiliyor; fiyat kutusunda para birimi; ek seçeneklerin altında canlı teklif toplamı.
+- Logo ve fotoğraflar sürükle-bırak; fotoğraflar küçük resimlerle görünüyor ve sonradan eklenebiliyor.
+- Bilgiler adımında metinde telefon, e-posta, adres, saatler, fiyat ve hizmet olup olmadığı gösteriliyor.
+- Özet adımı gruplu; her grubun "Düzenle" düğmesi ilgili adıma dönüyor. "İleri" düğmesi bir sonraki adımın adını söylüyor.
+
+**Ayarlar**
+- Solda gruplu menü (Kişisel, Çalışma, Sistem) ve simgeler; sağda bölüm başlığı ve açıklaması.
+- Her kart başlık, içerik ve düğme çubuğu olarak düzenlendi; alanlar okunur genişlikte.
+
+**Teknik**
+- Yeni görünüm ayrı bir stil dosyasında (`panel/studio.css`); kaldırılırsa eski görünüme dönülür. Sunucu tarafı ve API değişmedi.
+- İngilizce panel testi artık her düzenleyiciyi, her ayar bölümünü ve sihirbazın her adımını da denetliyor; ekran denetimi bu ekranların görüntülerini de alıyor.
+
 ## 2.1.0: ilk gerçek denemeden çıkan düzeltmeler
 
 **Panel**

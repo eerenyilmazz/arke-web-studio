@@ -1,6 +1,6 @@
 // Settings: publishing, budget, sender, backups, web research.
 import { getLang, LANGS, locale, setLang } from "./i18n.js";
-import { api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODEL_TR, PACKAGE_NAMES, toast } from "./core.js";
+import { api, copyButton, fmtTokens, guarded, h, ICON, ignoreOptional, MODEL_TR, PACKAGE_NAMES, svg, toast } from "./core.js";
 import { askNotifyPermission, chime } from "./jobs.js";
 import { portalSettingsCard } from "./portal.js";
 import { accountCard } from "./account.js";
@@ -16,30 +16,40 @@ export async function renderSettings() {
   const lines = 'export ARKE_CF_MANAGED_API_TOKEN="buraya-token"\nexport ARKE_CF_MANAGED_ACCOUNT_ID="buraya-hesap-kimligi"';
   const ready = st && st.managed.token && st.managed.accountId && st.wrangler;
   const group = (id, title, ...cards) =>
-    h("section", { class: "settings-group", id: `ayar-${id}`, "data-enter": "1" }, h("h2", { class: "settings-title", text: title }), ...cards);
+    h(
+      "section",
+      { class: "settings-group", id: `ayar-${id}`, "data-enter": "1" },
+      h(
+        "header",
+        { class: "set-section-head" },
+        h("h2", { class: "set-section-title", text: title }),
+        h("p", { class: "muted small", text: SECTION_NOTES[id] }),
+      ),
+      ...cards.map(asPanel),
+    );
   const nav = h(
     "nav",
     { class: "settings-nav", "aria-label": "Ayar bölümleri" },
-    ...[
-      ["hesap", "Hesabım"],
-      ["genel", "Genel"],
-      ["ekip", "Ekip"],
-      ["kullanim", "Kaynak Kullanımı"],
-      ["yayin", "Yayın"],
-      ["yedek", "Yedek"],
-      ["guncelleme", "Güncelleme"],
-    ].map(([id, label]) =>
+    ...NAV.map(([heading, items]) =>
       h(
-        "a",
-        {
-          href: `#ayar-${id}`,
-          "data-tab": id,
-          onclick: (e) => {
-            e.preventDefault();
-            showTab(id);
-          },
-        },
-        label,
+        "div",
+        { class: "set-nav-group" },
+        h("p", { class: "set-nav-heading", text: heading }),
+        ...items.map(([id, label, icon]) =>
+          h(
+            "a",
+            {
+              href: `#ayar-${id}`,
+              "data-tab": id,
+              onclick: (e) => {
+                e.preventDefault();
+                showTab(id);
+              },
+            },
+            svg(icon, 16, 1.8),
+            h("span", { text: label }),
+          ),
+        ),
       ),
     ),
   );
@@ -119,17 +129,27 @@ export async function renderSettings() {
   const page = h(
     "div",
     { class: "settings-page" },
-    h("div", { class: "settings-head", "data-enter": "0" }, h("h1", { text: "Ayarlar" }), nav),
+    h(
+      "header",
+      { class: "settings-head", "data-enter": "0" },
+      h("h1", { text: "Ayarlar" }),
+      h("p", { class: "muted", text: "Hesabınız, ekip, kaynak kullanımı ve sistem." }),
+    ),
     h(
       "div",
-      { class: "settings stack" },
-      group("hesap", "Hesabım", profileCard(), accountCard()),
-      group("genel", "Genel", languageCard(), senderCard(), notifications, approvalCode),
-      group("ekip", "Ekip", teamCard()),
-      group("kullanim", "Kaynak Kullanımı", budgetCard(), agentsCard(), profitSettingsCard(), webResearchCard()),
-      group("yayin", "Yayın", cloudflare, portalSettingsCard()),
-      group("yedek", "Yedek", backupCard()),
-      group("guncelleme", "Güncelleme", updateCard()),
+      { class: "settings-layout" },
+      h("aside", { class: "settings-side" }, nav),
+      h(
+        "div",
+        { class: "settings" },
+        group("hesap", "Hesabım", profileCard(), accountCard()),
+        group("genel", "Genel", languageCard(), senderCard(), notifications, approvalCode),
+        group("ekip", "Ekip", teamCard()),
+        group("kullanim", "Kaynak Kullanımı", budgetCard(), agentsCard(), profitSettingsCard(), webResearchCard()),
+        group("yayin", "Yayın", cloudflare, portalSettingsCard()),
+        group("yedek", "Yedek", backupCard()),
+        group("guncelleme", "Güncelleme", updateCard()),
+      ),
     ),
   );
   // Links inside the page to another section (e.g. "(Hesabım)") open that tab.
@@ -149,6 +169,73 @@ export async function renderSettings() {
   return page;
 }
 const TAB_KEY = "arke-settings-tab";
+
+const NAV = [
+  [
+    "Kişisel",
+    [
+      ["hesap", "Hesabım", ICON.user],
+      ["genel", "Genel", ICON.sliders],
+    ],
+  ],
+  [
+    "Çalışma",
+    [
+      ["ekip", "Ekip", ICON.users],
+      ["kullanim", "Kaynak Kullanımı", ICON.gauge],
+    ],
+  ],
+  [
+    "Sistem",
+    [
+      ["yayin", "Yayın", ICON.cloud],
+      ["yedek", "Yedek", ICON.archive],
+      ["guncelleme", "Güncelleme", ICON.refresh],
+    ],
+  ],
+];
+
+const SECTION_NOTES = {
+  hesap: "Adınız, panel diliniz ve yayın için kendi Cloudflare hesabınız.",
+  genel: "Panel dili, teklif bilgileri, bildirimler ve onay kodu.",
+  ekip: "Müşterileri ekip arkadaşlarınızla bir Git deposu üzerinden paylaşın.",
+  kullanim: "Paket, aylık sınır, iş türüne göre agent seçimi, kâr hesabı ve internet araştırması.",
+  yayin: "Yayın aracı ve müşteri portalı.",
+  yedek: "Bütün müşterilerin, sürüm geçmişlerinin ve ayarların yedeği.",
+  guncelleme: "Arke Web Studio sürümü ve güncellemeler.",
+};
+
+/** Is this element an action row (only buttons, perhaps a status line)? Those become the panel's footer. */
+const isActions = (el) =>
+  el.tagName === "DIV" &&
+  el.children.length > 0 &&
+  [...el.children].every((c) => c.matches("button, .btn, a.btn, label.btn, span, input[type=file]")) &&
+  el.querySelector("button, .btn");
+
+/**
+ * Gives a settings card a header (title, note, badge), a body and a footer for its buttons, without changing what the
+ * card does: its nodes are moved, never rebuilt. Cards that redraw themselves later are restructured again.
+ */
+function asPanel(card) {
+  card.classList.add("set-panel");
+  const shape = () => {
+    const items = [...card.children].flatMap((c) => (c.classList.contains("set-part") ? [...c.children] : [c]));
+    const head = [];
+    while (items.length && (items[0].tagName === "H2" || (items[0].matches(".row, div") && items[0].querySelector(":scope > h2")))) head.push(items.shift());
+    while (head.length && items.length && items[0].matches("p.muted.small") && head.length < 3) head.push(items.shift());
+    const foot = items.length > 1 && isActions(items.at(-1)) ? items.pop() : null;
+    observer.disconnect();
+    card.replaceChildren(
+      ...(head.length ? [h("header", { class: "set-part set-head" }, ...head)] : []),
+      ...(items.length ? [h("div", { class: "set-part set-body" }, ...items)] : []),
+      ...(foot ? [h("footer", { class: "set-part set-foot" }, foot)] : []),
+    );
+    observer.observe(card, { childList: true });
+  };
+  const observer = new MutationObserver(() => shape());
+  shape();
+  return card;
+}
 
 /** Budget mode, monthly budget and this month's use. */
 export function budgetCard() {

@@ -59,7 +59,7 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     await page.selectOption("#nc-country", "GB");
     await next();
     // Package, price and the extras the client asked for: recorded before the first job, so the design follows them.
-    await page.selectOption("#nc-package", "premium");
+    await page.click('label[for="nc-package-premium"]');
     await page.fill("#nc-price", "900");
     await page.check("#nc-ad-theme");
     await page.fill("#nc-ad-theme-price", "150");

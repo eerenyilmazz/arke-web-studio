@@ -649,7 +649,11 @@ describe("token budget", () => {
       body: JSON.stringify({ slug: "early-co", businessName: "Early", industry: "bakery", hostingModel: "managed" }),
     });
     const job = (await (
-      await fetch(`${base}/api/clients/early-co/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "Renkler uygun, sormadan devam." }) })
+      await fetch(`${base}/api/clients/early-co/agent/revise`, {
+        method: "POST",
+        headers: json,
+        body: JSON.stringify({ request: "Renkler uygun, sormadan devam." }),
+      })
     ).json()) as { title: string };
     expect(job.title).toBe("Siteyi hazırla");
     expect(calls[0]!.stdin).toMatch(/Prepare this client's website/);

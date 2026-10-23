@@ -59,6 +59,13 @@ describe("panel in English", { timeout: 300_000 }, () => {
     await page.click("#nc-start");
     await page.waitForURL(new RegExp(`#/musteri/${SLUG}`));
     expect((await jobDone(base, SLUG, "create-site", 1)).status).toBe("succeeded");
+    // Approve the plan and build the site, so the quick-edit editors exist too.
+    await page.evaluate(async (slug) => {
+      const post = (p: string) => fetch(p, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      await post(`/api/clients/${slug}/design-plan/approve`);
+      await post(`/api/clients/${slug}/agent/create-site`);
+    }, SLUG);
+    expect((await jobDone(base, SLUG, "create-site", 2)).status).toBe("succeeded");
 
     // Switch from the settings screen, as the operator would; the page reloads in English.
     await page.goto(`${base}/#/ayarlar`);
@@ -70,12 +77,9 @@ describe("panel in English", { timeout: 300_000 }, () => {
     expect(await page.locator("#view h1").textContent()).toBe("Settings");
 
     const leftovers: string[] = [];
-    for (const hash of SCREENS) {
-      await page.goto(`${base}/${hash}`);
-      await page.waitForSelector("#view h1");
-      await page.waitForTimeout(400); // lists and cards that load after the first draw
+    const collect = async (label: string) => {
       // ARKE_E2E_SHOTS=<folder> keeps a screenshot of each screen, for reading the English by eye.
-      if (process.env.ARKE_E2E_SHOTS) await page.screenshot({ path: `${process.env.ARKE_E2E_SHOTS}/${hash.replace(/\W+/g, "_")}.png`, fullPage: true });
+      if (process.env.ARKE_E2E_SHOTS) await page.screenshot({ path: `${process.env.ARKE_E2E_SHOTS}/${label.replace(/\W+/g, "_")}.png`, fullPage: true });
       const texts = await page.evaluate(() => {
         const out: string[] = [];
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -95,9 +99,39 @@ describe("panel in English", { timeout: 300_000 }, () => {
         return out;
       });
       for (const t of texts) {
-        if (TURKISH.test(t) && t !== "Türkçe" && !t.includes("Türkiye")) leftovers.push(`${hash}: ${t}`);
-        if (/^(null|false|undefined)$/.test(t)) leftovers.push(`${hash}: a stray "${t}"`); // a falsy value given to append()
+        if (TURKISH.test(t) && t !== "Türkçe" && !t.includes("Türkiye")) leftovers.push(`${label}: ${t}`);
+        if (/^(null|false|undefined)$/.test(t)) leftovers.push(`${label}: a stray "${t}"`); // a falsy value given to append()
       }
+    };
+    for (const hash of SCREENS) {
+      await page.goto(`${base}/${hash}`);
+      await page.waitForSelector("#view h1");
+      await page.waitForTimeout(400); // lists and cards that load after the first draw
+      await collect(hash);
+    }
+    // Every quick-edit editor, every settings section and every step of the new-client form.
+    for (const id of ["colors", "pages", "services", "text", "contact", "form", "files"]) {
+      await page.goto(`${base}/#/musteri/${SLUG}/duzenle`);
+      await page.click(`.qe-row[data-edit="${id}"]`);
+      await page.waitForSelector(".qe-editor");
+      await page.waitForTimeout(300);
+      await collect(`quick edit ${id}`);
+      await page.click(".qe-back");
+    }
+    await page.goto(`${base}/#/ayarlar`);
+    for (const tab of ["hesap", "genel", "ekip", "kullanim", "yayin", "yedek", "guncelleme"]) {
+      await page.click(`.settings-nav a[data-tab="${tab}"]`);
+      await page.waitForTimeout(250);
+      await collect(`settings ${tab}`);
+    }
+    await page.goto(`${base}/#/yeni`);
+    await page.waitForSelector("#nc-name");
+    await page.fill("#nc-name", "Test Co");
+    await page.fill("#nc-industry", "bakery");
+    for (let i = 1; i < 5; i++) {
+      await page.click("#nc-next");
+      await page.waitForTimeout(150);
+      await collect(`new client step ${i + 1}`);
     }
     // A string, so the test runner does not rewrite the browser-side import.
     const missing = (await page.evaluate('import("/js/i18n.js").then((m) => [...m.missing])')) as string[];

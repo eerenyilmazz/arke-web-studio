@@ -26,7 +26,7 @@ import {
   time,
   toast,
 } from "./core.js";
-import { editForm } from "./edit.js";
+import { quickEditCard } from "./edit.js";
 import { drawFeed } from "./feed.js";
 import { renderHome } from "./home.js";
 import { qualityTable, tabInfo, versionsCard } from "./info.js";
@@ -353,48 +353,18 @@ export async function tabWork(body, d) {
   if (planWaiting(d)) body.append(planCard(d));
   else if (!d.distReady || (PREPARE.includes(d.status.stage) && !approvedSite && !d.distReady)) body.append(prepareCard(d));
   if (d.distReady) {
-    const forms = [
-      ["colors", "Renk Paleti"],
-      ["pages", "Sayfalar"],
-      ["services", "Hizmetler ve Fiyatlar"],
-      ["text", "Metin"],
-      ["contact", "İletişim Bilgileri"],
-      ["form", "İletişim Formu"],
-      ["files", "Logo ve Görseller"],
-    ];
-    const open = state.editForm?.[slug] || null;
-    const holder = h("div", { class: "edit-holder" });
-    const chips = h(
-      "div",
-      { class: "quick-chips", role: "group", "aria-label": "Hızlı düzenleme" },
-      ...forms.map(([id, label]) =>
-        h(
-          "button",
-          {
-            type: "button",
-            class: "qchip",
-            "aria-pressed": String(open === id),
-            onclick: async () => {
-              state.editForm = { ...(state.editForm || {}), [slug]: open === id ? null : id };
-              const next = h("div", { class: "tab-body" });
-              await tabWork(next, d);
-              body.replaceWith(next);
-            },
-          },
-          label,
-        ),
-      ),
-    );
-    body.append(
-      h(
-        "section",
-        { class: "card quick" },
-        h("div", { class: "card-head" }, h("h3", { text: "Hızlı Düzenleme" }), h("span", { class: "muted small", text: "Talimat yazmanıza gerek yoktur" })),
-        chips,
-        holder,
-      ),
-    );
-    if (open) holder.append(await editForm(open, d));
+    // The open editor is kept per client, so a redraw (a job finishing, a tab switch) opens it again.
+    const setOpen = async (id) => {
+      state.editForm = { ...(state.editForm || {}), [slug]: id };
+      const next = h("div", { class: "tab-body" });
+      await tabWork(next, d);
+      body.replaceWith(next);
+      const target = next.querySelector(id ? ".qe-head h3" : `.qe-row[data-edit="${body.dataset.lastEdit || ""}"]`);
+      target?.focus({ preventScroll: true });
+      next.querySelector(".qe")?.scrollIntoView({ block: "nearest" });
+    };
+    body.dataset.lastEdit = state.editForm?.[slug] || "";
+    body.append(await quickEditCard(d, state.editForm?.[slug] || null, setOpen));
   }
   body.append(requestCard(d));
 }

@@ -144,12 +144,24 @@ async function findings(page: Page): Promise<string[]> {
   await idle(base);
 
   const report: string[] = [];
+  const ONLY = (process.env.ARKE_SHOT_ONLY || "").split(",").filter(Boolean);
   const screens: Array<[string, string, ((p: Page) => Promise<void>)?]> = [
     ["home", "#/"],
     ["analiz", "#/analiz"],
     ["kutuphane", "#/kutuphane"],
     ["arsiv", "#/arsiv"],
     ["ayarlar", "#/ayarlar"],
+    ...(["genel", "ekip", "kullanim", "yayin", "yedek", "guncelleme"] as const).map(
+      (tab) =>
+        [
+          `ayarlar-${tab}`,
+          "#/ayarlar",
+          async (p: Page) => {
+            await p.click(`.settings-nav a[data-tab="${tab}"]`);
+            await p.waitForTimeout(300);
+          },
+        ] as [string, string, (p: Page) => Promise<void>],
+    ),
     ["yeni-1", "#/yeni"],
     [
       "yeni-2",
@@ -192,6 +204,18 @@ async function findings(page: Page): Promise<string[]> {
         await p.click(".client-head .menu summary");
       },
     ],
+    ...(["colors", "pages", "services", "text", "contact", "form", "files"] as const).map(
+      (id) =>
+        [
+          `c-qe-${id}`,
+          "#/musteri/hollin/duzenle",
+          async (p: Page) => {
+            await p.click(`.qe-row[data-edit="${id}"]`);
+            await p.waitForSelector(".qe-editor");
+            await p.waitForTimeout(300);
+          },
+        ] as [string, string, (p: Page) => Promise<void>],
+    ),
     [
       "c-approve",
       "#/musteri/hollin/duzenle",
@@ -207,6 +231,8 @@ async function findings(page: Page): Promise<string[]> {
       [390, 844, "m"],
     ] as const) {
       for (const [name, hash, act] of screens) {
+        // ARKE_SHOT_ONLY=yeni,c-qe narrows the run while iterating on a screen.
+        if (ONLY.length && !ONLY.some((o) => name.startsWith(o))) continue;
         const page = await browser!.newPage({ viewport: { width: vw, height: vh } });
         const errors: string[] = [];
         page.on("pageerror", (e) => errors.push(e.message));

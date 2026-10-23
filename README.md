@@ -121,8 +121,10 @@ Arayüz ArkeLab tasarım sistemini kullanır: varsayılan tema koyu, sağ üstte
 
 ### Yeni müşteri
 
-**Yeni Müşteri** sihirbazı sırayla şunları sorar: site türü, paket (Temel / Standart / Premium) ve ekler, işletme
-bilgileri, ülke ve dil, logo ve fotoğraflar, müşteriden gelen serbest metin. Ülke dili, yazım kurallarını, para
+**Yeni Müşteri** sihirbazı beş adımdır: İşletme (site türü, ad, sektör, ülke ve dil, barındırma), Paket ve fiyat
+(paket, fiyat, teslim, ekler ve teklif toplamı), Logo ve fotoğraflar (sürükle-bırak), Bilgiler (müşteriden gelen
+serbest metin; metinde telefon, e-posta, fiyat gibi bilgilerin olup olmadığı gösterilir), Özet ve başlat. Solda
+adımlar ve her adımda girilenlerin kısa özeti, altında siteyi başlatmak için eksik olanlar durur. Ülke dili, yazım kurallarını, para
 birimini ve yasal gereklilikleri belirler (`rules/markets.md`). Varsayılan olarak site İngilizcedir, Türkiye'de
 Türkçedir; ikinci dil ek olarak satılır.
 
@@ -144,9 +146,12 @@ fikir istersiniz. Onaydan önce agent sayfa yazamaz, derleme de geçmez.
 
 Müşteri sayfasında solda canlı önizleme (telefon/masaüstü) ve sürüm geçmişi, sağda sekmeler bulunur:
 
-- **Düzenleme:** hızlı formlar (renk paleti, sayfalar, hizmetler ve fiyatlar, metin, iletişim bilgileri, iletişim
-  formu, logo ve görseller) ve "Özel Talep" sohbeti. Basit değişiklikleri panel kendisi kaydeder, gerisi agent'a
-  kısa ve net bir iş olarak gider.
+- **Düzenleme:** "Hızlı Düzenleme" listesi sitenin bugünkü hâlini gösterir (renkler, açık sayfalar, hizmet sayısı,
+  telefon ve e-posta, form durumu, logo). Bir satıra tıklayınca düzenleyici açılır; altındaki çubuk kaç değişiklik
+  olduğunu gösterir, "Vazgeç" ile geri alınır, uygula düğmesi değişiklik yoksa ya da bir hata varsa kapalıdır.
+  Renklerde okunurluk (kontrast) anında ölçülür; hizmetler sürüklenerek ya da oklarla sıralanır; metinlerde uzunluk
+  sayacı ve "sadece değişenler" süzgeci vardır; form adresi servisine göre tanınır. Altta "Özel Talep" sohbeti.
+  Basit değişiklikleri panel kendisi kaydeder, gerisi agent'a kısa ve net bir iş olarak gider.
 - **Marka Kimliği:** marka kartı (logo, slogan, renkler, canlı imza hareketi, tipografi), kütüphaneye kaydetme,
   "Markayla yeniden tasarla".
 - **Teklif:** yazdırılabilir teklif ve iş raporu.
@@ -167,7 +172,7 @@ kaldırma da panelden yapılır. Canlı sitede bu iki işlem müşterinin kısa 
 - **Analiz:** müşteri, iş, maliyet ve site verileri; filtreler, KPI'lar, para birimine göre toplamlar, CSV dışa aktarma.
 - **Tasarım Kütüphanesi:** beğendiğiniz tasarımları saklayın, yeni müşteride başlangıç olarak kullanın. Eski müşterinin bilgileri sitede kalırsa derleme durur.
 - **Arşiv:** müşteri silinmez; klasörleri `_archive/` altına taşınır.
-- **Ayarlar** (sekmeli; bir seferde tek bölüm): Hesabım (profil, Cloudflare), Genel (dil, teklif, bildirimler), Ekip, Kaynak Kullanımı (paket, agent ve model, kâr, internet araştırması), Yayın (portal), Yedek, Güncelleme.
+- **Ayarlar** (solda gruplu menü; bir seferde tek bölüm): Hesabım (profil, Cloudflare), Genel (dil, teklif, bildirimler), Ekip, Kaynak Kullanımı (paket, agent ve model, kâr, internet araştırması), Yayın (portal), Yedek, Güncelleme.
 
 ### Komut satırı (isteğe bağlı)
 
