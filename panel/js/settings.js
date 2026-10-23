@@ -379,7 +379,7 @@ export function senderCard() {
 
 /** Backups to a folder the operator chooses; automatic after jobs (at most every 30 minutes) and on demand. */
 export function backupCard() {
-  const dir = h("input", { id: "bk-dir", placeholder: "/mnt/c/Users/<kullanıcı>/OneDrive/SiteFactory-Yedek", maxlength: 400 });
+  const dir = h("input", { id: "bk-dir", placeholder: "/mnt/c/Users/<kullanıcı>/OneDrive/ArkeWebStudio-Yedek", maxlength: 400 });
   const list = h("ul", { class: "files" });
   const status = h("p", { class: "small", role: "status" });
   /** Unpacks the backup in a temporary folder and checks every client in it; the real folders are not touched. */

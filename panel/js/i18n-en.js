@@ -1285,7 +1285,7 @@ export const EN = {
     orta: "medium",
     "Adres:": "Address:",
     "· kuruldu:": "· set up:",
-    "/mnt/c/Users/<kullanıcı>/OneDrive/SiteFactory-Yedek": "/mnt/c/Users/<user>/OneDrive/SiteFactory-Backup",
+    "/mnt/c/Users/<kullanıcı>/OneDrive/ArkeWebStudio-Yedek": "/mnt/c/Users/<user>/OneDrive/ArkeWebStudio-Backup",
     Slogan: "Tagline",
     Almanca: "German",
     Hizmetler: "Services",

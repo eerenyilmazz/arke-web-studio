@@ -8,7 +8,7 @@ import { tempFactory } from "./helpers.js";
 /** Every person runs their own panel: nothing the agent or the panel shows may be tied to one named person. */
 // The product's old name and prefixes, spelled out in pieces so a rename sweep cannot change this check itself.
 const OLD_NAME = new RegExp(
-  ["Site Fac" + "tory", "site-fac" + "tory", "SF" + "Motion", "(?<![A-Za-z0-9])s" + "f[-_][A-Za-z0-9$]", "\\bS" + "F_[A-Z]"].join("|"),
+  ["Site Fac" + "tory", "site-fac" + "tory", "SiteFac" + "tory", "SF" + "Motion", "(?<![A-Za-z0-9])s" + "f[-_][A-Za-z0-9$]", "\\bS" + "F_[A-Z]"].join("|"),
 );
 
 describe("global studio: no personal traces", () => {
