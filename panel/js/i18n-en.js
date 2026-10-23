@@ -3,6 +3,7 @@
 // where {} stands in the English. Missing entries simply stay Turkish. Generated once, then edited by hand.
 export const EN = {
   exact: {
+    "Agent size bu adla hitap eder.": "The agent addresses you by this name.",
     Güncelleme: "Updates",
     Ekip: "Team",
     "Güncellemeleri Denetle": "Check for Updates",
@@ -48,13 +49,10 @@ export const EN = {
     Profil: "Profile",
     Başla: "Start",
     Adınız: "Your name",
-    "Stüdyo adı (isteğe bağlı)": "Studio name (optional)",
     "Profil kaydedildi.": "Profile saved.",
     "Ad Soyad": "Full name",
-    "ör. Atölye Web": "e.g. Atelier Web",
     "Bu panel size özel: kendi müşterileriniz, kendi hesaplarınız. Agent size adınızla hitap eder; onaylar yalnızca sizdedir.":
       "This panel is yours: your own clients, your own accounts. The agent addresses you by name; approvals are yours alone.",
-    "Agent size bu adla hitap eder. Stüdyo adı isteğe bağlıdır.": "The agent addresses you by this name. The studio name is optional.",
     "Müşteri Yönetim Ekranı": "Client Admin Screen",
     "Katalog ve gelen mesajlar için müşterinin kendi ekranı.": "The client's own screen for the catalogue and incoming messages.",
     "Site, müşterinin kendi yönetim ekranıyla gelir (site adresi/admin). Kayıtları ve gelen mesajları oradan yönetir.":

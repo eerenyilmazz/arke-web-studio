@@ -35,7 +35,7 @@ export const SettingsSchema = z.object({
   /** Language of the panel and of the agent's notes to the operator; client sites keep their own languages. */
   panelLanguage: z.enum(["tr", "en"]).default("tr"),
   /**
-   * Who uses this panel: their name and studio, asked on first start. The agent addresses them by name (the rules
+   * Who uses this panel: their name, asked on first start (studio: optional, kept for older settings files). The agent addresses them by name (the rules
    * call them "the operator"); everyone runs their own panel with their own accounts.
    */
   profile: z

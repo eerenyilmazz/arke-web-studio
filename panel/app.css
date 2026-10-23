@@ -1190,3 +1190,14 @@ h2 { font-weight: 600; }
 #team-remote { width: 100%; }
 .settings-nav { flex-wrap: wrap; max-width: 100%; }
 .settings-nav a { white-space: nowrap; }
+
+/* ---------- Wide screens (2.0.1): narrow pages sit in the middle instead of the left edge; settings use two columns ---------- */
+.nc-wizard, .archive-list, .empty { margin-inline: auto; }
+.settings-page { max-width: 80rem; margin-inline: auto; }
+@media (min-width: 1200px) {
+  .settings-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; align-items: start; }
+  .settings-group > .settings-title { grid-column: 1 / -1; margin-bottom: 0; }
+  .settings-group > .card + .card, .settings-group > form + .card, .settings-group > .card + form, .settings-group > form + form { margin-top: 0; }
+  /* A card alone in its group, and the wide tables, take the whole row. */
+  .settings-group > .settings-title + :last-child, .settings-group > :has(.agent-row), #team-card, #update-card { grid-column: 1 / -1; }
+}

@@ -415,7 +415,7 @@ async function proposalSheet(body, d, switcher) {
     api("GET", "/api/settings").catch(() => ({ sender: {} })),
     api("GET", `/api/clients/${slug}/brand`).catch(() => null),
   ]);
-  // The sender falls back to the profile (studio, else name) until the proposal's own fields are filled in.
+  // The sender falls back to the profile name until the proposal's own fields are filled in.
   const s = { ...(settings.sender || {}) };
   if (!s.name) s.name = settings.profile?.studio || settings.profile?.name || "";
   const b = d.businessTracking || {};

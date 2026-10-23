@@ -2,6 +2,12 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.0.1: geniş ekran düzeni, profil sadeleşti
+
+- **Geniş ekranlarda sayfalar ortalandı:** Yeni Müşteri, Arşiv ve boş ana ekran artık sol kenara yaslı durmuyor.
+- **Ayarlar iki sütunlu:** kartlar 1200px ve üstünde iki sütuna diziliyor; tek kartlı bölümler, agent tablosu, Ekip ve Güncelleme tam genişlikte.
+- **Profilden "Stüdyo adı" alanı kaldırıldı:** sadece adınız ve panel diliniz soruluyor. Teklifte gönderen boşsa adınız yazılıyor.
+
 ## 2.0.0: yeni ad, Arke Web Studio (temiz başlangıç)
 
 1.30.0 zip'inin yerini alır; o sürüm kullanılmamalı (eski adlara uyumluluk tutuyordu).
