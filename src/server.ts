@@ -290,7 +290,7 @@ function registerPlanTool(server: McpServer, factory: FactoryConfig): void {
     {
       title: "Save design plan",
       description:
-        "New designs: how you will design the site, for the operator to approve before any page is written (rules/custom-site.md, 'Design plan'). Formal names in the site's main language. Saving never approves; after saving, stop and summarise the plan.",
+        "New designs: how you will design the site, for the operator to approve before any page is written (rules/custom/plan.md). Formal names in the site's main language. Saving never approves; after saving, stop and summarise the plan.",
       inputSchema: {
         slug,
         plan: z

@@ -25,7 +25,7 @@ export function checkSignature(distDir: string, required: boolean, plannedBeats:
   const file = path.join(distDir, "brand", "signature.html");
   if (!existsSync(file))
     return required
-      ? { name, status: "fail", detail: "brand/signature.html is missing: write the signature motion's demo page (rules/custom-site.md)." }
+      ? { name, status: "fail", detail: "brand/signature.html is missing: write the signature motion's demo page (rules/custom/brand.md)." }
       : null;
   const html = readFileSync(file, "utf8");
   const steps = countMotionSteps(html);
@@ -37,6 +37,6 @@ export function checkSignature(distDir: string, required: boolean, plannedBeats:
   return {
     name,
     status: required ? "fail" : "warn",
-    detail: `${problems.join("; ")}. A fade or one moving part is not a signature: build it from the plan's beats (rules/custom-site.md, "Signature motion").`,
+    detail: `${problems.join("; ")}. A fade or one moving part is not a signature: build it from the plan's beats (rules/custom/brand.md, "Signature motion").`,
   };
 }

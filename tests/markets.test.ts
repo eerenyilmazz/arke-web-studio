@@ -113,7 +113,7 @@ describe("design and language rules (1.21.0)", () => {
     const { FACTORY_ROOT } = await import("../src/config.js");
     const { designDepth } = await import("../src/lib/custom-site.js");
     const { isExcluded, searchKnowledge } = await import("../src/lib/knowledge.js");
-    const rules = readFileSync(pathMod.join(FACTORY_ROOT, "rules", "custom-site.md"), "utf8");
+    const rules = ["custom-site.md", "custom/brand.md", "custom/build.md"].map((f) => readFileSync(pathMod.join(FACTORY_ROOT, "rules", f), "utf8")).join("\n");
     expect(rules).toMatch(/Never a label above every heading/);
     expect(rules).toMatch(/No minimum number of sections/);
     expect(rules).toMatch(/never write a `<locale>\/` page in a design job/);

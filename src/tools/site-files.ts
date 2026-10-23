@@ -42,7 +42,7 @@ function assertPlanAllows(paths: ClientPaths, rel: string): void {
   );
 }
 
-/** The agent's design plan for a new design (rules/custom-site.md, "Design plan"). Saving it never approves it. */
+/** The agent's design plan for a new design (rules/custom/plan.md). Saving it never approves it. */
 export function saveDesignPlanTool(factory: FactoryConfig, args: { slug: string; plan: unknown }) {
   const paths = openClient(factory, assertSlug(args.slug));
   const parsed = DesignPlanSchema.safeParse(args.plan);

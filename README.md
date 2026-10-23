@@ -9,7 +9,7 @@ Herkes kendi bilgisayarında kendi panelini kullanır: kendi müşterileri, kend
 Birden çok kişi aynı müşteriler üzerinde çalışacaksa bir Git deposu üzerinden ekip olarak eşitleme yapılabilir
 (bkz. [Ekip çalışması](#ekip-çalışması)).
 
-> Sürüm notları: [`CHANGELOG.md`](CHANGELOG.md) · Agent kuralları: [`AGENTS.md`](AGENTS.md) · Tasarım ve pazar kuralları: [`rules/`](rules/)
+> Sürüm notları: [`CHANGELOG.md`](CHANGELOG.md) · Yol haritası: [`ROADMAP.md`](ROADMAP.md) · Agent kuralları: [`AGENTS.md`](AGENTS.md) · Tasarım ve pazar kuralları: [`rules/`](rules/)
 
 ---
 
@@ -320,7 +320,12 @@ site yayınlanmaz; test için hayali firmalar kullanılır.
 ```
 site-factory/                 ← bu depo (fabrika)
 ├── AGENTS.md  CLAUDE.md      ← agent'ın akışı ve kuralları (CLAUDE.md → AGENTS.md)
-├── rules/                    ← tasarım, pazar, SEO, araştırma, hazır parça kuralları
+├── README.md  CHANGELOG.md  ROADMAP.md
+├── rules/                    ← kuralların tek kaynağı: araştırma, pazar, SEO, hazır parçalar
+│   ├── custom-site.md        ← serbest tasarımın başlangıcı (hangi dosya ne zaman okunur)
+│   └── custom/               ← plan.md, brand.md, build.md, changes.md
+├── docs/history/             ← ilk yapım planı (SPEC.md, sadece tarihçe)
+├── .github/workflows/ci.yml  ← her gönderimde lint, tip kontrolü, derleme, testler
 ├── src/
 │   ├── server.ts  tools/     ← MCP sunucusu ve araçları
 │   ├── lib/                  ← yollar, onaylar, derleme kontrolleri, hesaplar (şifreli), sürümler…
@@ -368,9 +373,11 @@ npm run schema       # Zod → schema/*.schema.json
 - Değişiklikler küçük, geri alınabilir ve testli olmalı; mevcut API ve veriler korunur.
 - Arayüz metinleri Türkçe yazılır, İngilizceleri `panel/js/i18n-en.js` dosyasında tutulur.
 - Ekran denetimi testi (`tests/ui-audit.test.ts`) her ekranı iki temada, masaüstü ve telefon genişliğinde kontrol eder: kontrast, taşma, animasyon, script hatası.
+- **Kurallar tek yerde:** agent'ın uyduğu kurallar `rules/` ve `AGENTS.md` dosyalarındadır. Agent komutları (`src/panel/prompts.ts`) kuralları tekrar etmez, sadece hangi dosyanın okunacağını söyler. Bir kuralı değiştirmek için ilgili md dosyasını değiştirin.
+- **CI:** GitHub'a her gönderimde lint, tip kontrolü, derleme ve testler çalışır (`.github/workflows/ci.yml`; tarayıcılı uçtan uca testler hariç).
 - **Sürüm çıkarmak:**
   1. `package.json` ve `package-lock.json` dosyalarında sürümü yükseltin.
-  2. `CHANGELOG.md` dosyasına not ekleyin.
+  2. `CHANGELOG.md` dosyasına not ekleyin; biten adımı `ROADMAP.md`'de işaretleyin.
   3. Commit atın ve depoya gönderin. Git ile kuranlar panelden günceller.
   4. Zip dağıtımı için: `git archive --format=zip --prefix=site-factory/ -o site-factory-X.Y.Z.zip HEAD`.
 

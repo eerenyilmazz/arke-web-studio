@@ -16,7 +16,7 @@ describe("design knowledge search", () => {
   it("finds the client-logo rule among rules and skills", () => {
     const hits = searchKnowledge(FACTORY_ROOT, "client logo own file", 3);
     expect(hits.length).toBeGreaterThan(0);
-    expect(hits[0]!.source).toBe("rules/custom-site.md");
+    expect(hits[0]!.source).toBe("rules/custom/brand.md");
     expect(hits[0]!.text.length).toBeLessThanOrEqual(1400);
   });
 

@@ -22,7 +22,7 @@ export function checkKitParts(distDir: string): CheckResult {
     const html = readFileSync(file, "utf8");
     const usesKit = /<script\b[^>]*\ssrc=["']\/js\/kit\.js["']/i.test(html);
     if (/data-(theme|nav)-toggle/.test(html) && !usesKit)
-      fails.push(`${rel}: has a theme toggle or menu button but does not load /js/kit.js (use the factory parts: rules/custom-site.md, "Factory parts")`);
+      fails.push(`${rel}: has a theme toggle or menu button but does not load /js/kit.js (use the factory parts: rules/custom/build.md, "Factory parts")`);
     const nav = /<header\b[\s\S]*?<\/header>/i.exec(html)?.[0] ?? "";
     const links = (nav.match(/<a\b/gi) ?? []).length - 1; // minus the logo link
     if (links > MAX_PHONE_LINKS && !/data-nav-toggle/.test(nav)) warns.push(rel);

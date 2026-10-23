@@ -2,6 +2,16 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 1.29.1: belgeler ve proje düzeni
+
+- **`AGENTS.md` yeniden yazıldı:** bugünkü akış öne alındı (serbest tasarım, araştırma, tasarım planı, panelden onay). Hangi kuralın hangi dosyada olduğunu gösteren bir tablo eklendi. Şablon akışı "eski müşteriler" bölümüne indi.
+- **Serbest tasarım kuralları bölündü:** `rules/custom-site.md` artık başlangıç dosyası; ayrıntılar `rules/custom/` altında (`plan.md`, `brand.md`, `build.md`, `changes.md`). Her iş sadece kendine gereken dosyayı okuyor; örneğin plan aşaması yazım kurallarını, marka kartı işi sayfa kurallarını okumuyor. Bu daha az token demek.
+- **Kurallar tek kaynakta:** agent komutları kuralları tekrar etmiyor, sadece hangi dosyanın okunacağını söylüyor. Kontrol edildi: komutlarda kurallardan kopyalanmış cümle yok.
+- **`ROADMAP.md` eklendi:** adımlar, açık konular ve alınmış kararlar.
+- **CI:** her gönderimde GitHub Actions ile lint, tip kontrolü, derleme ve testler çalışıyor.
+- **`SPEC.md` taşındı:** ilk yapım planı artık `docs/history/SPEC.md` dosyasında.
+- Uygulamanın davranışı değişmedi.
+
 ## 1.29.0: kolay kurulum, panelden güncelleme, ekip paylaşımı
 
 - **Tek komutla kurulum** (`scripts/install.sh`): Linux, WSL2 ve macOS'ta git ve Node'u kontrol eder, depoyu indirir, kurulum betiğini çalıştırır, kabuğa `sf-panel` ve `sf-update` komutlarını ekler. Sistem paketi kurmaz, hiçbir şeyi silmez.

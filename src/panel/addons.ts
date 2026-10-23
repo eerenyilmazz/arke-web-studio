@@ -44,7 +44,7 @@ const INSTRUCTIONS: Readonly<Record<AddonId, { included: (a: Addon) => string; e
     excluded: "One language only: no language switch.",
   },
   theme: {
-    included: () => "Light and dark theme: design both from the palette and use the factory's theme toggle (rules/custom-site.md, Factory parts).",
+    included: () => "Light and dark theme: design both from the palette and use the factory's theme toggle (rules/custom/build.md, Factory parts).",
     excluded: "One theme only: design the site in a single (light or dark) look that suits the brand; no theme toggle and no prefers-color-scheme switch.",
   },
   blog: {
@@ -74,7 +74,7 @@ export function addonsNote(addons: readonly Addon[] | undefined): string | null 
     const a = chosen.get(id);
     return `- ${a ? INSTRUCTIONS[id].included(a) : INSTRUCTIONS[id].excluded}`;
   });
-  return ["What the operator sold to this client (it overrides rules/custom-site.md on these points; build exactly this, nothing more):", ...lines].join("\n");
+  return ["What the operator sold to this client (it overrides the custom-site rules on these points; build exactly this, nothing more):", ...lines].join("\n");
 }
 
 /** Sum of the extras' prices (those without a price count as 0). */

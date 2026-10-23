@@ -113,7 +113,7 @@ export function passingSiteFiles(name: string): Record<string, string> {
   };
 }
 
-/** A valid design plan (rules/custom-site.md, "Design plan"), as the agent saves it with save_design_plan. */
+/** A valid design plan (rules/custom/plan.md), as the agent saves it with save_design_plan. */
 export const SAMPLE_PLAN = {
   concept: "Ekmeğin fırında kabarması: katmanlar, kabuk ve sıcak ışık.",
   source: "Logodaki somun biçimi",

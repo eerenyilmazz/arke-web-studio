@@ -188,7 +188,7 @@ export function buildCustomSite(paths: ClientPaths): CheckResult {
     return {
       name: "Custom site build",
       status: "fail",
-      detail: "site/index.html does not exist yet. Write the site with write_site_file first (rules/custom-site.md).",
+      detail: "site/index.html does not exist yet. Write the site with write_site_file first (rules/custom/build.md).",
     };
   }
   rmSync(paths.distDir, { recursive: true, force: true });
@@ -551,7 +551,7 @@ const MIN_LAYOUT_WIDTH_PX = 1100;
 const REM_PX = 16;
 
 /**
- * "Signature design" (rules/custom-site.md): the brand must be visible on the pages, not only in brand.json.
+ * "Signature design" (rules/custom/brand.md): the brand must be visible on the pages, not only in brand.json.
  * Cheap, structural signals only; a warning, so existing sites keep building.
  */
 export function designDepth(distDir: string, code: string, brand: Brand): CheckResult {
@@ -615,7 +615,7 @@ export function checkBrand(distDir: string, clientLogo: string | null = null): C
       {
         name: "Brand identity",
         status: "fail",
-        detail: `Design the brand first: write site/${BRAND_FILE} and site/${LOGO_FILE} (rules/custom-site.md, step 1).`,
+        detail: `Design the brand first: write site/${BRAND_FILE} and site/${LOGO_FILE} (rules/custom/brand.md, step 1).`,
       },
     ];
   }

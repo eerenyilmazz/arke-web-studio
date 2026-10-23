@@ -442,7 +442,7 @@ async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse,
     deps.factory,
     s,
     "logo",
-    `The operator set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom-site.md); never draw a replacement.`,
+    `The operator set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom/brand.md); never draw a replacement.`,
   );
   sendJson(res, 200, { logo: relPath });
 }

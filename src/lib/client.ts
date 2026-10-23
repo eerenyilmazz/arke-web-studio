@@ -56,7 +56,7 @@ export interface ClientStatus {
   readonly researchNotes: { savedAt: string; text: string } | null;
   /** Where a contact form may post (set by the operator in the panel), or null: then no <form>, only contact buttons. */
   readonly contactForm: { action: string; accessKey?: string } | null;
-  /** New designs: the plan the operator approves before the site is built (rules/custom-site.md, "Design plan"). */
+  /** New designs: the plan the operator approves before the site is built (rules/custom/plan.md). */
   readonly designPlan: { state: PlanState; next: string | null };
 }
 
