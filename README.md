@@ -9,6 +9,11 @@ Herkes kendi bilgisayarında kendi panelini kullanır: kendi müşterileri, kend
 Birden çok kişi aynı müşteriler üzerinde çalışacaksa bir Git deposu üzerinden ekip olarak eşitleme yapılabilir
 (bkz. [Ekip çalışması](#ekip-çalışması)).
 
+> **Lisans:** © 2026 Eren Yılmaz, tüm hakları saklıdır.
+> Bu depoya erişiminiz olması kullanma, kopyalama, değiştirme ya
+> da dağıtma izni vermez; bunlar için yazılı izin gerekir. Ayrıntılar [`LICENSE`](LICENSE), üçüncü taraf bileşenler
+> [`THIRD_PARTY.md`](THIRD_PARTY.md).
+
 > Sürüm notları: [`CHANGELOG.md`](CHANGELOG.md) · Yol haritası: [`ROADMAP.md`](ROADMAP.md) · Agent kuralları: [`AGENTS.md`](AGENTS.md) · Tasarım ve pazar kuralları: [`rules/`](rules/)
 
 ---
@@ -29,6 +34,7 @@ Birden çok kişi aynı müşteriler üzerinde çalışacaksa bir Git deposu üz
 11. [Geliştirme](#geliştirme)
 12. [Sorun giderme](#sorun-giderme)
 13. [Ad değişikliği](#ad-değişikliği-arke-web-studio--arke-web-studio)
+14. [Lisans](#lisans)
 
 ---
 
@@ -426,3 +432,16 @@ npm run schema       # Zod → schema/*.schema.json
 | Ekran görüntüsü alınmıyor | Chrome/Chromium yolu: `export ARKE_BROWSER=/yol/chrome` |
 
 Durum raporu almak için `npm run report -- ~/` komutunu çalıştırın. Rapor gizli bilgi içermez; destek isterken paylaşabilirsiniz.
+
+---
+
+## Lisans
+
+© 2026 Eren Yılmaz. Tüm hakları saklıdır.
+
+Arke Web Studio açık kaynak değildir. Kodu, kuralları, istemleri,
+şablonları ve hazır parçaları sahibinin yazılı izni olmadan kullanmak, kopyalamak, değiştirmek, dağıtmak ya da
+müşterilere hizmet vermek için çalıştırmak yasaktır. Yazılı izinle çalışan ekip üyeleri yalnızca izinde yazan amaç
+için kullanabilir. Tam metin: [`LICENSE`](LICENSE). Üçüncü taraf bileşenler kendi lisanslarıyla gelir:
+[`THIRD_PARTY.md`](THIRD_PARTY.md).
+

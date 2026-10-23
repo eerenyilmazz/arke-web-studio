@@ -27,7 +27,13 @@ describe("global studio: no personal traces", () => {
           path.join(ROOT, f),
         ),
       );
-    const hits = files.filter((f) => /\.(ts|js|md|html|json|sh)$/.test(f) && /\bEren\b|\beeren\b/.test(readFileSync(f, "utf8")));
+    // The copyright line ("© 2026 …") is the one place an owner's name belongs; the panel and rules address the operator.
+    const text = (f: string) =>
+      readFileSync(f, "utf8")
+        .split("\n")
+        .filter((l) => !l.includes("©"))
+        .join("\n");
+    const hits = files.filter((f) => /\.(ts|js|md|html|json|sh)$/.test(f) && /\bEren\b|\beeren\b/.test(text(f)));
     expect(hits.map((f) => path.relative(ROOT, f))).toEqual([]);
   });
 

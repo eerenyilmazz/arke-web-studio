@@ -92,6 +92,9 @@ The same tools work in a Claude Code session in this folder:
 - **Stay in scope.** For showcase sites, multi-location, migration, payments and newsletters are "later": put the
   need in `unmapped` and tell the operator; it is a separate quote.
 - **Ask before anything expensive to undo** (domain, hosting model, publishing).
+- **Proprietary software.** Arke Web Studio is all rights reserved by its owner (`LICENSE`). Never remove or
+  change `LICENSE`, `THIRD_PARTY.md` or copyright notices, and never copy this project's code, rules or prompts into
+  client sites or anywhere outside this repository. Client sites get only their own pages and the installed parts.
 - **No impersonation.** Never build a site that pretends to be a real business the operator does not work for.
   Test data uses fictional businesses.
 

@@ -2,6 +2,8 @@
   "name": "arke-web-studio",
   "version": "2.2.1",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Eren Yılmaz <eerenyilmazz1@gmail.com>",
   "description": "MCP server + rules for producing small-business showcase websites from a fixed template and a validated config.",
   "type": "module",
   "engines": {
