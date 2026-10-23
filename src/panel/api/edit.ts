@@ -99,7 +99,7 @@ async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRespons
     });
   } else if (before.template === "custom") {
     const prompt = [
-      `Site Factory, client "${s}". The operator changed these contact details in the panel (already saved in site.config.json):`,
+      `Arke Web Studio, client "${s}". The operator changed these contact details in the panel (already saved in site.config.json):`,
       ...changes.map((c) => `- ${c}`),
       "Update every place in the site files where the old values appear: header, footer, contact page, buttons (tel:, mailto:, wa.me links) and the JSON-LD. Show phone numbers in the usual local format. Change nothing else. Then build_site; if a check fails, fix it and build again.",
       "Finish with one or two sentences in Turkish saying what you changed.",
@@ -494,7 +494,14 @@ async function structuredEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRe
   let job;
   if (result.needsAgent) {
     await snapshot(paths.root, `Önce: ${title}`).catch(() => null);
-    job = launchAgent(deps, s, `edit-${type}`, title, [`Site Factory, client "${s}".`, ...result.lines, EDIT_TAIL].join("\n"), `${title}: ${result.summary}`);
+    job = launchAgent(
+      deps,
+      s,
+      `edit-${type}`,
+      title,
+      [`Arke Web Studio, client "${s}".`, ...result.lines, EDIT_TAIL].join("\n"),
+      `${title}: ${result.summary}`,
+    );
   } else {
     job = rebuildTask(deps, s, title, `${title}: ${result.summary}`);
   }

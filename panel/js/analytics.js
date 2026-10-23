@@ -5,7 +5,7 @@ import { CURRENCY_SIGNS, PAYMENT_LABELS } from "./business.js";
 import { api, guarded, h, LANG_NAMES, PACKAGE_NAMES, plainOf } from "./core.js";
 import { locale } from "./i18n.js";
 
-const PREF_KEY = "sf-analiz";
+const PREF_KEY = "arke-analiz";
 const PRODUCT_NAMES = { showcase: "Tanıtım", ecommerce: "E-ticaret", booking: "Randevu", restaurant: "Restoran-Kafe" };
 const COUNTRY_NAMES = { GB: "İngiltere", TR: "Türkiye", IE: "İrlanda", US: "ABD", DE: "Almanya", NL: "Hollanda" };
 /** Over this, a page (HTML + shared CSS/JS) or an image is marked heavy. */
@@ -255,7 +255,7 @@ function csvOf(rows) {
 
 function download(rows) {
   const url = URL.createObjectURL(new Blob([csvOf(rows)], { type: "text/csv;charset=utf-8" }));
-  const a = h("a", { href: url, download: `site-factory-analiz-${new Date().toISOString().slice(0, 10)}.csv` });
+  const a = h("a", { href: url, download: `arke-web-studio-analiz-${new Date().toISOString().slice(0, 10)}.csv` });
   document.body.append(a);
   a.click();
   a.remove();

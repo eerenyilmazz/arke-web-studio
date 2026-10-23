@@ -93,7 +93,7 @@ describe("factory parts", () => {
     const base = path.join(paths.root, "site", "css", "base.css");
     expect(ensureBaseKit(paths, path.join(KIT, "base.css"))).toBe(true);
     expect(readFileSync(path.join(paths.root, "site", "js", "kit.js"), "utf8")).toContain("data-theme-toggle");
-    writeFileSync(base, "/* Site Factory base layer (old) */");
+    writeFileSync(base, "/* Arke Web Studio base layer (old) */");
     expect(ensureBaseKit(paths, path.join(KIT, "base.css"))).toBe(true); // an older factory copy is replaced
     expect(readFileSync(base, "utf8")).toContain(".theme-toggle");
     writeFileSync(base, "/* written by hand */");

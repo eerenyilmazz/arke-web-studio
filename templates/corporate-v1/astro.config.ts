@@ -5,10 +5,10 @@ import { requireEnv, siteUrl } from "./src/lib/env";
 
 const site = siteUrl();
 
-// Contract: read the client folder from SF_CLIENT_DIR, write a static site to SF_OUT_DIR. Nothing else.
+// Contract: read the client folder from ARKE_CLIENT_DIR, write a static site to ARKE_OUT_DIR. Nothing else.
 export default defineConfig({
   output: "static",
-  outDir: requireEnv("SF_OUT_DIR"),
+  outDir: requireEnv("ARKE_OUT_DIR"),
   ...(site ? { site } : {}),
   trailingSlash: "always",
   build: { format: "directory" },

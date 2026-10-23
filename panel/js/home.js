@@ -31,7 +31,7 @@ export function renderHome() {
   // Grouping and filters (kept per browser): by step, by sector or by the operator's own tags.
   const pref = (() => {
     try {
-      return JSON.parse(localStorage.getItem("sf-dash") || "{}");
+      return JSON.parse(localStorage.getItem("arke-dash") || "{}");
     } catch {
       return {};
     }
@@ -40,7 +40,7 @@ export function renderHome() {
   const filter = pref.filter || "";
   const save = (p) => {
     try {
-      localStorage.setItem("sf-dash", JSON.stringify({ groupBy, filter, ...p }));
+      localStorage.setItem("arke-dash", JSON.stringify({ groupBy, filter, ...p }));
     } catch {
       /* private mode */
     }

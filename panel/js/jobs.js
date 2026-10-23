@@ -83,7 +83,7 @@ export function announceFinished(job) {
     });
   }
   if (document.hidden) {
-    const original = "Site Factory";
+    const original = "Arke Web Studio";
     document.title = ok ? `✓ ${name} hazır · ${original}` : `✕ ${name} · ${original}`;
     const reset = () => {
       document.title = original;

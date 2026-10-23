@@ -42,8 +42,8 @@ const AGENT_FORBIDDEN_TOOLS = new Set([
   "Task",
   "deploy",
   "create_client",
-  "mcp__site-factory__deploy",
-  "mcp__site-factory__create_client",
+  "mcp__arke-web__deploy",
+  "mcp__arke-web__create_client",
 ]);
 const SCAN_SKIP = new Set(["node_modules", ".git", ".wrangler"]);
 const TEXT_FILE = /\.(json|jsonl|md|log|txt|html|css|js|svg|xml|jsonc)$/i;
@@ -51,7 +51,7 @@ const TEXT_FILE = /\.(json|jsonl|md|log|txt|html|css|js|svg|xml|jsonc)$/i;
 /** The secret values this machine holds (never printed): Cloudflare tokens from the environment, the portal secret. */
 export function knownSecrets(env: NodeJS.ProcessEnv = process.env): string[] {
   const fromEnv = Object.entries(env)
-    .filter(([k, v]) => k.startsWith("SF_CF_") && k.endsWith("API_TOKEN") && typeof v === "string" && v.length >= 8)
+    .filter(([k, v]) => k.startsWith("ARKE_CF_") && k.endsWith("API_TOKEN") && typeof v === "string" && v.length >= 8)
     .map(([, v]) => v!);
   const portal = readPortal();
   const saved = readCloudflare();
@@ -315,11 +315,11 @@ export async function buildReport(factory: FactoryConfig, opts: ReportOptions): 
 
   // Set-up: only whether values are set, never the values.
   const saved = readCloudflare();
-  const cf = { token: Boolean(saved ?? env.SF_CF_MANAGED_API_TOKEN), account: Boolean(saved ?? env.SF_CF_MANAGED_ACCOUNT_ID) };
+  const cf = { token: Boolean(saved ?? env.ARKE_CF_MANAGED_API_TOKEN), account: Boolean(saved ?? env.ARKE_CF_MANAGED_ACCOUNT_ID) };
   const portal = readPortal();
   const settings = readSettings(factory);
   const head = [
-    `# Site Factory raporu`,
+    `# Arke Web Studio raporu`,
     "",
     `- Tarih: ${fmtDate(new Date().toISOString())} · sürüm ${factoryVersion()} · Node ${process.version} · ${os.platform()} ${os.release()}`,
     `- Araçlar: claude ${tryVersion("claude", ["--version"])} · codex ${tryVersion("codex", ["--version"])} · wrangler ${existsSync(path.join(FACTORY_ROOT, "node_modules", "wrangler")) ? "kurulu" : "yok"}`,

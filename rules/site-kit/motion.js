@@ -1,5 +1,5 @@
 /*
- * Site Factory motion kit (provided by the factory; do not rewrite it). Load it where motion is used:
+ * Arke Web Studio motion kit (provided by the factory; do not rewrite it). Load it where motion is used:
  *   <script src="/js/motion.js" defer></script>
  * Tested parts to compose the signature motion and the supporting animations from, instead of writing them anew.
  *

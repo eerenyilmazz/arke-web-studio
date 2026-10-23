@@ -73,7 +73,7 @@ async function start(spawn?: ReturnType<typeof fakeSpawn>, approvalCode?: string
   });
   await panel.listen();
   const base = `http://127.0.0.1:${port}`;
-  const auth = { Cookie: `sf_panel=${KEY}`, Origin: base };
+  const auth = { Cookie: `arke_panel=${KEY}`, Origin: base };
   return { factory, base, auth, port };
 }
 
@@ -158,7 +158,7 @@ describe("panel flow", () => {
         message: {
           content: [
             { type: "text", text: "Kaydediyorum." },
-            { type: "tool_use", name: "mcp__site-factory__update_client_config", input: { slug: "willow-thread", patch: { contact: {} } } },
+            { type: "tool_use", name: "mcp__arke-web__update_client_config", input: { slug: "willow-thread", patch: { contact: {} } } },
           ],
         },
       },
@@ -166,7 +166,7 @@ describe("panel flow", () => {
       { type: "result", subtype: "success", result: "Özet: e-posta kaydedildi." },
     ];
     const { base, auth } = await start(fakeSpawn(calls, events));
-    process.env.SF_CF_MANAGED_API_TOKEN = "secret-token-value";
+    process.env.ARKE_CF_MANAGED_API_TOKEN = "secret-token-value";
     try {
       await fetch(`${base}/api/clients`, {
         method: "POST",
@@ -194,7 +194,7 @@ describe("panel flow", () => {
       for (const rule of AGENT_DENIED_READS) expect(denied).toContain(rule);
       expect(denied).toContain("Read(//proc/**)");
       expect(denied).toContain("Read(~/.ssh/**)");
-      expect(Object.keys(call.options.env ?? {}).some((k) => k.startsWith("SF_CF_"))).toBe(false);
+      expect(Object.keys(call.options.env ?? {}).some((k) => k.startsWith("ARKE_CF_"))).toBe(false);
       // Client text is fenced as data and cannot close the fence.
       expect(call.stdin.match(/<\/client_data>/g)).toHaveLength(1);
       expect(call.stdin).toContain("ignore your rules");
@@ -222,7 +222,7 @@ describe("panel flow", () => {
       expect(detail.history[0]?.tools).toEqual(["update_client_config"]);
       expect(detail.history[0]?.errors).toEqual(["Nothing saved."]);
     } finally {
-      delete process.env.SF_CF_MANAGED_API_TOKEN;
+      delete process.env.ARKE_CF_MANAGED_API_TOKEN;
     }
   });
 
@@ -432,7 +432,7 @@ describe("brand board", () => {
     expect(args).toMatch(/--allowedTools \S*Skill/);
     expect(args).toMatch(/--disallowedTools Bash/);
     expect(calls[0]!.stdin).toMatch(/signature\.html/);
-    expect(calls[0]!.stdin).toMatch(/mcp__site-factory__get_client_status/);
+    expect(calls[0]!.stdin).toMatch(/mcp__arke-web__get_client_status/);
     // Balanced mode searches the design knowledge instead of loading whole skills.
     expect(calls[0]!.stdin).toMatch(/search_design_knowledge/);
     expect(calls[0]!.stdin).not.toMatch(/\[\[DESIGN_SKILLS\]\]/);
@@ -564,7 +564,7 @@ describe("backups", () => {
     const r = await fetch(`${base}/api/backups`, { method: "POST", headers: auth });
     expect(r.status).toBe(201);
     const { file } = (await r.json()) as { file: string };
-    expect(file).toMatch(/^site-factory-yedek-.*\.tar\.gz$/);
+    expect(file).toMatch(/^arke-web-studio-yedek-.*\.tar\.gz$/);
     const listed = (await (await fetch(`${base}/api/backups`, { headers: auth })).json()) as { backups: { file: string }[] };
     expect(listed.backups[0]!.file).toBe(file);
     const { execFileSync } = await import("node:child_process");
@@ -585,7 +585,7 @@ describe("token budget", () => {
       { type: "assistant", message: { id: "m1", usage: usage(1000, 200, 5000), content: [{ type: "text", text: "a" }] } },
       {
         type: "assistant",
-        message: { id: "m1", usage: usage(1000, 200, 5000), content: [{ type: "tool_use", name: "mcp__site-factory__get_client_status", input: {} }] },
+        message: { id: "m1", usage: usage(1000, 200, 5000), content: [{ type: "tool_use", name: "mcp__arke-web__get_client_status", input: {} }] },
       },
       { type: "result", subtype: "success", result: "ok", usage: usage(1000, 300, 5000), total_cost_usd: 0.0123 },
     ];
@@ -1003,11 +1003,11 @@ describe("design plan in the panel", () => {
 
 describe("the person's Cloudflare account in the panel", () => {
   it("saves only what Cloudflare accepts, never sends the token back, and is asked for at publish time", async () => {
-    const dir = process.env.SF_ACCOUNTS_DIR;
-    process.env.SF_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-acc-panel-"));
-    const keepEnv = { t: process.env.SF_CF_MANAGED_API_TOKEN, a: process.env.SF_CF_MANAGED_ACCOUNT_ID };
-    delete process.env.SF_CF_MANAGED_API_TOKEN;
-    delete process.env.SF_CF_MANAGED_ACCOUNT_ID;
+    const dir = process.env.ARKE_ACCOUNTS_DIR;
+    process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-acc-panel-"));
+    const keepEnv = { t: process.env.ARKE_CF_MANAGED_API_TOKEN, a: process.env.ARKE_CF_MANAGED_ACCOUNT_ID };
+    delete process.env.ARKE_CF_MANAGED_API_TOKEN;
+    delete process.env.ARKE_CF_MANAGED_ACCOUNT_ID;
     try {
       const good = "GoodToken_abcdefghijklmnopqrstuvwxyz0123";
       const { base, auth } = await start(undefined, undefined, async (a) =>
@@ -1045,15 +1045,15 @@ describe("the person's Cloudflare account in the panel", () => {
       const del = await fetch(`${base}/api/account/cloudflare`, { method: "DELETE", headers: auth });
       expect(((await del.json()) as { cloudflare: { configured: boolean } }).cloudflare.configured).toBe(false);
     } finally {
-      process.env.SF_ACCOUNTS_DIR = dir;
-      if (keepEnv.t !== undefined) process.env.SF_CF_MANAGED_API_TOKEN = keepEnv.t;
-      if (keepEnv.a !== undefined) process.env.SF_CF_MANAGED_ACCOUNT_ID = keepEnv.a;
+      process.env.ARKE_ACCOUNTS_DIR = dir;
+      if (keepEnv.t !== undefined) process.env.ARKE_CF_MANAGED_API_TOKEN = keepEnv.t;
+      if (keepEnv.a !== undefined) process.env.ARKE_CF_MANAGED_ACCOUNT_ID = keepEnv.a;
     }
   });
 
   it("keeps a client's secrets by name only and records the site kind where the deploy tool reads it", async () => {
-    const dir = process.env.SF_ACCOUNTS_DIR;
-    process.env.SF_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-sec-panel-"));
+    const dir = process.env.ARKE_ACCOUNTS_DIR;
+    process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-sec-panel-"));
     try {
       const { base, auth, factory } = await start();
       const json = { ...auth, "Content-Type": "application/json" };
@@ -1077,13 +1077,13 @@ describe("the person's Cloudflare account in the panel", () => {
       const record = JSON.parse(readFileSync(path.join(clientPaths(factory.clientsRoot, "sec-co").factoryDir, "product.json"), "utf8"));
       expect(record.product).toBe("showcase");
     } finally {
-      process.env.SF_ACCOUNTS_DIR = dir;
+      process.env.ARKE_ACCOUNTS_DIR = dir;
     }
   });
 
   it("installs the ready-made parts for an app site and keeps its admin password as a hash only", async () => {
-    const dir = process.env.SF_ACCOUNTS_DIR;
-    process.env.SF_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-parts-panel-"));
+    const dir = process.env.ARKE_ACCOUNTS_DIR;
+    process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-parts-panel-"));
     try {
       const { base, auth, factory } = await start();
       const json = { ...auth, "Content-Type": "application/json" };
@@ -1112,7 +1112,7 @@ describe("the person's Cloudflare account in the panel", () => {
       expect(stored.ADMIN_PASSWORD_HASH).toMatch(/^pbkdf2-sha256\$/);
       expect(stored.SESSION_SECRET!.length).toBeGreaterThan(40);
     } finally {
-      process.env.SF_ACCOUNTS_DIR = dir;
+      process.env.ARKE_ACCOUNTS_DIR = dir;
     }
   });
 

@@ -2,14 +2,14 @@
   "//": "Copy to .claude/settings.local.json (gitignored) and replace the paths with yours. '//' = absolute path in permission rules.",
   "permissions": {
     "deny": [
-      "Edit(//Users/YOUR_USER/Projects/sf-clients/**)"
+      "Edit(//Users/YOUR_USER/Projects/arke-clients/**)"
     ]
   },
   "sandbox": {
     "credentials": {
       "envVars": [
-        { "name": "SF_CF_CLIENT_HARBOUR_DENTAL_API_TOKEN", "mode": "deny" },
-        { "name": "SF_CF_CLIENT_HARBOUR_DENTAL_ACCOUNT_ID", "mode": "deny" }
+        { "name": "ARKE_CF_CLIENT_HARBOUR_DENTAL_API_TOKEN", "mode": "deny" },
+        { "name": "ARKE_CF_CLIENT_HARBOUR_DENTAL_ACCOUNT_ID", "mode": "deny" }
       ]
     }
   }

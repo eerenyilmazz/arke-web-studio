@@ -8,7 +8,7 @@ import type { CheckResult } from "./quality.js";
 
 /**
  * Phone and desktop screenshots of a built site, so the agent can look at what it made (Read shows images).
- * Uses a browser already on the machine (no download): SF_BROWSER, a Linux Chrome/Chromium, or on WSL the
+ * Uses a browser already on the machine (no download): ARKE_BROWSER, a Linux Chrome/Chromium, or on WSL the
  * Windows Edge/Chrome. Best effort: without a browser the check is skipped and nothing else changes.
  */
 const run = promisify(execFile);
@@ -41,7 +41,7 @@ async function onPath(cmd: string): Promise<string | null> {
 }
 
 async function findBrowser(): Promise<{ bin: string; windows: boolean } | null> {
-  const env = process.env.SF_BROWSER;
+  const env = process.env.ARKE_BROWSER;
   if (env && existsSync(env)) return { bin: env, windows: env.endsWith(".exe") };
   for (const c of LINUX_BROWSERS) {
     const p = await onPath(c);
@@ -106,9 +106,9 @@ async function toWindowsPath(p: string): Promise<string> {
 
 export async function takeScreenshots(distDir: string, outDir: string): Promise<CheckResult> {
   const name = "Screenshots (look at them: phone and desktop)";
-  if (process.env.SF_SCREENSHOTS === "off") return { name, status: "skip", detail: "Turned off (SF_SCREENSHOTS=off)." };
+  if (process.env.ARKE_SCREENSHOTS === "off") return { name, status: "skip", detail: "Turned off (ARKE_SCREENSHOTS=off)." };
   const browser = await findBrowser();
-  if (!browser) return { name, status: "skip", detail: "No browser found (set SF_BROWSER to Chrome/Edge to enable). Nothing else is affected." };
+  if (!browser) return { name, status: "skip", detail: "No browser found (set ARKE_BROWSER to Chrome/Edge to enable). Nothing else is affected." };
   const server = await serve(distDir);
   const port = (server.address() as AddressInfo).port;
   rmSync(outDir, { recursive: true, force: true });
@@ -156,7 +156,7 @@ const FRAME_SIZE = { width: 900, height: 640 } as const;
 export async function takeSignatureFrames(distDir: string, outDir: string, totalMs: number): Promise<CheckResult | null> {
   const name = "Signature motion frames (look at them in order)";
   if (!existsSync(path.join(distDir, "brand", "signature.html"))) return null;
-  if (process.env.SF_SCREENSHOTS === "off") return { name, status: "skip", detail: "Turned off (SF_SCREENSHOTS=off)." };
+  if (process.env.ARKE_SCREENSHOTS === "off") return { name, status: "skip", detail: "Turned off (ARKE_SCREENSHOTS=off)." };
   const browser = await findBrowser();
   if (!browser) return { name, status: "skip", detail: "No browser found; the motion could not be filmed. Nothing else is affected." };
   const server = await serve(distDir);

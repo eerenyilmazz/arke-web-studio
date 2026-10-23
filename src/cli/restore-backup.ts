@@ -10,7 +10,7 @@ import { restoreBackup } from "../panel/backup.js";
 async function main(): Promise<void> {
   const [archive, target] = process.argv.slice(2);
   if (!archive || !target) {
-    console.error("Kullanım: npm run restore-backup -- <site-factory-yedek-….tar.gz> <yeni-klasör>");
+    console.error("Kullanım: npm run restore-backup -- <arke-web-studio-yedek-….tar.gz> <yeni-klasör>");
     process.exit(2);
   }
   const factory = loadFactoryConfig();

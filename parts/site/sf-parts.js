@@ -1,4 +1,4 @@
-/* Site Factory ready-made part: the site side of the catalogue and the inbox forms (js/sf-parts.js).
+/* Arke Web Studio ready-made part: the site side of the catalogue and the inbox forms (js/sf-parts.js).
    Factory-owned: replaced by the factory at every build; the agent places the markup and never edits this file.
 
    Catalogue:  <div data-sf-catalog [data-category="slug"] [data-limit="6"]>

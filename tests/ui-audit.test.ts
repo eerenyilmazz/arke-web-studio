@@ -6,9 +6,9 @@ import { tempFactory } from "./helpers.js";
 /**
  * Every panel screen, in both themes, on a desktop and a phone: text contrast (WCAG AA), no animation left running,
  * no sideways scroll, no button or heading text spilling out of its box, no script error.
- * SF_SHOT_OUT=<folder> also keeps a screenshot of each screen, for checking by eye.
+ * ARKE_SHOT_OUT=<folder> also keeps a screenshot of each screen, for checking by eye.
  */
-const OUT = process.env.SF_SHOT_OUT;
+const OUT = process.env.ARKE_SHOT_OUT;
 const executable = findBrowser();
 const factory = { ...tempFactory(), defaultTemplate: "custom" };
 let browser: Browser | null = null;
@@ -25,7 +25,7 @@ afterAll(async () => {
 const call = async (base: string, method: string, p: string, body: unknown) => {
   const r = await fetch(`${base}${p}`, {
     method,
-    headers: { Cookie: `sf_panel=${KEY}`, Origin: base, "Content-Type": "application/json" },
+    headers: { Cookie: `arke_panel=${KEY}`, Origin: base, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   return r.json() as Promise<{ slug: string }>;
@@ -212,7 +212,7 @@ async function findings(page: Page): Promise<string[]> {
         page.on("pageerror", (e) => errors.push(e.message));
         await page.addInitScript((t) => {
           try {
-            localStorage.setItem("sf-theme", t);
+            localStorage.setItem("arke-theme", t);
           } catch {
             /* sandboxed frames (the signature preview) have no storage */
           }

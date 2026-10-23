@@ -22,7 +22,7 @@ import { startAutoPull } from "./portal.js";
 const DEFAULT_PORT = 4777;
 const HOST = "127.0.0.1";
 const UI_DIR = path.join(FACTORY_ROOT, "panel");
-const LOCKED_PAGE = `<!doctype html><meta charset="utf-8"><title>Site Factory</title><body style="font-family:system-ui;padding:3rem;max-width:40rem">
+const LOCKED_PAGE = `<!doctype html><meta charset="utf-8"><title>Arke Web Studio</title><body style="font-family:system-ui;padding:3rem;max-width:40rem">
 <h1>Oturum yok</h1><p>Paneli, terminalde <code>npm run panel</code> komutunun yazdığı bağlantıyla açın.</p></body>`;
 
 export interface PanelOptions {
@@ -154,7 +154,7 @@ async function main(): Promise<void> {
   const panel = createPanel({ factory: loadFactoryConfig(), port, previewPort: port + 1, sessionKey });
   await panel.listen();
   const stopPull = startAutoPull(loadFactoryConfig(), (m) => console.log(m));
-  console.log("\nSite Factory paneli hazır. Bu bağlantıyı tarayıcıda açın (anahtar sadece bu oturum için geçerli):\n");
+  console.log("\nArke Web Studio paneli hazır. Bu bağlantıyı tarayıcıda açın (anahtar sadece bu oturum için geçerli):\n");
   console.log(`  http://${HOST}:${port}/login?key=${sessionKey}\n`);
   console.log(`Önizleme adresi: http://${HOST}:${port + 1}/   ·   Kapatmak için Ctrl+C\n`);
   console.log(`Onay kodu: ${panel.gate.code}   (panelde "Onayla" derken sorulur; sadece bu terminalde görünür, kimseyle paylaşma)\n`);

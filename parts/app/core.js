@@ -1,4 +1,4 @@
-// Site Factory ready-made part: the app Worker core (router, admin sign-in, rate limits, shared helpers).
+// Arke Web Studio ready-made part: the app Worker core (router, admin sign-in, rate limits, shared helpers).
 // Factory-owned: copied into every app site as app/parts/core.js and replaced by newer factory versions.
 // The agent never writes or edits this file.
 

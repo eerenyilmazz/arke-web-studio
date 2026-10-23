@@ -12,7 +12,7 @@ import { readSettings } from "./settings.js";
  * because uploads may not be saved yet. Old backups beyond KEEP are removed; nothing else is ever deleted.
  */
 const run = promisify(execFile);
-const PREFIX = "site-factory-yedek-";
+const PREFIX = "arke-web-studio-yedek-";
 const KEEP = 10;
 /** After jobs: at most one automatic backup in this window. */
 const AUTO_MIN_INTERVAL_MS = 30 * 60 * 1000;
@@ -92,7 +92,7 @@ export interface BackupCheck {
   readonly problems: string[];
 }
 
-const BACKUP_NAME = /^site-factory-yedek-[0-9-]+\.tar\.gz$/;
+const BACKUP_NAME = /^arke-web-studio-yedek-[0-9-]+\.tar\.gz$/;
 
 /** A backup file in the chosen folder, by name only (no paths from the request). */
 function backupPath(factory: FactoryConfig, file: string): string {
@@ -133,7 +133,7 @@ function inspect(root: string, clientsName: string): BackupCheck {
  */
 export async function verifyBackup(factory: FactoryConfig, file: string): Promise<BackupCheck> {
   const archive = backupPath(factory, file);
-  const tmp = mkdtempSync(path.join(os.tmpdir(), "sf-backup-check-"));
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "arke-backup-check-"));
   try {
     await run("tar", ["-xzf", archive, "-C", tmp], { timeout: 10 * 60 * 1000 });
     return inspect(tmp, path.basename(path.resolve(factory.clientsRoot)));

@@ -35,9 +35,9 @@ export function playwrightCacheBrowser(): string | null {
   return null;
 }
 
-/** A Linux Chromium for Playwright, or null (then the e2e tests are skipped). SF_E2E=off skips them on purpose. */
+/** A Linux Chromium for Playwright, or null (then the e2e tests are skipped). ARKE_E2E=off skips them on purpose. */
 export function findBrowser(): string | null {
-  if (process.env.SF_E2E === "off" || process.env.SF_UI_TESTS === "off") return null;
+  if (process.env.ARKE_E2E === "off" || process.env.ARKE_UI_TESTS === "off") return null;
   if (existsSync("/opt/pw-browsers/chromium")) return "/opt/pw-browsers/chromium";
   const cached = playwrightCacheBrowser();
   if (cached) return cached;
@@ -93,7 +93,7 @@ export async function startPanel(factory: FactoryConfig): Promise<FakePanel> {
     spawn: (command, args, options) => {
       agentRuns.push({ command, args });
       // The MCP server finds this test's folders through these; everything else is the panel's own environment.
-      const env = { ...options.env, SF_CLIENTS_ROOT: factory.clientsRoot, SF_INBOX_DIR: factory.inboxDir, SF_TEMPLATES_DIR: factory.templatesDir };
+      const env = { ...options.env, ARKE_CLIENTS_ROOT: factory.clientsRoot, ARKE_INBOX_DIR: factory.inboxDir, ARKE_TEMPLATES_DIR: factory.templatesDir };
       return nodeSpawn(TSX, [FAKE_AGENT, ...args], { ...options, env });
     },
   });
@@ -114,7 +114,7 @@ export async function openPanel(browser: Browser, base: string, hash: string, al
 }
 
 export async function apiGet<T>(base: string, p: string): Promise<T> {
-  const r = await fetch(`${base}${p}`, { headers: { Cookie: `sf_panel=${KEY}` } });
+  const r = await fetch(`${base}${p}`, { headers: { Cookie: `arke_panel=${KEY}` } });
   return (await r.json()) as T;
 }
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Site Factory: one-time environment check and folder setup (WSL2 Ubuntu, Linux or macOS). Called by scripts/install.sh.
+# Arke Web Studio: one-time environment check and folder setup (WSL2 Ubuntu, Linux or macOS). Called by scripts/install.sh.
 #
 # Safe to run more than once. It never deletes or overwrites anything and never installs
 # system packages; it tells you the command to run instead.
 #
-# Usage (inside WSL, from the extracted site-factory folder):
+# Usage (inside WSL, from the extracted arke-web-studio folder):
 #   bash scripts/setup-wsl.sh            # check + create folders + git init + npm ci/build/test
 #   bash scripts/setup-wsl.sh --check    # only report, change nothing
 set -euo pipefail
@@ -14,8 +14,11 @@ CHECK_ONLY=false
 
 FACTORY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE_DIR="$(dirname "$FACTORY_DIR")"
-CLIENTS_DIR="$BASE_DIR/sf-clients"
-INBOX_DIR="$BASE_DIR/sf-inbox"
+CLIENTS_DIR="$BASE_DIR/arke-clients"
+INBOX_DIR="$BASE_DIR/arke-inbox"
+# Installs from before the rename keep their folders (sf-clients, sf-inbox) until scripts/migrate-name.sh moves them.
+[[ ! -d "$CLIENTS_DIR" && -d "$BASE_DIR/sf-clients" ]] && CLIENTS_DIR="$BASE_DIR/sf-clients"
+[[ ! -d "$INBOX_DIR" && -d "$BASE_DIR/sf-inbox" ]] && INBOX_DIR="$BASE_DIR/sf-inbox"
 MIN_NODE_MAJOR=22
 MIN_NODE_MINOR=12   # Astro 7 (template) needs Node >= 22.12
 
@@ -104,7 +107,7 @@ elif $CHECK_ONLY; then
   note "would run: git init -b main + first commit"
 elif has git && [[ -n "$(git config --global user.email || true)" ]]; then
   [[ -f .gitattributes ]] || printf '* text=auto eol=lf\n*.png binary\n*.jpg binary\n*.webp binary\n*.avif binary\n' > .gitattributes
-  git init -q -b main && git add -A && git commit -qm "Initial import of Site Factory" && pass "git repo created with first commit on main"
+  git init -q -b main && git add -A && git commit -qm "Initial import of Arke Web Studio" && pass "git repo created with first commit on main"
 else
   note "skipped git init (fix git first)"
 fi

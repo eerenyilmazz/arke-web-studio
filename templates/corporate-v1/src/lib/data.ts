@@ -61,7 +61,7 @@ let cached: Site | null = null;
 
 export function loadSite(): Site {
   if (cached) return cached;
-  const clientDir = requireEnv("SF_CLIENT_DIR");
+  const clientDir = requireEnv("ARKE_CLIENT_DIR");
   const ajv = new Ajv2020({ useDefaults: true, allErrors: true, strict: false, validateFormats: false });
   const validateConfig = ajv.compile(readSchema("site.config.schema.json"));
   const validateContent = ajv.compile(readSchema("content.schema.json"));

@@ -1,4 +1,4 @@
-# Site Factory — Web Stüdyosu
+# Arke Web Studio — Web Stüdyosu
 
 Küçük işletmelere web sitesi üreten bir **web stüdyosu**: yerel bir yönetim paneli, bir MCP sunucusu ve kurallar.
 Paneli kullanan kişi (kurallarda **operatör**) müşteriyi ekler. Agent (Claude Code ya da Codex) işletmeyi araştırır,
@@ -27,6 +27,7 @@ Birden çok kişi aynı müşteriler üzerinde çalışacaksa bir Git deposu üz
 10. [Klasör yapısı ve mimari](#klasör-yapısı-ve-mimari)
 11. [Geliştirme](#geliştirme)
 12. [Sorun giderme](#sorun-giderme)
+13. [Ad değişikliği](#ad-değişikliği-site-factory--arke-web-studio)
 
 ---
 
@@ -41,7 +42,7 @@ Birden çok kişi aynı müşteriler üzerinde çalışacaksa bir Git deposu üz
 | **Yayın** | Önizleme ve canlı ayrı Worker'larda, geri alma, yayından kaldırma. Uygulama sitelerinde ayrıca veritabanı (D1), görsel deposu (R2), veritabanı değişiklikleri ve gizli anahtarlar |
 | **İş takibi** | Teklif (yazdır/PDF), ödeme ve teslim takibi, kâr hesabı, Analiz ekranı (filtreli tablolar, CSV) |
 | **Kaynak yönetimi** | Paketlere göre model seçimi, iş başına ve aylık token sınırı, Claude Code ya da Codex |
-| **Ekip ve bakım** | Profil, ekip eşitleme (Git), panelden güncelleme, otomatik yedek, `sf-report` durum raporu |
+| **Ekip ve bakım** | Profil, ekip eşitleme (Git), panelden güncelleme, otomatik yedek, `arke-report` durum raporu |
 
 **Agent'ın sınırları:** agent sadece fabrikanın araçlarıyla (MCP) çalışır:
 - Kabuk komutu çalıştıramaz, dosyaları doğrudan düzenleyemez.
@@ -63,22 +64,22 @@ Birden çok kişi aynı müşteriler üzerinde çalışacaksa bir Git deposu üz
 curl -fsSL https://raw.githubusercontent.com/<sahip>/<depo>/main/scripts/install.sh | bash -s -- https://github.com/<sahip>/<depo>.git
 
 # ya da önce indirip:
-git clone https://github.com/<sahip>/<depo>.git ~/projects/site-factory
-bash ~/projects/site-factory/scripts/install.sh
+git clone https://github.com/<sahip>/<depo>.git ~/projects/arke-web-studio
+bash ~/projects/arke-web-studio/scripts/install.sh
 ```
 
 `scripts/install.sh` şunları yapar. Tekrar çalıştırmak güvenlidir; hiçbir şeyi silmez ve sistem paketi kurmaz,
 eksik olanın kurulum komutunu yazar.
 
 1. `git` ve Node sürümünü kontrol eder.
-2. Depoyu `~/projects/site-factory` klasörüne indirir (başka bir yer için `SF_HOME=/yol`). Bir kopyanın içinden çalıştırılırsa o kopyayı kullanır.
+2. Depoyu `~/projects/arke-web-studio` klasörüne indirir (başka bir yer için `ARKE_HOME=/yol`). Bir kopyanın içinden çalıştırılırsa o kopyayı kullanır.
 3. `scripts/setup-wsl.sh` betiğini çalıştırır:
-   - `../sf-clients` ve `../sf-inbox` klasörlerini oluşturur.
+   - `../arke-clients` ve `../arke-inbox` klasörlerini oluşturur.
    - Agent'ın müşteri klasörlerine doğrudan yazmasını engelleyen `.claude/settings.local.json` dosyasını yazar.
    - `npm ci`, derleme ve testleri çalıştırır, tasarım skill'lerini kurar.
 4. Kabuğa iki komut ekler (`~/.bashrc`, varsa `~/.zshrc`):
-   - **`sf-panel`**: paneli başlatır.
-   - **`sf-update`**: Site Factory'yi günceller.
+   - **`arke-panel`**: paneli başlatır.
+   - **`arke-update`**: Arke Web Studio'yu günceller.
 
 **Windows notu:** her şeyi WSL'in kendi diskine kurun (`~/projects/...`), `/mnt/c/...` altına kurmayın. Windows
 diski yavaştır ve OneDrive eşitlemesi dosyaları bozabilir. Claude Code'u da WSL içine kurun; sandbox sadece böyle
@@ -98,7 +99,7 @@ npm run panel
 ## İlk açılış
 
 ```bash
-sf-panel          # ya da: cd ~/projects/site-factory && npm run panel
+arke-panel          # ya da: cd ~/projects/arke-web-studio && npm run panel
 ```
 
 Terminal panelin adresini yazar (`http://127.0.0.1:4777/login?key=…`); adresi tarayıcıda açın. Bu anahtar her
@@ -155,7 +156,7 @@ Müşteri sayfasında solda canlı önizleme (telefon/masaüstü) ve sürüm ge�
 ### Onay ve yayın
 
 1. Site hazır olunca **Siteye bak** → beğenirseniz **Onayla** (terminaldeki kodla). Bu tek onay hem metni hem görünümü kapsar.
-2. **Önizleme** yayınlanır (`sf-<kısa-ad>-preview.<alt-alan>.workers.dev`). Linki müşteriye portal üzerinden de gönderebilirsiniz.
+2. **Önizleme** yayınlanır (`arke-<kısa-ad>-preview.<alt-alan>.workers.dev`). Linki müşteriye portal üzerinden de gönderebilirsiniz.
 3. Müşteri onaylayınca **Canlı yayın**: canlı yayın onayı verilir, site yayına girer (varsa alan adıyla).
 
 Her değişiklik onayları sıfırlar. Canlı site **Önceki sürüme dön** ile saniyeler içinde geri alınabilir; yayından
@@ -173,11 +174,11 @@ kaldırma da panelden yapılır. Canlı sitede bu iki işlem müşterinin kısa 
 | Komut | Ne yapar |
 | --- | --- |
 | `npm run approve -- <kısa-ad> <site\|production>` | Onayı terminalden verir (panelin yerine) |
-| `npm run report -- <klasör>` | Fabrikanın durum raporu (`sf-report-<tarih>.md`); gizli bilgi yazılmaz |
+| `npm run report -- <klasör>` | Fabrikanın durum raporu (`arke-report-<tarih>.md`); gizli bilgi yazılmaz |
 | `npm run restore-backup -- <yedek.tar.gz> <yeni-klasör>` | Yedeği yeni bir klasöre açar (mevcut müşterilerin üzerine yazmaz) |
-| `sf-update [zip]` | Güncelleme (bkz. [Güncelleme](#güncelleme)) |
+| `arke-update [zip]` | Güncelleme (bkz. [Güncelleme](#güncelleme)) |
 
-Agent'ı doğrudan Claude Code'da da kullanabilirsiniz: bu klasörde açıldığında `.mcp.json` ile `site-factory`
+Agent'ı doğrudan Claude Code'da da kullanabilirsiniz: bu klasörde açıldığında `.mcp.json` ile `arke-web`
 araçlarını bulur ve `AGENTS.md` dosyasındaki akışı izler.
 
 ---
@@ -223,11 +224,11 @@ Her operatör **kendi Cloudflare hesabıyla** yayın yapar (ücretsiz plan yeter
 2. Workers & Pages sayfasından **Account ID** değerini alın. İlk seferde workers.dev alt alan adını da seçin.
 3. Panelde Ayarlar → Hesabım → **Kaydet ve Test Et** (ya da ilk yayında açılan pencere).
 
-Token Cloudflare ile denenir ve `~/.config/site-factory/accounts.json` dosyasında **şifreli** (AES-256-GCM) saklanır:
+Token Cloudflare ile denenir ve `~/.config/arke-web-studio/accounts.json` dosyasında **şifreli** (AES-256-GCM) saklanır:
 - bir daha gösterilmez, yedeklere ve raporlara girmez;
-- agent süreçleri bu dosyayı hiç okumaz (`SF_NO_ACCOUNTS=1`).
+- agent süreçleri bu dosyayı hiç okumaz (`ARKE_NO_ACCOUNTS=1`).
 
-Eski kurulumlarda kullanılan `SF_CF_MANAGED_API_TOKEN` / `SF_CF_MANAGED_ACCOUNT_ID` ortam değişkenleri hâlâ çalışır.
+Ortam değişkeniyle tanımlanan hesap (`ARKE_CF_MANAGED_API_TOKEN` / `ARKE_CF_MANAGED_ACCOUNT_ID`; eski `SF_` önekiyle de) hâlâ çalışır.
 Panelde kayıtlı bir hesap varsa öncelik onundur.
 
 **Uygulama sitelerinde** yayın şu sırayla ilerler:
@@ -266,11 +267,11 @@ Agent işi süren müşteri o eşitlemede atlanır.
 
 | Kurulum | Nasıl |
 | --- | --- |
-| **Git ile** (`install.sh`) | Ayarlar → **Güncelleme** → *Güncellemeleri Denetle* → *Güncelle*. Ya da terminalde `sf-update` |
-| **Zip ile** | `sf-update /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.zip` |
+| **Git ile** (`install.sh`) | Ayarlar → **Güncelleme** → *Güncellemeleri Denetle* → *Güncelle*. Ya da terminalde `arke-update` |
+| **Zip ile** | `arke-update /mnt/c/Users/<kullanıcı>/Downloads/arke-web-studio-X.Y.Z.zip` |
 
 **Git ile güncelleme:** `git pull --ff-only` → `npm ci` → derleme. Kurulum klasöründe kaydedilmemiş değişiklik
-varsa güncelleme durur, agent işi sürerken de başlamaz. Bittiğinde paneli yeniden başlatın (Ctrl+C, sonra `sf-panel`).
+varsa güncelleme durur, agent işi sürerken de başlamaz. Bittiğinde paneli yeniden başlatın (Ctrl+C, sonra `arke-panel`).
 Geri almak için ekranda ve terminalde yazan `git reset --hard <önceki-commit>` komutunu kullanın.
 
 **Zip ile güncelleme:** önce mevcut durumu kaydeder, sonra yeni sürümü kopyalar, paketleri kurar ve testleri çalıştırır.
@@ -290,7 +291,7 @@ Panel onayı terminaldeki tek kullanımlık kodla verilir. Onaylar içeriğin ve
 onaylanandan farklı bir `dist/` yayınlanamaz.
 
 **Agent'ın kısıtları**
-- Sadece `site-factory` araçları açıktır. `Bash`, `Edit`, `Write`, yayın ve müşteri oluşturma kapalıdır.
+- Sadece `arke-web` araçları açıktır. `Bash`, `Edit`, `Write`, yayın ve müşteri oluşturma kapalıdır.
 - `--setting-sources project,local` ile çalışır; Cloudflare değişkenleri ortamından silinir.
 - Kimlik bilgisi dosyalarını okuyamaz (`~/.ssh`, `~/.config`, `.env`, git kimlik bilgileri…).
 - Tasarım planı onaylanmadan sayfa yazamaz.
@@ -318,7 +319,7 @@ site yayınlanmaz; test için hayali firmalar kullanılır.
 ## Klasör yapısı ve mimari
 
 ```
-site-factory/                 ← bu depo (fabrika)
+arke-web-studio/              ← bu depo (fabrika)
 ├── AGENTS.md  CLAUDE.md      ← agent'ın akışı ve kuralları (CLAUDE.md → AGENTS.md)
 ├── README.md  CHANGELOG.md  ROADMAP.md
 ├── rules/                    ← kuralların tek kaynağı: araştırma, pazar, SEO, hazır parçalar
@@ -341,15 +342,15 @@ site-factory/                 ← bu depo (fabrika)
 ├── schema/                   ← Zod'dan üretilen JSON şemaları (elle düzenlenmez)
 └── tests/                    ← vitest: birim, güvenlik, panel, uçtan uca, ekran denetimi
 
-../sf-clients/<kısa-ad>/       ← her müşteri ayrı klasör ve ayrı git geçmişi
+../arke-clients/<kısa-ad>/       ← her müşteri ayrı klasör ve ayrı git geçmişi
 ├── site.config.json  content/<dil>.json  assets/  site/   ← sitenin girdileri
 ├── design-plan.json  design-plans/  research.md            ← plan ve araştırma
 ├── app/                                                    ← uygulama sitelerinde hazır parçalar
 ├── dist/  quality-report.md                                ← derlenmiş site ve kontrol raporu
 └── .factory/                                               ← onaylar, kayıtlar, satış takibi (sadece panel)
 
-../sf-inbox/<kısa-ad>/         ← müşteriden gelen dosyalar
-~/.config/site-factory/        ← hesaplar ve müşteri gizli anahtarları (şifreli), portal ayarı
+../arke-inbox/<kısa-ad>/         ← müşteriden gelen dosyalar
+~/.config/arke-web-studio/        ← hesaplar ve müşteri gizli anahtarları (şifreli), portal ayarı
 ```
 
 **Akış:** panel bir işi başlatır. Agent (`claude -p` ya da Codex) kısıtlı izinlerle ve sadece MCP araçlarıyla çalışır.
@@ -362,7 +363,7 @@ agent bunları değiştiremez.
 
 ```bash
 npm run build        # TypeScript → dist/
-npm test             # tüm testler (uçtan uca dahil; SF_E2E=off ile hızlı)
+npm test             # tüm testler (uçtan uca dahil; ARKE_E2E=off ile hızlı)
 npm run test:e2e     # sadece tarayıcılı uçtan uca testler
 npm run lint         # Biome
 npm run format
@@ -379,7 +380,7 @@ npm run schema       # Zod → schema/*.schema.json
   1. `package.json` ve `package-lock.json` dosyalarında sürümü yükseltin.
   2. `CHANGELOG.md` dosyasına not ekleyin; biten adımı `ROADMAP.md`'de işaretleyin.
   3. Commit atın ve depoya gönderin. Git ile kuranlar panelden günceller.
-  4. Zip dağıtımı için: `git archive --format=zip --prefix=site-factory/ -o site-factory-X.Y.Z.zip HEAD`.
+  4. Zip dağıtımı için: `git archive --format=zip --prefix=arke-web-studio/ -o arke-web-studio-X.Y.Z.zip HEAD`.
 
 ---
 
@@ -387,13 +388,43 @@ npm run schema       # Zod → schema/*.schema.json
 
 | Belirti | Çözüm |
 | --- | --- |
-| `npm run panel` → ENOENT | Fabrika klasöründe değilsiniz: `sf-panel` kullanın ya da `cd ~/projects/site-factory` |
+| `npm run panel` → ENOENT | Fabrika klasöründe değilsiniz: `arke-panel` kullanın ya da `cd ~/projects/arke-web-studio` |
 | `node: command not found` | WSL içinde Node kurun: nvm, sonra `nvm install 22` |
 | Agent başlamıyor, sandbox hatası | Linux/WSL'de `sudo apt install -y bubblewrap socat`; Claude Code'un WSL içine kurulu olduğundan emin olun |
 | Yayında "Cloudflare hesabı yok" | Ayarlar → Hesabım → Kaydet ve Test Et |
 | Güncelleme "kaydedilmemiş değişiklikler" diyor | Kurulum klasöründe `git status`; değişiklikleri kaydedin ya da geri alın |
 | Ekip eşitlemede "çakışma" | O müşteride iki kişi değişiklik yaptı: değişiklikleri biriniz alsın, sonra tekrar eşitleyin |
 | Ekip deposuna ulaşılamıyor | Adresi ve git girişinizi kontrol edin (`gh auth login`, `git ls-remote <adres>`) |
-| Ekran görüntüsü alınmıyor | Chrome/Chromium yolu: `export SF_BROWSER=/yol/chrome` |
+| Ekran görüntüsü alınmıyor | Chrome/Chromium yolu: `export ARKE_BROWSER=/yol/chrome` |
 
 Durum raporu almak için `npm run report -- ~/` komutunu çalıştırın. Rapor gizli bilgi içermez; destek isterken paylaşabilirsiniz.
+
+---
+
+## Ad değişikliği: Site Factory → Arke Web Studio
+
+1.30.0 ile ürünün adı ve teknik adları değişti. **Eski kurulumlar hiçbir şey yapmadan çalışmaya devam eder:**
+
+| Eski | Yeni | Eski kurulumda |
+| --- | --- | --- |
+| Site Factory (`site-factory` paket, klasör, zip) | Arke Web Studio (`arke-web-studio`) | eski zip ve kopya da kabul edilir |
+| MCP sunucusu `site-factory` (`mcp__site-factory__*`) | `arke-web` (`mcp__arke-web__*`) | otomatik |
+| `../sf-clients`, `../sf-inbox` | `../arke-clients`, `../arke-inbox` | yeni klasör yoksa eskisi kullanılır |
+| `~/.config/site-factory` | `~/.config/arke-web-studio` | yeni klasör yoksa eskisi kullanılır |
+| `SF_…` ortam değişkenleri | `ARKE_…` | eski ad, yenisi tanımlı değilse geçerli sayılır |
+| `sf-panel`, `sf-update`, `sf-report` | `arke-panel`, `arke-update`, `arke-report` | `install.sh` ya da geçiş betiği yeni komutları ekler |
+| Worker adı `sf-<kısa-ad>` | yeni müşterilerde `arke-<kısa-ad>` | **yayınlanmış müşteriler eski Worker'larında kalır** (canlı siteler taşınmaz) |
+| Portal Worker'ı `sf-portal` | yeni kurulumda `arke-portal` | kurulu portal eski adıyla kalır (gönderilen linkler çalışır) |
+
+Eski klasörleri ve ayarları yeni adlara taşımak isteğe bağlıdır. Paneli kapatın, sonra:
+
+```bash
+bash scripts/migrate-name.sh
+```
+
+Betik sadece taşır (yeni ad zaten varsa dokunmaz, hiçbir şeyi silmez). Kurulum klasörünü de `arke-web-studio` olarak
+adlandırır ve kabuk komutlarını yeniler.
+
+**Bilerek değişmeyenler:** müşteri sitelerinin içinde çalışan küçük adlar (`data-sf-*` öznitelikleri,
+`js/sf-parts.js`, `SFMotion`, yönetim ekranının çerezi). Bunlar yayınlanmış sitelerin kodunda geçiyor;
+değiştirmek o siteleri bozar. Ayrıca uygulanmış veritabanı değişikliği dosyaları (`parts/migrations/`) hiç değiştirilmez.

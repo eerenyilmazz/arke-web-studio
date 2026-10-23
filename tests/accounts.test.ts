@@ -8,24 +8,24 @@ import { cloudflareCredentials } from "../src/tools/shared.js";
 
 const ACCOUNT = { accountId: "0123456789abcdef0123456789abcdef", token: "AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-zz" };
 const keep = {
-  dir: process.env.SF_ACCOUNTS_DIR,
-  t: process.env.SF_CF_MANAGED_API_TOKEN,
-  a: process.env.SF_CF_MANAGED_ACCOUNT_ID,
-  no: process.env.SF_NO_ACCOUNTS,
+  dir: process.env.ARKE_ACCOUNTS_DIR,
+  t: process.env.ARKE_CF_MANAGED_API_TOKEN,
+  a: process.env.ARKE_CF_MANAGED_ACCOUNT_ID,
+  no: process.env.ARKE_NO_ACCOUNTS,
 };
 
 beforeEach(() => {
-  process.env.SF_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-acc-"));
-  delete process.env.SF_CF_MANAGED_API_TOKEN;
-  delete process.env.SF_CF_MANAGED_ACCOUNT_ID;
-  delete process.env.SF_NO_ACCOUNTS;
+  process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-acc-"));
+  delete process.env.ARKE_CF_MANAGED_API_TOKEN;
+  delete process.env.ARKE_CF_MANAGED_ACCOUNT_ID;
+  delete process.env.ARKE_NO_ACCOUNTS;
 });
 afterEach(() => {
   for (const [k, v] of [
-    ["SF_ACCOUNTS_DIR", keep.dir],
-    ["SF_CF_MANAGED_API_TOKEN", keep.t],
-    ["SF_CF_MANAGED_ACCOUNT_ID", keep.a],
-    ["SF_NO_ACCOUNTS", keep.no],
+    ["ARKE_ACCOUNTS_DIR", keep.dir],
+    ["ARKE_CF_MANAGED_API_TOKEN", keep.t],
+    ["ARKE_CF_MANAGED_ACCOUNT_ID", keep.a],
+    ["ARKE_NO_ACCOUNTS", keep.no],
   ] as const) {
     if (v === undefined) delete process.env[k];
     else process.env[k] = v;
@@ -41,13 +41,13 @@ describe("the person's own Cloudflare account", () => {
 
   it("keeps the token encrypted in a private file and reads it back", () => {
     saveCloudflare(ACCOUNT);
-    const file = path.join(process.env.SF_ACCOUNTS_DIR!, "accounts.json");
+    const file = path.join(process.env.ARKE_ACCOUNTS_DIR!, "accounts.json");
     const raw = readFileSync(file, "utf8");
     expect(raw).not.toContain(ACCOUNT.token);
     expect(raw).toContain(ACCOUNT.accountId);
     if (process.platform !== "win32") {
       expect(statSync(file).mode & 0o777).toBe(0o600);
-      expect(statSync(path.join(process.env.SF_ACCOUNTS_DIR!, "accounts.key")).mode & 0o777).toBe(0o600);
+      expect(statSync(path.join(process.env.ARKE_ACCOUNTS_DIR!, "accounts.key")).mode & 0o777).toBe(0o600);
     }
     expect(readCloudflare()).toEqual(ACCOUNT);
     const st = cloudflareAccountStatus();
@@ -56,8 +56,8 @@ describe("the person's own Cloudflare account", () => {
   });
 
   it("is used before the environment variables, which still work on their own", () => {
-    process.env.SF_CF_MANAGED_API_TOKEN = "env-token-value-1234567890";
-    process.env.SF_CF_MANAGED_ACCOUNT_ID = "ffffffffffffffffffffffffffffffff";
+    process.env.ARKE_CF_MANAGED_API_TOKEN = "env-token-value-1234567890";
+    process.env.ARKE_CF_MANAGED_ACCOUNT_ID = "ffffffffffffffffffffffffffffffff";
     expect(cloudflareCredentials("managed", "x")?.token).toBe("env-token-value-1234567890");
     expect(cloudflareAccountStatus().source).toBe("env");
     saveCloudflare(ACCOUNT);
@@ -68,10 +68,10 @@ describe("the person's own Cloudflare account", () => {
 
   it("is never read in an agent process, and the agent's environment says so", () => {
     saveCloudflare(ACCOUNT);
-    process.env.SF_NO_ACCOUNTS = "1";
+    process.env.ARKE_NO_ACCOUNTS = "1";
     expect(readCloudflare()).toBeNull();
     expect(cloudflareCredentials("managed", "x")).toBeNull();
-    const env = agentEnv({ HOME: "/h", SF_ACCOUNTS_DIR: "/x", SF_CF_MANAGED_API_TOKEN: "t" });
-    expect(env).toEqual({ HOME: "/h", SF_NO_ACCOUNTS: "1" });
+    const env = agentEnv({ HOME: "/h", ARKE_ACCOUNTS_DIR: "/x", ARKE_CF_MANAGED_API_TOKEN: "t" });
+    expect(env).toEqual({ HOME: "/h", ARKE_NO_ACCOUNTS: "1" });
   });
 });

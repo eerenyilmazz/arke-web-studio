@@ -13,7 +13,7 @@ import { teamCard, updateCard } from "./team-update.js";
 export async function renderSettings() {
   const st = await guarded(() => api("GET", "/api/cloudflare"));
   const ok = (b) => h("span", { class: `badge ${b ? "ok" : "warn"}`, text: b ? "tamam" : "eksik" });
-  const lines = 'export SF_CF_MANAGED_API_TOKEN="buraya-token"\nexport SF_CF_MANAGED_ACCOUNT_ID="buraya-hesap-kimligi"';
+  const lines = 'export ARKE_CF_MANAGED_API_TOKEN="buraya-token"\nexport ARKE_CF_MANAGED_ACCOUNT_ID="buraya-hesap-kimligi"';
   const ready = st && st.managed.token && st.managed.accountId && st.wrangler;
   const group = (id, title, ...cards) =>
     h("section", { class: "settings-group", id: `ayar-${id}`, "data-enter": "1" }, h("h2", { class: "settings-title", text: title }), ...cards);
@@ -446,7 +446,7 @@ export function agentsCard() {
         if (saved) {
           toast("Kaydedildi; bir sonraki işten itibaren geçerlidir.");
           note.textContent = rows.some((r) => r.provider.value === "codex")
-            ? "Codex seçili işler bu bilgisayardaki Codex ile çalışır (npm i -g @openai/codex, ardından codex login). Codex'te shell, tarayıcı ve eklentiler kapalıdır; sadece site-factory araçlarını kullanır."
+            ? "Codex seçili işler bu bilgisayardaki Codex ile çalışır (npm i -g @openai/codex, ardından codex login). Codex'te shell, tarayıcı ve eklentiler kapalıdır; sadece arke-web araçlarını kullanır."
             : "";
         }
       },

@@ -1,17 +1,17 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import { userConfigDir } from "../config.js";
 import { writeJson } from "./files.js";
 
 /**
  * The person's own accounts (each person runs the panel on their own computer with their own Cloudflare account).
- * Kept in ~/.config/site-factory/accounts.json, readable only by that user, with the token encrypted (AES-256-GCM)
+ * Kept in ~/.config/arke-web-studio/accounts.json, readable only by that user, with the token encrypted (AES-256-GCM)
  * by a key in a separate file next to it. On WSL there is no OS keychain: this protects against the file being
  * shared by accident (backups, reports, screenshots), not against someone logged in as the same user. Inside
  * ArkeLab the OS's encrypted store (safeStorage) takes its place.
  *
- * Never sent to the agent: agent processes run with SF_NO_ACCOUNTS=1 (this module then reads nothing), and the
+ * Never sent to the agent: agent processes run with ARKE_NO_ACCOUNTS=1 (this module then reads nothing), and the
  * agent may not read ~/.config at all. The panel never returns the token, only a short hint.
  */
 export interface CloudflareAccount {
@@ -42,12 +42,12 @@ interface StoreFile {
 export const ACCOUNT_ID_PATTERN = /^[0-9a-f]{32}$/;
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{30,200}$/;
 
-const dir = () => process.env.SF_ACCOUNTS_DIR ?? path.join(os.homedir(), ".config", "site-factory");
+const dir = () => process.env.ARKE_ACCOUNTS_DIR ?? userConfigDir();
 const storeFile = () => path.join(dir(), "accounts.json");
 const keyFile = () => path.join(dir(), "accounts.key");
 
 /** Agent processes (and anything started for them) never see the person's accounts. */
-export const accountsDisabled = (): boolean => process.env.SF_NO_ACCOUNTS === "1";
+export const accountsDisabled = (): boolean => process.env.ARKE_NO_ACCOUNTS === "1";
 
 function privateFile(file: string): void {
   try {
@@ -141,8 +141,8 @@ export function readCloudflare(): CloudflareAccount | null {
 export function managedCloudflare(): CloudflareAccount | null {
   const saved = readCloudflare();
   if (saved) return saved;
-  const token = process.env.SF_CF_MANAGED_API_TOKEN;
-  const accountId = process.env.SF_CF_MANAGED_ACCOUNT_ID;
+  const token = process.env.ARKE_CF_MANAGED_API_TOKEN;
+  const accountId = process.env.ARKE_CF_MANAGED_ACCOUNT_ID;
   return token && accountId ? { token, accountId } : null;
 }
 
@@ -165,7 +165,7 @@ export function cloudflareAccountStatus(): AccountStatus {
   return { configured: false, source: null, accountId: null, tokenHint: null, savedAt: null, verifiedAt: null };
 }
 
-/** For tests: forget the files (used with SF_ACCOUNTS_DIR). */
+/** For tests: forget the files (used with ARKE_ACCOUNTS_DIR). */
 export function resetAccountsForTest(): void {
   rmSync(storeFile(), { force: true });
   rmSync(keyFile(), { force: true });

@@ -1,4 +1,4 @@
-// Site Factory ready-made part: catalogue (products, services or menu items, with categories and images).
+// Arke Web Studio ready-made part: catalogue (products, services or menu items, with categories and images).
 // Factory-owned (app/parts/catalog.js); the agent never writes it. Tables: migration 0002_catalog.sql.
 import { HttpError, int, json, nowIso, randomKey, readJson, text } from "./core.js";
 

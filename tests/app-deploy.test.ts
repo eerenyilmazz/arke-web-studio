@@ -14,12 +14,12 @@ import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } fr
 
 const SLUG = "shop-co";
 const SECRET = "sk_test_value_that_must_never_be_an_argument";
-const keepDir = process.env.SF_ACCOUNTS_DIR;
+const keepDir = process.env.ARKE_ACCOUNTS_DIR;
 beforeEach(() => {
-  process.env.SF_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-app-acc-"));
+  process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-app-acc-"));
 });
 afterEach(() => {
-  process.env.SF_ACCOUNTS_DIR = keepDir;
+  process.env.ARKE_ACCOUNTS_DIR = keepDir;
 });
 
 /** Records every wrangler call and answers like wrangler would. */
@@ -34,7 +34,7 @@ function fakeWrangler() {
       : j.startsWith("d1 create")
         ? 'database_id = "11111111-2222-3333-4444-555555555555"'
         : j === "deploy"
-          ? "Deployed https://sf-shop-co-preview.example.workers.dev"
+          ? "Deployed https://arke-shop-co-preview.example.workers.dev"
           : "ok";
     return { code: 0, stdout, stderr: "" };
   };
@@ -71,14 +71,14 @@ describe("publishing an app site", () => {
     saveClientSecret(SLUG, "IYZICO_API_KEY", SECRET);
     w.calls.length = 0;
     const r = await tools.deploy(f, { slug: SLUG, target: "preview", runner: w.runner });
-    expect(r.url).toBe("https://sf-shop-co-preview.example.workers.dev");
+    expect(r.url).toBe("https://arke-shop-co-preview.example.workers.dev");
     const order = w.calls.map((c) => c.args.slice(0, 3).join(" "));
     expect(order).toEqual([
       "d1 list --json",
-      "d1 create sf-shop-co-preview-db",
+      "d1 create arke-shop-co-preview-db",
       "r2 bucket list",
       "r2 bucket create",
-      "d1 export sf-shop-co-preview-db",
+      "d1 export arke-shop-co-preview-db",
       "d1 migrations apply",
       "secret bulk --name",
       "deploy",
@@ -89,7 +89,7 @@ describe("publishing an app site", () => {
     const cfg = readFileSync(paths.wranglerConfig, "utf8");
     expect(cfg).toContain('"database_id": "11111111-2222-3333-4444-555555555555"');
     expect(cfg).toContain('"migrations_dir": "app/migrations"');
-    expect(cfg).toContain('"bucket_name": "sf-shop-co-preview-media"');
+    expect(cfg).toContain('"bucket_name": "arke-shop-co-preview-media"');
     expect(cfg).toContain('"main": "./app/worker.js"');
 
     w.calls.length = 0;
@@ -117,7 +117,7 @@ describe("publishing an app site", () => {
       timeoutMs: 1000,
       log: () => undefined,
     };
-    const db = { database: { name: "sf-shop-co-db", id: "1" } };
+    const db = { database: { name: "arke-shop-co-db", id: "1" } };
     await expect(migrate(ctx, db, false)).rejects.toThrow(/delete or overwrite data/);
     expect(w.calls).toHaveLength(0); // not even a backup: nothing was changed
     expect(await migrate(ctx, db, true)).toEqual(["0001_products.sql", "0002_cleanup.sql"]);

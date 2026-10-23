@@ -4,7 +4,7 @@ import path from "node:path";
 /**
  * A client's contact form endpoint, set by the operator in the panel and stored in .factory/form.json (the agent cannot
  * write there, so a web page or client text can never redirect form posts somewhere else). Only well-known
- * form services are accepted; the global SF_FORM_ACTION still works as a fallback for every client.
+ * form services are accepted; the global ARKE_FORM_ACTION still works as a fallback for every client.
  */
 export const FORM_FILE = "form.json";
 export const FORM_ACTION =
@@ -30,10 +30,10 @@ export function readClientForm(factoryDir: string): ClientForm | null {
   }
 }
 
-/** The endpoint forms may post to for this client: its own, else the factory-wide SF_FORM_ACTION (https only). */
+/** The endpoint forms may post to for this client: its own, else the factory-wide ARKE_FORM_ACTION (https only). */
 export function effectiveFormAction(factoryDir: string): string | null {
   const own = readClientForm(factoryDir);
   if (own) return own.action;
-  const env = process.env.SF_FORM_ACTION;
+  const env = process.env.ARKE_FORM_ACTION;
   return env && /^https:\/\//.test(env) ? env : null;
 }

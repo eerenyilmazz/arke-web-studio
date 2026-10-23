@@ -1,3 +1,4 @@
+import { userConfigDir } from "../config.js";
 import { managedCloudflare } from "../lib/accounts.js";
 import { randomBytes } from "node:crypto";
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
@@ -15,14 +16,19 @@ import * as tools from "../tools.js";
 /**
  * The panel's side of the client portal (portal/worker.js on the operator's Cloudflare account).
  *
- * The portal secret and address are kept in ~/.config/site-factory/portal.json: outside the client folders,
+ * The portal secret and address are kept in ~/.config/arke-web-studio/portal.json: outside the client folders,
  * where agent jobs are refused reads (AGENT_DENIED_READS covers ~/.config), so no agent can call the portal.
  * Links are created here and pushed to the portal; what clients send is pulled here, saved in the client's
  * folder (files into the inbox, text into .factory/), and then deleted from the portal.
  */
 const LINK_DAYS = 60;
-const PORTAL_NAME = "sf-portal";
-const KV_TITLE = "sf-portal-store";
+const PORTAL_NAME = "arke-portal";
+const KV_TITLE = "arke-portal-store";
+/** A portal set up before the rename to Arke Web Studio keeps its Worker and store, so links already sent keep working. */
+const LEGACY_PORTAL_NAME = "sf-portal";
+const LEGACY_KV_TITLE = "sf-portal-store";
+const portalWorkerName = (old: PortalConfig | null): string =>
+  old && new URL(old.url).hostname.startsWith(`${LEGACY_PORTAL_NAME}.`) ? LEGACY_PORTAL_NAME : PORTAL_NAME;
 const COMPAT_DATE = "2026-06-01";
 const FETCH_TIMEOUT_MS = 15_000;
 const LINKS_FILE = "portal-links.json";
@@ -45,7 +51,7 @@ export interface PortalConfig {
 
 /** Overridable in tests. */
 export const portalPaths = {
-  file: () => path.join(process.env.SF_PORTAL_CONFIG_DIR ?? path.join(os.homedir(), ".config", "site-factory"), "portal.json"),
+  file: () => path.join(process.env.ARKE_PORTAL_CONFIG_DIR ?? userConfigDir(), "portal.json"),
 };
 
 export function readPortal(): PortalConfig | null {
@@ -87,7 +93,7 @@ export async function setupPortal(factory: FactoryConfig, log: (t: string) => vo
   const wrangler = path.join(FACTORY_ROOT, "node_modules", "wrangler", "bin", "wrangler.js");
   if (!existsSync(wrangler)) throw new Error("wrangler kurulu değil (npm install).");
   const env = { CLOUDFLARE_API_TOKEN: creds.token, CLOUDFLARE_ACCOUNT_ID: creds.accountId, WRANGLER_SEND_METRICS: "false" };
-  const dir = mkdtempSync(path.join(os.tmpdir(), "sf-portal-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "arke-portal-"));
   const w = (args: string[], input?: string) =>
     run(process.execPath, [wrangler, ...args], {
       cwd: dir,
@@ -104,8 +110,8 @@ export async function setupPortal(factory: FactoryConfig, log: (t: string) => vo
       log("Depolama (KV) aranıyor…");
       const list = await w(["kv", "namespace", "list"]);
       try {
-        const found = (JSON.parse(list.stdout.slice(list.stdout.indexOf("["))) as Array<{ id: string; title: string }>).find(
-          (n) => n.title === KV_TITLE || n.title.endsWith(KV_TITLE),
+        const found = (JSON.parse(list.stdout.slice(list.stdout.indexOf("["))) as Array<{ id: string; title: string }>).find((n) =>
+          [KV_TITLE, LEGACY_KV_TITLE].some((t) => n.title === t || n.title.endsWith(t)),
         );
         if (found) kvId = found.id;
       } catch {
@@ -122,7 +128,13 @@ export async function setupPortal(factory: FactoryConfig, log: (t: string) => vo
     writeFileSync(
       path.join(dir, "wrangler.jsonc"),
       JSON.stringify(
-        { name: PORTAL_NAME, main: "worker.js", compatibility_date: COMPAT_DATE, workers_dev: true, kv_namespaces: [{ binding: "SF_PORTAL", id: kvId }] },
+        {
+          name: portalWorkerName(old),
+          main: "worker.js",
+          compatibility_date: COMPAT_DATE,
+          workers_dev: true,
+          kv_namespaces: [{ binding: "ARKE_PORTAL", id: kvId }],
+        },
         null,
         2,
       ),

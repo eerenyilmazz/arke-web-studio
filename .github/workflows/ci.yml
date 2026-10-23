@@ -23,4 +23,4 @@ jobs:
       - run: npm run build
       - run: npm test
         env:
-          SF_E2E: "off"
+          ARKE_E2E: "off"

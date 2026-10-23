@@ -34,7 +34,7 @@ function handler<A extends Record<string, unknown>>(factory: FactoryConfig, name
     } catch (error) {
       const known = error instanceof FactoryError;
       const message = known ? error.message : "Internal error. Details were written to the server log.";
-      if (!known) console.error(`[site-factory] ${name} failed:`, error);
+      if (!known) console.error(`[arke-web] ${name} failed:`, error);
       if (logFile && existsSync(path.dirname(path.dirname(logFile)))) {
         audit(logFile, { tool: name, ok: false, ms: Date.now() - started, args: summariseArgs(args), error: message.slice(0, 300) });
       }
@@ -46,10 +46,10 @@ function handler<A extends Record<string, unknown>>(factory: FactoryConfig, name
 
 export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpServer {
   const server = new McpServer(
-    { name: "site-factory", version: "0.1.0" },
+    { name: "arke-web", version: "0.1.0" },
     {
       instructions:
-        'Site Factory: produces small-business websites. Read AGENTS.md first. You write config and content through these tools. Template sites: never edit template code. Custom sites (template "custom"): you design the brand and write the site code with the site-file tools, following rules/custom-site.md. Never create approvals.',
+        'Arke Web Studio: produces small-business websites. Read AGENTS.md first. You write config and content through these tools. Template sites: never edit template code. Custom sites (template "custom"): you design the brand and write the site code with the site-file tools, following rules/custom-site.md. Never create approvals.',
     },
   );
 
@@ -336,7 +336,7 @@ function registerDeployTool(server: McpServer, factory: FactoryConfig): void {
     "new-site",
     {
       title: "Start a new site",
-      description: "Starts the Site Factory flow for a new client.",
+      description: "Starts the Arke Web Studio flow for a new client.",
       argsSchema: { businessName: z.string(), industry: z.string() },
     },
     ({ businessName, industry }) => ({
@@ -345,7 +345,7 @@ function registerDeployTool(server: McpServer, factory: FactoryConfig): void {
           role: "user",
           content: {
             type: "text",
-            text: `Start a new Site Factory client: "${businessName}" (${industry}). Follow AGENTS.md: propose a slug, ask me only the internal questions (hosting model, extra language if known), create the client, then generate the round-1 questionnaire for me to send.`,
+            text: `Start a new Arke Web Studio client: "${businessName}" (${industry}). Follow AGENTS.md: propose a slug, ask me only the internal questions (hosting model, extra language if known), create the client, then generate the round-1 questionnaire for me to send.`,
           },
         },
       ],
@@ -356,13 +356,13 @@ function registerDeployTool(server: McpServer, factory: FactoryConfig): void {
 async function main(): Promise<void> {
   const server = createServer();
   await server.connect(new StdioServerTransport());
-  console.error("[site-factory] MCP server running on stdio");
+  console.error("[arke-web] MCP server running on stdio");
 }
 
 const invokedDirectly = process.argv[1] && /server\.(ts|js)$/.test(process.argv[1]);
 if (invokedDirectly) {
   main().catch((error) => {
-    console.error("[site-factory] fatal:", error);
+    console.error("[arke-web] fatal:", error);
     process.exit(1);
   });
 }

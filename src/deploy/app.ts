@@ -72,7 +72,7 @@ export function appPlanFor(module: ProductModule, record: ProductRecord): AppPla
 export const isAppSite = (record: ProductRecord): boolean => PRODUCTS[record.product].deploy === "app";
 
 export function resourceNames(slug: string, target: Target) {
-  const base = target === "preview" ? `sf-${slug}-preview` : `sf-${slug}`;
+  const base = target === "preview" ? `arke-${slug}-preview` : `arke-${slug}`;
   return { database: `${base}-db`, bucket: `${base}-media` };
 }
 

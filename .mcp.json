@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "site-factory": {
+    "arke-web": {
       "command": "node",
       "args": ["dist/server.js"]
     }

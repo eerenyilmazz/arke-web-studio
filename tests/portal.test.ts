@@ -44,7 +44,7 @@ const SECRET = "s".repeat(43);
 const URL_BASE = "https://sf-portal.example.workers.dev";
 let worker: { fetch: (r: Request, env: unknown) => Promise<Response> };
 let kv: ReturnType<typeof fakeKv>;
-let env: { SF_PORTAL: ReturnType<typeof fakeKv>; PORTAL_SECRET: string };
+let env: { ARKE_PORTAL: ReturnType<typeof fakeKv>; PORTAL_SECRET: string };
 const fetcher = (url: string, init: RequestInit) => worker.fetch(new Request(url, init), env);
 const visit = (url: string, init?: RequestInit) => worker.fetch(new Request(url, init), env);
 let factory: ReturnType<typeof tempFactory>;
@@ -53,18 +53,18 @@ let oldDir: string | undefined;
 beforeAll(async () => {
   worker = (await import("../portal/worker.js" as string)).default;
   kv = fakeKv();
-  env = { SF_PORTAL: kv, PORTAL_SECRET: SECRET };
-  oldDir = process.env.SF_PORTAL_CONFIG_DIR;
+  env = { ARKE_PORTAL: kv, PORTAL_SECRET: SECRET };
+  oldDir = process.env.ARKE_PORTAL_CONFIG_DIR;
   const dir = mkdtempSync(path.join(os.tmpdir(), "sf-portal-cfg-"));
-  process.env.SF_PORTAL_CONFIG_DIR = dir;
+  process.env.ARKE_PORTAL_CONFIG_DIR = dir;
   writeFileSync(path.join(dir, "portal.json"), JSON.stringify({ url: URL_BASE, secret: SECRET, kvId: "a".repeat(32), at: "2026-10-01T00:00:00Z" }));
   factory = tempFactory();
   await tools.createClient(factory, { slug: "rose-cafe", businessName: "Rose <Cafe>", industry: "cafe", hostingModel: "managed", template: "custom" });
 });
 
 afterAll(() => {
-  if (oldDir === undefined) delete process.env.SF_PORTAL_CONFIG_DIR;
-  else process.env.SF_PORTAL_CONFIG_DIR = oldDir;
+  if (oldDir === undefined) delete process.env.ARKE_PORTAL_CONFIG_DIR;
+  else process.env.ARKE_PORTAL_CONFIG_DIR = oldDir;
 });
 
 describe("client portal", () => {
@@ -224,7 +224,7 @@ describe("portal endpoints of the panel", () => {
       return url.startsWith(URL_BASE) ? worker.fetch(new Request(url, init), env) : realFetch(input, init);
     }) as typeof fetch;
     const base = `http://127.0.0.1:${port}`;
-    const headers = { Cookie: `sf_panel=${key}`, Origin: base, "Content-Type": "application/json" };
+    const headers = { Cookie: `arke_panel=${key}`, Origin: base, "Content-Type": "application/json" };
     const call = async (method: string, p: string, body?: unknown) => {
       const r = await realFetch(`${base}${p}`, { method, headers, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) });
       return { status: r.status, text: await r.text() };
@@ -262,15 +262,15 @@ describe("portal endpoints of the panel", () => {
   });
 
   it("refuses setup without a Cloudflare account (panel or environment)", async () => {
-    const saved = [process.env.SF_CF_MANAGED_API_TOKEN, process.env.SF_CF_MANAGED_ACCOUNT_ID];
-    delete process.env.SF_CF_MANAGED_API_TOKEN;
-    delete process.env.SF_CF_MANAGED_ACCOUNT_ID;
+    const saved = [process.env.ARKE_CF_MANAGED_API_TOKEN, process.env.ARKE_CF_MANAGED_ACCOUNT_ID];
+    delete process.env.ARKE_CF_MANAGED_API_TOKEN;
+    delete process.env.ARKE_CF_MANAGED_ACCOUNT_ID;
     try {
       const { setupPortal } = await import("../src/panel/portal.js");
       await expect(setupPortal(factory, () => undefined)).rejects.toThrow(/Cloudflare hesabı eklenmemiş/);
     } finally {
-      if (saved[0] !== undefined) process.env.SF_CF_MANAGED_API_TOKEN = saved[0];
-      if (saved[1] !== undefined) process.env.SF_CF_MANAGED_ACCOUNT_ID = saved[1];
+      if (saved[0] !== undefined) process.env.ARKE_CF_MANAGED_API_TOKEN = saved[0];
+      if (saved[1] !== undefined) process.env.ARKE_CF_MANAGED_ACCOUNT_ID = saved[1];
     }
   });
 });

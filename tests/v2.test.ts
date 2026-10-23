@@ -135,19 +135,19 @@ describe("taking a site off Cloudflare (panel only)", () => {
     const paths = clientPaths(f.clientsRoot, "off-co");
     writeFileSync(
       paths.lastDeploy,
-      JSON.stringify({ hash: "x", at: "2026-10-17T00:00:00Z", target: "preview", url: "https://sf-off-co-preview.example.workers.dev" }),
+      JSON.stringify({ hash: "x", at: "2026-10-17T00:00:00Z", target: "preview", url: "https://arke-off-co-preview.example.workers.dev" }),
     );
     const calls: Array<{ args: readonly string[]; env?: Record<string, string> }> = [];
     const fake = (async (_cmd: string, args: readonly string[], opts: { env?: Record<string, string> }) => {
       calls.push({ args, env: opts.env });
-      return { code: 0, stdout: "Successfully deleted sf-off-co-preview", stderr: "" };
+      return { code: 0, stdout: "Successfully deleted arke-off-co-preview", stderr: "" };
     }) as unknown as Parameters<typeof tools.undeploy>[2];
-    process.env.SF_CF_MANAGED_API_TOKEN = "test-token";
-    process.env.SF_CF_MANAGED_ACCOUNT_ID = "test-account";
+    process.env.ARKE_CF_MANAGED_API_TOKEN = "test-token";
+    process.env.ARKE_CF_MANAGED_ACCOUNT_ID = "test-account";
     try {
       const r = await tools.undeploy(f, { slug: "off-co", target: "preview" }, fake);
-      expect(r).toMatchObject({ worker: "sf-off-co-preview", alreadyRemoved: false });
-      expect(calls[0]!.args.slice(1)).toEqual(["delete", "sf-off-co-preview", "--force"]);
+      expect(r).toMatchObject({ worker: "arke-off-co-preview", alreadyRemoved: false });
+      expect(calls[0]!.args.slice(1)).toEqual(["delete", "arke-off-co-preview", "--force"]);
       expect(calls[0]!.env?.CLOUDFLARE_API_TOKEN).toBe("test-token");
       // The preview link is no longer shown as published.
       expect(existsSync(paths.lastDeploy)).toBe(false);
@@ -160,8 +160,8 @@ describe("taking a site off Cloudflare (panel only)", () => {
       const broken = (async () => ({ code: 1, stdout: "", stderr: "Authentication error [code: 10000]" })) as unknown as Parameters<typeof tools.undeploy>[2];
       await expect(tools.undeploy(f, { slug: "off-co", target: "production" }, broken)).rejects.toThrow(/wrangler exited/);
     } finally {
-      delete process.env.SF_CF_MANAGED_API_TOKEN;
-      delete process.env.SF_CF_MANAGED_ACCOUNT_ID;
+      delete process.env.ARKE_CF_MANAGED_API_TOKEN;
+      delete process.env.ARKE_CF_MANAGED_ACCOUNT_ID;
     }
     await expect(tools.undeploy(f, { slug: "off-co", target: "preview" }, (async () => ({ code: 0, stdout: "", stderr: "" })) as never)).rejects.toThrow(
       /No Cloudflare credentials/,

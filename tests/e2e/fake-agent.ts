@@ -79,10 +79,10 @@ const SIGNATURE_HTML = `<!doctype html><html lang="tr"><head><meta charset="utf-
 
 async function main(): Promise<void> {
   const prompt = await readStdin();
-  const leaked = Object.keys(process.env).filter((k) => k.startsWith("SF_CF_"));
+  const leaked = Object.keys(process.env).filter((k) => k.startsWith("ARKE_CF_"));
   if (leaked.length) finish(false, `BOUNDARY: Cloudflare variables reached the agent: ${leaked.join(", ")}`);
   const denied = process.argv.slice(process.argv.indexOf("--disallowedTools") + 1)[0] ?? "";
-  for (const tool of ["Bash", "Edit", "Write", "mcp__site-factory__deploy"]) {
+  for (const tool of ["Bash", "Edit", "Write", "mcp__arke-web__deploy"]) {
     if (!denied.split(",").includes(tool)) finish(false, `BOUNDARY: ${tool} is not denied (${denied.slice(0, 80)})`);
   }
   const sources = process.argv[process.argv.indexOf("--setting-sources") + 1];
@@ -107,7 +107,7 @@ async function main(): Promise<void> {
       type: "assistant",
       message: {
         id: `m${n}`,
-        content: [{ type: "tool_use", id: `t${n}`, name: `mcp__site-factory__${name}`, input: args }],
+        content: [{ type: "tool_use", id: `t${n}`, name: `mcp__arke-web__${name}`, input: args }],
         usage: { input_tokens: 100, output_tokens: 20 },
       },
     });

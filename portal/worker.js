@@ -1,4 +1,4 @@
-// Site Factory client portal: a small Cloudflare Worker on the operator's own account (free plan, Workers KV).
+// Arke Web Studio client portal: a small Cloudflare Worker on the operator's own account (free plan, Workers KV).
 //
 // Clients open a link the operator sends them:
 //   /f/<token>  a form for their business details, logo and photos
@@ -76,7 +76,7 @@ const json = (data, status = 200) => new Response(JSON.stringify(data), { status
 
 async function getLink(env, token) {
   if (!TOKEN.test(token)) return null;
-  const link = await env.SF_PORTAL.get(`link:${token}`, "json");
+  const link = await env.ARKE_PORTAL.get(`link:${token}`, "json");
   if (!link || (link.expiresAt && Date.parse(link.expiresAt) < Date.now())) return null;
   return link;
 }
@@ -86,7 +86,7 @@ async function count(env, token, link) {
   const used = Number(link.count || 0);
   if (used >= Number(link.maxSubmissions || 20)) return false;
   const ttl = link.expiresAt ? Math.max(60, Math.round((Date.parse(link.expiresAt) - Date.now()) / 1000)) : undefined;
-  await env.SF_PORTAL.put(`link:${token}`, JSON.stringify({ ...link, count: used + 1 }), ttl ? { expirationTtl: ttl } : undefined);
+  await env.ARKE_PORTAL.put(`link:${token}`, JSON.stringify({ ...link, count: used + 1 }), ttl ? { expirationTtl: ttl } : undefined);
   return true;
 }
 
@@ -155,10 +155,10 @@ async function handleIntake(request, env, token, link, t) {
     if (!type) continue;
     const fileKey = `file:${link.slug}:${key.slice(5 + link.slug.length + 1)}-${files.length}`;
     const name = clip(String(f.name || `file.${IMAGE_TYPES[type]}`).replace(/[^\w.-]+/g, "-"), 80);
-    await env.SF_PORTAL.put(fileKey, bytes, { metadata: { name, type } });
+    await env.ARKE_PORTAL.put(fileKey, bytes, { metadata: { name, type } });
     files.push({ key: fileKey, name, type, bytes: f.size });
   }
-  await env.SF_PORTAL.put(key, JSON.stringify({ type: "intake", token, at: new Date().toISOString(), answers, freeText: clip(form.get("freeText")).trim(), files }));
+  await env.ARKE_PORTAL.put(key, JSON.stringify({ type: "intake", token, at: new Date().toISOString(), answers, freeText: clip(form.get("freeText")).trim(), files }));
   return page(link.lang, t.thanks, `<div class="card"><h1>${esc(t.thanks)}</h1><p class="mute">${esc(t.thanksLead)}</p></div>`);
 }
 
@@ -176,12 +176,12 @@ async function handleReview(request, env, token, action, link, t) {
     const text = clip(form.get("text")).trim();
     if (!text) return page(link.lang, t.bad, `<div class="card"><p>${esc(t.bad)}</p>${back}</div>`, null, 400);
     const pageId = clip(form.get("page"), 60);
-    await env.SF_PORTAL.put(itemKey(link.slug), JSON.stringify({ type: "comment", token, at, page: pageId, text }));
+    await env.ARKE_PORTAL.put(itemKey(link.slug), JSON.stringify({ type: "comment", token, at, page: pageId, text }));
     return page(link.lang, t.commentThanks, `<div class="card"><h1>${esc(t.commentThanks)}</h1>${back}</div>`);
   }
   const name = clip(form.get("name"), 80).trim();
   if (!name) return page(link.lang, t.bad, `<div class="card"><p>${esc(t.bad)}</p>${back}</div>`, null, 400);
-  await env.SF_PORTAL.put(itemKey(link.slug), JSON.stringify({ type: "approval", token, at, name, previewUrl: link.previewUrl }));
+  await env.ARKE_PORTAL.put(itemKey(link.slug), JSON.stringify({ type: "approval", token, at, name, previewUrl: link.previewUrl }));
   return page(link.lang, t.approveThanks, `<div class="card"><h1>${esc(t.approveThanks)}</h1>${back}</div>`);
 }
 
@@ -199,7 +199,7 @@ async function putLink(request, env, id) {
   const link = await request.json();
   if (!SLUG.test(String(link.slug || "")) || !["intake", "review"].includes(link.kind)) return json({ error: "bad link" }, 400);
   const ttl = Math.max(60, Math.round((Date.parse(link.expiresAt) - Date.now()) / 1000) || 60 * 60 * 24 * 60);
-  await env.SF_PORTAL.put(`link:${id}`, JSON.stringify({ ...link, count: 0 }), { expirationTtl: ttl });
+  await env.ARKE_PORTAL.put(`link:${id}`, JSON.stringify({ ...link, count: 0 }), { expirationTtl: ttl });
   return json({ ok: true });
 }
 
@@ -209,9 +209,9 @@ async function listItems(env) {
   const out = [];
   let cursor;
   do {
-    const batch = await env.SF_PORTAL.list({ prefix: "item:", cursor });
+    const batch = await env.ARKE_PORTAL.list({ prefix: "item:", cursor });
     for (const k of batch.keys) {
-      const value = await env.SF_PORTAL.get(k.name, "json");
+      const value = await env.ARKE_PORTAL.get(k.name, "json");
       if (value) out.push({ key: k.name, slug: k.name.split(":")[1], ...value });
     }
     cursor = batch.list_complete ? undefined : batch.cursor;
@@ -221,14 +221,14 @@ async function listItems(env) {
 
 /** Deletes a collected item together with its files. */
 async function deleteItem(env, id) {
-  const value = await env.SF_PORTAL.get(id, "json");
-  for (const f of value?.files || []) await env.SF_PORTAL.delete(f.key);
-  await env.SF_PORTAL.delete(id);
+  const value = await env.ARKE_PORTAL.get(id, "json");
+  for (const f of value?.files || []) await env.ARKE_PORTAL.delete(f.key);
+  await env.ARKE_PORTAL.delete(id);
   return json({ ok: true });
 }
 
 async function getFile(env, id) {
-  const { value, metadata } = await env.SF_PORTAL.getWithMetadata(id, "arrayBuffer");
+  const { value, metadata } = await env.ARKE_PORTAL.getWithMetadata(id, "arrayBuffer");
   if (!value) return json({ error: "not found" }, 404);
   return new Response(value, { headers: headers({ "Content-Type": "application/octet-stream", "X-File-Name": metadata?.name || "file", "X-File-Type": metadata?.type || "" }) });
 }
@@ -241,7 +241,7 @@ async function handleApi(request, env, parts) {
   if (what === "links" && id && TOKEN.test(id)) {
     if (method === "PUT") return putLink(request, env, id);
     if (method === "DELETE") {
-      await env.SF_PORTAL.delete(`link:${id}`);
+      await env.ARKE_PORTAL.delete(`link:${id}`);
       return json({ ok: true });
     }
   }

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 /** Environment variables from the template contract; missing ones stop the build with a clear message. */
-export function requireEnv(name: "SF_CLIENT_DIR" | "SF_OUT_DIR"): string {
+export function requireEnv(name: "ARKE_CLIENT_DIR" | "ARKE_OUT_DIR"): string {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set. build_site sets it; to build by hand: ${name}=/path npm run build`);
   return path.resolve(value);
@@ -10,7 +10,7 @@ export function requireEnv(name: "SF_CLIENT_DIR" | "SF_OUT_DIR"): string {
 
 /** Optional: where the contact form posts. Without it the site shows contact buttons instead of a form. */
 export function formAction(): string | null {
-  const value = process.env.SF_FORM_ACTION;
+  const value = process.env.ARKE_FORM_ACTION;
   return value && /^https:\/\//.test(value) ? value : null;
 }
 
@@ -20,7 +20,7 @@ export function formAction(): string | null {
  */
 export function siteUrl(): string | null {
   try {
-    const raw = JSON.parse(readFileSync(path.join(requireEnv("SF_CLIENT_DIR"), "site.config.json"), "utf8")) as { site?: { domain?: unknown } };
+    const raw = JSON.parse(readFileSync(path.join(requireEnv("ARKE_CLIENT_DIR"), "site.config.json"), "utf8")) as { site?: { domain?: unknown } };
     const domain = raw.site?.domain;
     return typeof domain === "string" && domain.length > 0 ? `https://${domain}` : null;
   } catch {

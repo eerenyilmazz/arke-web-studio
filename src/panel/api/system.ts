@@ -53,7 +53,7 @@ export const systemRoutes: Route[] = [
   },
   {
     method: "POST",
-    pattern: /^\/api\/backups\/(site-factory-yedek-[0-9-]+\.tar\.gz)\/verify$/,
+    pattern: /^\/api\/backups\/(arke-web-studio-yedek-[0-9-]+\.tar\.gz)\/verify$/,
     handler: async (d, _r, res, [file]) => {
       try {
         sendJson(res, 200, await verifyBackup(d.factory, file!));

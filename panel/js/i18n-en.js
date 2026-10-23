@@ -10,10 +10,10 @@ export const EN = {
       "An update never overwrites changes in the install folder. Restart the panel when it finishes.",
     "Zip ile kurulmuş. Yeni sürüm zip'ini indirip terminalde çalıştırın:": "Installed from a zip. Download the new release zip and run in a terminal:",
     "Güncelleme bitti. Paneli yeniden başlatın.": "Update finished. Restart the panel.",
-    "Site Factory güncel.": "Site Factory is up to date.",
-    "Zip ile kurulmuş: yeni sürümü sf-update <zip> ile kurun.": "Installed from a zip: install the new release with sf-update <zip>.",
-    "Uzak depo bağlı değil (zip ile kurulmuş): yeni sürümü sf-update <zip> ile kurun.":
-      "No remote repository (installed from a zip): install the new release with sf-update <zip>.",
+    "Arke Web Studio güncel.": "Arke Web Studio is up to date.",
+    "Zip ile kurulmuş: yeni sürümü arke-update <zip> ile kurun.": "Installed from a zip: install the new release with arke-update <zip>.",
+    "Uzak depo bağlı değil (zip ile kurulmuş): yeni sürümü arke-update <zip> ile kurun.":
+      "No remote repository (installed from a zip): install the new release with arke-update <zip>.",
     "Uzak depoya ulaşılamadı. İnternet bağlantısını ve git girişini kontrol edin.":
       "Could not reach the repository. Check the internet connection and your git login.",
     "Kurulum klasöründe kaydedilmemiş değişiklikler var; güncelleme bunların üzerine yazmaz. Önce onları kaydedin ya da geri alın.":
@@ -39,7 +39,7 @@ export const EN = {
     "Ekip deposu bağlı değil.": "No team repository connected.",
     "Bir agent işi sürüyor; bittiğinde güncelleyin.": "An agent job is running; update when it finishes.",
     "Bir güncelleme zaten sürüyor.": "An update is already running.",
-    "Site Factory zaten güncel.": "Site Factory is already up to date.",
+    "Arke Web Studio zaten güncel.": "Arke Web Studio is already up to date.",
     "Ekip deposuna ulaşılamadı. Adresi ve git girişinizi (gh auth login) kontrol edin.":
       "Could not reach the team repository. Check the address and your git login (gh auth login).",
     "Ekip deposu adresi https://… ya da git@…:… biçiminde olmalı (ör. https://github.com/ekip/musteriler.git).":
@@ -359,7 +359,7 @@ export const EN = {
     kurulmadı: "not set up",
     "Önizleme linki ve canlı yayın için bir kez yapılır. Token panelde ya da dosyada saklanmaz; sadece terminal ortamında durur ve agent'a hiç verilmez.":
       "Done once, for preview links and live publishing. The token is not stored in the panel or in a file; it lives only in the terminal environment and is never given to the agent.",
-    "Hesap kimliği (SF_CF_MANAGED_ACCOUNT_ID)": "Account ID (SF_CF_MANAGED_ACCOUNT_ID)",
+    "Hesap kimliği (ARKE_CF_MANAGED_ACCOUNT_ID)": "Account ID (ARKE_CF_MANAGED_ACCOUNT_ID)",
     "Yayın aracı (wrangler)": "Publishing tool (wrangler)",
     "Cloudflare hesabı aç": "Open a Cloudflare account",
     "(ücretsiz):": "(free):",
@@ -422,8 +422,8 @@ export const EN = {
     "boş = paket": "empty = package",
     adım: "steps",
     "Kaydedildi; bir sonraki işten itibaren geçerlidir.": "Saved; applies from the next job.",
-    "Codex seçili işler bu bilgisayardaki Codex ile çalışır (npm i -g @openai/codex, ardından codex login). Codex'te shell, tarayıcı ve eklentiler kapalıdır; sadece site-factory araçlarını kullanır.":
-      "Jobs set to Codex run with Codex on this computer (npm i -g @openai/codex, then codex login). In Codex the shell, browser and plugins are off; it uses only the site-factory tools.",
+    "Codex seçili işler bu bilgisayardaki Codex ile çalışır (npm i -g @openai/codex, ardından codex login). Codex'te shell, tarayıcı ve eklentiler kapalıdır; sadece arke-web araçlarını kullanır.":
+      "Jobs set to Codex run with Codex on this computer (npm i -g @openai/codex, then codex login). In Codex the shell, browser and plugins are off; it uses only the arke-web tools.",
     "Agent ve Sınırlar": "Agent and Limits",
     "Her iş türü için hangi agent'ın, hangi modelle ve hangi sınırlarla çalışacağını seçiniz. Boş bırakılan alan paketin değerini kullanır. Claude modelleri: opus, sonnet, haiku. Codex modelleri Codex'in kendi adlarıdır (boş = Codex varsayılanı).":
       "Choose which agent runs each kind of job, with which model and limits. An empty field uses the package's value. Claude models: opus, sonnet, haiku. Codex models use Codex's own names (empty = Codex default).",
@@ -443,7 +443,7 @@ export const EN = {
     "Sayfaları yazıyor": "Writing the pages",
     "bitti. Panelde sonucu gör.": "done. See the result in the panel.",
     "başarısız oldu.": "failed.",
-    "Site Factory": "Site Factory",
+    "Arke Web Studio": "Arke Web Studio",
     "Doğru, devam et": "Correct, continue",
     "Logo başka bir müşteriye ait": "The logo belongs to another client",
     "İşlem başlatıldı. Tamamlandığında bildirim alacaksınız.": "Job started. You will be notified when it is done.",
@@ -461,8 +461,8 @@ export const EN = {
     "Portalı güncelle": "Update the portal",
     "Portalı kur": "Set up the portal",
     "Önce yukarıdaki Cloudflare bağlantısını tamamlayınız.": "First complete the Cloudflare connection above.",
-    "Portal anahtarı yalnızca bu bilgisayarda (~/.config/site-factory) durur; agent'a hiç verilmez. Linkler 60 gün geçerlidir; istediğinizde kapatabilirsiniz.":
-      "The portal key stays only on this computer (~/.config/site-factory) and is never given to the agent. Links are valid for 60 days; you can close them whenever you want.",
+    "Portal anahtarı yalnızca bu bilgisayarda (~/.config/arke-web-studio) durur; agent'a hiç verilmez. Linkler 60 gün geçerlidir; istediğinizde kapatabilirsiniz.":
+      "The portal key stays only on this computer (~/.config/arke-web-studio) and is never given to the agent. Links are valid for 60 days; you can close them whenever you want.",
     "Müşteri portalı kurulmadı.": "The client portal is not set up.",
     "Ayarlar → Yayın → Müşteri Portalı": "Settings → Publishing → Client Portal",
     "Link kapatılsın mı?": "Close the link?",
@@ -975,8 +975,8 @@ export const EN = {
     "İstek panelin kendisinden gelmedi.": "The request did not come from the panel itself.",
     "İzin verilmeyen yöntem.": "Method not allowed.",
     "Geçersiz oturum anahtarı.": "Invalid session key.",
-    "Cloudflare token ve hesap kimliği tanımlı değil (SF_CF_MANAGED_API_TOKEN, SF_CF_MANAGED_ACCOUNT_ID).":
-      "Cloudflare token and account ID are not set (SF_CF_MANAGED_API_TOKEN, SF_CF_MANAGED_ACCOUNT_ID).",
+    "Cloudflare token ve hesap kimliği tanımlı değil (ARKE_CF_MANAGED_API_TOKEN, ARKE_CF_MANAGED_ACCOUNT_ID).":
+      "Cloudflare token and account ID are not set (ARKE_CF_MANAGED_API_TOKEN, ARKE_CF_MANAGED_ACCOUNT_ID).",
     "wrangler kurulu değil (npm install).": "wrangler is not installed (npm install).",
     "Depolama (KV) aranıyor…": "Looking for the storage (KV)…",
     "Depolama (KV) oluşturuluyor…": "Creating the storage (KV)…",

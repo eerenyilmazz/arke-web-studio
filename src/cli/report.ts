@@ -1,7 +1,7 @@
 /**
  * Read-only factory report: npm run report -- [folder] [--no-network]
  *
- * Writes sf-report-<date>.md into the folder (default: the current folder) and prints a short summary. Token and
+ * Writes arke-report-<date>.md into the folder (default: the current folder) and prints a short summary. Token and
  * secret values are never written. --no-network skips the live checks of published addresses and the portal.
  */
 import { writeFileSync } from "node:fs";
@@ -15,7 +15,7 @@ async function main(): Promise<void> {
   const dir = path.resolve(args.find((a) => !a.startsWith("--")) ?? ".");
   const { markdown, checks } = await buildReport(loadFactoryConfig(), { network });
   const stamp = new Date().toISOString().slice(0, 16).replace(/[-:]/g, "").replace("T", "-");
-  const file = path.join(dir, `sf-report-${stamp}.md`);
+  const file = path.join(dir, `arke-report-${stamp}.md`);
   writeFileSync(file, markdown);
   const n = (v: string) => checks.filter((c) => c.verdict === v).length;
   console.log(`\nRapor hazır: ${file}`);

@@ -33,12 +33,12 @@ describe("live site rollback (panel only)", () => {
       calls.push({ args, env: opts.env });
       return { code: 0, stdout: "Worker Version ... has been deployed to 100% of traffic.", stderr: "" };
     }) as unknown as Runner;
-    process.env.SF_CF_MANAGED_API_TOKEN = "test-token";
-    process.env.SF_CF_MANAGED_ACCOUNT_ID = "test-account";
+    process.env.ARKE_CF_MANAGED_API_TOKEN = "test-token";
+    process.env.ARKE_CF_MANAGED_ACCOUNT_ID = "test-account";
     try {
       const r = await tools.rollback(f, { slug: "back-co", target: "production", by: "eren" }, fake);
-      expect(r).toMatchObject({ target: "production", worker: "sf-back-co" });
-      expect(calls[0]!.args.slice(1)).toEqual(["rollback", "--name", "sf-back-co", "--message", "Site Factory: rolled back by eren", "--yes"]);
+      expect(r).toMatchObject({ target: "production", worker: "arke-back-co" });
+      expect(calls[0]!.args.slice(1)).toEqual(["rollback", "--name", "arke-back-co", "--message", "Arke Web Studio: rolled back by eren", "--yes"]);
       expect(calls[0]!.env?.CLOUDFLARE_API_TOKEN).toBe("test-token");
       const deploys = JSON.parse(readFileSync(path.join(clientPaths(f.clientsRoot, "back-co").factoryDir, tools.DEPLOYS_FILE), "utf8"));
       expect(deploys.production).toMatchObject({ rolledBackBy: "eren" });
@@ -52,8 +52,8 @@ describe("live site rollback (panel only)", () => {
       const after = JSON.parse(readFileSync(path.join(clientPaths(f.clientsRoot, "back-co").factoryDir, tools.DEPLOYS_FILE), "utf8"));
       expect(after.preview).toBeUndefined();
     } finally {
-      delete process.env.SF_CF_MANAGED_API_TOKEN;
-      delete process.env.SF_CF_MANAGED_ACCOUNT_ID;
+      delete process.env.ARKE_CF_MANAGED_API_TOKEN;
+      delete process.env.ARKE_CF_MANAGED_ACCOUNT_ID;
     }
     await expect(
       tools.rollback(f, { slug: "back-co", target: "preview", by: "eren" }, (async () => ({ code: 0, stdout: "", stderr: "" })) as never),
@@ -96,7 +96,7 @@ describe("backup check and restore", () => {
     const client = path.join(src, path.basename(f.clientsRoot), "bad-co");
     mkdirSync(client, { recursive: true });
     writeFileSync(path.join(client, "site.config.json"), "{ not json");
-    const name = "site-factory-yedek-2026-10-18-0000.tar.gz";
+    const name = "arke-web-studio-yedek-2026-10-18-0000.tar.gz";
     execFileSync("tar", ["-czf", path.join(dir, name), "-C", src, path.basename(f.clientsRoot)]);
     const check = await verifyBackup(f, name);
     expect(check.ok).toBe(false);

@@ -13,7 +13,7 @@ const INPUTS = ["site.config.json", "content", "assets", "site"] as const;
 const GIT_TIMEOUT_MS = 20_000;
 const MAX_LIST = 30;
 const COMMIT_ID = /^[0-9a-f]{40}$/;
-const AUTHOR = ["-c", "user.name=Site Factory", "-c", "user.email=factory@localhost", "-c", "commit.gpgsign=false"];
+const AUTHOR = ["-c", "user.name=Arke Web Studio", "-c", "user.email=factory@localhost", "-c", "commit.gpgsign=false"];
 
 export interface Version {
   readonly id: string;

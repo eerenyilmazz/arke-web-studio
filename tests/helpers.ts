@@ -22,7 +22,7 @@ export function tempFactory(): FactoryConfig & { base: string } {
 }
 
 /**
- * Minimal template honouring the contract: reads SF_CLIENT_DIR, writes SF_OUT_DIR.
+ * Minimal template honouring the contract: reads ARKE_CLIENT_DIR, writes ARKE_OUT_DIR.
  * Lets build_site be tested without Astro.
  */
 export function installStubTemplate(templatesDir: string, name = "stub-v1"): void {
@@ -32,7 +32,7 @@ export function installStubTemplate(templatesDir: string, name = "stub-v1"): voi
   writeFileSync(
     path.join(dir, "build.mjs"),
     `import fs from "node:fs"; import path from "node:path";
-const client = process.env.SF_CLIENT_DIR, out = process.env.SF_OUT_DIR;
+const client = process.env.ARKE_CLIENT_DIR, out = process.env.ARKE_OUT_DIR;
 const cfg = JSON.parse(fs.readFileSync(path.join(client, "site.config.json"), "utf8"));
 const c = JSON.parse(fs.readFileSync(path.join(client, "content", cfg.i18n.defaultLocale + ".json"), "utf8"));
 fs.mkdirSync(out, { recursive: true });

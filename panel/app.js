@@ -1,4 +1,4 @@
-// Site Factory panel. Plain browser JS, ES modules, no build step.
+// Arke Web Studio panel. Plain browser JS, ES modules, no build step.
 // All text from the server (client data included) is inserted with textContent, never innerHTML.
 // This file only wires the page together; the screens live in ./js/.
 import { $, api, state, STATUS_POLL_MS } from "./js/core.js";
@@ -12,7 +12,7 @@ $("#theme").addEventListener("click", () => {
   const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
   try {
-    localStorage.setItem("sf-theme", next);
+    localStorage.setItem("arke-theme", next);
   } catch {
     /* private window: theme just isn't remembered */
   }

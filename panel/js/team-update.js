@@ -1,4 +1,4 @@
-// Ayarlar: updating Site Factory from the panel, and sharing clients with a team through one Git repository.
+// Ayarlar: updating Arke Web Studio from the panel, and sharing clients with a team through one Git repository.
 import { api, guarded, h, time, toast } from "./core.js";
 
 const POLL_MS = 1500;
@@ -32,12 +32,7 @@ export function updateCard() {
     }
     const help =
       status.mode === "zip"
-        ? h(
-            "p",
-            { class: "muted small" },
-            "Zip ile kurulmuş. Yeni sürüm zip'ini indirip terminalde çalıştırın: ",
-            h("code", { text: "sf-update <zip>" }),
-          )
+        ? h("p", { class: "muted small" }, "Zip ile kurulmuş. Yeni sürüm zip'ini indirip terminalde çalıştırın: ", h("code", { text: "arke-update <zip>" }))
         : h("p", { class: "muted small", text: "Güncelleme kurulum klasöründeki değişikliklerin üzerine yazmaz. Bitince paneli yeniden başlatmanız gerekir." });
     if (progress && (progress.running || progress.done || progress.error)) {
       log.hidden = false;

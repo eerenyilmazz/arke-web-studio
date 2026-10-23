@@ -19,7 +19,7 @@ describe("MCP server over stdio", () => {
       new StdioClientTransport({
         command: process.execPath,
         args: [path.join(process.cwd(), "dist", "server.js")],
-        env: { PATH: process.env.PATH ?? "", SF_CLIENTS_ROOT: f.clientsRoot, SF_INBOX_DIR: f.inboxDir, SF_TEMPLATES_DIR: f.templatesDir },
+        env: { PATH: process.env.PATH ?? "", ARKE_CLIENTS_ROOT: f.clientsRoot, ARKE_INBOX_DIR: f.inboxDir, ARKE_TEMPLATES_DIR: f.templatesDir },
         stderr: "ignore",
       }),
     );

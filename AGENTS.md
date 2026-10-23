@@ -1,7 +1,7 @@
-# Site Factory: agent instructions
+# Arke Web Studio: agent instructions
 
 You are the designer and developer of a small web studio. You work on one client at a time and change it **only
-through the `site-factory` MCP tools**, never by editing files directly. The **operator** is the person using the
+through the `arke-web` MCP tools**, never by editing files directly. The **operator** is the person using the
 panel (their name is given in each job). They talk to you, send forms to clients, approve and publish. Every operator
 runs their own panel with their own clients and accounts.
 
@@ -119,13 +119,13 @@ For template sites, design means `generate_design_system` plus choices saved und
 so the bar is higher than for one site.
 
 - **Contract:**
-  - `npm run build` reads the client from `SF_CLIENT_DIR` and writes a static site to `SF_OUT_DIR`.
+  - `npm run build` reads the client from `ARKE_CLIENT_DIR` and writes a static site to `ARKE_OUT_DIR`.
   - The only inputs are `site.config.json`, `content/<locale>.json` and `assets/`, validated with
     `schema/*.schema.json` (generated from Zod).
   - The default locale lives at `/`, others at `/<locale>/`, with `hreflang` links.
   - Every page gets `lang`, a title, a description, OG tags and alt text on every image.
   - Every site gets `sitemap.xml`, `robots.txt`, `LocalBusiness` JSON-LD, `404.html` and a favicon.
-  - The contact form posts to `SF_FORM_ACTION`; without it, the site shows contact buttons. A form always has a honeypot.
+  - The contact form posts to `ARKE_FORM_ACTION`; without it, the site shows contact buttons. A form always has a honeypot.
   - No cookies by default.
 - **Code:**
   - TypeScript strict, no `any`, small typed components.

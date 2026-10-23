@@ -71,7 +71,7 @@ export function portalSettingsCard() {
       ),
       h("p", {
         class: "muted small",
-        text: "Portal anahtarı yalnızca bu bilgisayarda (~/.config/site-factory) durur; agent'a hiç verilmez. Linkler 60 gün geçerlidir; istediğinizde kapatabilirsiniz.",
+        text: "Portal anahtarı yalnızca bu bilgisayarda (~/.config/arke-web-studio) durur; agent'a hiç verilmez. Linkler 60 gün geçerlidir; istediğinizde kapatabilirsiniz.",
       }),
     );
   })();

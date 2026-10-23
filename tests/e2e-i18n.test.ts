@@ -73,8 +73,8 @@ describe("panel in English", { timeout: 300_000 }, () => {
       await page.goto(`${base}/${hash}`);
       await page.waitForSelector("#view h1");
       await page.waitForTimeout(400); // lists and cards that load after the first draw
-      // SF_E2E_SHOTS=<folder> keeps a screenshot of each screen, for reading the English by eye.
-      if (process.env.SF_E2E_SHOTS) await page.screenshot({ path: `${process.env.SF_E2E_SHOTS}/${hash.replace(/\W+/g, "_")}.png`, fullPage: true });
+      // ARKE_E2E_SHOTS=<folder> keeps a screenshot of each screen, for reading the English by eye.
+      if (process.env.ARKE_E2E_SHOTS) await page.screenshot({ path: `${process.env.ARKE_E2E_SHOTS}/${hash.replace(/\W+/g, "_")}.png`, fullPage: true });
       const texts = await page.evaluate(() => {
         const out: string[] = [];
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);

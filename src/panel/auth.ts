@@ -10,7 +10,7 @@ import type { IncomingMessage } from "node:http";
  *    must come from the panel's own origin.
  */
 
-export const COOKIE_NAME = "sf_panel";
+export const COOKIE_NAME = "arke_panel";
 
 export function newSessionKey(): string {
   return randomBytes(32).toString("hex");

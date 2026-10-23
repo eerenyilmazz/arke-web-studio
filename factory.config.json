@@ -1,6 +1,6 @@
 {
-  "clientsRoot": "../sf-clients",
-  "inboxDir": "../sf-inbox",
+  "clientsRoot": "../arke-clients",
+  "inboxDir": "../arke-inbox",
   "templatesDir": "templates",
   "defaultTemplate": "custom",
   "uupmScript": "vendor/ui-ux-pro-max/src/ui-ux-pro-max/scripts/search.py",

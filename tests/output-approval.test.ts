@@ -99,7 +99,7 @@ describe("preview deploy target", () => {
     // wrangler may be missing in the test env; the generated config is what matters.
     void r;
     const cfg = readFileSync(path.join(paths.root, "wrangler.jsonc"), "utf8");
-    expect(cfg).toContain('"name": "sf-willow-thread-preview"');
+    expect(cfg).toContain('"name": "arke-willow-thread-preview"');
     expect(cfg).not.toContain("routes");
   });
 });

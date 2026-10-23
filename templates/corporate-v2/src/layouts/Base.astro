@@ -66,7 +66,7 @@ const wa = config.whatsapp;
     {darkMode && <meta name="theme-color" media="(prefers-color-scheme: dark)" content={dark.background} />}
     <style is:inline set:html={themeCss} />
     {/* Applies a saved light/dark choice before the first paint, so the page does not flash. */}
-    {darkMode && <script is:inline>try{var t=localStorage.getItem("sf-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>}
+    {darkMode && <script is:inline>try{var t=localStorage.getItem("arke-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>}
     {site.baseUrl && canonical && <link rel="canonical" href={canonical} />}
     {alternates.length > 1 && alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={a.href} />)}
     {alternates.length > 1 && <link rel="alternate" hreflang="x-default" href={abs(ctx.url(page, config.i18n.defaultLocale))} />}

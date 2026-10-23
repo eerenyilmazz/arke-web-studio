@@ -52,20 +52,20 @@ describe("unknown fields are rejected, not silently saved", () => {
 });
 
 describe("build_site", () => {
-  const saved = process.env.SF_FORM_ACTION;
+  const saved = process.env.ARKE_FORM_ACTION;
   afterEach(() => {
-    if (saved === undefined) delete process.env.SF_FORM_ACTION;
-    else process.env.SF_FORM_ACTION = saved;
+    if (saved === undefined) delete process.env.ARKE_FORM_ACTION;
+    else process.env.ARKE_FORM_ACTION = saved;
   });
 
-  it("passes SF_FORM_ACTION through to the template", async () => {
+  it("passes ARKE_FORM_ACTION through to the template", async () => {
     const { f, paths } = await readyClient();
-    process.env.SF_FORM_ACTION = "https://forms.example.com/submit";
+    process.env.ARKE_FORM_ACTION = "https://forms.example.com/submit";
     overrideStubBuild(
       f.templatesDir,
       `import fs from "node:fs"; import path from "node:path";
-const out = process.env.SF_OUT_DIR; fs.mkdirSync(out, { recursive: true });
-fs.writeFileSync(path.join(out, "index.html"), '<!doctype html><html lang="en"><head><title>Willow &amp; Thread</title></head><body><h1>Willow &amp; Thread</h1><form action="' + (process.env.SF_FORM_ACTION ?? "none") + '"></form></body></html>');`,
+const out = process.env.ARKE_OUT_DIR; fs.mkdirSync(out, { recursive: true });
+fs.writeFileSync(path.join(out, "index.html"), '<!doctype html><html lang="en"><head><title>Willow &amp; Thread</title></head><body><h1>Willow &amp; Thread</h1><form action="' + (process.env.ARKE_FORM_ACTION ?? "none") + '"></form></body></html>');`,
     );
     const built = await tools.buildSite(f, { slug: SLUG });
     expect(built.passed).toBe(true);
@@ -79,7 +79,7 @@ fs.writeFileSync(path.join(out, "index.html"), '<!doctype html><html lang="en"><
     overrideStubBuild(
       f.templatesDir,
       `import fs from "node:fs"; import path from "node:path";
-const client = process.env.SF_CLIENT_DIR, out = process.env.SF_OUT_DIR;
+const client = process.env.ARKE_CLIENT_DIR, out = process.env.ARKE_OUT_DIR;
 const file = path.join(client, "content", "en.json");
 const c = JSON.parse(fs.readFileSync(file, "utf8")); c.tagline = "Changed during build"; fs.writeFileSync(file, JSON.stringify(c));
 fs.mkdirSync(out, { recursive: true });

@@ -7,7 +7,7 @@ import { EN } from "./i18n-en.js";
 export const LANGS = { tr: "Türkçe", en: "English" };
 const ATTRS = ["placeholder", "title", "aria-label"];
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE", "PRE"]);
-const STORE_KEY = "sf-lang";
+const STORE_KEY = "arke-lang";
 
 let lang = "tr";
 const exact = new Map(Object.entries(EN.exact));

@@ -10,6 +10,7 @@
       "Bash(unbuffer:*)",
       "Bash(wrangler:*)",
       "Bash(npx wrangler:*)",
+      "Edit(../arke-clients/**)",
       "Edit(../sf-clients/**)",
       "Edit(**/.factory/**)",
       "Read(./.env)",
@@ -28,6 +29,8 @@
     },
     "credentials": {
       "envVars": [
+        { "name": "ARKE_CF_MANAGED_API_TOKEN", "mode": "deny" },
+        { "name": "ARKE_CF_MANAGED_ACCOUNT_ID", "mode": "deny" },
         { "name": "SF_CF_MANAGED_API_TOKEN", "mode": "deny" },
         { "name": "SF_CF_MANAGED_ACCOUNT_ID", "mode": "deny" }
       ]

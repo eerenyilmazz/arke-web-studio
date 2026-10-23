@@ -13,12 +13,12 @@ import { PNG_1PX, tempFactory } from "./helpers.js";
  * request that rebuilds the site and resets the approval. Only the model is replaced, by tests/e2e/fake-agent.ts,
  * which follows a fixed script and fails the job if the agent's boundaries are broken (Cloudflare variables in its
  * environment, dangerous tools not denied). Nothing is uploaded: the publish runs wrangler with --dry-run.
- * Skipped without a Linux Chromium, like the UI smoke tests; SF_E2E=off skips it on purpose.
+ * Skipped without a Linux Chromium, like the UI smoke tests; ARKE_E2E=off skips it on purpose.
  */
 const SLUG = "ekmek-evi";
 const executable = findBrowser();
 const factory = { ...tempFactory(), defaultTemplate: "custom" };
-const savedToken = process.env.SF_CF_MANAGED_API_TOKEN;
+const savedToken = process.env.ARKE_CF_MANAGED_API_TOKEN;
 let browser: Browser | null = null;
 let fp: FakePanel | null = null;
 
@@ -31,15 +31,15 @@ beforeAll(async () => {
   browser = await launchBrowser(executable);
   if (!browser) return;
   // A token in the panel's environment: the agent must never see it (the fake agent fails the job if it does).
-  process.env.SF_CF_MANAGED_API_TOKEN = "e2e-token-must-not-reach-the-agent";
+  process.env.ARKE_CF_MANAGED_API_TOKEN = "e2e-token-must-not-reach-the-agent";
   fp = await startPanel(factory);
 }, 60_000);
 
 afterAll(async () => {
   await browser?.close();
   fp?.panel.close();
-  if (savedToken === undefined) delete process.env.SF_CF_MANAGED_API_TOKEN;
-  else process.env.SF_CF_MANAGED_API_TOKEN = savedToken;
+  if (savedToken === undefined) delete process.env.ARKE_CF_MANAGED_API_TOKEN;
+  else process.env.ARKE_CF_MANAGED_API_TOKEN = savedToken;
 });
 
 const e2e = () => (executable ? it : it.skip);
@@ -173,10 +173,10 @@ describe("the fake agent's boundary checks", { timeout: 60_000 }, () => {
     const tsx = path.join(FACTORY_ROOT, "node_modules", ".bin", "tsx");
     const agent = path.join(FACTORY_ROOT, "tests", "e2e", "fake-agent.ts");
     const run = (env: NodeJS.ProcessEnv, args: string[]) => {
-      const r = spawnSync(tsx, [agent, ...args], { input: 'Site Factory, client "x-co".', encoding: "utf8", env: { PATH: process.env.PATH, ...env } });
+      const r = spawnSync(tsx, [agent, ...args], { input: 'Arke Web Studio, client "x-co".', encoding: "utf8", env: { PATH: process.env.PATH, ...env } });
       return (JSON.parse(r.stdout.trim().split("\n").at(-1)!) as { result: string }).result;
     };
-    expect(run({ SF_CF_MANAGED_API_TOKEN: "t" }, ["--disallowedTools", "Bash,Edit,Write,mcp__site-factory__deploy"])).toMatch(/^BOUNDARY: Cloudflare/);
+    expect(run({ ARKE_CF_MANAGED_API_TOKEN: "t" }, ["--disallowedTools", "Bash,Edit,Write,mcp__arke-web__deploy"])).toMatch(/^BOUNDARY: Cloudflare/);
     expect(run({}, ["--disallowedTools", "Edit,Write"])).toMatch(/^BOUNDARY: Bash is not denied/);
   });
 });

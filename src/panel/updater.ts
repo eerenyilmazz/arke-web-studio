@@ -3,12 +3,12 @@ import path from "node:path";
 import { run as realRun, type RunOptions, type RunResult } from "../lib/exec.js";
 
 /**
- * Updating Site Factory from the panel. Two kinds of install:
+ * Updating Arke Web Studio from the panel. Two kinds of install:
  *
  *   git  installed with `git clone` (scripts/install.sh): the panel checks the remote and, on request, runs
  *        git pull --ff-only → npm ci → npm run build. Local changes stop it (nothing is overwritten); a bad update
  *        is undone with `git reset --hard <previous commit>`, which the log shows.
- *   zip  installed from a release zip: the panel shows the version and the `sf-update <zip>` command.
+ *   zip  installed from a release zip: the panel shows the version and the `arke-update <zip>` command.
  *
  * The new code runs after the panel is restarted. Only one update runs at a time, never during an agent job.
  */
@@ -59,9 +59,9 @@ export async function checkForUpdate(root: string, opts: { run?: Runner; fetch?:
   const current = version(root);
   const base = { current, latest: null, behind: 0, dirty: false, upstream: null, checkedAt: new Date().toISOString() };
   const zip = (message: string): UpdateStatus => ({ ...base, mode: "zip", message });
-  if (!existsSync(path.join(root, ".git"))) return zip("Zip ile kurulmuş: yeni sürümü sf-update <zip> ile kurun.");
+  if (!existsSync(path.join(root, ".git"))) return zip("Zip ile kurulmuş: yeni sürümü arke-update <zip> ile kurun.");
   const up = await git(run, root, ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]);
-  if (up.code !== 0) return zip("Uzak depo bağlı değil (zip ile kurulmuş): yeni sürümü sf-update <zip> ile kurun.");
+  if (up.code !== 0) return zip("Uzak depo bağlı değil (zip ile kurulmuş): yeni sürümü arke-update <zip> ile kurun.");
   const upstream = up.stdout.trim();
   if (opts.fetch !== false) {
     const f = await git(run, root, ["fetch", "--quiet"], FETCH_MS);
@@ -82,7 +82,7 @@ export async function checkForUpdate(root: string, opts: { run?: Runner; fetch?:
     ? "Kurulum klasöründe kaydedilmemiş değişiklikler var; güncelleme bunların üzerine yazmaz. Önce onları kaydedin ya da geri alın."
     : behind > 0
       ? `Yeni sürüm hazır: ${latest ?? "?"} (${behind} değişiklik).`
-      : "Site Factory güncel.";
+      : "Arke Web Studio güncel.";
   return { ...base, mode: "git", latest, behind, dirty, upstream, message };
 }
 
@@ -105,7 +105,7 @@ export async function applyUpdate(root: string, opts: { run?: Runner } = {}): Pr
   const status = await checkForUpdate(root, { run });
   if (status.mode !== "git") throw new Error(status.message);
   if (status.dirty) throw new Error(status.message);
-  if (status.behind === 0) throw new Error("Site Factory zaten güncel.");
+  if (status.behind === 0) throw new Error("Arke Web Studio zaten güncel.");
   const head = (await git(run, root, ["rev-parse", "HEAD"])).stdout.trim();
   const log: string[] = [];
   progress = { running: true, done: false, error: null, log, from: status.current, to: status.latest, previousCommit: head || null };
@@ -119,7 +119,7 @@ export async function applyUpdate(root: string, opts: { run?: Runner } = {}): Pr
       await step("Yeni kod indiriliyor (git pull)", "git", ["pull", "--ff-only", "--quiet"], PULL_MS);
       await step("Paketler kuruluyor (npm ci)", "npm", ["ci", "--no-fund", "--no-audit"], NPM_CI_MS);
       await step("Derleniyor (npm run build)", "npm", ["run", "build"], BUILD_MS);
-      log.push(`Tamam: ${status.current} → ${version(root)}. Paneli yeniden başlatın (terminalde Ctrl+C, sonra sf-panel).`);
+      log.push(`Tamam: ${status.current} → ${version(root)}. Paneli yeniden başlatın (terminalde Ctrl+C, sonra arke-panel).`);
       progress = { ...progress, running: false, done: true, to: version(root), log: [...log] };
     } catch (error) {
       const undo = head ? ` Geri almak için: git -C "${root}" reset --hard ${head.slice(0, 12)} && npm ci && npm run build` : "";

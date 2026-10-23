@@ -10,19 +10,19 @@ export const CLIENT_GITIGNORE = ["dist/", "node_modules/", ".wrangler/", ".env",
 /** `meta` is only changed through the `unmapped` / `laterInterests` arguments, so recorded answers can never be wiped by a patch. */
 export const LOCKED_CONFIG_KEYS = new Set(["slug", "schemaVersion", "meta"]);
 /** Optional form endpoint passed through to the template build (see template contract). */
-export const FORM_ACTION_ENV = "SF_FORM_ACTION";
+export const FORM_ACTION_ENV = "ARKE_FORM_ACTION";
 export const WRANGLER_COMPAT_DATE = "2026-10-01";
 export const PREVIEW_SUFFIX = "-preview";
 /** .factory/deploys.json: { preview?: {url, at}, production?: {url, at} }. */
 export const DEPLOYS_FILE = "deploys.json";
 
 export function clientEnvPrefix(slug: string): string {
-  return `SF_CF_CLIENT_${slug.toUpperCase().replaceAll("-", "_")}_`;
+  return `ARKE_CF_CLIENT_${slug.toUpperCase().replaceAll("-", "_")}_`;
 }
 
 /**
  * Credentials for a deploy. "managed" = the person's own account: saved in the panel (Ayarlar → Hesabım), else the
- * SF_CF_MANAGED_* environment variables. "client" = the client's own account from SF_CF_CLIENT_<SLUG>_*.
+ * ARKE_CF_MANAGED_* environment variables. "client" = the client's own account from ARKE_CF_CLIENT_<SLUG>_*.
  */
 export function cloudflareCredentials(model: "managed" | "client", slug: string): { token: string; accountId: string } | null {
   if (model === "managed") return managedCloudflare();
@@ -39,7 +39,7 @@ export function formActionUrl(): string | null {
 }
 
 export function buildEnv(clientDir: string, outDir: string): Record<string, string> {
-  const env: Record<string, string> = { SF_CLIENT_DIR: clientDir, SF_OUT_DIR: outDir, NODE_ENV: "production" };
+  const env: Record<string, string> = { ARKE_CLIENT_DIR: clientDir, ARKE_OUT_DIR: outDir, NODE_ENV: "production" };
   // The client's own form service (panel setting) wins over the factory-wide one.
   const formAction = effectiveFormAction(path.join(clientDir, ".factory"));
   if (formAction) env[FORM_ACTION_ENV] = formAction;

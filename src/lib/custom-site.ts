@@ -270,7 +270,7 @@ function brokenLinks(distDir: string, rel: string, html: string): string[] {
   return out;
 }
 
-/** Form posts may only go to the factory's form service (SF_FORM_ACTION). */
+/** Form posts may only go to the factory's form service (ARKE_FORM_ACTION). */
 /** App sites' own inbox endpoint (parts/app/inbox.js), used by <form data-sf-inquiry> through js/sf-parts.js. */
 export const APP_INBOX_ACTION = "/api/inbox";
 
@@ -417,7 +417,7 @@ export const BASE_CSS = "css/base.css";
 /** The factory's small script for the theme toggle and the phone menu (rules/site-kit/kit.js). */
 export const KIT_JS = "js/kit.js";
 /** The first line of the factory's base stylesheet: a file starting with it is the factory's to update. */
-const KIT_MARKER = "Site Factory base layer";
+const KIT_MARKER = "Arke Web Studio base layer";
 
 /**
  * Copies the factory's parts into a custom site: css/base.css and js/kit.js. Both are factory-owned (the agent must

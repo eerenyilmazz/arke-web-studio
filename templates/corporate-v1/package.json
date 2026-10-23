@@ -2,7 +2,7 @@
   "name": "corporate-v1",
   "version": "1.0.0",
   "private": true,
-  "description": "Site Factory template: static showcase site for a small business, built from one client folder.",
+  "description": "Arke Web Studio template: static showcase site for a small business, built from one client folder.",
   "type": "module",
   "engines": {
     "node": ">=22.12"

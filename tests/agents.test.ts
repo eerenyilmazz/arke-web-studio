@@ -32,7 +32,7 @@ describe("agent per kind of job (Claude Code or Codex)", () => {
     expect(() => writeSettings(f, { agents: { edit: { provider: "codex", model: "gpt; rm -rf /", maxTurns: 0, tokenCap: 0 } } })).toThrow();
   });
 
-  it("runs Codex read-only, without shell, browser or plugins, with only the site-factory server", () => {
+  it("runs Codex read-only, without shell, browser or plugins, with only the arke-web server", () => {
     const args = codexArgs({ factoryRoot: "/f", workDir: "/tmp/w", model: "gpt-x", web: false });
     const joined = args.join(" ");
     expect(args.slice(0, 2)).toEqual(["exec", "--json"]);
@@ -43,7 +43,7 @@ describe("agent per kind of job (Claude Code or Codex)", () => {
       expect(CODEX_DISABLED_FEATURES).toContain(f);
       expect(joined).toContain(`--disable ${f}`);
     }
-    expect(joined).toContain('mcp_servers.site-factory.args=["/f/dist/server.js"]');
+    expect(joined).toContain('mcp_servers.arke-web.args=["/f/dist/server.js"]');
     expect(joined).not.toMatch(/dangerously|danger-full-access|workspace-write/);
     expect(args).not.toContain("--search");
     expect(codexArgs({ factoryRoot: "/f", workDir: "/tmp/w", web: true })).toContain("--search");
@@ -64,9 +64,9 @@ describe("agent per kind of job (Claude Code or Codex)", () => {
           { type: "thread.started", thread_id: "t" },
           {
             type: "item.started",
-            item: { id: "1", type: "mcp_tool_call", server: "site-factory", tool: "write_site_file", arguments: { path: "index.html" }, status: "in_progress" },
+            item: { id: "1", type: "mcp_tool_call", server: "arke-web", tool: "write_site_file", arguments: { path: "index.html" }, status: "in_progress" },
           },
-          { type: "item.completed", item: { id: "1", type: "mcp_tool_call", server: "site-factory", tool: "write_site_file", status: "completed" } },
+          { type: "item.completed", item: { id: "1", type: "mcp_tool_call", server: "arke-web", tool: "write_site_file", status: "completed" } },
           { type: "item.completed", item: { id: "2", type: "agent_message", text: "Başlık değişti." } },
           { type: "turn.completed", usage: { input_tokens: 12000, cached_input_tokens: 10000, output_tokens: 800 } },
         ])
@@ -228,7 +228,7 @@ describe("agent event streams", () => {
           id: "m2",
           content: [
             { type: "text", text: "Writing the brand." },
-            { type: "tool_use", name: "mcp__site-factory__write_site_file", input: { path: "brand/brand.json" } },
+            { type: "tool_use", name: "mcp__arke-web__write_site_file", input: { path: "brand/brand.json" } },
           ],
         },
       },

@@ -1,5 +1,5 @@
 /*
- * Site Factory kit (provided by the factory; do not rewrite it). Load it on every page:
+ * Arke Web Studio kit (provided by the factory; do not rewrite it). Load it on every page:
  *   <script src="/js/kit.js" defer></script>
  * Two tested parts, so no site hand-rolls them:
  *   - Theme toggle: <button type="button" class="theme-toggle" data-theme-toggle data-label-dark="…" data-label-light="…">

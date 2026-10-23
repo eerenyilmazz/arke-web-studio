@@ -19,7 +19,7 @@ function approve(f: ReturnType<typeof tempFactory>, args: string[], input = "") 
     input, // piped stdin and stdout: what an agent's shell would have
     encoding: "utf8",
     timeout: 60_000,
-    env: { ...process.env, SF_CLIENTS_ROOT: f.clientsRoot, SF_INBOX_DIR: f.inboxDir, SF_TEMPLATES_DIR: f.templatesDir },
+    env: { ...process.env, ARKE_CLIENTS_ROOT: f.clientsRoot, ARKE_INBOX_DIR: f.inboxDir, ARKE_TEMPLATES_DIR: f.templatesDir },
   });
 }
 

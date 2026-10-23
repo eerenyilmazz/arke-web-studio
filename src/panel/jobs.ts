@@ -53,23 +53,23 @@ export interface Job {
 
 /** The only tools an agent job may use. No shell, no file edits, no deploy, no new clients. */
 export const AGENT_ALLOWED_TOOLS = [
-  "mcp__site-factory__get_client_status",
-  "mcp__site-factory__list_clients",
-  "mcp__site-factory__update_client_config",
-  "mcp__site-factory__save_content",
-  "mcp__site-factory__save_asset",
-  "mcp__site-factory__generate_design_system",
-  "mcp__site-factory__build_site",
-  "mcp__site-factory__list_site_files",
-  "mcp__site-factory__read_site_file",
-  "mcp__site-factory__write_site_file",
-  "mcp__site-factory__delete_site_file",
-  "mcp__site-factory__edit_site_file",
-  "mcp__site-factory__site_map",
-  "mcp__site-factory__read_site_file_part",
-  "mcp__site-factory__search_design_knowledge",
-  "mcp__site-factory__save_research_notes",
-  "mcp__site-factory__save_design_plan",
+  "mcp__arke-web__get_client_status",
+  "mcp__arke-web__list_clients",
+  "mcp__arke-web__update_client_config",
+  "mcp__arke-web__save_content",
+  "mcp__arke-web__save_asset",
+  "mcp__arke-web__generate_design_system",
+  "mcp__arke-web__build_site",
+  "mcp__arke-web__list_site_files",
+  "mcp__arke-web__read_site_file",
+  "mcp__arke-web__write_site_file",
+  "mcp__arke-web__delete_site_file",
+  "mcp__arke-web__edit_site_file",
+  "mcp__arke-web__site_map",
+  "mcp__arke-web__read_site_file_part",
+  "mcp__arke-web__search_design_knowledge",
+  "mcp__arke-web__save_research_notes",
+  "mcp__arke-web__save_design_plan",
   // No bare "Read", "Grep" or "Glob" here: a bare name allows reading ANY file on the machine. Without it, Claude
   // Code lets these read-only tools work without a prompt only in the working directory (the factory) and the
   // --add-dir folders (clients, inbox); anything else is refused in a headless run.
@@ -77,7 +77,7 @@ export const AGENT_ALLOWED_TOOLS = [
   // would need Bash, which stays denied below.
   "Skill",
 ] as const;
-export const AGENT_DENIED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "Task", "mcp__site-factory__deploy", "mcp__site-factory__create_client"] as const;
+export const AGENT_DENIED_TOOLS = ["Bash", "Edit", "Write", "NotebookEdit", "Task", "mcp__arke-web__deploy", "mcp__arke-web__create_client"] as const;
 /**
  * Secrets the agent must never read, even if a client text or a web page tells it to (prompt injection): process
  * environments (the panel's holds the Cloudflare tokens), keys, shell profiles where tokens may be exported,
@@ -145,7 +145,7 @@ export function claudeArgs(maxTurns: number = MAX_AGENT_TURNS, web = false, read
 }
 
 /**
- * Codex features that would widen what the agent can do beyond the site-factory tools: a shell (reading any file),
+ * Codex features that would widen what the agent can do beyond the arke-web tools: a shell (reading any file),
  * browsers and computer use (network, the desktop), apps, plugins, hooks, sub-agents, image generation. All off.
  * The list is kept explicit (not "everything but"), so a new Codex version cannot silently turn on less.
  */
@@ -182,12 +182,12 @@ const toml = (v: string) => JSON.stringify(v);
 
 /**
  * `codex exec` with the same boundaries as the Claude jobs: read-only sandbox, never asks, no shell or browser
- * features, only the site-factory MCP server (given here, user config ignored), no web search unless asked.
+ * features, only the arke-web MCP server (given here, user config ignored), no web search unless asked.
  * It runs in an empty working folder, so even its read-only workspace holds nothing.
  */
 export function codexArgs(opts: { factoryRoot: string; workDir: string; model?: string; web?: boolean; serverEnv?: Record<string, string> }): string[] {
   const server = path.join(opts.factoryRoot, "dist", "server.js");
-  const envPairs = Object.entries(opts.serverEnv ?? {}).flatMap(([k, v]) => ["-c", `mcp_servers.site-factory.env.${k}=${toml(v)}`]);
+  const envPairs = Object.entries(opts.serverEnv ?? {}).flatMap(([k, v]) => ["-c", `mcp_servers.arke-web.env.${k}=${toml(v)}`]);
   return [
     "exec",
     "--json",
@@ -203,9 +203,9 @@ export function codexArgs(opts: { factoryRoot: string; workDir: string; model?: 
     opts.workDir,
     ...CODEX_DISABLED_FEATURES.flatMap((f) => ["--disable", f]),
     "-c",
-    `mcp_servers.site-factory.command=${toml(process.execPath)}`,
+    `mcp_servers.arke-web.command=${toml(process.execPath)}`,
     "-c",
-    `mcp_servers.site-factory.args=[${toml(server)}]`,
+    `mcp_servers.arke-web.args=[${toml(server)}]`,
     ...envPairs,
     ...(opts.web ? ["--search"] : []),
     ...(opts.model ? ["-m", opts.model] : []),
@@ -213,25 +213,27 @@ export function codexArgs(opts: { factoryRoot: string; workDir: string; model?: 
   ];
 }
 
-/** Factory paths the MCP server needs, when the panel was started with overrides (SF_CLIENTS_ROOT…). */
+/** Factory paths the MCP server needs, when the panel was started with overrides (ARKE_CLIENTS_ROOT…). */
 function serverEnvFrom(parent: NodeJS.ProcessEnv): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const k of ["SF_CLIENTS_ROOT", "SF_INBOX_DIR", "SF_TEMPLATES_DIR", "SF_FORM_ACTION", "SF_BROWSER", "SF_SCREENSHOTS"]) {
+  for (const k of ["ARKE_CLIENTS_ROOT", "ARKE_INBOX_DIR", "ARKE_TEMPLATES_DIR", "ARKE_FORM_ACTION", "ARKE_BROWSER", "ARKE_SCREENSHOTS"]) {
     const v = parent[k];
     if (v) out[k] = v;
   }
-  out.SF_NO_ACCOUNTS = "1"; // the MCP server Codex starts never reads the person's saved accounts
+  out.ARKE_NO_ACCOUNTS = "1"; // the MCP server Codex starts never reads the person's saved accounts
   return out;
 }
 
 /**
  * The agent never needs Cloudflare credentials (it cannot deploy): they are removed from its environment, and
- * SF_NO_ACCOUNTS=1 keeps its processes (and the MCP server it starts) from reading the accounts saved in the panel.
+ * ARKE_NO_ACCOUNTS=1 keeps its processes (and the MCP server it starts) from reading the accounts saved in the panel.
  */
 export function agentEnv(parent: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
-  for (const [k, v] of Object.entries(parent)) if (!k.startsWith("SF_CF_") && k !== "SF_ACCOUNTS_DIR") env[k] = v;
-  env.SF_NO_ACCOUNTS = "1";
+  // Both prefixes: SF_ is the name from before the rename and would stand in for ARKE_ in the child (src/config.ts).
+  const secret = (k: string) => /^(ARKE|SF)_CF_/.test(k) || k === "ARKE_ACCOUNTS_DIR" || k === "SF_ACCOUNTS_DIR";
+  for (const [k, v] of Object.entries(parent)) if (!secret(k)) env[k] = v;
+  env.ARKE_NO_ACCOUNTS = "1";
   return env;
 }
 
@@ -284,7 +286,7 @@ export class JobRunner {
   constructor(
     private readonly factoryRoot: string,
     private readonly spawn: SpawnFn = nodeSpawn,
-    private readonly claudeBin: string = process.env.SF_CLAUDE_BIN ?? "claude",
+    private readonly claudeBin: string = process.env.ARKE_CLAUDE_BIN ?? "claude",
     /** Called once when a job ends (used to keep the conversation history in the client folder). */
     private readonly onFinish: (slug: string, record: JobRecord) => void = () => {
       /* nothing to do unless the panel passes a hook */
@@ -292,7 +294,7 @@ export class JobRunner {
     /** Read at the start of every job, so the setting applies from the next job on. */
     private readonly webResearch: () => boolean = () => false,
     private readonly readDirs: readonly string[] = [],
-    private readonly codexBin: string = process.env.SF_CODEX_BIN ?? "codex",
+    private readonly codexBin: string = process.env.ARKE_CODEX_BIN ?? "codex",
   ) {}
 
   running(): Job | undefined {
@@ -376,7 +378,7 @@ export class JobRunner {
     this.push(
       job,
       "info",
-      `Agent başlatıldı: ${engine} (sadece site-factory araçları; shell ve dosya düzenleme kapalı)${policy ? ` · ${PACKAGE_LABELS[policy.mode]} paket, ${policy.model || "varsayılan model"}, en fazla ${Math.round(policy.tokenCap / 1000)}K token` : ""}.`,
+      `Agent başlatıldı: ${engine} (sadece arke-web araçları; shell ve dosya düzenleme kapalı)${policy ? ` · ${PACKAGE_LABELS[policy.mode]} paket, ${policy.model || "varsayılan model"}, en fazla ${Math.round(policy.tokenCap / 1000)}K token` : ""}.`,
     );
     let child: ChildProcess;
     let workDir: string | null = null;
@@ -384,7 +386,7 @@ export class JobRunner {
       const web = policy ? policy.research : this.webResearch();
       if (codex) {
         // An empty folder as Codex's workspace: nothing to read there, nothing it may write.
-        workDir = mkdtempSync(path.join(os.tmpdir(), "sf-codex-"));
+        workDir = mkdtempSync(path.join(os.tmpdir(), "arke-codex-"));
         const args = codexArgs({ factoryRoot: this.factoryRoot, workDir, model: policy?.model || undefined, web, serverEnv: serverEnvFrom(process.env) });
         child = this.spawn(this.codexBin, args, { cwd: workDir, env: agentEnv(process.env), stdio: ["pipe", "pipe", "pipe"] });
       } else {
@@ -656,7 +658,7 @@ export function phaseOf(tool: string, input: unknown): Phase | null {
 }
 
 function shortTool(name: string): string {
-  return name.replace(/^mcp__site-factory__/, "");
+  return name.replace(/^mcp__arke-web__/, "");
 }
 
 function summariseInput(input: unknown): string {

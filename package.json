@@ -1,6 +1,6 @@
 {
-  "name": "site-factory",
-  "version": "1.29.1",
+  "name": "arke-web-studio",
+  "version": "1.30.0",
   "private": true,
   "description": "MCP server + rules for producing small-business showcase websites from a fixed template and a validated config.",
   "type": "module",
@@ -8,7 +8,7 @@
     "node": ">=20.11"
   },
   "bin": {
-    "site-factory-mcp": "dist/server.js"
+    "arke-web-mcp": "dist/server.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

@@ -33,6 +33,6 @@ export function audit(logFile: string, entry: AuditEntry): void {
     if (!existsSync(path.dirname(logFile))) mkdirSync(path.dirname(logFile), { recursive: true });
     appendFileSync(logFile, `${JSON.stringify({ ts: new Date().toISOString(), runId: RUN_ID, ...entry })}\n`);
   } catch (error) {
-    console.error(`[site-factory] audit write failed: ${(error as Error).message}`);
+    console.error(`[arke-web] audit write failed: ${(error as Error).message}`);
   }
 }

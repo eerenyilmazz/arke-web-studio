@@ -90,17 +90,17 @@ describe("team sharing through one Git repository", () => {
   });
 });
 
-describe("updating Site Factory from the panel", () => {
+describe("updating Arke Web Studio from the panel", () => {
   /** An "upstream" repository with a newer version, and an install cloned from it one version behind. */
   function installBehind() {
     const upstream = tmp("sf-up-");
     git(upstream, "init", "--quiet", "-b", "main");
-    writeFileSync(path.join(upstream, "package.json"), JSON.stringify({ name: "site-factory", version: "1.0.0" }));
+    writeFileSync(path.join(upstream, "package.json"), JSON.stringify({ name: "arke-web-studio", version: "1.0.0" }));
     git(upstream, "add", "-A");
     git(upstream, "commit", "--quiet", "-m", "1.0.0");
-    const install = path.join(tmp("sf-inst-"), "site-factory");
+    const install = path.join(tmp("sf-inst-"), "arke-web-studio");
     git(path.dirname(install), "clone", "--quiet", upstream, install);
-    writeFileSync(path.join(upstream, "package.json"), JSON.stringify({ name: "site-factory", version: "1.1.0" }));
+    writeFileSync(path.join(upstream, "package.json"), JSON.stringify({ name: "arke-web-studio", version: "1.1.0" }));
     git(upstream, "commit", "--quiet", "-am", "1.1.0");
     return { upstream, install };
   }
@@ -117,7 +117,7 @@ describe("updating Site Factory from the panel", () => {
   it("refuses to update over local changes, and updates step by step otherwise", async () => {
     resetUpdateProgress();
     const { install } = installBehind();
-    writeFileSync(path.join(install, "package.json"), JSON.stringify({ name: "site-factory", version: "1.0.0-local" }));
+    writeFileSync(path.join(install, "package.json"), JSON.stringify({ name: "arke-web-studio", version: "1.0.0-local" }));
     await expect(applyUpdate(install)).rejects.toThrow(/kaydedilmemiş değişiklikler/);
     git(install, "checkout", "--", "package.json");
     const calls: string[] = [];

@@ -8,10 +8,10 @@ import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, tempFactory, writePassingCustomSite } from "./helpers.js";
 
 const TOKEN = "cf_tok_ABCDEFGH12345678";
-const env = { SF_CF_MANAGED_API_TOKEN: TOKEN, SF_CF_MANAGED_ACCOUNT_ID: "acc-1" };
+const env = { ARKE_CF_MANAGED_API_TOKEN: TOKEN, ARKE_CF_MANAGED_ACCOUNT_ID: "acc-1" };
 
 async function factoryWithClient() {
-  process.env.SF_PORTAL_CONFIG_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-report-portal-")); // no portal
+  process.env.ARKE_PORTAL_CONFIG_DIR = mkdtempSync(path.join(os.tmpdir(), "arke-report-portal-")); // no portal
   const f = { ...tempFactory(), defaultTemplate: "custom" };
   await tools.createClient(f, { slug: "bake-co", businessName: "Bake Co", industry: "bakery", hostingModel: "managed", template: "custom" });
   tools.updateClientConfig(f, { slug: "bake-co", patch: COMPLETE_PATCH });
@@ -31,7 +31,7 @@ describe("factory report", () => {
     mkdirSync(p.factoryDir, { recursive: true });
     appendFileSync(p.auditLog, `${JSON.stringify({ ts: "2026-10-18T10:00:00Z", runId: "r", tool: "write_site_file", ok: true, ms: 3, args: {} })}\n`);
     const { markdown, checks } = await buildReport(f, { network: false, env, username: "eren" });
-    expect(markdown).toContain("# Site Factory raporu");
+    expect(markdown).toContain("# Arke Web Studio raporu");
     expect(markdown).toContain("Bake Co (bake-co)");
     expect(markdown).not.toContain(TOKEN);
     expect(checks.filter((c) => c.verdict === "fail")).toEqual([]);

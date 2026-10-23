@@ -13,7 +13,7 @@ import { PNG_1PX, tempFactory } from "./helpers.js";
  * with a local KV store), the panel talks to it over real HTTP, and a "client" uses the pages in a real browser.
  * The operator creates links → the client sends the form with photos → the panel collects them → the answers go to the agent →
  * the client comments on the preview and approves → the comments go to the agent → links are closed and nothing is
- * left on the portal. Skipped without a Linux Chromium or when workerd cannot start; SF_E2E=off skips it on purpose.
+ * left on the portal. Skipped without a Linux Chromium or when workerd cannot start; ARKE_E2E=off skips it on purpose.
  */
 const SLUG = "rose-cafe";
 const SECRET = "p".repeat(43);
@@ -24,7 +24,7 @@ let browser: Browser | null = null;
 let fp: FakePanel | null = null;
 let worker: { stop: () => Promise<void>; address: string; port: number } | null = null;
 let portalUrl = "";
-const savedDir = process.env.SF_PORTAL_CONFIG_DIR;
+const savedDir = process.env.ARKE_PORTAL_CONFIG_DIR;
 
 async function startWorker(): Promise<typeof worker> {
   const dir = mkdtempSync(path.join(os.tmpdir(), "sf-portal-e2e-"));
@@ -33,7 +33,7 @@ async function startWorker(): Promise<typeof worker> {
     name: "sf-portal",
     main: "worker.js",
     compatibility_date: "2026-06-01",
-    kv_namespaces: [{ binding: "SF_PORTAL", id: "local" }],
+    kv_namespaces: [{ binding: "ARKE_PORTAL", id: "local" }],
     vars: { PORTAL_SECRET: SECRET },
   };
   writeFileSync(path.join(dir, "wrangler.jsonc"), JSON.stringify(config));
@@ -59,7 +59,7 @@ beforeAll(async () => {
   portalUrl = `http://${worker!.address === "localhost" ? "127.0.0.1" : worker!.address}:${worker!.port}`;
   const cfg = mkdtempSync(path.join(os.tmpdir(), "sf-portal-cfg-e2e-"));
   writeFileSync(path.join(cfg, "portal.json"), JSON.stringify({ url: portalUrl, secret: SECRET, kvId: "local", at: "2026-10-18T10:00:00Z" }));
-  process.env.SF_PORTAL_CONFIG_DIR = cfg;
+  process.env.ARKE_PORTAL_CONFIG_DIR = cfg;
 
   await tools.createClient(factory, { slug: SLUG, businessName: "Rose Cafe", industry: "cafe", hostingModel: "managed", template: "custom" });
   // The review link shows the published preview; publishing itself is covered by the main e2e test.
@@ -73,8 +73,8 @@ afterAll(async () => {
   await browser?.close();
   fp?.panel.close();
   await worker?.stop();
-  if (savedDir === undefined) delete process.env.SF_PORTAL_CONFIG_DIR;
-  else process.env.SF_PORTAL_CONFIG_DIR = savedDir;
+  if (savedDir === undefined) delete process.env.ARKE_PORTAL_CONFIG_DIR;
+  else process.env.ARKE_PORTAL_CONFIG_DIR = savedDir;
 });
 
 const e2e = () => (executable ? it : it.skip);

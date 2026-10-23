@@ -1,4 +1,4 @@
-// Site Factory ready-made part: notifications (the inbox). Messages from the site's forms land here; later parts
+// Arke Web Studio ready-made part: notifications (the inbox). Messages from the site's forms land here; later parts
 // (orders, bookings) add their own entries through addEntry(). Optionally each new entry is also sent to a
 // webhook the client chose (NOTIFY_WEBHOOK_URL secret: Slack, Discord, a Telegram relay…).
 // Factory-owned (app/parts/inbox.js); the agent never writes it. Table: migration 0003_inbox.sql.

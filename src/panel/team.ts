@@ -74,7 +74,7 @@ function clientSlugs(clientsRoot: string): string[] {
 
 const author = (me: Teammate) => [
   "-c",
-  `user.name=${me.name || "Site Factory"}`,
+  `user.name=${me.name || "Arke Web Studio"}`,
   "-c",
   `user.email=${me.email || "team@localhost"}`,
   "-c",

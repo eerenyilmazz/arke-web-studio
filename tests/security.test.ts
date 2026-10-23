@@ -93,8 +93,8 @@ describe("exec", () => {
   });
 
   it("does not leak parent env and masks secrets in output", async () => {
-    process.env.SF_TEST_PARENT_SECRET = "parent-secret-value";
-    const res = await run(process.execPath, ["-e", "console.log(process.env.SF_TEST_PARENT_SECRET ?? 'none', process.env.TOKEN)"], {
+    process.env.ARKE_TEST_PARENT_SECRET = "parent-secret-value";
+    const res = await run(process.execPath, ["-e", "console.log(process.env.ARKE_TEST_PARENT_SECRET ?? 'none', process.env.TOKEN)"], {
       cwd: process.cwd(),
       timeoutMs: 10_000,
       env: { TOKEN: "super-secret-token" },
@@ -126,7 +126,7 @@ describe("the factory's own permission rules", () => {
     const { readFileSync } = await import("node:fs");
     const settings = JSON.parse(readFileSync(path.join(import.meta.dirname, "..", ".claude", "settings.json"), "utf8"));
     const deny: string[] = settings.permissions.deny;
-    expect(deny).toEqual(expect.arrayContaining(["Edit(../sf-clients/**)", "Edit(**/.factory/**)"]));
+    expect(deny).toEqual(expect.arrayContaining(["Edit(../arke-clients/**)", "Edit(**/.factory/**)"]));
     expect(deny.filter((r) => /^Write\(/.test(r))).toEqual([]);
     expect(settings.sandbox.enabled).toBe(true);
   });

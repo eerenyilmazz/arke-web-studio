@@ -2,6 +2,28 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 1.30.0: yeni ad, Arke Web Studio
+
+- **Ürünün adı Arke Web Studio oldu.** Panelde, belgelerde, agent kurallarında ve komutlarında artık bu ad geçiyor.
+- **Teknik adlar da değişti:**
+  - paket ve klasör: `arke-web-studio`
+  - MCP sunucusu: `arke-web`
+  - komutlar: `arke-panel`, `arke-update`
+  - klasörler: `../arke-clients`, `../arke-inbox`
+  - ayarlar: `~/.config/arke-web-studio`
+  - ortam değişkenleri: `ARKE_` önekiyle
+  - yeni müşterilerin Worker'ları: `arke-<kısa-ad>`
+- **Eski kurulumlar hiçbir şey yapmadan çalışıyor:**
+  - Eski klasörler ve ayarlar, yenisi yoksa kullanılıyor.
+  - `SF_` ile başlayan ortam değişkenleri hâlâ geçerli.
+  - Eski zip'ler ve eski kopyalar kabul ediliyor.
+  - Yayınlanmış müşteriler eski `sf-` Worker'larında kalıyor; canlı siteler taşınmıyor.
+  - Kurulu portal eski adıyla kalıyor, gönderilmiş linkler çalışıyor.
+- **İsteğe bağlı geçiş:** `scripts/migrate-name.sh` eski klasörleri ve ayarları yeni adlara taşır ve kabuk komutlarını yeniler. Hiçbir şeyi silmez, yeni ad zaten varsa dokunmaz.
+- **Güvenlik:** agent'ın ortamından Cloudflare değişkenleri iki adla da (`ARKE_`, `SF_`) siliniyor. Sandbox kuralları da eski klasörü ve eski değişken adlarını kapsıyor.
+- **Bilerek değişmeyenler:** yayınlanmış sitelerin kodunda geçen adlar (`data-sf-*`, `js/sf-parts.js`, `SFMotion`, yönetim ekranı çerezi) ve uygulanmış veritabanı değişikliği dosyaları.
+- **Panel oturumu:** çerezin adı değiştiği için güncellemeden sonra panele bir kez yeniden girmek gerekiyor. Tema ve filtre gibi tarayıcı tercihleri de bir kez sıfırlanıyor.
+
 ## 1.29.1: belgeler ve proje düzeni
 
 - **`AGENTS.md` yeniden yazıldı:** bugünkü akış öne alındı (serbest tasarım, araştırma, tasarım planı, panelden onay). Hangi kuralın hangi dosyada olduğunu gösteren bir tablo eklendi. Şablon akışı "eski müşteriler" bölümüne indi.

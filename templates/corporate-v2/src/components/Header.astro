@@ -57,7 +57,7 @@ const darkMode = config.design.darkMode === "auto";
 
 <script>
   // Light/dark switch: remembers the choice on this device only (no cookie), and cross-fades where supported.
-  const STORAGE_KEY = "sf-theme";
+  const STORAGE_KEY = "arke-theme";
   const root = document.documentElement;
   const isDark = () => (root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches);
   for (const button of document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]")) {

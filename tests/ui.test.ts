@@ -13,7 +13,7 @@ import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory, wri
 /**
  * Smoke tests of the panel UI in a real headless browser: every main screen renders without a script error and
  * the key forms work. They guard refactors of panel/app.js. Skipped (not failed) when no Linux Chromium/Chrome
- * is available, e.g. on WSL with only Windows browsers; SF_UI_TESTS=off skips them on purpose.
+ * is available, e.g. on WSL with only Windows browsers; ARKE_UI_TESTS=off skips them on purpose.
  */
 type Browser = import("playwright-core").Browser;
 type Page = import("playwright-core").Page;
@@ -22,8 +22,8 @@ const KEY = "u".repeat(64);
 const LINUX_BROWSERS = ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable"];
 
 function findLinuxBrowser(): string | null {
-  if (process.env.SF_UI_TESTS === "off") return null;
-  const env = process.env.SF_BROWSER;
+  if (process.env.ARKE_UI_TESTS === "off") return null;
+  const env = process.env.ARKE_BROWSER;
   if (env && !env.endsWith(".exe") && existsSync(env)) return env;
   if (existsSync("/opt/pw-browsers/chromium")) return "/opt/pw-browsers/chromium";
   const cached = playwrightCacheBrowser();
@@ -66,7 +66,7 @@ beforeAll(async () => {
     return;
   }
   factory = tempFactory();
-  process.env.SF_PORTAL_CONFIG_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-ui-portal-")); // no portal set up
+  process.env.ARKE_PORTAL_CONFIG_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-ui-portal-")); // no portal set up
   const port = await freePort();
   panel = createPanel({
     factory,
@@ -309,7 +309,7 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     const csv = readFileSync((await download.path())!, "utf8");
     expect(csv).not.toContain("[object");
     expect(csv.split("\n")[0]).toContain("Müşteri");
-    expect(download.suggestedFilename()).toMatch(/^site-factory-analiz-\d{4}-\d{2}-\d{2}\.csv$/);
+    expect(download.suggestedFilename()).toMatch(/^arke-web-studio-analiz-\d{4}-\d{2}-\d{2}\.csv$/);
     expect(errors).toEqual([]);
     await page.close();
   });

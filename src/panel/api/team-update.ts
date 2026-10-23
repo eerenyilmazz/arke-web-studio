@@ -6,7 +6,7 @@ import { remoteClients, safeRemote, syncTeam, teamStatus, validRemote } from "..
 import { applyUpdate, checkForUpdate, type Runner, updateProgress } from "../updater.js";
 import { type ApiDeps, type Route, JSON_LIMIT } from "./common.js";
 
-/** Updating Site Factory from the panel, and team sharing of clients through one Git repository. */
+/** Updating Arke Web Studio from the panel, and team sharing of clients through one Git repository. */
 export const teamUpdateRoutes: Route[] = [
   { method: "GET", pattern: /^\/api\/update$/, handler: getUpdate },
   { method: "POST", pattern: /^\/api\/update$/, handler: postUpdate },

@@ -17,7 +17,7 @@ const LATIN_SUBSETS = ["latin", "latin-ext"] as const;
  */
 export function clientFiles(): AstroIntegration {
   return {
-    name: "site-factory-client-files",
+    name: "arke-web-studio-client-files",
     hooks: {
       "astro:build:done": async ({ dir, logger }) => {
         const outDir = fileURLToPath(dir);

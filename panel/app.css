@@ -452,7 +452,7 @@ details > summary.small { cursor: pointer; color: var(--ink-2); }
 .device .screen { box-sizing: content-box; }
 .code-input::placeholder { letter-spacing: normal; font-size: 1rem; font-weight: 500; }
 
-/* Site Factory's own mark: three floors of a site on an axis (still). */
+/* Arke Web Studio's own mark: three floors of a site on an axis (still). */
 .brand-mark .axis { opacity: .55; }
 .brand small { display: block; font-family: var(--mono); font-size: .68rem; font-weight: 500; letter-spacing: .02em; color: var(--ink-3); line-height: 1.1; }
 
