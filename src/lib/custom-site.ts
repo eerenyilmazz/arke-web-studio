@@ -1,5 +1,6 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { FACTORY_ROOT } from "../config.js";
 import { FactoryError } from "./errors.js";
 import type { ClientPaths } from "./paths.js";
 import { safeJoin } from "./paths.js";
@@ -392,6 +393,17 @@ interface Brand {
 }
 
 export const SIGNATURE_FILE = "brand/signature.html";
+
+/**
+ * The signature demo may load the motion kit (<script src="/js/motion.js">). Where it is shown on its own (the
+ * panel's sandboxed frame allows no script files), the kit is put inline in its place.
+ */
+export function inlineMotionKit(html: string): string {
+  const kit = path.join(FACTORY_ROOT, "rules", "site-kit", "motion.js");
+  if (!existsSync(kit)) return html;
+  const code = readFileSync(kit, "utf8").replace(/<\/script/gi, "<\\/script");
+  return html.replace(/<script\b[^>]*\bsrc=["'](?:\.\.\/|\/)?js\/motion\.js["'][^>]*>\s*<\/script>/gi, () => `<script>${code}</script>`);
+}
 /** The factory's brand-neutral base stylesheet, copied into every custom site so the agent does not write it. */
 export const BASE_CSS = "css/base.css";
 
@@ -405,11 +417,15 @@ const KIT_MARKER = "Site Factory base layer";
  * not rewrite them), so a newer factory version replaces them; a base.css without the factory's header (written by
  * hand) is left alone. Returns whether anything was written.
  */
+/** The factory's motion kit (rules/site-kit/motion.js), copied like kit.js. */
+export const MOTION_JS = "js/motion.js";
+
 export function ensureBaseKit(paths: ClientPaths, kitFile: string): boolean {
   let wrote = false;
   const parts: Array<[string, string]> = [
     [BASE_CSS, kitFile],
     [KIT_JS, path.join(path.dirname(kitFile), "kit.js")],
+    [MOTION_JS, path.join(path.dirname(kitFile), "motion.js")],
   ];
   for (const [rel, src] of parts) {
     if (!existsSync(src)) continue;
@@ -518,7 +534,8 @@ export function readBrandBoard(paths: ClientPaths, template: string, clientLogo:
     brand = null;
   }
   const missing = brand ? [...brandProblems(brand), ...brandBoardProblems(brand, root)] : [`${BRAND_FILE}: the brand identity`];
-  return { source: "custom", brand, logoSvg: read(LOGO_FILE), signatureHtml: read(SIGNATURE_FILE), clientLogo: own, missing };
+  const sig = read(SIGNATURE_FILE);
+  return { source: "custom", brand, logoSvg: read(LOGO_FILE), signatureHtml: sig === null ? null : inlineMotionKit(sig), clientLogo: own, missing };
 }
 
 /** Drawn graphics on the home page besides the logo: one with a purpose is enough (no filler decoration). */

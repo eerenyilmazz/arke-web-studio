@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { type Browser, type FakePanel, findBrowser, jobDone, KEY, launchBrowser, type Page, startPanel } from "./e2e/harness.js";
+import { type Browser, type FakePanel, findBrowser, idle, jobDone, KEY, launchBrowser, type Page, startPanel } from "./e2e/harness.js";
 import { tempFactory } from "./helpers.js";
 
 /**
@@ -132,8 +132,16 @@ async function findings(page: Page): Promise<string[]> {
       tags: ["acil"],
     });
   }
+  // Hollin: plan, approval, built site. Northgate: a plan waiting for Eren (the plan card is audited too).
   await call(base, "POST", "/api/clients/hollin/agent/create-site", { freeText: "Family bakery in Leeds." });
-  await jobDone(base, "hollin", "create-site", 1).catch(() => null);
+  await jobDone(base, "hollin", "create-site", 1);
+  await call(base, "POST", "/api/clients/hollin/design-plan/approve", {});
+  await call(base, "POST", "/api/clients/hollin/agent/create-site", {});
+  await jobDone(base, "hollin", "create-site", 2);
+  await idle(base);
+  await call(base, "POST", "/api/clients/northgate/agent/create-site", { freeText: "Joinery in York." });
+  await jobDone(base, "northgate", "create-site", 1);
+  await idle(base);
 
   const report: string[] = [];
   const screens: Array<[string, string, ((p: Page) => Promise<void>)?]> = [
@@ -172,6 +180,7 @@ async function findings(page: Page): Promise<string[]> {
       },
     ],
     ["c-duzenle", "#/musteri/hollin/duzenle"],
+    ["c-plan", "#/musteri/northgate/duzenle"],
     ["c-marka", "#/musteri/hollin/marka"],
     ["c-teklif", "#/musteri/hollin/teklif"],
     ["c-bilgiler", "#/musteri/hollin/bilgiler"],
@@ -201,7 +210,13 @@ async function findings(page: Page): Promise<string[]> {
         const page = await browser!.newPage({ viewport: { width: vw, height: vh } });
         const errors: string[] = [];
         page.on("pageerror", (e) => errors.push(e.message));
-        await page.addInitScript((t) => localStorage.setItem("sf-theme", t), theme);
+        await page.addInitScript((t) => {
+          try {
+            localStorage.setItem("sf-theme", t);
+          } catch {
+            /* sandboxed frames (the signature preview) have no storage */
+          }
+        }, theme);
         await page.goto(`${base}/login?key=${KEY}`);
         await page.goto(`${base}/${hash}`);
         await page.waitForSelector("#view h1");

@@ -42,6 +42,41 @@ async function readStdin(): Promise<string> {
   return text;
 }
 
+/** A valid design plan, as the real agent writes it with save_design_plan. */
+const FAKE_PLAN = {
+  concept: "Ekmeğin fırında kabarması: katmanlar, kabuk ve sıcak ışık.",
+  source: "Logodaki somun biçimi",
+  tone: ["sıcak", "ölçülü"],
+  palette: [
+    { name: "Kabuk", hex: "#8A4B16", role: "ana renk" },
+    { name: "Un", hex: "#F6F1E4", role: "zemin" },
+    { name: "Mürekkep", hex: "#1B1B1B", role: "metin" },
+  ],
+  fonts: { heading: "Fraunces", body: "Nunito" },
+  hero: "Somun çizimi giriş alanının yarısını kaplar; başlık solda, büyük.",
+  pages: [{ name: "Ana sayfa", sections: [{ name: "Giriş", purpose: "Markayı ve imza hareketini gösterir" }] }],
+  signature: {
+    name: "Katmanlı Kabarma",
+    idea: "Somunun katmanları sırayla yükselir, kabuk çizgisi çizilir ve başlık yerine oturur.",
+    trigger: "load",
+    beats: [
+      { atMs: 0, durationMs: 500, what: "Alt katman yükselir", easing: "ease-out" },
+      { atMs: 250, durationMs: 700, what: "Kabuk çizgisi çizilir", easing: "ease-in-out" },
+      { atMs: 700, durationMs: 450, what: "Başlık yerine oturur", easing: "spring" },
+    ],
+    totalMs: 1200,
+    reducedMotion: "Son kare: somun ve başlık yerinde",
+  },
+  animations: [],
+};
+const SIGNATURE_HTML = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="İmza hareketi"><meta name="robots" content="noindex"><title>İmza hareketi</title>
+<style>@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }</style><script src="/js/motion.js" defer></script></head>
+<body><svg viewBox="0 0 100 60"><rect class="base" x="10" y="30" width="80" height="20"/><path class="crust" d="M10 30 Q50 0 90 30" fill="none" stroke="#8A4B16"/></svg><h1>Ekmek Evi</h1>
+<script>document.addEventListener("DOMContentLoaded", function () { SFMotion.sequence([
+{ target: ".base", keyframes: [{ transform: "scaleY(0)" }, { transform: "none" }], at: 0, duration: 500 },
+{ target: ".crust", draw: true, at: 250, duration: 700 },
+{ target: "h1", keyframes: [{ opacity: 0 }, { opacity: 1 }], at: 700, duration: 450 }]); });</script></body></html>`;
+
 async function main(): Promise<void> {
   const prompt = await readStdin();
   const leaked = Object.keys(process.env).filter((k) => k.startsWith("SF_CF_"));
@@ -84,10 +119,18 @@ async function main(): Promise<void> {
 
   if (prompt.includes("Prepare this client's website")) {
     const pasted = /<client_data>\n([\s\S]*?)\n<\/client_data>/.exec(prompt)?.[1] ?? "";
-    await call("get_client_status", { slug });
+    const status = JSON.parse(await call("get_client_status", { slug })) as { designPlan?: { state: string } };
     await call("update_client_config", { slug, patch: COMPLETE_PATCH });
     await call("save_content", { slug, locale: "en", content: COMPLETE_CONTENT });
+    // A new design: the plan first, then stop until Eren approves it in the panel (rules/custom-site.md).
+    if (status.designPlan?.state === "missing") {
+      await call("save_design_plan", { slug, plan: FAKE_PLAN });
+      await call("write_site_file", { slug, path: "brand/signature.html", content: SIGNATURE_HTML });
+      await client.close();
+      finish(true, `Tasarım planı hazır: ${FAKE_PLAN.signature.name}. Onayınızı bekliyor. Okunan bilgi: ${pasted.replace(/\s+/g, " ").slice(0, 300)}`);
+    }
     for (const [p, content] of Object.entries(passingSiteFiles("Ekmek Evi"))) await call("write_site_file", { slug, path: p, content });
+    await call("write_site_file", { slug, path: "brand/signature.html", content: SIGNATURE_HTML });
     const build = JSON.parse(await call("build_site", { slug })) as { passed: boolean };
     await client.close();
     finish(build.passed, `Site hazır. Okunan bilgi: ${pasted.replace(/\s+/g, " ").slice(0, 400)}`);

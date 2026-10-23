@@ -57,6 +57,7 @@ describe("MCP server over stdio", () => {
         "read_site_file_part",
         "search_design_knowledge",
         "save_research_notes",
+        "save_design_plan",
       ].sort(),
     );
     const { resources } = await client.listResources();

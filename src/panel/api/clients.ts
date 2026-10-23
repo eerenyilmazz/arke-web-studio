@@ -21,7 +21,9 @@ import * as tools from "../../tools.js";
 import { HttpError, readBody, readJsonBody, sendJson, str } from "../http.js";
 import { appendInput, readHistory } from "../history.js";
 import { serialiseJob } from "../jobs.js";
-import { readBrandBoard, readBrandOptions } from "../../lib/custom-site.js";
+import { inlineMotionKit, readBrandBoard, readBrandOptions, SIGNATURE_FILE } from "../../lib/custom-site.js";
+import { approvePlan, planState, previousPlans, readPlan } from "../../lib/design-plan.js";
+import os from "node:os";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, UPLOAD_LIMIT, safeFileName, BUSY, asHttp, IMAGE_TYPES, assetFiles, inboxFiles } from "./common.js";
 
 /** Clients: list, create, archive, detail, questionnaires, uploads, logo, business, versions. */
@@ -51,10 +53,39 @@ export const clientRoutes: Route[] = [
   { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}/(inbox|assets)/([^/]{1,120})$`), handler: deleteClientImage },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/versions$`), handler: versions },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/concepts$`), handler: concepts },
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/design-plan$`), handler: designPlan },
+  { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/design-plan/approve$`), handler: approveDesignPlan },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/brand$`), handler: brandBoard },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/business$`), handler: saveBusiness },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/versions/restore$`), handler: restore },
 ];
+
+/** The design plan for Eren to read: state, the plan, how many earlier ones, and the signature preview if written. */
+function designPlan(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const paths = clientPaths(deps.factory.clientsRoot, s);
+  const sig = path.join(paths.root, "site", SIGNATURE_FILE);
+  sendJson(res, 200, {
+    state: planState(paths),
+    plan: readPlan(paths),
+    earlier: previousPlans(paths).length,
+    signatureHtml: existsSync(sig) ? inlineMotionKit(readFileSync(sig, "utf8")) : null,
+  });
+}
+
+/** Eren approves the plan in the panel (never the agent: the approval is written in .factory/). */
+function approveDesignPlan(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  if (deps.jobs.running()?.slug === s) throw new HttpError(409, BUSY);
+  const paths = clientPaths(deps.factory.clientsRoot, s);
+  const state = planState(paths);
+  if (state === "not-required" || state === "missing") throw new HttpError(409, "Onaylanacak bir tasarım planı yok.");
+  approvePlan(paths, `panel:${os.userInfo().username}`);
+  appendInput(deps.factory, s, "design-plan", "Tasarım planı onaylandı.");
+  sendJson(res, 200, { state: planState(paths) });
+}
 
 function concepts(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
   const s = assertSlug(slug!);

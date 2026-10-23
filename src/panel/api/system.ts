@@ -108,6 +108,7 @@ const DEFAULT_SECONDS: Readonly<Record<string, number>> = {
   redesign: 900,
   "from-library": 600,
   translate: 600,
+  "new-plan": 300,
 };
 const RECENT_RUNS = 20;
 function typicalSeconds(deps: ApiDeps): Record<string, number> {

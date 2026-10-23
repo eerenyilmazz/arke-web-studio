@@ -7,10 +7,12 @@ import { contentHash, dirHash, writeJson, writeText } from "../lib/files.js";
 import { assertSlug, safeJoin } from "../lib/paths.js";
 import { checkInputs, checkOutput, renderReport, type CheckResult } from "../lib/quality.js";
 import { buildCustomSite, checkBrand, checkCustomCode, checkLibraryLeftovers, isCustom } from "../lib/custom-site.js";
-import { takeScreenshots } from "../lib/screenshots.js";
+import { takeScreenshots, takeSignatureFrames } from "../lib/screenshots.js";
 import { checkImages, checkLegal, checkSeo } from "../lib/seo.js";
 import { checkLanguages } from "../lib/i18n-check.js";
 import { checkKitParts } from "../lib/kit-check.js";
+import { planState, readPlan } from "../lib/design-plan.js";
+import { checkSignature } from "../lib/signature-check.js";
 import { checkCurrency } from "../lib/currency-check.js";
 import { effectiveFormAction } from "../lib/form.js";
 import { buildEnv } from "./shared.js";
@@ -29,6 +31,20 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
   let buildOutput = "";
   if (isCustom(config.template)) {
     // The agent wrote the site itself: copy it, then check the code and the brand identity.
+    const plan = planState(paths);
+    if (plan !== "not-required")
+      results.push(
+        plan === "approved"
+          ? { name: "Design plan (approved by Eren)", status: "pass", detail: "Built to the approved plan." }
+          : {
+              name: "Design plan (approved by Eren)",
+              status: "fail",
+              detail:
+                plan === "changed"
+                  ? "design-plan.json changed after approval; Eren must approve it again."
+                  : "No approved design plan yet: Eren approves it in the panel first.",
+            },
+      );
     if (results.some((r) => r.status === "fail")) {
       results.push({ name: "Custom site build", status: "skip", detail: "Skipped because input checks failed." });
     } else {
@@ -46,6 +62,11 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
         results.push(checkSeo(paths.distDir, { name: config.business.name, phone: config.contact.phone ?? null, domain: config.site.domain ?? null }));
         results.push(checkImages(paths.distDir), checkLegal(paths.distDir, config.business.country));
         results.push(await takeScreenshots(paths.distDir, path.join(paths.factoryDir, "shots")));
+        const planned = plan !== "not-required" ? readPlan(paths) : null;
+        const signature = checkSignature(paths.distDir, plan !== "not-required", planned?.signature.beats.length ?? null);
+        if (signature) results.push(signature);
+        const frames = await takeSignatureFrames(paths.distDir, path.join(paths.factoryDir, "shots"), planned?.signature.totalMs ?? 2000);
+        if (frames) results.push(frames);
       }
     }
   } else if (!existsSync(path.join(safeJoin(factory.templatesDir, config.template), "package.json"))) {

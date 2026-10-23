@@ -112,3 +112,30 @@ export function passingSiteFiles(name: string): Record<string, string> {
     "404.html": page(`Not found | ${name}`, "<h1>Not found</h1>"),
   };
 }
+
+/** A valid design plan (rules/custom-site.md, "Design plan"), as the agent saves it with save_design_plan. */
+export const SAMPLE_PLAN = {
+  concept: "Ekmeğin fırında kabarması: katmanlar, kabuk ve sıcak ışık.",
+  source: "Logodaki somun biçimi",
+  tone: ["sıcak", "ölçülü"],
+  palette: [
+    { name: "Kabuk", hex: "#8A4B16", role: "ana renk" },
+    { name: "Un", hex: "#F6F1E4", role: "zemin" },
+    { name: "Mürekkep", hex: "#1B1B1B", role: "metin" },
+  ],
+  fonts: { heading: "Fraunces", body: "Nunito" },
+  hero: "Somun çizimi giriş alanının yarısını kaplar.",
+  pages: [{ name: "Ana sayfa", sections: [{ name: "Giriş", purpose: "Markayı gösterir" }] }],
+  signature: {
+    name: "Katmanlı Kabarma",
+    idea: "Katmanlar sırayla yükselir.",
+    trigger: "load",
+    beats: [
+      { atMs: 0, durationMs: 500, what: "Alt katman yükselir", easing: "ease-out" },
+      { atMs: 250, durationMs: 700, what: "Kabuk çizilir", easing: "ease-in-out" },
+      { atMs: 700, durationMs: 450, what: "Başlık oturur", easing: "spring" },
+    ],
+    totalMs: 1200,
+    reducedMotion: "Son kare",
+  },
+};

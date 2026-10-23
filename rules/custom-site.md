@@ -23,9 +23,10 @@ Before designing, load the design skills in `.claude/skills/` with the Skill too
 - **impeccable**: design direction, typography, colour, motion and the audit of generated-looking design.
 - **design-taste-frontend** (taste-skill): art direction for public pages, composition and the no-slop house style.
 - **ui-ux-pro-max** and **brand** (when installed): sector palettes, font pairings, brand identity structure.
-- **animate** (Emil Kowalski, MIT): load it when you design the animations and the signature motion, not before.
-  It decides whether something should move at all, then the property, curve, duration and reduced-motion variant.
-  Here only its CSS and WAAPI paths apply (no Motion library, no npm packages; see below).
+- **animate** (Emil Kowalski, MIT): for interface motion only (buttons, menus, cards, form feedback): whether it
+  should move at all, the property, curve, duration and reduced-motion variant. Its restraint ("should this move?",
+  150–250 ms) does **not** apply to the signature motion, which is brand expression: that follows
+  "Signature motion" below. Only its CSS and WAAPI paths apply (no Motion library, no npm packages).
 
 Their scripts, browser tools and image generation are not available here (no shell). Do not load their reference
 files whole: ask `search_design_knowledge` for the passage you need (e.g. "hero composition bakery", "dark palette
@@ -41,6 +42,31 @@ missing; it is the single source of facts). Run `generate_design_system` for a s
 Never invent facts (prices, years, reviews, awards, addresses). Copy for visitors is written in the site's
 languages; if Eren wrote notes in Turkish, translate them. The market rules (`rules/markets.md`: language, spelling,
 formats, legal pages) and `rules/local-seo.md` (titles, local facts, JSON-LD, images) apply to every page you write.
+
+## Design plan (new designs: approved by Eren before anything is built)
+
+When `get_client_status` shows `designPlan.state` other than `not-required`, the site is not designed straight away.
+First write the plan with `save_design_plan`, then **stop**: Eren reads it in the panel and approves it, or asks for
+a new idea with notes. Until he approves, the write tools refuse every site file except `brand/signature.html`
+(write it to show the motion live in the plan card). After approval, build exactly to the plan; any departure goes
+in the summary with its reason. The build fails without an approved plan, or when the plan changed after approval.
+
+The plan (all names formal and in the site's main language; no jokes, puns or cute phrasing):
+
+- `concept`: the one idea the design grows from; `source`: where it comes from (the logo's shapes, the craft's
+  material, the place), never "modern and clean".
+- `tone` (2–4 words), `palette` (3–6 named colours with hex and role), `fonts` (heading, body, optional mono).
+- `hero`: what fills the first screen, where the signature plays, how the headline sits.
+- `pages`: every page with its sections and the purpose of each (only what earns its place).
+- `signature`: the signature motion (see "Signature motion"): formal `name`, `idea`, `trigger`, `beats`
+  (3–8: start `atMs`, `durationMs`, `what` moves, `easing`), `totalMs` (800–6000) and the `reducedMotion` still state.
+- `animations`: 0–4 supporting animations with formal names, trigger and what moves.
+- `differs` (only after a new-idea request): how this plan differs from the earlier ones.
+
+In the summary, write the plan out for Eren in formal Turkish: concept and source, palette, fonts, hero, pages, the
+signature's name and its beats in order with timings. On a new-idea request, read the earlier plans
+(`design-plans/`): the new one has a different concept or source, hero composition and signature motion (not a
+variation), unless Eren's notes keep a part.
 
 ## Step 1: brand identity (required, before any page)
 
@@ -60,7 +86,7 @@ Write `site/brand/brand.json`:
     { "id": "lid-twist", "idea": "Product cards: the jar lid twists open on hover and the price label swings", "trigger": "hover" }
   ],
   "tagline": "Crunch, the slow way.",
-  "signature": { "id": "jar-fill", "name": "The jar fills", "idea": "Brine rises in the jar, the pickles bob up and settle: the brand's one recognisable move." },
+  "signature": { "id": "jar-fill", "name": "Brine Fill Sequence", "idea": "Brine rises in the jar, the pickles rise and settle: the brand's one recognisable move." },
   "typeSample": "Brine, dill and a little patience.",
   "monoFont": "JetBrains Mono"
 }
@@ -71,29 +97,43 @@ Write `site/brand/brand.json`:
   Mirror the main ones into `design.palette` in the config, and the fonts into `design.fonts`.
 - **fonts**: Google Fonts, one or two families, with normal lowercase letters (no all-caps faces). Choose for the
   brand, not the default you use everywhere.
-- **animations**: 2–4 **signature animations** that only make sense for this business. Each `id` must appear in the
-  code (class name, keyframes name or `data-anim`), or the build fails. Examples by sector:
+- **animations**: 2–4 **signature animations** that only make sense for this business, with formal names. Each `id`
+  must appear in the code (class name, keyframes name or `data-anim`), or the build fails. How to find them: see
+  "Signature motion" below; there is no list of ready ideas per sector on purpose.
 
-| Sector | Signature animation ideas |
-|---|---|
-| Pickles / deli | jars fill and empty with brine, bubbles rise, lid twists open, dill sprig sways, label stamps on |
-| Kebab / grill | embers rise from the cursor, skewers turn, smoke curls on scroll, menu prices sizzle in |
-| Bakery / café | steam from a cup, dough rises on scroll, flour dust from the cursor, coffee pours into a cup on load |
-| Barber / salon | the cursor becomes scissors that snip, hair clippings fall, a comb sweeps text into place, a barber pole turns |
-| Dentist / clinic | a sparkle sweeps across a tooth, a calm pulse line draws itself, cards lift gently |
-| Builder / trades | bricks stack up as you scroll, a crane lowers the headline, a measuring tape draws section dividers |
-| Gardener / florist | stems grow along the page edge, leaves fall from the cursor, flowers open on hover |
-| Software / agency | code types itself, a cursor blinks, UI pieces snap together on scroll |
-| Solicitor / accountant | scales settle, numbers count up to real facts, a pen signs the headline |
+### Signature motion
+
+The one movement people remember the brand by. It is designed like a short film, not added as an effect.
+
+1. **Source.** Take it from the logo's shapes (a stroke that draws itself, a mark that assembles) or from the
+   craft's real material and process (how the product is made, cut, poured, folded, built). Say the source in the plan.
+2. **Choreography.** 3–8 beats with a clear order: something is established, something transforms, the brand
+   resolves (the mark and the headline settle into the composed first screen). Overlap beats (a beat starts before
+   the previous ends); vary durations; one beat carries the moment. Total 0.8–2.5 s on load (up to 6 s for a
+   scroll-driven scene).
+3. **Craft.** Animate several elements and at least two properties (position/scale, stroke drawing, clip/mask,
+   colour); ease out on arrival (`--ease-out`), use `--ease-spring` for a physical settle, never linear except for
+   continuous loops. It plays at full size in the hero (40–60% of it), not as a small icon.
+4. **Stills.** Under `prefers-reduced-motion` it shows the composed end state at once.
+5. **Avoid the defaults** unless the logo itself asks for them: steam from a cup, flour or dust particles from the
+   cursor, typing code, a blinking cursor, sparkles on a tooth, scissors cursor, a generic fade-and-slide, a
+   counter as the hero. They read as a template.
+
+Build it with the factory's motion kit (`js/motion.js`, see "Factory parts"): `SFMotion.sequence` takes the plan's
+beats almost one to one (`at`, `duration`, `easing`, `draw`, `stagger`). After `build_site`, Read the four
+**signature frames** it lists (start → end) and fix the motion if they do not show the planned beats. The build
+fails for new designs when `brand/signature.html` is missing, has fewer animated steps than the plan's beats (at
+least 3), or has no reduced-motion state.
 
 **The brand board** (Eren shows it to the client as the "Marka Atölyesi" card, so it must stand on its own):
 
 - **tagline**: a few words in the site's main language that only this business could say. Not "Quality and trust".
 - **signature**: the one **signature motion** people remember the brand by (usually one of the animations above):
-  `id` (used in the site's code), `name` (2–4 words) and `idea` (one sentence). It appears on the site where it
+  `id` (used in the site's code), `name` (2–4 words, formal, e.g. "Katmanlı Açılış", "Layered Reveal") and
+  `idea` (one sentence). With a design plan, it is the plan's signature. It appears on the site where it
   matters most (hero, logo or the main action), not everywhere.
 - **`site/brand/signature.html`**: a small self-contained page that plays the signature motion on its own, centred
-  on the brand's background, with inline CSS/JS only (no other files), looping calmly, and still under
+  on the brand's background, with inline CSS/JS only (the one exception: it may load `/js/motion.js`), looping calmly, and still under
   `prefers-reduced-motion`, with `<title>`, meta description, viewport and `<meta name="robots" content="noindex">`.
   The panel shows it live in the board. It is not linked from the site.
 - **typeSample**: one line in the brand's voice, set in the heading font on the board.
@@ -168,8 +208,9 @@ however clean. Every custom site has all of these, designed for its own business
 5. **Use the screen.** Containers around 1200–1360px, full-bleed colour bands, generous but intentional spacing.
    A 900px column in the middle of a 1920px screen reads as unfinished.
 6. **Every page has a designed page hero** (title, a label, a piece of the visual language), not just an `h1`.
-7. **Motion with meaning**: the signature in the hero, 1–3 supporting animations from `brand.json`, scroll reveals
-   that stagger; nothing moves without a reason, everything calms under `prefers-reduced-motion`.
+7. **Motion with meaning**: the signature in the hero (as planned, at full size), 1–3 supporting animations from
+   `brand.json`, scroll reveals that stagger (`data-reveal`, `data-stagger`); nothing moves without a reason,
+   everything calms under `prefers-reduced-motion`.
 8. **Both themes are designed**: the dark look is built from the palette (like the board), not inverted colours.
 
 9. **Every section earns its place.** No minimum number of sections: hero, what they sell, why them, how to reach
@@ -222,7 +263,9 @@ Only the pages listed in `config.pages`. Every page:
 
 ### Factory parts (do not write your own)
 
-`css/base.css` and `js/kit.js` are copied into every site by the factory and updated by it; never edit them. Every
+`css/base.css`, `js/kit.js` and `js/motion.js` (the motion kit: `SFMotion.sequence`, `data-reveal`, `data-draw`,
+`data-split`, `data-scene`, `data-count`; usage at the top of the file, readable with `read_site_file js/motion.js`)
+are copied into every site by the factory and updated by it; never edit them. Every
 page loads `<script src="/js/kit.js" defer></script>` and, in `<head>` before the stylesheets, this one line so the
 saved theme applies before the first paint:
 `<script>try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>`

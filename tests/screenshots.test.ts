@@ -2,7 +2,8 @@ import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { takeScreenshots } from "../src/lib/screenshots.js";
+import { readFileSync } from "node:fs";
+import { takeScreenshots, takeSignatureFrames } from "../src/lib/screenshots.js";
 
 const BROWSER = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
@@ -32,6 +33,34 @@ describe("screenshots for the agent", () => {
       }
     },
     60_000,
+  );
+});
+
+describe("signature motion frames", () => {
+  it.runIf(existsSync(BROWSER))(
+    "films brand/signature.html as four stills that differ as the motion plays",
+    async () => {
+      const dir = mkdtempSync(path.join(os.tmpdir(), "frames-"));
+      const dist = path.join(dir, "dist");
+      mkdirSync(path.join(dist, "brand"), { recursive: true });
+      writeFileSync(
+        path.join(dist, "brand", "signature.html"),
+        "<!doctype html><style>body{margin:0;background:#fff}.bar{height:200px;width:10px;background:#c00;animation:grow 1s linear forwards}@keyframes grow{to{width:800px}}</style><div class=bar></div>",
+      );
+      const prev = { s: process.env.SF_SCREENSHOTS, b: process.env.SF_BROWSER };
+      process.env.SF_SCREENSHOTS = "on";
+      process.env.SF_BROWSER = BROWSER;
+      try {
+        const r = await takeSignatureFrames(dist, path.join(dir, "shots"), 1000);
+        expect(r?.status).toBe("pass");
+        const frames = [1, 2, 3, 4].map((i) => readFileSync(path.join(dir, "shots", `imza-${i}.png`)));
+        expect(frames[0]!.equals(frames[3]!)).toBe(false); // the bar has grown between the first and the last
+      } finally {
+        process.env.SF_SCREENSHOTS = prev.s;
+        process.env.SF_BROWSER = prev.b;
+      }
+    },
+    90_000,
   );
 });
 

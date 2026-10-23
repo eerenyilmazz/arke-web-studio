@@ -17,6 +17,23 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Tasarım planı onayı ve güçlü imza hareketleri (1.24.0)
+
+**Tasarım planı (yeni tasarımlar):** Agent siteyi kurmadan önce nasıl tasarlayacağını anlatır ve durur. Müşteri ekranında **Tasarım Planı** kartı çıkar:
+- Konsept ve kaynağı (logo, zanaatın malzemesi, yer), ton, renk paleti, yazı tipleri, giriş alanı, sayfalar ve bölümleri.
+- **İmza hareketi:** resmî adı, fikri, adım adım zaman planı (başlangıç, süre, hareket, eğri) ve zaman çizelgesi; agent yazdıysa canlı önizlemesi.
+- **Planı Onayla ve Siteyi Kur:** site bu plana göre kurulur. **Yeni Fikir İste:** isteğe bağlı notlarla agent öncekilerden gerçekten farklı yeni bir plan hazırlar (eski planlar saklanır).
+- Onay sizde: panel `.factory/` içine yazar, agent onaylayamaz. Onaydan sonra plan değişirse onay düşer. Onaysız sayfa yazılamaz (yalnızca imza önizlemesi) ve site derlenmez; boşa kaynak harcanmaz.
+- Eski siteler etkilenmez. Yeniden tasarlama yeni plan ister; 3 tasarım önerisinden birini seçmek o yönün onayı sayılır.
+
+**İmza hareketleri:**
+- Adlar resmî ve sitenin dilinde ("Katmanlı Açılış", "Kavanoz Dolumu"); şaka ya da benzetme yok.
+- Sektörlere göre hazır fikir listesi kaldırıldı (her fırına "un tozu", her yazılımcıya "kendini yazan kod" çıkıyordu). Yerine yöntem: kaynaktan (logo, malzeme, süreç) 3–8 adımlık koreografi, örtüşen adımlar, yaylı oturma; klişeler logodan gelmedikçe yasak.
+- animate skill'i yalnızca arayüz hareketlerinde; imza hareketine kısıtlayıcı "hareket etmeli mi?" yaklaşımı uygulanmaz.
+- **Hareket kiti** (`js/motion.js`, fabrikanın): `SFMotion.sequence` planın adımlarını birebir oynatır; ayrıca sırayla açılma, SVG çizgi çizimi, yazıyı kelime kelime açma, kaydırmaya bağlı sahne ve sayı sayma. Agent sıfırdan yazmaz, daha zengin ve daha az token.
+- **Agent hareketi görür:** derleme imza sayfasını tarayıcıda oynatıp 4 kare yakalar (başlangıç → son); agent bunlara bakıp düzeltir.
+- **Gerçek kontrol (yeni tasarımlarda zorunlu):** imza sayfası yoksa, planın adım sayısından (en az 3) az hareketli adım varsa ya da hareket azaltma durumu yoksa derleme geçmez. Eski sitelerde uyarı.
+
 ## rreinware denemesinden çıkan düzeltmeler (1.23.2)
 
 - **Çeviri boşa çalışmaz:** Tasarım işi bitince otomatik çeviri yalnızca o iş siteyi başarıyla derlediyse başlar. Agent soru sorup durduysa çeviri başlamaz (önceden kütüphane dosyaları yüzünden başlıyor, boşa kaynak harcıyordu). "Diğer dilleri güncelle" de geçen bir derleme yoksa açıklamayla reddedilir.

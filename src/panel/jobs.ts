@@ -69,6 +69,7 @@ export const AGENT_ALLOWED_TOOLS = [
   "mcp__site-factory__read_site_file_part",
   "mcp__site-factory__search_design_knowledge",
   "mcp__site-factory__save_research_notes",
+  "mcp__site-factory__save_design_plan",
   // No bare "Read", "Grep" or "Glob" here: a bare name allows reading ANY file on the machine. Without it, Claude
   // Code lets these read-only tools work without a prompt only in the working directory (the factory) and the
   // --add-dir folders (clients, inbox); anything else is refused in a headless run.

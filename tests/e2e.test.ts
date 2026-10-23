@@ -96,7 +96,32 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     expect(existsSync(path.join(paths.assetsDir, assets[0]!.name))).toBe(true);
     expect(existsSync(path.join(factory.inboxDir, SLUG, "loaves.png"))).toBe(true); // the photo waits for the agent
     expect(fp.agentRuns[0]!.args).toContain("--disallowedTools");
-    expect(existsSync(path.join(clientPaths(factory.clientsRoot, SLUG).distDir, "index.html"))).toBe(true);
+    // A new design stops at its plan: nothing is built until Eren approves it.
+    expect(created.summary).toContain("Tasarım planı hazır");
+    expect(existsSync(path.join(paths.distDir, "index.html"))).toBe(false);
+    expect(existsSync(path.join(paths.root, "site", "index.html"))).toBe(false);
+
+    // 1b. The plan card: read it, approve it, and the site is built to it.
+    await page.reload();
+    await page.waitForSelector("#view h1");
+    await expect.poll(() => page.locator(".strip-next p").textContent()).toContain("Tasarım planını");
+    const plan = page.locator("#design-plan");
+    await expect.poll(() => plan.textContent()).toContain("Katmanlı Kabarma");
+    expect(await plan.locator(".plan-beats tbody tr").count()).toBe(3);
+    expect(await plan.locator("iframe.sig-frame").count()).toBe(1); // the motion plays live in the card
+    // The kit is put inline in the sandboxed preview, so the sequence really runs and ends composed.
+    const heading = page.frameLocator("iframe.sig-frame").locator("h1");
+    expect(await heading.evaluate(() => typeof (window as unknown as { SFMotion?: unknown }).SFMotion)).toBe("object");
+    // The sequence ran on the heading (its animation exists); an off-screen frame may be throttled, so no end-state timing here.
+    await expect.poll(() => heading.evaluate((el) => el.getAnimations().length), { timeout: 10_000 }).toBe(1);
+    await idle(base);
+    await page.click("#plan-approve");
+    const built = await jobDone(base, SLUG, "create-site", 2);
+    expect(built.status, built.summary).toBe("succeeded");
+    expect(existsSync(path.join(paths.distDir, "index.html"))).toBe(true);
+    const report = readFileSync(paths.qualityReport, "utf8");
+    expect(report).toMatch(/Design plan \(approved by Eren\) \| PASS/);
+    expect(report).toMatch(/Signature motion .* \| PASS/);
 
     // 2. The panel shows the next step: review and approve. A wrong code is refused, the right one approves.
     await page.reload();

@@ -10,7 +10,7 @@ import { AGENT_DENIED_READS, AGENT_DENIED_TOOLS } from "../src/panel/jobs.js";
 import { createPanel, type Panel } from "../src/panel/server.js";
 import * as tools from "../src/tools.js";
 import { clientPaths } from "../src/lib/paths.js";
-import { COMPLETE_CONTENT, COMPLETE_PATCH, PNG_1PX, installStubTemplate, tempFactory } from "./helpers.js";
+import { COMPLETE_CONTENT, COMPLETE_PATCH, PNG_1PX, SAMPLE_PLAN as PLAN, installStubTemplate, tempFactory } from "./helpers.js";
 
 const KEY = "k".repeat(64);
 let panel: Panel | null = null;
@@ -949,6 +949,43 @@ describe("translation after a design job", () => {
     await idle();
     await waitFor(async () => calls.length === 3);
     expect(calls[2]!.stdin).toMatch(/Add these languages: en/);
+  });
+});
+
+describe("design plan in the panel", () => {
+  it("marks a new design, refuses approval without a plan, approves it, and asks the agent for a new idea", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth, factory } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "Plan hazır." }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "plan-shop", businessName: "Plan Shop", industry: "bakery", hostingModel: "managed", country: "TR" }),
+    });
+    tools.updateClientConfig(factory, { slug: "plan-shop", patch: { template: "custom" } });
+    const idle = () =>
+      waitFor(async () => ((await (await fetch(`${base}/api/clients/plan-shop`, { headers: auth })).json()) as { running: unknown }).running === null);
+    await fetch(`${base}/api/clients/plan-shop/agent/create-site`, { method: "POST", headers: json, body: JSON.stringify({ freeText: "Fırın." }) });
+    await idle();
+    expect(calls[0]!.stdin).toMatch(/Design plan: look at designPlan/);
+    const plan = async () => (await (await fetch(`${base}/api/clients/plan-shop/design-plan`, { headers: auth })).json()) as { state: string; plan: unknown };
+    expect((await plan()).state).toBe("missing");
+    expect((await fetch(`${base}/api/clients/plan-shop/design-plan/approve`, { method: "POST", headers: json, body: "{}" })).status).toBe(409);
+
+    tools.saveDesignPlanTool(factory, { slug: "plan-shop", plan: PLAN });
+    expect((await plan()).state).toBe("awaiting");
+    const newIdea = await fetch(`${base}/api/clients/plan-shop/agent/new-plan`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ notes: "Daha sade bir giriş." }),
+    });
+    expect(newIdea.status).toBe(202);
+    await idle();
+    expect(calls[1]!.stdin).toMatch(/asks for a new idea/);
+    expect(calls[1]!.stdin).toContain("<eren_notes>\nDaha sade bir giriş.");
+    const ok = await fetch(`${base}/api/clients/plan-shop/design-plan/approve`, { method: "POST", headers: json, body: "{}" });
+    expect(ok.status).toBe(200);
+    expect((await plan()).state).toBe("approved");
   });
 });
 

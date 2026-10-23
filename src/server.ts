@@ -56,6 +56,7 @@ export function createServer(factory: FactoryConfig = loadFactoryConfig()): McpS
   registerClientTools(server, factory);
   registerContentTools(server, factory);
   registerSiteFileTools(server, factory);
+  registerPlanTool(server, factory);
   registerDeployTool(server, factory);
 
   return server;
@@ -279,6 +280,28 @@ function registerSiteFileTools(server: McpServer, factory: FactoryConfig): void 
     "delete_site_file",
     { title: "Delete site file", description: "Deletes one file from the client's site/ folder.", inputSchema: { slug, path: sitePath } },
     handler(factory, "delete_site_file", (a: { slug: string; path: string }) => tools.deleteSiteFileTool(factory, a)),
+  );
+}
+
+/** The design plan for new designs: saved by the agent, approved only by Eren in the panel. */
+function registerPlanTool(server: McpServer, factory: FactoryConfig): void {
+  server.registerTool(
+    "save_design_plan",
+    {
+      title: "Save design plan",
+      description:
+        "New designs: how you will design the site, for Eren to approve before any page is written (rules/custom-site.md, 'Design plan'). Formal names in the site's main language. Saving never approves; after saving, stop and summarise the plan.",
+      inputSchema: {
+        slug,
+        plan: z
+          .object({})
+          .passthrough()
+          .describe(
+            "concept, source, tone[2–4], palette[3–6]{name,hex,role}, fonts{heading,body,mono?}, hero, pages[]{name,sections[]{name,purpose}}, signature{name,idea,trigger,beats[3–8]{atMs,durationMs,what,easing},totalMs,reducedMotion}, animations[0–4]{name,trigger,what}, differs? (after a new-idea request)",
+          ),
+      },
+    },
+    handler(factory, "save_design_plan", (a: { slug: string; plan: unknown }) => tools.saveDesignPlanTool(factory, a)),
   );
 }
 

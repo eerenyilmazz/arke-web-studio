@@ -57,7 +57,7 @@ export function createPanel(opts: PanelOptions): Panel {
       autoBackup(opts.factory, (msg) => console.log(msg));
       // A finished design job on a multilingual custom site continues with the cheaper translation job.
       // A finished design job rebuilt the brand from the current logo.
-      if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) clearBrandStale(opts.factory, slug);
+      if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind) && record.kind !== "new-plan") clearBrandStale(opts.factory, slug);
       if (record.status === "succeeded" && DESIGN_KINDS.has(record.kind)) {
         setTimeout(() => {
           try {

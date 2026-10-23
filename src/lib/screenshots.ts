@@ -144,3 +144,53 @@ export async function takeScreenshots(distDir: string, outDir: string): Promise<
       }
     : { name, status: "skip", detail: `The browser (${path.basename(browser.bin)}) did not produce screenshots. Nothing else is affected.` };
 }
+
+/** Moments of the signature motion captured as stills, as a share of its total length (then just after the end). */
+const FRAME_POINTS = [0.05, 0.3, 0.6, 1] as const;
+const FRAME_SIZE = { width: 900, height: 640 } as const;
+
+/**
+ * The signature motion as four stills (start, a third, two thirds, end), so the agent can see how it moves:
+ * headless Chrome runs the page on virtual time for a set budget, then takes the picture.
+ */
+export async function takeSignatureFrames(distDir: string, outDir: string, totalMs: number): Promise<CheckResult | null> {
+  const name = "Signature motion frames (look at them in order)";
+  if (!existsSync(path.join(distDir, "brand", "signature.html"))) return null;
+  if (process.env.SF_SCREENSHOTS === "off") return { name, status: "skip", detail: "Turned off (SF_SCREENSHOTS=off)." };
+  const browser = await findBrowser();
+  if (!browser) return { name, status: "skip", detail: "No browser found; the motion could not be filmed. Nothing else is affected." };
+  const server = await serve(distDir);
+  const port = (server.address() as AddressInfo).port;
+  mkdirSync(outDir, { recursive: true });
+  const made: string[] = [];
+  try {
+    for (const [i, share] of FRAME_POINTS.entries()) {
+      const file = path.join(outDir, `imza-${i + 1}.png`);
+      rmSync(file, { force: true });
+      const budget = Math.max(60, Math.round(totalMs * share) + (share === 1 ? 300 : 0));
+      const args = [
+        "--headless=new",
+        "--disable-gpu",
+        "--hide-scrollbars",
+        "--no-first-run",
+        "--no-default-browser-check",
+        ...(browser.windows ? [] : ["--no-sandbox"]),
+        `--window-size=${FRAME_SIZE.width},${FRAME_SIZE.height}`,
+        `--virtual-time-budget=${budget}`,
+        `--screenshot=${browser.windows ? await toWindowsPath(file) : file}`,
+        `http://127.0.0.1:${port}/brand/signature.html`,
+      ];
+      await run(browser.bin, args, { timeout: TIMEOUT_MS }).catch(() => null);
+      if (existsSync(file) && statSync(file).size > 0) made.push(file);
+    }
+  } finally {
+    server.close();
+  }
+  return made.length
+    ? {
+        name,
+        status: "pass",
+        detail: `Read these in order (start → end) and check the motion against the plan's beats: does something real move, in the planned order, and end in a composed state? ${made.join(", ")}`,
+      }
+    : { name, status: "skip", detail: "The browser did not produce frames. Nothing else is affected." };
+}

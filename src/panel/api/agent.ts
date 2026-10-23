@@ -1,5 +1,8 @@
 import { portalMessages, updateEntry } from "../portal.js";
+import { existsSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import path from "node:path";
+import { planState, requirePlan, resetPlanApproval, waivePlan } from "../../lib/design-plan.js";
 import { snapshot } from "../../lib/versions.js";
 import { DESIGN_KINDS, resolvePolicy } from "../budget.js";
 import { applyLibraryDesign, clearStartDesign } from "../library.js";
@@ -27,6 +30,7 @@ import {
   fixBuildPrompt,
   revisePrompt,
   upgradeTemplatePrompt,
+  newPlanPrompt,
   type AnswersInput,
 } from "../prompts.js";
 import { OPTION_IDS } from "../../lib/custom-site.js";
@@ -61,6 +65,10 @@ type JobBuilder = (ctx: JobContext) => JobSpec | Promise<JobSpec>;
 function requireCustom(ctx: JobContext, message: string): void {
   const template = (readDraftConfig(clientPaths(ctx.deps.factory.clientsRoot, ctx.slug)) as { template?: string }).template;
   if (template !== "custom") throw new HttpError(409, message);
+}
+
+function isCustomClient(ctx: JobContext): boolean {
+  return (readDraftConfig(clientPaths(ctx.deps.factory.clientsRoot, ctx.slug)) as { template?: string }).template === "custom";
 }
 
 /** Replaces site/ with a library design (a version of the current site is saved first). */
@@ -124,6 +132,9 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     };
     const hasInput = pasted.freeText.trim() !== "" || Object.values(pasted.answers).some((a) => a.trim()) || pasted.files.length > 0;
     const libraryId = str(body, "libraryId", { optional: true, max: 41 });
+    // A new design (no brand yet, or a library start) goes through the design plan Eren approves first.
+    const cp = clientPaths(deps.factory.clientsRoot, slug);
+    if (isCustomClient(ctx) && (libraryId || !existsSync(path.join(cp.root, "site", "brand", "brand.json")))) requirePlan(cp);
     let libraryName: string | undefined;
     let libraryFilled = "";
     if (libraryId) {
@@ -153,6 +164,10 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
 
   redesign: (ctx) => {
     requireCustom(ctx, "Marka kartı serbest tasarımlı sitelerde var. Önce 'Serbest tasarıma geç'.");
+    // A redesign is a new design: a new plan, approved again.
+    const cp = clientPaths(ctx.deps.factory.clientsRoot, ctx.slug);
+    requirePlan(cp);
+    resetPlanApproval(cp);
     return { prompt: redesignPrompt(ctx.slug), title: "Markayla yeniden tasarla", request: "Siteyi markanın imza tasarımıyla baştan tasarla." };
   },
 
@@ -170,6 +185,8 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     requireCustom(ctx, "Tasarım önerileri serbest tasarımlı sitelerde var. Önce 'Serbest tasarıma geç'.");
     const option = str(ctx.body, "option", { max: 1 })!;
     if (!(OPTION_IDS as readonly string[]).includes(option)) throw new HttpError(400, "Öneri a, b ya da c olmalı.");
+    // Choosing one of the three full proposals is Eren's approval of that direction.
+    waivePlan(clientPaths(ctx.deps.factory.clientsRoot, ctx.slug));
     return {
       prompt: chooseConceptPrompt(ctx.slug, option),
       title: "Seçilen tasarımla siteyi kur",
@@ -185,6 +202,19 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
       prompt: fromLibraryPrompt(ctx.slug, name, filledNote(applied)),
       title: `Kütüphaneden: ${name}`,
       request: `"${name}" tasarımını bu müşteriye uyarla.`,
+    };
+  },
+
+  "new-plan": (ctx) => {
+    requireCustom(ctx, "Tasarım planı serbest tasarımlı sitelerde var.");
+    const cp = clientPaths(ctx.deps.factory.clientsRoot, ctx.slug);
+    if (planState(cp) === "not-required") throw new HttpError(409, "Bu müşteri için tasarım planı kullanılmıyor.");
+    const notes = (str(ctx.body, "notes", { optional: true, max: 2000 }) ?? "").trim();
+    return {
+      prompt: newPlanPrompt(ctx.slug, notes),
+      input: notes ? `Tasarım planı için not: ${notes}` : "",
+      title: "Yeni tasarım planı",
+      request: notes ? `Yeni bir tasarım fikri hazırla. Notlarım: ${notes}` : "Yeni bir tasarım fikri hazırla.",
     };
   },
 

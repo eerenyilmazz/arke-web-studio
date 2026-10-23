@@ -129,7 +129,7 @@ describe("brand board (Marka Atölyesi)", () => {
       ...BRAND,
       tagline: "Crunch since 1962",
       typeSample: "Brine, dill and patience.",
-      signature: { id: "jar-fill", name: "Kavanoz dolar", idea: "The jar fills with brine and settles, once." },
+      signature: { id: "jar-fill", name: "Kavanoz Dolumu", idea: "The jar fills with brine and settles, once." },
     };
     tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/brand.json", content: JSON.stringify(full) });
     tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/signature.html", content: page("Signature", '<div class="jar-fill"></div>') });

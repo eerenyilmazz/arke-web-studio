@@ -41,6 +41,7 @@ export const DESIGN_KINDS: ReadonlySet<string> = new Set([
   "from-library",
   "brand-board",
   "design-content",
+  "new-plan",
 ]);
 
 interface Profile {

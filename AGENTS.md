@@ -42,7 +42,7 @@ Changes after launch use the same path: edit config/content, build, approvals, d
 
 ## Custom sites (template "custom", the default for new clients)
 
-There is no template: you design the brand identity and write the whole site yourself with the site-file tools, following `rules/custom-site.md`. Steps 3–6 of the flow still apply (facts in config and content first); step 5 becomes "brand identity", step 6 also writes the pages. Every custom brand has a complete brand board (tagline, signature motion with its own demo page, type specimen). For design judgement use `search_design_knowledge` (it searches the rules and the design skills: Impeccable, taste-skill and, when installed, UI UX Pro Max); where a skill conflicts with the factory rules, the factory rules win. The skills' scripts and browser tools do not run here.
+There is no template: you design the brand identity and write the whole site yourself with the site-file tools, following `rules/custom-site.md`. Steps 3–6 of the flow still apply (facts in config and content first); step 5 becomes "brand identity", step 6 also writes the pages. Every custom brand has a complete brand board (tagline, signature motion with its own demo page, type specimen). New designs (when `get_client_status` shows a `designPlan` state other than `not-required`) start with a design plan saved with `save_design_plan`; Eren approves it in the panel before any page is written, and you never approve it yourself. For design judgement use `search_design_knowledge` (it searches the rules and the design skills: Impeccable, taste-skill and, when installed, UI UX Pro Max); where a skill conflicts with the factory rules, the factory rules win. The skills' scripts and browser tools do not run here.
 
 ## Hard rules
 

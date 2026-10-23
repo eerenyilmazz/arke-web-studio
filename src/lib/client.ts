@@ -1,3 +1,4 @@
+import { type PlanState, planStatus } from "./design-plan.js";
 import path from "node:path";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { effectiveFormAction, readClientForm } from "./form.js";
@@ -55,6 +56,8 @@ export interface ClientStatus {
   readonly researchNotes: { savedAt: string; text: string } | null;
   /** Where a contact form may post (set by Eren in the panel), or null: then no <form>, only contact buttons. */
   readonly contactForm: { action: string; accessKey?: string } | null;
+  /** New designs: the plan Eren approves before the site is built (rules/custom-site.md, "Design plan"). */
+  readonly designPlan: { state: PlanState; next: string | null };
 }
 
 export const RESEARCH_FILE = "research.md";
@@ -178,6 +181,7 @@ export function clientStatus(factory: FactoryConfig, slug: string): ClientStatus
     contentHash: hash,
     researchNotes: readResearchNotes(paths.root),
     contactForm: readClientForm(paths.factoryDir) ?? (effectiveFormAction(paths.factoryDir) ? { action: effectiveFormAction(paths.factoryDir)! } : null),
+    designPlan: planStatus(paths),
   };
 }
 

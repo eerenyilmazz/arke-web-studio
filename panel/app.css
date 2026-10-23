@@ -1112,3 +1112,31 @@ body[data-view="home"] #clients { display: none; }
 .data-table thead button:focus-visible { outline-color: var(--ink); }
 .job-errors > summary { cursor: pointer; font-size: .85rem; color: var(--ink-3); }
 .job-errors[open] > summary { margin-bottom: .3rem; }
+
+/* Design plan card: the agent's plan, read and approved before anything is built. */
+.plan-card { display: grid; gap: .9rem; }
+.plan-body { display: grid; gap: 1rem; }
+.plan-field { display: grid; gap: .35rem; padding-top: .8rem; border-top: 1px solid var(--line); }
+.plan-field h4 { margin: 0; font-size: .82rem; font-weight: 650; color: var(--ink-3); }
+.plan-sig-name { font-size: 1.1rem; font-weight: 700; }
+.plan-chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.plan-chips .chip { cursor: default; }
+.plan-palette { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+.plan-palette li { display: grid; grid-template-columns: 1.6rem minmax(6rem, auto) 5.5rem 1fr; gap: .6rem; align-items: center; }
+.plan-swatch { width: 1.6rem; height: 1.6rem; border-radius: 6px; border: 1px solid var(--line-strong); }
+.plan-pages { margin: 0; padding-inline-start: 1.2rem; display: grid; gap: .4rem; }
+.plan-pages ul { margin: .2rem 0 0; padding-inline-start: 1rem; }
+.plan-timeline { display: grid; gap: .3rem; padding: .6rem; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.plan-beat { display: grid; grid-template-columns: 1.2rem 1fr; gap: .5rem; align-items: center; }
+.plan-beat-no { font-size: .75rem; color: var(--ink-3); text-align: end; }
+.plan-beat-track { position: relative; height: .55rem; border-radius: 4px; background: var(--line); }
+.plan-beat-bar { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--accent); }
+.plan-beats { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.plan-beats th, .plan-beats td { text-align: start; padding: .35rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.plan-beats .num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.plan-card .sig-frame { width: 100%; height: 320px; border: 1px solid var(--line); border-radius: 8px; background: var(--logo-paper); }
+.plan-warn { color: var(--bad); font-weight: 600; }
+.plan-new { display: grid; gap: .5rem; }
+.plan-new label { font-weight: 600; font-size: .9rem; }
+.plan-new textarea { width: 100%; }
+@media (max-width: 640px) { .plan-palette li { grid-template-columns: 1.6rem 1fr; } .plan-palette li code, .plan-palette li .small { grid-column: 2; } .plan-beats { display: block; overflow-x: auto; } }

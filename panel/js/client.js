@@ -1,6 +1,7 @@
 // Client page: header, status strip, preview, Düzenleme tab and approval dialog.
 import { locale } from "./i18n.js";
 import { tabBrand } from "./brand.js";
+import { planCard, planWaiting } from "./design-plan.js";
 import { archiveClient, deployProduction, openPreview } from "./client-actions.js";
 import {
   $,
@@ -179,6 +180,21 @@ export function nextAction(d) {
     setTimeout(() => $("#composer")?.focus(), 120);
   };
   if (working) return { text: "İşlem sürüyor. Tamamlandığında bildirim alacaksınız.", actions: [] };
+  // A new design waits for Eren's decision on its plan before anything is built.
+  if (planWaiting(d))
+    return {
+      text: "Tasarım planını inceleyip onaylayınız.",
+      actions: [
+        btn(
+          "Planı İncele",
+          () => {
+            location.hash = `#/musteri/${slug}/duzenle`;
+            setTimeout(() => $("#design-plan")?.scrollIntoView({ block: "start" }), 150);
+          },
+          "btn btn-primary",
+        ),
+      ],
+    };
   const PREPARE = ["collecting-answers", "design", "content", "awaiting-content-approval", "build", "awaiting-visual-approval"];
   if (PREPARE.includes(stage)) {
     const approved = (k) => d.approvals.find((x) => x.kind === k)?.valid;
@@ -309,7 +325,9 @@ export async function tabWork(body, d) {
   const slug = d.status.slug;
   const PREPARE = ["collecting-answers", "design", "content", "build"];
   const approvedSite = ["content", "visual"].every((k) => d.approvals.find((x) => x.kind === k)?.valid);
-  if (!d.distReady || (PREPARE.includes(d.status.stage) && !approvedSite && !d.distReady)) body.append(prepareCard(d));
+  // While a plan waits, its card is the only next step (the information form would start the design again).
+  if (planWaiting(d)) body.append(planCard(d));
+  else if (!d.distReady || (PREPARE.includes(d.status.stage) && !approvedSite && !d.distReady)) body.append(prepareCard(d));
   if (d.distReady) {
     const forms = [
       ["colors", "Renk Paleti"],
