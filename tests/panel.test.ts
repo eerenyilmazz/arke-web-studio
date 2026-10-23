@@ -11,6 +11,8 @@ import { AGENT_DENIED_READS, AGENT_DENIED_TOOLS } from "../src/panel/jobs.js";
 import { createPanel, type Panel, type PanelOptions } from "../src/panel/server.js";
 import * as tools from "../src/tools.js";
 import { clientPaths } from "../src/lib/paths.js";
+import { writeProductRecord } from "../src/deploy/app.js";
+import { readClientSecrets } from "../src/lib/accounts.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, PNG_1PX, SAMPLE_PLAN as PLAN, installStubTemplate, tempFactory } from "./helpers.js";
 
 const KEY = "k".repeat(64);
@@ -1073,6 +1075,41 @@ describe("the person's Cloudflare account in the panel", () => {
       await fetch(`${base}/api/clients/sec-co/business`, { method: "PUT", headers: json, body: JSON.stringify({ product: "showcase" }) });
       const record = JSON.parse(readFileSync(path.join(clientPaths(factory.clientsRoot, "sec-co").factoryDir, "product.json"), "utf8"));
       expect(record.product).toBe("showcase");
+    } finally {
+      process.env.SF_ACCOUNTS_DIR = dir;
+    }
+  });
+
+  it("installs the ready-made parts for an app site and keeps its admin password as a hash only", async () => {
+    const dir = process.env.SF_ACCOUNTS_DIR;
+    process.env.SF_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-parts-panel-"));
+    try {
+      const { base, auth, factory } = await start();
+      const json = { ...auth, "Content-Type": "application/json" };
+      await fetch(`${base}/api/clients`, {
+        method: "POST",
+        headers: json,
+        body: JSON.stringify({ slug: "cafe-co", businessName: "Cafe Co", industry: "cafe", hostingModel: "managed" }),
+      });
+      expect(((await (await fetch(`${base}/api/clients/cafe-co/app`, { headers: auth })).json()) as { app: boolean }).app).toBe(false);
+      const cp = clientPaths(factory.clientsRoot, "cafe-co");
+      writeProductRecord(cp, { product: "restaurant" }); // kinds are not selectable yet; set as a later step will
+      const view = (await (await fetch(`${base}/api/clients/cafe-co/app`, { headers: auth })).json()) as Record<string, unknown>;
+      expect(view).toMatchObject({ app: true, parts: ["catalog", "admin", "notifications"], adminPassword: false, missingSecrets: ["ADMIN_PASSWORD_HASH"] });
+      expect(existsSync(path.join(cp.root, "app", "worker.js"))).toBe(true);
+      const put = (body: object, what = "admin-password") =>
+        fetch(`${base}/api/clients/cafe-co/app/${what}`, { method: "PUT", headers: json, body: JSON.stringify(body) });
+      expect((await put({ password: "kisa" })).status).toBe(400);
+      const ok = await put({ password: "uzun-ve-guclu-parola" });
+      const text = await ok.text();
+      expect(ok.status).toBe(200);
+      expect(text).not.toContain("uzun-ve-guclu-parola");
+      expect(JSON.parse(text)).toMatchObject({ adminPassword: true, missingSecrets: [] });
+      expect((await put({ url: "http://insecure.example/hook" }, "notify-webhook")).status).toBe(400);
+      expect(((await (await put({ url: "https://hooks.example/abc" }, "notify-webhook")).json()) as { notifyWebhook: boolean }).notifyWebhook).toBe(true);
+      const stored = readClientSecrets("cafe-co");
+      expect(stored.ADMIN_PASSWORD_HASH).toMatch(/^pbkdf2-sha256\$/);
+      expect(stored.SESSION_SECRET!.length).toBeGreaterThan(40);
     } finally {
       process.env.SF_ACCOUNTS_DIR = dir;
     }

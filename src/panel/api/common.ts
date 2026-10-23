@@ -1,3 +1,4 @@
+import { prepareAppParts } from "../app-parts.js";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
@@ -101,6 +102,10 @@ export function pageFiles(page: string): (rel: string) => boolean {
  * Every agent job starts here: the monthly budget is checked, the client's budget mode decides model, steps,
  * cap, skills and research, and the prompt gets the mode-dependent parts.
  */
+/** One line for app sites; the details are in rules/parts.md, read only when the job places a part. */
+const PARTS_NOTE =
+  "This is an app site with the factory's ready-made parts (catalogue, enquiry inbox, admin screen): before placing a catalogue or a form, read rules/parts.md; never write app/ or js/sf-parts.js.";
+
 export function launchAgent(deps: ApiDeps, slug: string, kind: string, title: string, prompt: string, request: string) {
   const blocked = monthlyBlock(deps.factory);
   if (blocked) throw new HttpError(409, blocked);
@@ -109,7 +114,10 @@ export function launchAgent(deps: ApiDeps, slug: string, kind: string, title: st
   if ((readDraftConfig(clientPaths(deps.factory.clientsRoot, slug)) as { template?: string }).template === "custom") {
     ensureBaseKit(clientPaths(deps.factory.clientsRoot, slug), path.join(FACTORY_ROOT, "rules", "site-kit", "base.css"));
   }
-  const text = finalPrompt(prompt.startsWith(TOOLS_NOTE) ? prompt : `${TOOLS_NOTE}\n${prompt}`, {
+  // App sites get the factory's ready-made parts (catalogue, admin screen, inbox) before the agent places them.
+  const parts = prepareAppParts(clientPaths(deps.factory.clientsRoot, slug), slug);
+  const withParts = parts.installed ? `${prompt}\n${PARTS_NOTE}` : prompt;
+  const text = finalPrompt(withParts.startsWith(TOOLS_NOTE) ? withParts : `${TOOLS_NOTE}\n${withParts}`, {
     ...policy,
     panelLanguage: readSettings(deps.factory).panelLanguage,
     addons: addonsNote(readBusiness(deps.factory, slug)?.addons),

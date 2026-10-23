@@ -1,3 +1,4 @@
+import { isAppSite, readProductRecord } from "../deploy/app.js";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { FACTORY_ROOT, type FactoryConfig } from "../config.js";
@@ -52,7 +53,7 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
       results.push(built);
       if (built.status === "pass") {
         results.push(...checkOutput(paths.distDir, config));
-        results.push(...checkCustomCode(paths.distDir, effectiveFormAction(paths.factoryDir)));
+        results.push(...checkCustomCode(paths.distDir, effectiveFormAction(paths.factoryDir), isAppSite(readProductRecord(paths))));
         results.push(...checkBrand(paths.distDir, config.brand.logo));
         results.push(...checkLibraryLeftovers(paths.distDir, paths.factoryDir));
         const languages = checkLanguages(paths.distDir, config.i18n.defaultLocale, config.i18n.locales, config.site.domain ?? null);

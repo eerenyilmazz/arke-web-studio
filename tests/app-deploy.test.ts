@@ -109,7 +109,7 @@ describe("publishing an app site", () => {
       paths,
       slug: SLUG,
       target: "production",
-      plan: { database: true, media: false, secrets: [] },
+      plan: { database: true, media: false, secrets: [], optionalSecrets: [] },
       run: w.runner,
       wranglerJs: "/w.js",
       env: {},

@@ -1,4 +1,5 @@
 // The Müşteri Bilgileri tab: links, missing facts, texts, files, approvals, publishing and questionnaires.
+import { appPartsCard } from "./app-parts.js";
 import { businessForm } from "./business.js";
 import { deployProduction, rollbackSite, unpublish } from "./client-actions.js";
 import { approveDialog } from "./client.js";
@@ -119,6 +120,8 @@ export async function tabInfo(body, d) {
   };
   section("İş Takibi", "Teklif, ödeme ve teslim tarihi. Yalnızca panelde tutulur; siteye ve asistana iletilmez.").append(businessForm(d));
   section("Müşteri Linkleri", "Müşteriye form ya da önizleme linki gönderin; gelen bilgiler, yorumlar ve onay burada görünür.").append(portalCard(d));
+  const appCard = await appPartsCard(d.status.slug);
+  if (appCard) section("Müşteri Yönetim Ekranı", "Katalog ve gelen mesajlar için müşterinin kendi ekranı.").append(appCard);
   if (d.status.openQuestions.length) {
     const miss = section("Eksik Bilgiler", "Yanıtları Düzenleme sekmesindeki bilgi alanına yapıştırınız.");
     miss.append(h("ul", { class: "missing" }, ...d.status.openQuestions.map((q) => h("li", { title: q.text, text: MISSING_TR[q.id] || q.text }))));

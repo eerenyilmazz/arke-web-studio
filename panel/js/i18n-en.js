@@ -3,6 +3,35 @@
 // where {} stands in the English. Missing entries simply stay Turkish. Generated once, then edited by hand.
 export const EN = {
   exact: {
+    "Müşteri Yönetim Ekranı": "Client Admin Screen",
+    "Katalog ve gelen mesajlar için müşterinin kendi ekranı.": "The client's own screen for the catalogue and incoming messages.",
+    "Site, müşterinin kendi yönetim ekranıyla gelir (site adresi/admin). Kayıtları ve gelen mesajları oradan yönetir.":
+      "The site comes with the client's own admin screen (site address/admin), where they manage entries and incoming messages.",
+    "Yönetim ekranı": "Admin screen",
+    Katalog: "Catalogue",
+    Sepet: "Cart",
+    Takvim: "Calendar",
+    "QR menü": "QR menu",
+    "Yasal sayfalar": "Legal pages",
+    "Sonraki sürümlerde": "In a later version",
+    "Yönetim parolası": "Admin password",
+    tanımlı: "set",
+    "tanımlı değil": "not set",
+    "Yeni parola": "New password",
+    Parola: "Password",
+    "en az 10 karakter": "at least 10 characters",
+    "Parolayı müşteriye güvenli bir yoldan iletin. Burada yalnızca şifrelenmiş özeti tutulur; parola bir daha gösterilmez.":
+      "Send the password to the client securely. Only its hash is kept here; the password is never shown again.",
+    "Parolayı Değiştir": "Change the Password",
+    "Parolayı Kaydet": "Save the Password",
+    "Bildirim adresi (isteğe bağlı)": "Notification address (optional)",
+    "Webhook adresi": "Webhook address",
+    "Yeni mesajlar ayrıca bu adrese gönderilir (Slack, Discord ya da bir Telegram aktarıcısı). Boş bırakılırsa mesajlar yalnızca yönetim ekranında görünür.":
+      "New messages are also sent to this address (Slack, Discord or a Telegram relay). Without one, messages only appear in the admin screen.",
+    "Adresi Kaydet": "Save the Address",
+    "Kaydedildi. Bir sonraki yayında siteye gönderilir.": "Saved. It is sent to the site with the next publish.",
+    "Yönetim parolası kaydedildi.": "Admin password saved.",
+    "Bildirim adresi kaydedildi.": "Notification address saved.",
     "ör. hair salon, family law solicitor": "e.g. hair salon, family law solicitor",
     "Ör: Erkek kuaförü, Mono. Saç kesimi 500 TL, sakal 300 TL. Ankara Sincan, 0534 985 63 19. Siyah-beyaz renkler.":
       "E.g.: Men's barber, Mono. Haircut 500 TL, beard 300 TL. Ankara Sincan, 0534 985 63 19. Black and white colours.",
@@ -1486,5 +1515,7 @@ export const EN = {
     ["{} fotoğraf", "{} photos"],
     ["{} dk", "{} min"],
     ["{} gün", "{} days"],
+    ["{} (yakında)", "{} (soon)"],
+    ["Yayın için eksik: {}.", "Missing for publishing: {}."],
   ],
 };

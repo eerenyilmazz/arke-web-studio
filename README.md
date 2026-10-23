@@ -17,6 +17,20 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Ortak hazır parçalar: katalog, yönetim ekranı, bildirimler (1.27.0)
+
+Uygulama sitelerinin (E-ticaret, Randevu, Restoran-Kafe) ilk hazır parçaları geldi. Kodlar fabrikanın `parts/` klasöründe ve testli; agent bunları yazmaz, yalnızca sayfaya yerleştirip tasarlar (`rules/parts.md`). Tanıtım siteleri etkilenmez.
+- **Katalog:** ürün, hizmet ya da menü kalemleri; kategoriler, fiyat (kuruş cinsinden), süre (hizmetler için), görsel (R2, en fazla 5 MB, yalnız JPG/PNG/WebP/AVIF). Sitede agent'ın tasarladığı şablonla gösterilir; kalemler yönetim ekranından değişir, siteye bir dakika içinde yansır.
+- **Gelen kutusu (bildirimler):** sitedeki formlardan gelen mesajlar veritabanına kaydedilir. İstenirse bir webhook adresine de iletilir (Slack, Discord, Telegram aktarıcısı). Gizli tuzak alanı ve adres başına saatlik sınır vardır. Sonraki adımlarda sipariş ve randevular da buraya düşecek.
+- **Müşterinin yönetim ekranı (site adresi/admin):** parolayı panelden siz belirlersiniz (Müşteri Bilgileri → Müşteri Yönetim Ekranı). Panelde parolanın kendisi değil, yalnızca şifrelenmiş özeti saklanır.
+  - Oturum 12 saat sürer.
+  - 15 dakikada 5 hatalı denemeden sonra giriş kilitlenir.
+  - Değişiklikler yalnızca sitenin kendisinden kabul edilir.
+  - Ekranın sıkı güvenlik başlıkları vardır ve arama motorlarına kapalıdır.
+- **Kurulum otomatik:** site türü bir uygulama türüyse panel parçaları müşteri klasörüne kopyalar: `app/worker.js` (yalnızca o türün parçalarıyla oluşturulur), `app/parts/`, `app/migrations/0001–0003` ve `site/js/sf-parts.js`. Oturum anahtarı da otomatik oluşturulur. Yeni bir fabrika sürümü parça kodunu yeniler; uygulanmış veritabanı değişikliklerine hiç dokunmaz.
+- **Sayfalar API'yi gölgeleyemez:** Worker `/api/*`, `/admin` ve `/media/*` adreslerini her zaman kendisi karşılar.
+- Uygulama türleri hâlâ "yakında" durumunda: ödeme ve yasal sayfalar 4. adımda (E-ticaret) gelecek.
+
 ## Uygulama siteleri için yayın modülü (1.26.0)
 
 E-ticaret, Randevu ve Restoran-Kafe "uygulama" sitesi olacak: sayfaların yanında çalışan bir Worker, kendi veritabanı (D1), görsel deposu (R2) ve gizli anahtarları. Bu sürüm onları yayınlayacak ortak altyapıyı ekler; tanıtım siteleri eskisi gibi yayınlanır (değişiklik yok).

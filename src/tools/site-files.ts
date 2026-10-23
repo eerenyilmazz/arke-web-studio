@@ -1,3 +1,4 @@
+import { isAppSite, readProductRecord } from "../deploy/app.js";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { FACTORY_ROOT, type FactoryConfig } from "../config.js";
@@ -88,7 +89,7 @@ export function writeSiteFileTool(factory: FactoryConfig, args: { slug: string; 
 
 /** Write results carry the file's safety problems right away, so they are fixed before a build. */
 function withProblems<T extends object>(result: T, rel: string, content: string, factoryDir: string) {
-  const problems = fileProblems(rel, content, effectiveFormAction(factoryDir));
+  const problems = fileProblems(rel, content, effectiveFormAction(factoryDir), isAppSite(readProductRecord({ factoryDir })));
   return problems.length ? { ...result, problems, fix: "The build will fail on these. Fix them now with edit_site_file." } : result;
 }
 

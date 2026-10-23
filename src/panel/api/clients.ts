@@ -24,6 +24,7 @@ import { serialiseJob } from "../jobs.js";
 import { inlineMotionKit, readBrandBoard, readBrandOptions, SIGNATURE_FILE } from "../../lib/custom-site.js";
 import { approvePlan, planState, previousPlans, readPlan } from "../../lib/design-plan.js";
 import os from "node:os";
+import { appPartsView, prepareAppParts, setAdminPassword, setNotifyWebhook } from "../app-parts.js";
 import { readProductRecord, writeProductRecord } from "../../deploy/app.js";
 import { clientSecretNames, removeClientSecret, saveClientSecret } from "../../lib/accounts.js";
 import { PRODUCT_IDS, PRODUCTS, type ProductId } from "../../products/registry.js";
@@ -61,6 +62,10 @@ export const clientRoutes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/secrets$`), handler: listSecrets },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/secrets$`), handler: putSecret },
   { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}/secrets/([A-Z][A-Z0-9_]{1,63})$`), handler: deleteSecret },
+  // Ready-made parts of app sites: the client's admin screen password and the notification address.
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/app$`), handler: appParts },
+  { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/app/admin-password$`), handler: putAdminPassword },
+  { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/app/notify-webhook$`), handler: putNotifyWebhook },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/design-plan/approve$`), handler: approveDesignPlan },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/brand$`), handler: brandBoard },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/business$`), handler: saveBusiness },
@@ -95,6 +100,34 @@ function deleteSecret(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse,
   tools.getClientStatus(deps.factory, { slug: s });
   removeClientSecret(s, name!);
   sendJson(res, 200, secretsView(deps, s));
+}
+
+function appParts(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const cp = clientPaths(deps.factory.clientsRoot, s);
+  prepareAppParts(cp, s);
+  sendJson(res, 200, appPartsView(cp, s));
+}
+
+async function putAppSecret(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, slug: string, field: string, save: (s: string, v: string) => void) {
+  const s = assertSlug(slug);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const body = await readJsonBody(req, JSON_LIMIT);
+  try {
+    save(s, str(body, field, { max: 2000 }) ?? "");
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    throw new HttpError(400, (error as Error).message);
+  }
+  sendJson(res, 200, appPartsView(clientPaths(deps.factory.clientsRoot, s), s));
+}
+
+function putAdminPassword(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]) {
+  return putAppSecret(deps, req, res, slug!, "password", setAdminPassword);
+}
+function putNotifyWebhook(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]) {
+  return putAppSecret(deps, req, res, slug!, "url", setNotifyWebhook);
 }
 
 /** The design plan for Eren to read: state, the plan, how many earlier ones, and the signature preview if written. */
@@ -197,6 +230,7 @@ async function saveBusiness(deps: ApiDeps, req: IncomingMessage, res: ServerResp
     // The deploy tool reads the kind from .factory/ (the agent cannot change it); installed parts' secret names stay.
     const cp = clientPaths(deps.factory.clientsRoot, s);
     writeProductRecord(cp, { ...readProductRecord(cp), product: saved.product ?? "showcase" });
+    prepareAppParts(cp, s);
     addSoldLanguage(deps, s, saved.addons);
     sendJson(res, 200, saved);
   } catch (error) {

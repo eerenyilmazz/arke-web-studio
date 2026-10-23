@@ -47,7 +47,7 @@ export const PRODUCTS: Readonly<Record<ProductId, ProductModule>> = {
     deploy: "app",
     addons: ["language", "theme", "whatsapp"],
     parts: ["site-kit", "motion", "catalog", "cart", "payments", "admin", "notifications", "legal-pages"],
-    rules: [],
+    rules: ["rules/custom-site.md", "rules/parts.md"],
   },
   booking: {
     id: "booking",
@@ -57,7 +57,7 @@ export const PRODUCTS: Readonly<Record<ProductId, ProductModule>> = {
     deploy: "app",
     addons: ["language", "theme", "whatsapp"],
     parts: ["site-kit", "motion", "catalog", "calendar", "admin", "notifications"],
-    rules: [],
+    rules: ["rules/custom-site.md", "rules/parts.md"],
   },
   restaurant: {
     id: "restaurant",
@@ -67,7 +67,7 @@ export const PRODUCTS: Readonly<Record<ProductId, ProductModule>> = {
     deploy: "app",
     addons: ["language", "theme", "whatsapp"],
     parts: ["site-kit", "motion", "catalog", "menu-qr", "calendar", "cart", "payments", "admin", "notifications", "legal-pages"],
-    rules: [],
+    rules: ["rules/custom-site.md", "rules/parts.md"],
   },
 };
 

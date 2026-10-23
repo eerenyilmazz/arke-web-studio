@@ -1161,3 +1161,5 @@ body[data-view="home"] #clients { display: none; }
 .account-replace > summary { cursor: pointer; font-weight: 600; }
 .account-replace[open] > summary { margin-bottom: .6rem; }
 .account-dialog { max-width: min(36rem, 92vw); }
+#app-parts .chip { cursor: default; }
+#app-parts .chip:hover { color: var(--ink-2); background: var(--surface); }

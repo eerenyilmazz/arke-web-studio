@@ -1,3 +1,4 @@
+import { isFactorySiteScript } from "../parts/install.js";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { FACTORY_ROOT } from "../config.js";
@@ -270,10 +271,14 @@ function brokenLinks(distDir: string, rel: string, html: string): string[] {
 }
 
 /** Form posts may only go to the factory's form service (SF_FORM_ACTION). */
-function formProblems(rel: string, html: string, formAction: string | null): string[] {
+/** App sites' own inbox endpoint (parts/app/inbox.js), used by <form data-sf-inquiry> through js/sf-parts.js. */
+export const APP_INBOX_ACTION = "/api/inbox";
+
+function formProblems(rel: string, html: string, formAction: string | null, appSite: boolean): string[] {
   const out: string[] = [];
   for (const m of html.matchAll(/<form\b[^>]*>/gi)) {
     const action = /\baction\s*=\s*["']([^"']*)["']/i.exec(m[0])?.[1] ?? "";
+    if (appSite && /\bdata-sf-inquiry\b/i.test(m[0]) && (action === "" || action === APP_INBOX_ACTION)) continue;
     if (!formAction || action !== formAction)
       out.push(
         `${rel}: <form action="${action.slice(0, 60)}"> (forms may only post to the configured form service; without one, show phone/email/WhatsApp buttons)`,
@@ -286,16 +291,18 @@ function formProblems(rel: string, html: string, formAction: string | null): str
  * Safety problems of one file on its own (everything except links between files and the 404 page). Used by the
  * build and right when a file is written, so the agent fixes a problem at once instead of after a full build.
  */
-export function fileProblems(rel: string, text: string, formAction: string | null): string[] {
+export function fileProblems(rel: string, text: string, formAction: string | null, appSite = false): string[] {
   const problems: string[] = [];
   const ext = path.extname(rel).toLowerCase();
+  // The factory's own site script talks to the site's own API; only an exact copy is exempt.
+  if (appSite && isFactorySiteScript(rel, text)) return problems;
   if (ext === ".html") {
     const markup = stripScripts(text);
     for (const r of HTML_RULES) if (r.pattern.test(text)) problems.push(`${rel}: ${r.label}`);
     for (const r of SCRIPT_RULES) if (r.pattern.test(inlineScripts(text))) problems.push(`${rel}: ${r.label}`);
     if (/\son[a-z]+\s*=\s*["'][^"']*(?:fetch|location|cookie|eval)/i.test(markup)) problems.push(`${rel}: unsafe inline event handler`);
     problems.push(...externalStyleProblems(markup).map((p) => `${rel}: ${p}`));
-    problems.push(...formProblems(rel, markup, formAction));
+    problems.push(...formProblems(rel, markup, formAction, appSite));
     if (!/<meta[^>]+name=["']viewport["']/i.test(text)) problems.push(`${rel}: missing viewport meta (needed for phones)`);
   } else if (ext === ".js") {
     for (const r of SCRIPT_RULES) if (r.pattern.test(text)) problems.push(`${rel}: ${r.label}`);
@@ -307,7 +314,7 @@ export function fileProblems(rel: string, text: string, formAction: string | nul
   return problems;
 }
 
-export function checkCustomCode(distDir: string, formAction: string | null): CheckResult[] {
+export function checkCustomCode(distDir: string, formAction: string | null, appSite = false): CheckResult[] {
   const problems: string[] = [];
   const files = readdirSync(distDir, { recursive: true, withFileTypes: true })
     .filter((e) => e.isFile())
@@ -316,7 +323,7 @@ export function checkCustomCode(distDir: string, formAction: string | null): Che
     const rel = path.relative(distDir, abs).replaceAll("\\", "/");
     if (rel.startsWith(`${ASSETS_URL_DIR}/`)) continue;
     const text = readFileSync(abs, "utf8");
-    problems.push(...fileProblems(rel, text, formAction));
+    problems.push(...fileProblems(rel, text, formAction, appSite));
     if (rel.endsWith(".html")) problems.push(...brokenLinks(distDir, rel, stripScripts(text)));
   }
   if (!existsSync(path.join(distDir, "404.html"))) problems.push("404.html is missing");

@@ -24,6 +24,7 @@ const MIGRATIONS_LEDGER = "migrations.json";
 const BACKUPS_DIR = "db-backups";
 export const APP_ENTRY = "app/worker.js";
 export const MIGRATIONS_DIR = "app/migrations";
+export const WORKER_FIRST = ["/api/*", "/admin", "/admin/*", "/media/*"] as const;
 const PLACEHOLDER_DB_ID = "00000000-0000-0000-0000-000000000000";
 
 export type Target = "preview" | "production";
@@ -33,13 +34,16 @@ export type Runner = (command: string, args: readonly string[], options: RunOpti
 export interface ProductRecord {
   readonly product: ProductId;
   readonly secrets?: readonly string[];
+  /** Sent when the client set them (e.g. a notification webhook); a publish does not wait for them. */
+  readonly optionalSecrets?: readonly string[];
 }
 
-export function readProductRecord(paths: ClientPaths): ProductRecord {
+const names = (v: unknown): string[] => (Array.isArray(v) ? v.filter((s): s is string => typeof s === "string") : []);
+
+export function readProductRecord(paths: Pick<ClientPaths, "factoryDir">): ProductRecord {
   const raw = readJsonIfExists(path.join(paths.factoryDir, PRODUCT_FILE)) as Partial<ProductRecord> | undefined;
   const product = raw?.product && (PRODUCT_IDS as readonly string[]).includes(raw.product) ? raw.product : "showcase";
-  const secrets = Array.isArray(raw?.secrets) ? raw.secrets.filter((s): s is string => typeof s === "string") : [];
-  return { product, secrets };
+  return { product, secrets: names(raw?.secrets), optionalSecrets: names(raw?.optionalSecrets) };
 }
 
 /** Panel only: keeps the client's kind next to the approvals (business.json is not read by the deploy tool). */
@@ -51,6 +55,7 @@ export interface AppPlan {
   readonly database: boolean;
   readonly media: boolean;
   readonly secrets: readonly string[];
+  readonly optionalSecrets: readonly string[];
 }
 
 /** What an app needs, from the parts its kind is built from and the secrets its installed parts asked for. */
@@ -60,6 +65,7 @@ export function appPlanFor(module: ProductModule, record: ProductRecord): AppPla
     database: ["catalog", "cart", "calendar", "admin"].some((p) => parts.has(p as never)),
     media: ["catalog", "menu-qr"].some((p) => parts.has(p as never)),
     secrets: [...new Set(record.secrets ?? [])].sort(),
+    optionalSecrets: [...new Set(record.optionalSecrets ?? [])].sort(),
   };
 }
 
@@ -92,7 +98,8 @@ export function appWranglerConfig(opts: {
     name: opts.workerName,
     main: `./${APP_ENTRY}`,
     compatibility_date: opts.compatibilityDate,
-    assets: { directory: "./dist", binding: "ASSETS", not_found_handling: "404-page" },
+    // The Worker answers its own paths first, so no page file can ever shadow the API or the admin screen.
+    assets: { directory: "./dist", binding: "ASSETS", not_found_handling: "404-page", run_worker_first: [...WORKER_FIRST] },
     ...(opts.plan.database
       ? {
           d1_databases: [
@@ -270,8 +277,9 @@ export function assertSecrets(plan: AppPlan, values: Readonly<Record<string, str
 /** Sends the client's secrets to the Worker in one call, through stdin. */
 export async function pushSecrets(ctx: AppDeployContext, workerName: string, values: Readonly<Record<string, string>>): Promise<number> {
   assertSecrets(ctx.plan, values);
-  if (!ctx.plan.secrets.length) return 0;
-  const payload = Object.fromEntries(ctx.plan.secrets.map((n) => [n, values[n]!]));
+  const send = [...ctx.plan.secrets, ...ctx.plan.optionalSecrets.filter((n) => values[n])];
+  if (!send.length) return 0;
+  const payload = Object.fromEntries(send.map((n) => [n, values[n]!]));
   const res = await ctx.run(process.execPath, [ctx.wranglerJs, "secret", "bulk", "--name", workerName], {
     cwd: ctx.paths.root,
     timeoutMs: ctx.timeoutMs,
@@ -280,6 +288,6 @@ export async function pushSecrets(ctx: AppDeployContext, workerName: string, val
     input: JSON.stringify(payload),
   });
   if (res.code !== 0) throw new FactoryError(`wrangler secret bulk failed (${res.code}).`, "Check the Cloudflare account and try again.");
-  ctx.log(`${ctx.plan.secrets.length} gizli anahtar yüklendi.`);
-  return ctx.plan.secrets.length;
+  ctx.log(`${send.length} gizli anahtar yüklendi.`);
+  return send.length;
 }
