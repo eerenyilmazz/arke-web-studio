@@ -17,6 +17,16 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Uygulama siteleri için yayın modülü (1.26.0)
+
+E-ticaret, Randevu ve Restoran-Kafe "uygulama" sitesi olacak: sayfaların yanında çalışan bir Worker, kendi veritabanı (D1), görsel deposu (R2) ve gizli anahtarları. Bu sürüm onları yayınlayacak ortak altyapıyı ekler; tanıtım siteleri eskisi gibi yayınlanır (değişiklik yok).
+- **Sıra:** gizli anahtarlar eksik mi (eksikse hiçbir şeye dokunulmaz) → veritabanı ve depo (bir kez oluşturulur, kimlikleri `.factory/resources.json`) → veritabanı yedeği (`.factory/db-backups/`) → veritabanı değişiklikleri → gizli anahtarlar (komut satırında değil, stdin ile) → Worker yayını.
+- **Önizleme ve canlı ayrı:** her birinin kendi veritabanı ve deposu var; önizleme denemesi canlı veriye dokunmaz.
+- **Veri kaybettiren değişiklikler** (tablo/sütun silme, koşulsuz silme veya güncelleme) yedek alınsa bile ancak müşterinin kısa adı yazılarak onaylanırsa çalışır. Uygulanmış bir değişiklik dosyası düzenlenirse yayın durur (yeni dosya eklenmeli).
+- **Müşterinin gizli anahtarları** (ör. ödeme sağlayıcısı): panelde müşteri bazında, şifreli ve yalnız sizin okuyabildiğiniz dosyada; yalnız adları gösterilir; agent'a gitmez.
+- **Onaylar uygulama kodunu da kapsar:** `app/` (Worker ve veritabanı değişiklikleri) içerik özetine dahil; onaydan sonra değişirse onay yenilenir. Tanıtım sitelerinde `app/` olmadığı için özetleri değişmez.
+- Sitenin türü panel tarafından `.factory/product.json` dosyasına yazılır; yayın aracı türü oradan okur (agent değiştiremez).
+
 ## Web Stüdyosu temeli ve bireysel hesaplar (1.25.0)
 
 **Bireysel Cloudflare hesabı:** Panel herkes tarafından kullanılabilsin diye yayın hesabı kişiye ait.

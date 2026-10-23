@@ -170,3 +170,70 @@ export function resetAccountsForTest(): void {
   rmSync(storeFile(), { force: true });
   rmSync(keyFile(), { force: true });
 }
+
+// ---------------------------------------------------------------- the client's own secrets (app sites)
+
+/**
+ * Secrets that belong to one client's app site (payment provider keys, the admin screen's password hash…). Kept
+ * like the Cloudflare token: encrypted, readable only by this user, never sent to the agent, never shown back
+ * (only their names). They reach Cloudflare as Worker secrets at publish time, through stdin.
+ */
+export const SECRET_NAME_PATTERN = /^[A-Z][A-Z0-9_]{1,63}$/;
+const CLIENT_SLUG = /^[a-z0-9][a-z0-9-]{1,39}$/;
+const MAX_SECRET_CHARS = 4000;
+
+interface ClientSecretsFile {
+  secrets: Record<string, { value: Sealed; savedAt: string }>;
+}
+
+function clientFile(slug: string): string {
+  if (!CLIENT_SLUG.test(slug)) throw new Error("Geçersiz müşteri kısa adı.");
+  return path.join(dir(), "clients", `${slug}.json`);
+}
+
+function readClientFile(slug: string): ClientSecretsFile {
+  try {
+    const f = clientFile(slug);
+    return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as ClientSecretsFile) : { secrets: {} };
+  } catch {
+    return { secrets: {} };
+  }
+}
+
+export function saveClientSecret(slug: string, name: string, value: string): void {
+  if (accountsDisabled()) throw new Error("Gizli anahtarlar bu süreçte kullanılamaz.");
+  if (!SECRET_NAME_PATTERN.test(name)) throw new Error("Anahtar adı büyük harf, rakam ve alt çizgiden oluşmalı (ör. IYZICO_API_KEY).");
+  if (typeof value !== "string" || !value.trim() || value.length > MAX_SECRET_CHARS) throw new Error("Anahtar değeri boş ya da çok uzun.");
+  const k = key(true)!;
+  const f = readClientFile(slug);
+  f.secrets[name] = { value: seal(value.trim(), k), savedAt: new Date().toISOString() };
+  writeJson(clientFile(slug), f);
+  privateFile(clientFile(slug));
+}
+
+export function removeClientSecret(slug: string, name: string): void {
+  const f = readClientFile(slug);
+  delete f.secrets[name];
+  writeJson(clientFile(slug), f);
+  privateFile(clientFile(slug));
+}
+
+/** Names and dates only: what the panel may show. */
+export function clientSecretNames(slug: string): Array<{ name: string; savedAt: string }> {
+  return Object.entries(readClientFile(slug).secrets)
+    .map(([name, s]) => ({ name, savedAt: s.savedAt }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** The values, for the publish step only; empty in an agent process. */
+export function readClientSecrets(slug: string): Record<string, string> {
+  if (accountsDisabled()) return {};
+  const k = key(false);
+  if (!k) return {};
+  const out: Record<string, string> = {};
+  for (const [name, s] of Object.entries(readClientFile(slug).secrets)) {
+    const v = open(s.value, k);
+    if (v !== null) out[name] = v;
+  }
+  return out;
+}

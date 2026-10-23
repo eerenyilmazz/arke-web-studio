@@ -24,6 +24,8 @@ import { serialiseJob } from "../jobs.js";
 import { inlineMotionKit, readBrandBoard, readBrandOptions, SIGNATURE_FILE } from "../../lib/custom-site.js";
 import { approvePlan, planState, previousPlans, readPlan } from "../../lib/design-plan.js";
 import os from "node:os";
+import { readProductRecord, writeProductRecord } from "../../deploy/app.js";
+import { clientSecretNames, removeClientSecret, saveClientSecret } from "../../lib/accounts.js";
 import { PRODUCT_IDS, PRODUCTS, type ProductId } from "../../products/registry.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, UPLOAD_LIMIT, safeFileName, BUSY, asHttp, IMAGE_TYPES, assetFiles, inboxFiles } from "./common.js";
 
@@ -55,11 +57,45 @@ export const clientRoutes: Route[] = [
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/versions$`), handler: versions },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/concepts$`), handler: concepts },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/design-plan$`), handler: designPlan },
+  // The client's own secrets for app sites: names only ever leave the panel process.
+  { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/secrets$`), handler: listSecrets },
+  { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/secrets$`), handler: putSecret },
+  { method: "DELETE", pattern: new RegExp(`^/api/clients/${SLUG}/secrets/([A-Z][A-Z0-9_]{1,63})$`), handler: deleteSecret },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/design-plan/approve$`), handler: approveDesignPlan },
   { method: "GET", pattern: new RegExp(`^/api/clients/${SLUG}/brand$`), handler: brandBoard },
   { method: "PUT", pattern: new RegExp(`^/api/clients/${SLUG}/business$`), handler: saveBusiness },
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/versions/restore$`), handler: restore },
 ];
+
+function secretsView(deps: ApiDeps, s: string) {
+  return { secrets: clientSecretNames(s), needed: readProductRecord(clientPaths(deps.factory.clientsRoot, s)).secrets ?? [] };
+}
+
+function listSecrets(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  sendJson(res, 200, secretsView(deps, s));
+}
+
+async function putSecret(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  const body = await readJsonBody(req, JSON_LIMIT);
+  try {
+    saveClientSecret(s, str(body, "name", { max: 64 })!, str(body, "value", { max: 4000 })!);
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    throw new HttpError(400, (error as Error).message);
+  }
+  sendJson(res, 200, secretsView(deps, s));
+}
+
+function deleteSecret(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug, name]: string[]): void {
+  const s = assertSlug(slug!);
+  tools.getClientStatus(deps.factory, { slug: s });
+  removeClientSecret(s, name!);
+  sendJson(res, 200, secretsView(deps, s));
+}
 
 /** The design plan for Eren to read: state, the plan, how many earlier ones, and the signature preview if written. */
 function designPlan(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
@@ -158,6 +194,9 @@ async function saveBusiness(deps: ApiDeps, req: IncomingMessage, res: ServerResp
     throw new HttpError(400, "Bu site türü henüz hazır değil.");
   try {
     const saved = writeBusiness(deps.factory, s, body);
+    // The deploy tool reads the kind from .factory/ (the agent cannot change it); installed parts' secret names stay.
+    const cp = clientPaths(deps.factory.clientsRoot, s);
+    writeProductRecord(cp, { ...readProductRecord(cp), product: saved.product ?? "showcase" });
     addSoldLanguage(deps, s, saved.addons);
     sendJson(res, 200, saved);
   } catch (error) {

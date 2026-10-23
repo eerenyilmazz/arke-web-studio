@@ -34,7 +34,15 @@ export function writeText(file: string, text: string): void {
 export function contentHash(clientRoot: string): string {
   const hash = createHash("sha256");
   // site/ holds the code of "custom" sites written by the agent; it is an input like config and content.
-  const files = ["site.config.json", ...listFiles(clientRoot, "content"), ...listFiles(clientRoot, "assets"), ...listFiles(clientRoot, "site")];
+  // app/ holds an app site's Worker and database migrations: approvals cover them too (absent on showcase sites,
+  // so their hash is unchanged).
+  const files = [
+    "site.config.json",
+    ...listFiles(clientRoot, "content"),
+    ...listFiles(clientRoot, "assets"),
+    ...listFiles(clientRoot, "site"),
+    ...listFiles(clientRoot, "app"),
+  ];
   for (const rel of files.sort()) {
     const abs = path.join(clientRoot, rel);
     if (!existsSync(abs)) continue;

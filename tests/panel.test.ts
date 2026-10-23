@@ -1048,6 +1048,36 @@ describe("the person's Cloudflare account in the panel", () => {
     }
   });
 
+  it("keeps a client's secrets by name only and records the site kind where the deploy tool reads it", async () => {
+    const dir = process.env.SF_ACCOUNTS_DIR;
+    process.env.SF_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-sec-panel-"));
+    try {
+      const { base, auth, factory } = await start();
+      const json = { ...auth, "Content-Type": "application/json" };
+      await fetch(`${base}/api/clients`, {
+        method: "POST",
+        headers: json,
+        body: JSON.stringify({ slug: "sec-co", businessName: "Sec Co", industry: "shop", hostingModel: "managed" }),
+      });
+      const value = "pk_live_never_shown_again_123456";
+      expect(
+        (await fetch(`${base}/api/clients/sec-co/secrets`, { method: "PUT", headers: json, body: JSON.stringify({ name: "lower_case", value }) })).status,
+      ).toBe(400);
+      const put = await fetch(`${base}/api/clients/sec-co/secrets`, { method: "PUT", headers: json, body: JSON.stringify({ name: "IYZICO_API_KEY", value }) });
+      const text = await put.text();
+      expect(put.status).toBe(200);
+      expect(text).not.toContain(value);
+      expect((JSON.parse(text) as { secrets: Array<{ name: string }> }).secrets.map((x) => x.name)).toEqual(["IYZICO_API_KEY"]);
+      const del = await fetch(`${base}/api/clients/sec-co/secrets/IYZICO_API_KEY`, { method: "DELETE", headers: auth });
+      expect(((await del.json()) as { secrets: unknown[] }).secrets).toEqual([]);
+      await fetch(`${base}/api/clients/sec-co/business`, { method: "PUT", headers: json, body: JSON.stringify({ product: "showcase" }) });
+      const record = JSON.parse(readFileSync(path.join(clientPaths(factory.clientsRoot, "sec-co").factoryDir, "product.json"), "utf8"));
+      expect(record.product).toBe("showcase");
+    } finally {
+      process.env.SF_ACCOUNTS_DIR = dir;
+    }
+  });
+
   it("lists the site types and refuses one that is not ready", async () => {
     const { base, auth } = await start();
     const json = { ...auth, "Content-Type": "application/json" };
