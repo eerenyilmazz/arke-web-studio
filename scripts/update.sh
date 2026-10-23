@@ -49,10 +49,8 @@ fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 unzip -q "$ZIP" -d "$TMP"
-# Releases unpack to arke-web-studio/ (site-factory/ before 1.30.0, the old name).
 NEW="$TMP/arke-web-studio"
-[[ -d "$NEW" ]] || NEW="$TMP/site-factory"
-[[ -f "$NEW/package.json" ]] && grep -qE '"name": "(arke-web-studio|site-factory)"' "$NEW/package.json" || { echo "This zip is not an Arke Web Studio release."; exit 2; }
+[[ -f "$NEW/package.json" ]] && grep -q '"name": "arke-web-studio"' "$NEW/package.json" || { echo "This zip is not an Arke Web Studio release."; exit 2; }
 
 FROM="$(version "$TARGET")"
 TO="$(version "$NEW")"

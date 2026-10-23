@@ -554,7 +554,7 @@ describe("backups", () => {
     expect((await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ backupDir: factory.clientsRoot }) })).status).toBe(400);
     const os = await import("node:os");
     const { mkdtempSync } = await import("node:fs");
-    const dir = mkdtempSync(path.join(os.tmpdir(), "sf-backup-"));
+    const dir = mkdtempSync(path.join(os.tmpdir(), "arke-backup-"));
     await fetch(`${base}/api/clients`, {
       method: "POST",
       headers: json,
@@ -1004,7 +1004,7 @@ describe("design plan in the panel", () => {
 describe("the person's Cloudflare account in the panel", () => {
   it("saves only what Cloudflare accepts, never sends the token back, and is asked for at publish time", async () => {
     const dir = process.env.ARKE_ACCOUNTS_DIR;
-    process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-acc-panel-"));
+    process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "arke-acc-panel-"));
     const keepEnv = { t: process.env.ARKE_CF_MANAGED_API_TOKEN, a: process.env.ARKE_CF_MANAGED_ACCOUNT_ID };
     delete process.env.ARKE_CF_MANAGED_API_TOKEN;
     delete process.env.ARKE_CF_MANAGED_ACCOUNT_ID;
@@ -1053,7 +1053,7 @@ describe("the person's Cloudflare account in the panel", () => {
 
   it("keeps a client's secrets by name only and records the site kind where the deploy tool reads it", async () => {
     const dir = process.env.ARKE_ACCOUNTS_DIR;
-    process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-sec-panel-"));
+    process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "arke-sec-panel-"));
     try {
       const { base, auth, factory } = await start();
       const json = { ...auth, "Content-Type": "application/json" };
@@ -1083,7 +1083,7 @@ describe("the person's Cloudflare account in the panel", () => {
 
   it("installs the ready-made parts for an app site and keeps its admin password as a hash only", async () => {
     const dir = process.env.ARKE_ACCOUNTS_DIR;
-    process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-parts-panel-"));
+    process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "arke-parts-panel-"));
     try {
       const { base, auth, factory } = await start();
       const json = { ...auth, "Content-Type": "application/json" };
@@ -1119,7 +1119,7 @@ describe("the person's Cloudflare account in the panel", () => {
   it("connects a team repository only with a profile name, syncs, and shows the update state", async () => {
     const { base, auth } = await start();
     const json = { ...auth, "Content-Type": "application/json" };
-    const bare = mkdtempSync(path.join(os.tmpdir(), "sf-team-panel-"));
+    const bare = mkdtempSync(path.join(os.tmpdir(), "arke-team-panel-"));
     execFileSync("git", ["init", "--quiet", "--bare", "-b", "main"], { cwd: bare });
     const put = (remote: string) => fetch(`${base}/api/team`, { method: "PUT", headers: json, body: JSON.stringify({ remote }) });
     expect((await put("--upload-pack=x")).status).toBe(400);

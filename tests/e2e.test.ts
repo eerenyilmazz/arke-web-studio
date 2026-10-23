@@ -111,7 +111,7 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     expect(await plan.locator("iframe.sig-frame").count()).toBe(1); // the motion plays live in the card
     // The kit is put inline in the sandboxed preview, so the sequence really runs and ends composed.
     const heading = page.frameLocator("iframe.sig-frame").locator("h1");
-    expect(await heading.evaluate(() => typeof (window as unknown as { SFMotion?: unknown }).SFMotion)).toBe("object");
+    expect(await heading.evaluate(() => typeof (window as unknown as { ArkeMotion?: unknown }).ArkeMotion)).toBe("object");
     // The sequence ran on the heading (its animation exists); an off-screen frame may be throttled, so no end-state timing here.
     await expect.poll(() => heading.evaluate((el) => el.getAnimations().length), { timeout: 10_000 }).toBe(1);
     await idle(base);

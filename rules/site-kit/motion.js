@@ -4,12 +4,12 @@
  * Tested parts to compose the signature motion and the supporting animations from, instead of writing them anew.
  *
  * Call it from your own script after the kit has loaded:
- *   document.addEventListener("DOMContentLoaded", function () { SFMotion.sequence([...]); });
+ *   document.addEventListener("DOMContentLoaded", function () { ArkeMotion.sequence([...]); });
  * brand/signature.html may load this file too (the only script file it may use; everything else inline).
  *
- * SFMotion.sequence(steps, root?) plays a storyboard with the Web Animations API, beat by beat like the design plan:
- *   SFMotion.sequence([
- *     { target: ".mark-base", keyframes: [{ transform: "scaleY(0)" }, { transform: "none" }], at: 0, duration: 500, easing: SFMotion.ease.out },
+ * ArkeMotion.sequence(steps, root?) plays a storyboard with the Web Animations API, beat by beat like the design plan:
+ *   ArkeMotion.sequence([
+ *     { target: ".mark-base", keyframes: [{ transform: "scaleY(0)" }, { transform: "none" }], at: 0, duration: 500, easing: ArkeMotion.ease.out },
  *     { target: ".mark-line", draw: true, at: 300, duration: 700 },
  *     { target: ".headline .word", keyframes: [{ opacity: 0, transform: "translateY(0.6em)" }, { opacity: 1, transform: "none" }], at: 700, duration: 450, stagger: 60 },
  *   ]);
@@ -23,7 +23,7 @@
  *   data-scene: sets --p from 0 to 1 while the element crosses the screen; use it in CSS, e.g.
  *               transform: translateY(calc((1 - var(--p)) * 40px)) rotate(calc(var(--p) * 8deg));
  *   data-count="1250": counts up to the number (only for real figures)  [data-duration]
- * Easing presets: SFMotion.ease.out, .inOut, .spring (also as CSS variables --ease-out, --ease-in-out, --ease-spring in base.css).
+ * Easing presets: ArkeMotion.ease.out, .inOut, .spring (also as CSS variables --ease-out, --ease-in-out, --ease-spring in base.css).
  */
 (function () {
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -96,10 +96,10 @@
         return;
       }
       var span = document.createElement("span");
-      span.className = "sf-split";
+      span.className = "arke-split";
       span.setAttribute("aria-hidden", "true");
       span.textContent = p;
-      span.style.setProperty("--sf-delay", n * gap + "ms");
+      span.style.setProperty("--arke-delay", n * gap + "ms");
       n++;
       el.appendChild(span);
     });
@@ -135,11 +135,11 @@
     document.querySelectorAll("[data-stagger]:not([data-split])").forEach(function (parent) {
       var gap = Number(parent.getAttribute("data-stagger")) || 80;
       Array.prototype.forEach.call(parent.querySelectorAll(":scope > [data-reveal]"), function (child, i) {
-        if (!child.hasAttribute("data-delay")) child.style.setProperty("--sf-delay", i * gap + "ms");
+        if (!child.hasAttribute("data-delay")) child.style.setProperty("--arke-delay", i * gap + "ms");
       });
     });
     document.querySelectorAll("[data-reveal][data-delay]").forEach(function (el) {
-      el.style.setProperty("--sf-delay", (Number(el.getAttribute("data-delay")) || 0) + "ms");
+      el.style.setProperty("--arke-delay", (Number(el.getAttribute("data-delay")) || 0) + "ms");
     });
     var watched = document.querySelectorAll("[data-reveal], [data-draw], [data-split], [data-count]");
     if (reduce || !("IntersectionObserver" in window)) {
@@ -187,7 +187,7 @@
     }
   }
 
-  window.SFMotion = { sequence: sequence, ease: ease, reduced: reduce };
+  window.ArkeMotion = { sequence: sequence, ease: ease, reduced: reduce };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setup);
   else setup();
 })();

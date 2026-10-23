@@ -11,7 +11,7 @@ const git = (cwd: string, ...args: string[]) =>
 const tmp = (p: string) => mkdtempSync(path.join(os.tmpdir(), p));
 
 function bareRepo(): { dir: string; url: string } {
-  const dir = tmp("sf-team-remote-");
+  const dir = tmp("arke-team-remote-");
   git(dir, "init", "--quiet", "--bare", "-b", "main");
   return { dir, url: `file://${dir}` };
 }
@@ -42,8 +42,8 @@ describe("team sharing through one Git repository", () => {
 
   it("shares a client's inputs, never its approvals, and brings teammates' work and new clients", async () => {
     const remote = bareRepo();
-    const mine = tmp("sf-team-a-");
-    const yours = tmp("sf-team-b-");
+    const mine = tmp("arke-team-a-");
+    const yours = tmp("arke-team-b-");
     client(mine, "atlas-dis", "Atlas");
 
     const first = await syncTeam(mine, remote.url, ME);
@@ -72,8 +72,8 @@ describe("team sharing through one Git repository", () => {
 
   it("stops on a client two people changed, without losing either change, and skips a busy client", async () => {
     const remote = bareRepo();
-    const mine = tmp("sf-team-c-");
-    const yours = tmp("sf-team-d-");
+    const mine = tmp("arke-team-c-");
+    const yours = tmp("arke-team-d-");
     client(mine, "mavi-kapi", "Mavi");
     client(mine, "busy-co", "Busy");
     await syncTeam(mine, remote.url, ME);
@@ -93,12 +93,12 @@ describe("team sharing through one Git repository", () => {
 describe("updating Arke Web Studio from the panel", () => {
   /** An "upstream" repository with a newer version, and an install cloned from it one version behind. */
   function installBehind() {
-    const upstream = tmp("sf-up-");
+    const upstream = tmp("arke-up-");
     git(upstream, "init", "--quiet", "-b", "main");
     writeFileSync(path.join(upstream, "package.json"), JSON.stringify({ name: "arke-web-studio", version: "1.0.0" }));
     git(upstream, "add", "-A");
     git(upstream, "commit", "--quiet", "-m", "1.0.0");
-    const install = path.join(tmp("sf-inst-"), "arke-web-studio");
+    const install = path.join(tmp("arke-inst-"), "arke-web-studio");
     git(path.dirname(install), "clone", "--quiet", upstream, install);
     writeFileSync(path.join(upstream, "package.json"), JSON.stringify({ name: "arke-web-studio", version: "1.1.0" }));
     git(upstream, "commit", "--quiet", "-am", "1.1.0");
@@ -106,7 +106,7 @@ describe("updating Arke Web Studio from the panel", () => {
   }
 
   it("tells a zip install to use the command, and a git install what is new", async () => {
-    const zipInstall = tmp("sf-zip-");
+    const zipInstall = tmp("arke-zip-");
     writeFileSync(path.join(zipInstall, "package.json"), JSON.stringify({ version: "1.0.0" }));
     expect((await checkForUpdate(zipInstall)).mode).toBe("zip");
     const { install } = installBehind();

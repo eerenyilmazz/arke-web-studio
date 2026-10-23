@@ -66,17 +66,17 @@ body:has(.float-btn) { padding-bottom: 5.5rem; }
 /* Motion kit (js/motion.js): start states, hidden only while scripts run and motion is allowed. A safety
    animation shows anything the script has not revealed within 3 s, so content never stays hidden. */
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  [data-reveal]:not(.is-in), [data-split]:not(.is-in) .sf-split { opacity: 0; animation: sf-failsafe 0s 3s forwards; }
-  [data-reveal="up"]:not(.is-in), [data-split]:not(.is-in) .sf-split { transform: translateY(1.2rem); }
+  [data-reveal]:not(.is-in), [data-split]:not(.is-in) .arke-split { opacity: 0; animation: arke-failsafe 0s 3s forwards; }
+  [data-reveal="up"]:not(.is-in), [data-split]:not(.is-in) .arke-split { transform: translateY(1.2rem); }
   [data-reveal="down"]:not(.is-in) { transform: translateY(-1.2rem); }
   [data-reveal="left"]:not(.is-in) { transform: translateX(1.6rem); }
   [data-reveal="right"]:not(.is-in) { transform: translateX(-1.6rem); }
   [data-reveal="scale"]:not(.is-in) { transform: scale(.94); }
   [data-reveal="clip"]:not(.is-in) { clip-path: inset(0 100% 0 0); opacity: 1; }
 }
-[data-reveal], .sf-split { transition: opacity .7s var(--ease-out), transform .8s var(--ease-out), clip-path .9s var(--ease-in-out); transition-delay: var(--sf-delay, 0ms); }
-.sf-split { display: inline-block; }
-@keyframes sf-failsafe { to { opacity: 1; transform: none; clip-path: none; } }
+[data-reveal], .arke-split { transition: opacity .7s var(--ease-out), transform .8s var(--ease-out), clip-path .9s var(--ease-in-out); transition-delay: var(--arke-delay, 0ms); }
+.arke-split { display: inline-block; }
+@keyframes arke-failsafe { to { opacity: 1; transform: none; clip-path: none; } }
 
 /* Motion safety: everything calms down for visitors who ask for less motion. */
 @media (prefers-reduced-motion: reduce) {

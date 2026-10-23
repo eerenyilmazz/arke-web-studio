@@ -107,7 +107,7 @@ export function pageFiles(page: string): (rel: string) => boolean {
  */
 /** One line for app sites; the details are in rules/parts.md, read only when the job places a part. */
 const PARTS_NOTE =
-  "This is an app site with the factory's ready-made parts (catalogue, enquiry inbox, admin screen): before placing a catalogue or a form, read rules/parts.md; never write app/ or js/sf-parts.js.";
+  "This is an app site with the factory's ready-made parts (catalogue, enquiry inbox, admin screen): before placing a catalogue or a form, read rules/parts.md; never write app/ or js/arke-parts.js.";
 
 export function launchAgent(deps: ApiDeps, slug: string, kind: string, title: string, prompt: string, request: string) {
   const blocked = monthlyBlock(deps.factory);

@@ -70,7 +70,7 @@ describe("backup check and restore", () => {
   it("proves a backup opens, and restores only into a new folder", async () => {
     const f = tempFactory();
     await tools.createClient(f, { slug: "keep-me", businessName: "Keep", industry: "bakery", hostingModel: "managed" });
-    const dir = mkdtempSync(path.join(os.tmpdir(), "sf-backup-"));
+    const dir = mkdtempSync(path.join(os.tmpdir(), "arke-backup-"));
     writeSettings(f, { backupDir: dir });
     const { file } = await backupNow(f);
 
@@ -79,7 +79,7 @@ describe("backup check and restore", () => {
     expect(check.files).toBeGreaterThan(0);
     await expect(verifyBackup(f, "../../etc/passwd")).rejects.toThrow(/Geçersiz yedek adı/);
 
-    const target = path.join(mkdtempSync(path.join(os.tmpdir(), "sf-restore-")), "restored");
+    const target = path.join(mkdtempSync(path.join(os.tmpdir(), "arke-restore-")), "restored");
     const restored = await restoreBackup(f, path.join(dir, file), target);
     expect(restored.ok).toBe(true);
     expect(existsSync(path.join(target, path.basename(f.clientsRoot), "keep-me", "site.config.json"))).toBe(true);
@@ -90,9 +90,9 @@ describe("backup check and restore", () => {
 
   it("reports a broken backup instead of claiming it is fine", async () => {
     const f = tempFactory();
-    const dir = mkdtempSync(path.join(os.tmpdir(), "sf-backup-"));
+    const dir = mkdtempSync(path.join(os.tmpdir(), "arke-backup-"));
     writeSettings(f, { backupDir: dir });
-    const src = mkdtempSync(path.join(os.tmpdir(), "sf-bad-"));
+    const src = mkdtempSync(path.join(os.tmpdir(), "arke-bad-"));
     const client = path.join(src, path.basename(f.clientsRoot), "bad-co");
     mkdirSync(client, { recursive: true });
     writeFileSync(path.join(client, "site.config.json"), "{ not json");

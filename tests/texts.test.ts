@@ -64,7 +64,7 @@ describe("search and AI visibility check", () => {
     const os = await import("node:os");
     const path = await import("node:path");
     const { checkSeo } = await import("../src/lib/seo.js");
-    const dir = mkdtempSync(path.join(os.tmpdir(), "sf-seo-"));
+    const dir = mkdtempSync(path.join(os.tmpdir(), "arke-seo-"));
     const page = (title: string, extra = "") =>
       `<!doctype html><html lang="tr"><head><title>${title}</title><meta property="og:title" content="x"><meta property="og:description" content="y">${extra}</head><body></body></html>`;
     writeFileSync(path.join(dir, "index.html"), page("Mono"));

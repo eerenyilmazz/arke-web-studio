@@ -44,7 +44,7 @@ Only the pages listed in `config.pages`. Every page:
 
 ### Factory parts (do not write your own)
 
-`css/base.css`, `js/kit.js` and `js/motion.js` (the motion kit: `SFMotion.sequence`, `data-reveal`, `data-draw`,
+`css/base.css`, `js/kit.js` and `js/motion.js` (the motion kit: `ArkeMotion.sequence`, `data-reveal`, `data-draw`,
 `data-split`, `data-scene`, `data-count`; usage at the top of the file, readable with `read_site_file js/motion.js`)
 are copied into every site by the factory and updated by it; never edit them. Every
 page loads `<script src="/js/kit.js" defer></script>` and, in `<head>` before the stylesheets, this one line so the

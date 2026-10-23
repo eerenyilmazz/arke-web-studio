@@ -16,9 +16,6 @@ FACTORY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASE_DIR="$(dirname "$FACTORY_DIR")"
 CLIENTS_DIR="$BASE_DIR/arke-clients"
 INBOX_DIR="$BASE_DIR/arke-inbox"
-# Installs from before the rename keep their folders (sf-clients, sf-inbox) until scripts/migrate-name.sh moves them.
-[[ ! -d "$CLIENTS_DIR" && -d "$BASE_DIR/sf-clients" ]] && CLIENTS_DIR="$BASE_DIR/sf-clients"
-[[ ! -d "$INBOX_DIR" && -d "$BASE_DIR/sf-inbox" ]] && INBOX_DIR="$BASE_DIR/sf-inbox"
 MIN_NODE_MAJOR=22
 MIN_NODE_MINOR=12   # Astro 7 (template) needs Node >= 22.12
 

@@ -15,7 +15,7 @@ const KIT = path.join(FACTORY_ROOT, "rules", "site-kit");
 
 /** Writes pages into a temporary dist: { "about/index.html": "<html>…" }. */
 function dist(pages: Record<string, string>): string {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "sf-kit-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "arke-kit-"));
   for (const [rel, html] of Object.entries(pages)) {
     mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
     writeFileSync(path.join(dir, rel), html);
@@ -88,7 +88,7 @@ describe("factory parts", () => {
   });
 
   it("copies kit.js and updates the factory's base.css, but never a hand-written one", () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), "sf-kitcopy-"));
+    const root = mkdtempSync(path.join(os.tmpdir(), "arke-kitcopy-"));
     const paths = clientPaths(root, "kit-co");
     const base = path.join(paths.root, "site", "css", "base.css");
     expect(ensureBaseKit(paths, path.join(KIT, "base.css"))).toBe(true);

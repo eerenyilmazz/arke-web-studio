@@ -10,7 +10,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
-    env: { ARKE_SCREENSHOTS: "off", ARKE_ACCOUNTS_DIR: path.join(os.tmpdir(), `sf-accounts-test-${process.pid}`) },
+    env: { ARKE_SCREENSHOTS: "off", ARKE_ACCOUNTS_DIR: path.join(os.tmpdir(), `arke-accounts-test-${process.pid}`) },
     testTimeout: 20_000,
   },
 });

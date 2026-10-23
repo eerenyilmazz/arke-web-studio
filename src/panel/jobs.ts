@@ -230,8 +230,8 @@ function serverEnvFrom(parent: NodeJS.ProcessEnv): Record<string, string> {
  */
 export function agentEnv(parent: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
-  // Both prefixes: SF_ is the name from before the rename and would stand in for ARKE_ in the child (src/config.ts).
-  const secret = (k: string) => /^(ARKE|SF)_CF_/.test(k) || k === "ARKE_ACCOUNTS_DIR" || k === "SF_ACCOUNTS_DIR";
+  // The factory's Cloudflare variables and wrangler's own (CLOUDFLARE_API_TOKEN…), should either be set.
+  const secret = (k: string) => k.startsWith("ARKE_CF_") || k.startsWith("CLOUDFLARE_") || k === "ARKE_ACCOUNTS_DIR";
   for (const [k, v] of Object.entries(parent)) if (!secret(k)) env[k] = v;
   env.ARKE_NO_ACCOUNTS = "1";
   return env;

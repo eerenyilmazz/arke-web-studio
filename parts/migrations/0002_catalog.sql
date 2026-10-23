@@ -1,4 +1,4 @@
--- Site Factory ready-made part: catalogue (products, services, menu items). Prices are whole minor units
+-- Arke Web Studio ready-made part: catalogue (products, services, menu items). Prices are whole minor units
 -- (kuruş, cents). Factory-owned; never edited once applied.
 CREATE TABLE IF NOT EXISTS catalog_categories (
   id INTEGER PRIMARY KEY,

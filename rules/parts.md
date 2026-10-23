@@ -4,21 +4,21 @@ App sites run the factory's tested code. You design and place the parts; you nev
 
 ## What you must not do
 
-- Never write or edit anything under `app/`, `js/sf-parts.js`, or a page at `admin/`, `api/` or `media/`. The factory installs and replaces these files. The Worker answers `/admin`, `/api/*` and `/media/*` before any page.
+- Never write or edit anything under `app/`, `js/arke-parts.js`, or a page at `admin/`, `api/` or `media/`. The factory installs and replaces these files. The Worker answers `/admin`, `/api/*` and `/media/*` before any page.
 - Never invent catalogue entries as page text. Products, services and menu items live in the client's admin screen; the page shows whatever is there.
 - No payment, cart or booking code. Those parts arrive as factory parts in later versions.
 
 ## Catalogue (products, services, menu)
 
-Load the script once per page that uses a part: `<script src="/js/sf-parts.js" defer></script>`.
+Load the script once per page that uses a part: `<script src="/js/arke-parts.js" defer></script>`.
 
 ```html
-<section data-sf-catalog data-category="tatlilar" data-limit="6">
+<section data-arke-catalog data-category="tatlilar" data-limit="6">
   <div class="filters">                         <!-- optional -->
-    <button type="button" data-sf-filter="">Tümü</button>
-    <button type="button" data-sf-filter="tatlilar">Tatlılar</button>
+    <button type="button" data-arke-filter="">Tümü</button>
+    <button type="button" data-arke-filter="tatlilar">Tatlılar</button>
   </div>
-  <template data-sf-item data-list-class="menu-grid">
+  <template data-arke-item data-list-class="menu-grid">
     <article class="menu-card">
       <img data-field="image" alt="">
       <h3 data-field="name"></h3>
@@ -26,26 +26,26 @@ Load the script once per page that uses a part: `<script src="/js/sf-parts.js" d
       <span data-field="price"></span>  <span data-field="duration"></span>  <small data-field="category"></small>
     </article>
   </template>
-  <p data-sf-empty hidden>Menü yakında burada.</p>
+  <p data-arke-empty hidden>Menü yakında burada.</p>
 </section>
 ```
 
 - You design the `<template>` freely. Fields: `name`, `description`, `price` (formatted for the page language), `image`, `category`, `duration` (services, in minutes). An empty field hides itself; an item without an image drops its `<img>`.
 - The rendered items go into one wrapper `<div>` after the template. `data-list-class` sets that wrapper's class, so it is your grid.
 - `data-category` (a category slug) and `data-limit` are optional. Filter buttons get `aria-pressed`; style `[aria-pressed="true"]`.
-- Always write the empty state (`data-sf-empty`) in the page language. It also shows when the catalogue cannot load.
+- Always write the empty state (`data-arke-empty`) in the page language. It also shows when the catalogue cannot load.
 - Style the loading moment with CSS, e.g. a min-height on the wrapper. No skeleton scripts.
 
 ## Contact and enquiry forms (inbox)
 
 ```html
-<form data-sf-inquiry data-sent="Teşekkürler, size döneceğiz." data-error="Gönderilemedi, lütfen arayın.">
+<form data-arke-inquiry data-sent="Teşekkürler, size döneceğiz." data-error="Gönderilemedi, lütfen arayın.">
   <label>Adınız <input name="name" required maxlength="120" autocomplete="name"></label>
   <label>Telefon veya e-posta <input name="contact" required maxlength="160"></label>
   <label>Konu <input name="subject" maxlength="160"></label>            <!-- optional -->
   <label>Mesajınız <textarea name="message" maxlength="4000"></textarea></label>
   <button type="submit">Gönder</button>
-  <p data-sf-status role="status"></p>
+  <p data-arke-status role="status"></p>
 </form>
 ```
 

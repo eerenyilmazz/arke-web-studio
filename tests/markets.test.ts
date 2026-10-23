@@ -10,7 +10,7 @@ import * as tools from "../src/tools.js";
 import { tempFactory } from "./helpers.js";
 
 function dist(pages: Record<string, string>, files: Record<string, Buffer> = {}): string {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "sf-market-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "arke-market-"));
   for (const [rel, html] of Object.entries({ ...pages })) {
     mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
     writeFileSync(path.join(dir, rel), html);
@@ -93,7 +93,7 @@ describe("market-specific quality notes", () => {
     expect((await legal("GB"))?.detail).toMatch(/UK limited companies/);
     expect((await legal("IE"))?.detail).toMatch(/CRO/);
 
-    const dist = mkdtempSync(pathMod.join(os.tmpdir(), "sf-dist-"));
+    const dist = mkdtempSync(pathMod.join(os.tmpdir(), "arke-dist-"));
     const page = (title: string, body: string) =>
       `<!doctype html><html lang="tr"><head><title>${title}</title><meta name="description" content="x"></head><body>${body}</body></html>`;
     writeFileSync(pathMod.join(dist, "index.html"), page("Gul Kafe", "Gul Kafe"));
@@ -118,7 +118,7 @@ describe("design and language rules (1.21.0)", () => {
     expect(rules).toMatch(/No minimum number of sections/);
     expect(rules).toMatch(/never write a `<locale>\/` page in a design job/);
 
-    const dist = mkdtempSync(pathMod.join(os.tmpdir(), "sf-depth-"));
+    const dist = mkdtempSync(pathMod.join(os.tmpdir(), "arke-depth-"));
     writeFileSync(
       pathMod.join(dist, "index.html"),
       '<main><section class="hero"><svg class="sig-x"></svg><img src="/brand/logo.svg"></section><section><svg></svg></section></main>',

@@ -106,7 +106,7 @@ describe("ready-made parts: the app Worker", () => {
   it("refuses admin routes without a valid session, and changes that do not come from the site", async () => {
     const { call, signIn } = setup();
     expect((await call("/api/admin/catalog")).status).toBe(401);
-    expect((await call("/api/admin/catalog", { headers: { Cookie: "__Host-sf_admin=9999999999.forged" } })).status).toBe(401);
+    expect((await call("/api/admin/catalog", { headers: { Cookie: "__Host-arke_admin=9999999999.forged" } })).status).toBe(401);
     const cookie = await signIn();
     expect((await call("/api/admin/catalog", { headers: { Cookie: cookie } })).status).toBe(200);
     const noOrigin = await call("/api/admin/catalog/items", { method: "POST", body: JSON.stringify({ name: "X" }), headers: { Cookie: cookie } });
@@ -226,7 +226,7 @@ describe("ready-made parts: the app Worker", () => {
 
 describe("ready-made parts: installing into a client", () => {
   const client = () => {
-    const root = mkdtempSync(path.join(os.tmpdir(), "sf-parts-"));
+    const root = mkdtempSync(path.join(os.tmpdir(), "arke-parts-"));
     mkdirSync(path.join(root, ".factory"), { recursive: true });
     return { root, factoryDir: path.join(root, ".factory") } as never as Parameters<typeof installParts>[0];
   };
@@ -239,7 +239,7 @@ describe("ready-made parts: installing into a client", () => {
     const r = installParts(shop, PRODUCTS.booking);
     expect(r.parts).toEqual(["admin", "catalog", "notifications"]);
     expect(r.written).toContain("app/worker.js");
-    expect(r.written).toContain("site/js/sf-parts.js");
+    expect(r.written).toContain("site/js/arke-parts.js");
     const worker = readFileSync(path.join(shop.root, "app", "worker.js"), "utf8");
     expect(worker).toContain('import catalog from "./parts/catalog.js"');
     expect(worker).toContain("parts: [catalog, notifications]");
@@ -266,16 +266,16 @@ describe("ready-made parts: installing into a client", () => {
   });
 
   it("lets only the exact factory site script make requests, and inbox forms only on app sites", () => {
-    const script = readFileSync(path.join(PARTS_DIR, "site", "sf-parts.js"), "utf8");
+    const script = readFileSync(path.join(PARTS_DIR, "site", "arke-parts.js"), "utf8");
     expect(isFactorySiteScript(SITE_PARTS_JS, script)).toBe(true);
     expect(fileProblems(SITE_PARTS_JS, script, null, true)).toEqual([]);
     expect(fileProblems(SITE_PARTS_JS, script, null, false).join()).toContain("network request");
     expect(fileProblems(SITE_PARTS_JS, `${script}\nfetch("https://evil.example")`, null, true).join()).toContain("network request");
     expect(fileProblems("js/other.js", script, null, true).join()).toContain("network request");
     const page = (form: string) => `<!doctype html><meta name="viewport" content="width=device-width">${form}`;
-    expect(fileProblems("index.html", page('<form data-sf-inquiry><input name="name"></form>'), null, true)).toEqual([]);
-    expect(fileProblems("index.html", page('<form data-sf-inquiry action="https://evil.example"></form>'), null, true)).not.toEqual([]);
-    expect(fileProblems("index.html", page("<form data-sf-inquiry></form>"), null, false)).not.toEqual([]);
+    expect(fileProblems("index.html", page('<form data-arke-inquiry><input name="name"></form>'), null, true)).toEqual([]);
+    expect(fileProblems("index.html", page('<form data-arke-inquiry action="https://evil.example"></form>'), null, true)).not.toEqual([]);
+    expect(fileProblems("index.html", page("<form data-arke-inquiry></form>"), null, false)).not.toEqual([]);
   });
 
   it("lets the Worker answer its own paths before any page file", () => {

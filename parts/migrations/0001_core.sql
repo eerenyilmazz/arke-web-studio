@@ -1,4 +1,4 @@
--- Site Factory ready-made part: core (admin sign-in attempts and form rate limits). Factory-owned; never edited
+-- Arke Web Studio ready-made part: core (admin sign-in attempts and form rate limits). Factory-owned; never edited
 -- once applied: changes come as new migration files.
 CREATE TABLE IF NOT EXISTS rate_hits (
   bucket TEXT NOT NULL,

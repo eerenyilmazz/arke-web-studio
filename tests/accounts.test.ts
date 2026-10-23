@@ -15,7 +15,7 @@ const keep = {
 };
 
 beforeEach(() => {
-  process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-acc-"));
+  process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "arke-acc-"));
   delete process.env.ARKE_CF_MANAGED_API_TOKEN;
   delete process.env.ARKE_CF_MANAGED_ACCOUNT_ID;
   delete process.env.ARKE_NO_ACCOUNTS;

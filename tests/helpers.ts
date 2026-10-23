@@ -6,7 +6,7 @@ import { writeSiteFileTool } from "../src/tools.js";
 
 /** A throwaway factory with its own clients/inbox/templates folders. */
 export function tempFactory(): FactoryConfig & { base: string } {
-  const base = mkdtempSync(path.join(os.tmpdir(), "sf-test-"));
+  const base = mkdtempSync(path.join(os.tmpdir(), "arke-test-"));
   const cfg = {
     base,
     clientsRoot: path.join(base, "clients"),

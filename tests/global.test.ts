@@ -6,6 +6,11 @@ import { profileComplete, readSettings, writeSettings } from "../src/panel/setti
 import { tempFactory } from "./helpers.js";
 
 /** Every person runs their own panel: nothing the agent or the panel shows may be tied to one named person. */
+// The product's old name and prefixes, spelled out in pieces so a rename sweep cannot change this check itself.
+const OLD_NAME = new RegExp(
+  ["Site Fac" + "tory", "site-fac" + "tory", "SF" + "Motion", "(?<![A-Za-z0-9])s" + "f[-_][A-Za-z0-9$]", "\\bS" + "F_[A-Z]"].join("|"),
+);
+
 describe("global studio: no personal traces", () => {
   const ROOT = path.resolve(import.meta.dirname, "..");
   const walk = (dir: string): string[] =>
@@ -26,23 +31,9 @@ describe("global studio: no personal traces", () => {
     expect(hits.map((f) => path.relative(ROOT, f))).toEqual([]);
   });
 
-  it("uses the name Arke Web Studio; the old name only where installs from before the rename are carried over", () => {
-    const LEGACY_OK = new Set([
-      "scripts/migrate-name.sh", // moves the old folders
-      "scripts/shell-commands.sh", // removes the old shell block
-      "scripts/install.sh", // accepts an old clone
-      "scripts/update.sh", // accepts an old zip
-      "src/config.ts", // old folders and settings while only they exist
-      "src/tools/deploy.ts", // published clients keep their sf- Workers
-      "src/panel/portal.ts", // an installed portal keeps its Worker
-      "src/panel/jobs.ts", // strips the old SF_ secret names too
-      "scripts/setup-wsl.sh", // keeps the old folders of an install from before the rename
-      ".claude/settings.json", // the agent's limits cover the old folder and variable names too
-      ".claude/settings.local.json", // made on this computer by setup-wsl.sh (not in the repository)
-      "tests/global.test.ts",
-      "tests/rename.test.ts",
-      "README.md", // the section on the rename
-    ]);
+  it("uses only the name Arke Web Studio, also in technical names", () => {
+    // settings.local.json is written on each computer by setup-wsl.sh (not part of the repository).
+    const LEGACY_OK = new Set(["tests/global.test.ts", ".claude/settings.local.json"]);
     const files = ["src", "panel", "rules", "portal", "parts", "templates", "scripts", "tests", ".claude"]
       .flatMap((d) => walk(path.join(ROOT, d)))
       .filter(
@@ -50,9 +41,7 @@ describe("global studio: no personal traces", () => {
       )
       .concat(["AGENTS.md", "README.md", "ROADMAP.md", ".mcp.json", "package.json", "factory.config.json"].map((f) => path.join(ROOT, f)))
       .filter((f) => /\.(ts|js|md|html|json|sh|mjs)$/.test(f));
-    const old = files.filter(
-      (f) => !LEGACY_OK.has(path.relative(ROOT, f)) && /Site Factory|site-factory|sf-clients|sf-inbox|\bSF_[A-Z]/.test(readFileSync(f, "utf8")),
-    );
+    const old = files.filter((f) => !LEGACY_OK.has(path.relative(ROOT, f)) && OLD_NAME.test(readFileSync(f, "utf8")));
     expect(old.map((f) => path.relative(ROOT, f))).toEqual([]);
   });
 

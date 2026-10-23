@@ -70,7 +70,7 @@ describe("screenshot server stays inside dist/", () => {
     const os = await import("node:os");
     const path = await import("node:path");
     const { serveDistForTest } = await import("../src/lib/screenshots.js");
-    const base = mkdtempSync(path.join(os.tmpdir(), "sf-shot-"));
+    const base = mkdtempSync(path.join(os.tmpdir(), "arke-shot-"));
     mkdirSync(path.join(base, "dist"));
     mkdirSync(path.join(base, "dist2"));
     writeFileSync(path.join(base, "dist", "index.html"), "<p>ok</p>");

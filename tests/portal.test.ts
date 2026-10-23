@@ -41,7 +41,7 @@ function fakeKv() {
 }
 
 const SECRET = "s".repeat(43);
-const URL_BASE = "https://sf-portal.example.workers.dev";
+const URL_BASE = "https://arke-portal.example.workers.dev";
 let worker: { fetch: (r: Request, env: unknown) => Promise<Response> };
 let kv: ReturnType<typeof fakeKv>;
 let env: { ARKE_PORTAL: ReturnType<typeof fakeKv>; PORTAL_SECRET: string };
@@ -55,7 +55,7 @@ beforeAll(async () => {
   kv = fakeKv();
   env = { ARKE_PORTAL: kv, PORTAL_SECRET: SECRET };
   oldDir = process.env.ARKE_PORTAL_CONFIG_DIR;
-  const dir = mkdtempSync(path.join(os.tmpdir(), "sf-portal-cfg-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "arke-portal-cfg-"));
   process.env.ARKE_PORTAL_CONFIG_DIR = dir;
   writeFileSync(path.join(dir, "portal.json"), JSON.stringify({ url: URL_BASE, secret: SECRET, kvId: "a".repeat(32), at: "2026-10-01T00:00:00Z" }));
   factory = tempFactory();
@@ -130,11 +130,11 @@ describe("client portal", () => {
     mkdirSync(fdir, { recursive: true });
     writeFileSync(
       path.join(fdir, tools.DEPLOYS_FILE),
-      JSON.stringify({ preview: { url: "https://sf-rose-cafe-preview.example.workers.dev", at: "2026-10-01" } }),
+      JSON.stringify({ preview: { url: "https://arke-rose-cafe-preview.example.workers.dev", at: "2026-10-01" } }),
     );
     const link = await createLink(factory, "rose-cafe", "review", fetcher);
     const html = await (await visit(link.url)).text();
-    expect(html).toContain('src="https://sf-rose-cafe-preview.example.workers.dev"');
+    expect(html).toContain('src="https://arke-rose-cafe-preview.example.workers.dev"');
 
     const post = (action: string, fields: Record<string, string>) => visit(`${link.url}/${action}`, { method: "POST", body: new URLSearchParams(fields) });
     expect((await post("comment", { page: "home", text: "Make the logo bigger" })).status).toBe(200);
@@ -179,7 +179,7 @@ describe("monthly report data and payment", () => {
       seen.push(url);
       return { status: 200 };
     });
-    expect(seen).toEqual(["https://sf-rose-cafe-preview.example.workers.dev"]);
+    expect(seen).toEqual(["https://arke-rose-cafe-preview.example.workers.dev"]);
     expect(h.live[0]).toMatchObject({ target: "preview", ok: true, status: 200 });
     const down = await siteHealth(factory, "rose-cafe", async () => {
       throw new Error("ENOTFOUND");
@@ -239,7 +239,7 @@ describe("portal endpoints of the panel", () => {
       const created = await call("POST", "/api/clients/rose-cafe/portal/links", { kind: "intake" });
       expect(created.status).toBe(201);
       const link = JSON.parse(created.text) as { token: string; url: string };
-      expect(link.url).toMatch(/^https:\/\/sf-portal\.example\.workers\.dev\/f\//);
+      expect(link.url).toMatch(/^https:\/\/arke-portal\.example\.workers\.dev\/f\//);
       const listed = JSON.parse((await call("GET", "/api/clients/rose-cafe/portal")).text) as { links: Array<{ token: string }> };
       expect(listed.links.some((l) => l.token === link.token)).toBe(true);
 

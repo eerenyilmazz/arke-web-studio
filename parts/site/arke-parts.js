@@ -1,13 +1,13 @@
-/* Arke Web Studio ready-made part: the site side of the catalogue and the inbox forms (js/sf-parts.js).
+/* Arke Web Studio ready-made part: the site side of the catalogue and the inbox forms (js/arke-parts.js).
    Factory-owned: replaced by the factory at every build; the agent places the markup and never edits this file.
 
-   Catalogue:  <div data-sf-catalog [data-category="slug"] [data-limit="6"]>
-                 <button data-sf-filter="">All</button> <button data-sf-filter="slug">…</button>   (optional)
-                 <template data-sf-item> …elements with data-field="name|description|price|image|category|duration"… </template>
-                 <p data-sf-empty hidden>…</p>
+   Catalogue:  <div data-arke-catalog [data-category="slug"] [data-limit="6"]>
+                 <button data-arke-filter="">All</button> <button data-arke-filter="slug">…</button>   (optional)
+                 <template data-arke-item> …elements with data-field="name|description|price|image|category|duration"… </template>
+                 <p data-arke-empty hidden>…</p>
                </div>
-   Form:       <form data-sf-inquiry [data-sent="…"] [data-error="…"]> name, contact, [subject], [message] fields,
-               a submit button and <p data-sf-status role="status"></p> </form>                                   */
+   Form:       <form data-arke-inquiry [data-sent="…"] [data-error="…"]> name, contact, [subject], [message] fields,
+               a submit button and <p data-arke-status role="status"></p> </form>                                   */
 (() => {
   "use strict";
   const lang = document.documentElement.lang || "tr";
@@ -60,11 +60,11 @@
   };
 
   async function renderCatalogue(box) {
-    const tpl = box.querySelector("template[data-sf-item]");
-    const empty = box.querySelector("[data-sf-empty]");
+    const tpl = box.querySelector("template[data-arke-item]");
+    const empty = box.querySelector("[data-arke-empty]");
     if (!tpl) return;
     const list = document.createElement("div");
-    list.className = tpl.getAttribute("data-list-class") || "sf-items";
+    list.className = tpl.getAttribute("data-list-class") || "arke-items";
     tpl.after(list);
     let data;
     try {
@@ -83,11 +83,11 @@
       list.append(node);
     }
     if (empty) empty.hidden = items.length > 0;
-    const filters = box.querySelectorAll("[data-sf-filter]");
+    const filters = box.querySelectorAll("[data-arke-filter]");
     for (const b of filters) {
-      b.setAttribute("aria-pressed", b.getAttribute("data-sf-filter") === "" ? "true" : "false");
+      b.setAttribute("aria-pressed", b.getAttribute("data-arke-filter") === "" ? "true" : "false");
       b.addEventListener("click", () => {
-        const want = b.getAttribute("data-sf-filter");
+        const want = b.getAttribute("data-arke-filter");
         for (const o of filters) o.setAttribute("aria-pressed", o === b ? "true" : "false");
         for (const card of list.children) card.hidden = Boolean(want) && card.getAttribute("data-category") !== want;
       });
@@ -95,7 +95,7 @@
   }
 
   function wireForm(form) {
-    const status = form.querySelector("[data-sf-status]");
+    const status = form.querySelector("[data-arke-status]");
     const trap = document.createElement("input");
     trap.type = "text";
     trap.name = "website";
@@ -127,8 +127,8 @@
   }
 
   const start = () => {
-    for (const box of document.querySelectorAll("[data-sf-catalog]")) renderCatalogue(box);
-    for (const form of document.querySelectorAll("form[data-sf-inquiry]")) wireForm(form);
+    for (const box of document.querySelectorAll("[data-arke-catalog]")) renderCatalogue(box);
+    for (const form of document.querySelectorAll("form[data-arke-inquiry]")) wireForm(form);
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();

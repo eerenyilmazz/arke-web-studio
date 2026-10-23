@@ -1,4 +1,4 @@
--- Site Factory ready-made part: notifications inbox (form messages, later orders and bookings).
+-- Arke Web Studio ready-made part: notifications inbox (form messages, later orders and bookings).
 -- Factory-owned; never edited once applied.
 CREATE TABLE IF NOT EXISTS inbox (
   id INTEGER PRIMARY KEY,

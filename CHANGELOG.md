@@ -2,27 +2,37 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
-## 1.30.0: yeni ad, Arke Web Studio
+## 2.0.0: yeni ad, Arke Web Studio (temiz başlangıç)
 
-- **Ürünün adı Arke Web Studio oldu.** Panelde, belgelerde, agent kurallarında ve komutlarında artık bu ad geçiyor.
-- **Teknik adlar da değişti:**
-  - paket ve klasör: `arke-web-studio`
-  - MCP sunucusu: `arke-web`
-  - komutlar: `arke-panel`, `arke-update`
-  - klasörler: `../arke-clients`, `../arke-inbox`
-  - ayarlar: `~/.config/arke-web-studio`
-  - ortam değişkenleri: `ARKE_` önekiyle
-  - yeni müşterilerin Worker'ları: `arke-<kısa-ad>`
-- **Eski kurulumlar hiçbir şey yapmadan çalışıyor:**
-  - Eski klasörler ve ayarlar, yenisi yoksa kullanılıyor.
-  - `SF_` ile başlayan ortam değişkenleri hâlâ geçerli.
-  - Eski zip'ler ve eski kopyalar kabul ediliyor.
-  - Yayınlanmış müşteriler eski `sf-` Worker'larında kalıyor; canlı siteler taşınmıyor.
-  - Kurulu portal eski adıyla kalıyor, gönderilmiş linkler çalışıyor.
-- **İsteğe bağlı geçiş:** `scripts/migrate-name.sh` eski klasörleri ve ayarları yeni adlara taşır ve kabuk komutlarını yeniler. Hiçbir şeyi silmez, yeni ad zaten varsa dokunmaz.
-- **Güvenlik:** agent'ın ortamından Cloudflare değişkenleri iki adla da (`ARKE_`, `SF_`) siliniyor. Sandbox kuralları da eski klasörü ve eski değişken adlarını kapsıyor.
-- **Bilerek değişmeyenler:** yayınlanmış sitelerin kodunda geçen adlar (`data-sf-*`, `js/sf-parts.js`, `SFMotion`, yönetim ekranı çerezi) ve uygulanmış veritabanı değişikliği dosyaları.
-- **Panel oturumu:** çerezin adı değiştiği için güncellemeden sonra panele bir kez yeniden girmek gerekiyor. Tema ve filtre gibi tarayıcı tercihleri de bir kez sıfırlanıyor.
+1.30.0 zip'inin yerini alır; o sürüm kullanılmamalı (eski adlara uyumluluk tutuyordu).
+
+- **Ürünün adı her yerde Arke Web Studio:** panel, belgeler, agent kuralları ve komutları.
+- **Teknik adlar da tamamen değişti; eski adlara uyumluluk tutulmadı:**
+
+  | Ne | Yeni ad |
+  | --- | --- |
+  | paket, klasör, zip | `arke-web-studio` |
+  | MCP sunucusu | `arke-web` (`mcp__arke-web__*`) |
+  | komutlar | `arke-panel`, `arke-update` |
+  | klasörler | `../arke-clients`, `../arke-inbox` |
+  | ayarlar | `~/.config/arke-web-studio` |
+  | ortam değişkenleri | `ARKE_` önekiyle |
+  | Worker'lar | `arke-<kısa-ad>`, `arke-portal` |
+  | site içindeki adlar | `data-arke-*`, `js/arke-parts.js`, `ArkeMotion`, yönetim ekranı çerezi `__Host-arke_admin` |
+
+- **Eski kurulumlar bozulur:**
+  - Eski müşteri klasörleri, hesaplar ve ortam değişkenleri artık okunmuyor; kendin taşıman gerekiyor (aşağıda).
+  - Daha önce yayınlanmış `sf-…` Worker'ları yenisiyle değiştirilmez, Cloudflare'de ayrıca durur.
+  - Eski sitelerin sayfaları yeni hareket ve parça adlarıyla yeniden oluşturulmalı.
+  - Panel çerezi ve tarayıcı tercihleri sıfırlanır.
+- **Güvenlik:** agent'ın ortamından Cloudflare değişkenleri (`ARKE_CF_*`) ve wrangler'ın kendi değişkenleri (`CLOUDFLARE_*`) siliniyor.
+- **Eski verileri elle taşımak için** (paneli kapatıp):
+
+  ```bash
+  mv ~/projects/sf-clients ~/projects/arke-clients
+  mv ~/projects/sf-inbox ~/projects/arke-inbox
+  mv ~/.config/site-factory ~/.config/arke-web-studio
+  ```
 
 ## 1.29.1: belgeler ve proje düzeni
 

@@ -16,7 +16,7 @@ const SLUG = "shop-co";
 const SECRET = "sk_test_value_that_must_never_be_an_argument";
 const keepDir = process.env.ARKE_ACCOUNTS_DIR;
 beforeEach(() => {
-  process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-app-acc-"));
+  process.env.ARKE_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "arke-app-acc-"));
 });
 afterEach(() => {
   process.env.ARKE_ACCOUNTS_DIR = keepDir;

@@ -24,11 +24,6 @@ import * as tools from "../tools.js";
 const LINK_DAYS = 60;
 const PORTAL_NAME = "arke-portal";
 const KV_TITLE = "arke-portal-store";
-/** A portal set up before the rename to Arke Web Studio keeps its Worker and store, so links already sent keep working. */
-const LEGACY_PORTAL_NAME = "sf-portal";
-const LEGACY_KV_TITLE = "sf-portal-store";
-const portalWorkerName = (old: PortalConfig | null): string =>
-  old && new URL(old.url).hostname.startsWith(`${LEGACY_PORTAL_NAME}.`) ? LEGACY_PORTAL_NAME : PORTAL_NAME;
 const COMPAT_DATE = "2026-06-01";
 const FETCH_TIMEOUT_MS = 15_000;
 const LINKS_FILE = "portal-links.json";
@@ -110,8 +105,8 @@ export async function setupPortal(factory: FactoryConfig, log: (t: string) => vo
       log("Depolama (KV) aranıyor…");
       const list = await w(["kv", "namespace", "list"]);
       try {
-        const found = (JSON.parse(list.stdout.slice(list.stdout.indexOf("["))) as Array<{ id: string; title: string }>).find((n) =>
-          [KV_TITLE, LEGACY_KV_TITLE].some((t) => n.title === t || n.title.endsWith(t)),
+        const found = (JSON.parse(list.stdout.slice(list.stdout.indexOf("["))) as Array<{ id: string; title: string }>).find(
+          (n) => n.title === KV_TITLE || n.title.endsWith(KV_TITLE),
         );
         if (found) kvId = found.id;
       } catch {
@@ -129,7 +124,7 @@ export async function setupPortal(factory: FactoryConfig, log: (t: string) => vo
       path.join(dir, "wrangler.jsonc"),
       JSON.stringify(
         {
-          name: portalWorkerName(old),
+          name: PORTAL_NAME,
           main: "worker.js",
           compatibility_date: COMPAT_DATE,
           workers_dev: true,

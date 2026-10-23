@@ -53,7 +53,7 @@ The one movement people remember the brand by. It is designed like a short film,
    cursor, typing code, a blinking cursor, sparkles on a tooth, scissors cursor, a generic fade-and-slide, a
    counter as the hero. They read as a template.
 
-Build it with the factory's motion kit (`js/motion.js`, see "Factory parts"): `SFMotion.sequence` takes the plan's
+Build it with the factory's motion kit (`js/motion.js`, see "Factory parts"): `ArkeMotion.sequence` takes the plan's
 beats almost one to one (`at`, `duration`, `easing`, `draw`, `stagger`). After `build_site`, Read the four
 **signature frames** it lists (start → end) and fix the motion if they do not show the planned beats. The build
 fails for new designs when `brand/signature.html` is missing, has fewer animated steps than the plan's beats (at

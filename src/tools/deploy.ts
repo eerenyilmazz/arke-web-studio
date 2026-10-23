@@ -16,7 +16,7 @@ import {
   type Target,
 } from "../deploy/app.js";
 import { PRODUCTS } from "../products/registry.js";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { FACTORY_ROOT, type FactoryConfig } from "../config.js";
@@ -60,7 +60,7 @@ export async function deploy(
 
   // Preview is its own Worker on workers.dev (never the custom domain), so the client can review it
   // while production stays untouched, and a first-ever preview works without an existing Worker.
-  const baseWorker = baseWorkerName(paths.wranglerConfig, config);
+  const baseWorker = baseWorkerName(config);
   const workerName = args.target === "preview" ? `${baseWorker}${PREVIEW_SUFFIX}` : baseWorker;
   const routes = args.target === "production" && config.site.domain ? [{ pattern: config.site.domain, custom_domain: true }] : undefined;
   const product = readProductRecord(paths);
@@ -198,30 +198,15 @@ function recordDeploy(paths: { lastDeploy: string; factoryDir: string }, record:
   writeJson(deploysFile, { ...deploys, [record.target]: { url: address, at: record.at } });
 }
 
-/**
- * The client's Worker name: the one set in the config, else the one it was already published under (its
- * wrangler.jsonc; clients from before the rename to Arke Web Studio keep their "sf-" Workers, so live sites never
- * move), else "arke-<slug>".
- */
-export function baseWorkerName(wranglerConfig: string, config: { slug: string; hosting: { workerName?: string | null } }): string {
-  if (config.hosting.workerName) return config.hosting.workerName;
-  if (existsSync(wranglerConfig)) {
-    const name = /"name"\s*:\s*"([a-z0-9-]+)"/.exec(readFileSync(wranglerConfig, "utf8"))?.[1];
-    const base = name?.endsWith(PREVIEW_SUFFIX) ? name.slice(0, -PREVIEW_SUFFIX.length) : name;
-    if (base === `${LEGACY_WORKER_PREFIX}${config.slug}`) return base;
-  }
-  return `${WORKER_PREFIX}${config.slug}`;
+/** The client's Worker name: the one set in its config, else "arke-<slug>". */
+export function baseWorkerName(config: { slug: string; hosting: { workerName?: string | null } }): string {
+  return config.hosting.workerName ?? `${WORKER_PREFIX}${config.slug}`;
 }
 const WORKER_PREFIX = "arke-";
-const LEGACY_WORKER_PREFIX = "sf-";
 
 /** The Worker a target publishes to: the production name, or the same name with "-preview". */
-function workerFor(
-  paths: { wranglerConfig: string },
-  config: { slug: string; hosting: { workerName?: string | null } },
-  target: "preview" | "production",
-): string {
-  const base = baseWorkerName(paths.wranglerConfig, config);
+function workerFor(config: { slug: string; hosting: { workerName?: string | null } }, target: "preview" | "production"): string {
+  const base = baseWorkerName(config);
   return target === "preview" ? `${base}${PREVIEW_SUFFIX}` : base;
 }
 
@@ -266,7 +251,7 @@ async function wranglerOnWorker(
  */
 export async function undeploy(factory: FactoryConfig, args: { slug: string; target: "preview" | "production" }, runner: typeof run = run) {
   const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
-  const workerName = workerFor(paths, config, args.target);
+  const workerName = workerFor(config, args.target);
   // --force: no interactive question (the panel already asked the operator).
   const { code, output } = await wranglerOnWorker(factory, config, ["delete", workerName, "--force"], runner);
   // Already gone (deleted in the Cloudflare dashboard, or never published) is the wanted end state.
@@ -291,7 +276,7 @@ export async function undeploy(factory: FactoryConfig, args: { slug: string; tar
  */
 export async function rollback(factory: FactoryConfig, args: { slug: string; target: "preview" | "production"; by: string }, runner: typeof run = run) {
   const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
-  const workerName = workerFor(paths, config, args.target);
+  const workerName = workerFor(config, args.target);
   const message = `Arke Web Studio: rolled back by ${args.by}`.slice(0, 100);
   // No version id: wrangler takes the version before the current one. --yes: the panel already asked the operator.
   const { code, output } = await wranglerOnWorker(factory, config, ["rollback", "--name", workerName, "--message", message, "--yes"], runner);

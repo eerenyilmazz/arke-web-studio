@@ -84,13 +84,13 @@ describe("signature motion check", () => {
   it("counts animated steps from keyframes in use, Web Animations, the kit's sequence and its attributes", () => {
     expect(countMotionSteps(page("<p>x</p>", "@keyframes a{to{opacity:1}} .x{animation: a 1s}"))).toBe(1);
     expect(countMotionSteps(page("<p>x</p>", "@keyframes unused{to{opacity:1}}"))).toBe(0);
-    expect(countMotionSteps(page('<script>el.animate([], 1); SFMotion.sequence([{ at: 0 }, { at: 200 }])</script><svg><path data-draw d="M0 0"/></svg>'))).toBe(
-      4,
-    );
+    expect(
+      countMotionSteps(page('<script>el.animate([], 1); ArkeMotion.sequence([{ at: 0 }, { at: 200 }])</script><svg><path data-draw d="M0 0"/></svg>')),
+    ).toBe(4);
   });
 
   it("fails a one-step motion or a missing still state for new designs, and only warns for older sites", () => {
-    const dist = mkdtempSync(path.join(os.tmpdir(), "sf-sig-"));
+    const dist = mkdtempSync(path.join(os.tmpdir(), "arke-sig-"));
     mkdirSync(path.join(dist, "brand"));
     expect(checkSignature(dist, true, 3)?.status).toBe("fail"); // missing
     expect(checkSignature(dist, false, null)).toBeNull();
@@ -99,15 +99,15 @@ describe("signature motion check", () => {
     expect(checkSignature(dist, false, null)?.status).toBe("warn");
     writeFileSync(
       path.join(dist, "brand", "signature.html"),
-      page("<script>SFMotion.sequence([{ at: 0 }, { at: 250 }, { at: 700 }, { at: 900 }])</script>", "p{} @media (prefers-reduced-motion: reduce) {}"),
+      page("<script>ArkeMotion.sequence([{ at: 0 }, { at: 250 }, { at: 700 }, { at: 900 }])</script>", "p{} @media (prefers-reduced-motion: reduce) {}"),
     );
     expect(checkSignature(dist, true, 4)?.status).toBe("pass");
   });
 
   it("puts the motion kit inline where the demo is shown on its own", () => {
     const html = inlineMotionKit('<p>x</p><script src="/js/motion.js" defer></script>');
-    expect(html).toContain("window.SFMotion");
+    expect(html).toContain("window.ArkeMotion");
     expect(html.startsWith("<p>x</p><script>/*")).toBe(true); // the tag itself is replaced by the code
-    expect(readFileSync(path.join(FACTORY_ROOT, "rules", "site-kit", "motion.js"), "utf8")).toContain("SFMotion.sequence");
+    expect(readFileSync(path.join(FACTORY_ROOT, "rules", "site-kit", "motion.js"), "utf8")).toContain("ArkeMotion.sequence");
   });
 });

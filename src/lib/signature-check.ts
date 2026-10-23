@@ -16,7 +16,7 @@ export function countMotionSteps(html: string): number {
   for (const m of css.matchAll(/animation(?:-name)?\s*:\s*([^;}]+)/g)) for (const name of defined) if (m[1]!.includes(name!)) used.add(name!);
   const waapi = (html.match(/\.animate\(/g) ?? []).length;
   const kit = (html.match(/\bdata-(draw|reveal|split|scene|count)\b/g) ?? []).length;
-  const sequence = (html.match(/\bat\s*:\s*\d+/g) ?? []).length; // SFMotion.sequence steps
+  const sequence = (html.match(/\bat\s*:\s*\d+/g) ?? []).length; // ArkeMotion.sequence steps
   return used.size + waapi + kit + sequence;
 }
 

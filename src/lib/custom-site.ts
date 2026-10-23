@@ -271,14 +271,14 @@ function brokenLinks(distDir: string, rel: string, html: string): string[] {
 }
 
 /** Form posts may only go to the factory's form service (ARKE_FORM_ACTION). */
-/** App sites' own inbox endpoint (parts/app/inbox.js), used by <form data-sf-inquiry> through js/sf-parts.js. */
+/** App sites' own inbox endpoint (parts/app/inbox.js), used by <form data-arke-inquiry> through js/arke-parts.js. */
 export const APP_INBOX_ACTION = "/api/inbox";
 
 function formProblems(rel: string, html: string, formAction: string | null, appSite: boolean): string[] {
   const out: string[] = [];
   for (const m of html.matchAll(/<form\b[^>]*>/gi)) {
     const action = /\baction\s*=\s*["']([^"']*)["']/i.exec(m[0])?.[1] ?? "";
-    if (appSite && /\bdata-sf-inquiry\b/i.test(m[0]) && (action === "" || action === APP_INBOX_ACTION)) continue;
+    if (appSite && /\bdata-arke-inquiry\b/i.test(m[0]) && (action === "" || action === APP_INBOX_ACTION)) continue;
     if (!formAction || action !== formAction)
       out.push(
         `${rel}: <form action="${action.slice(0, 60)}"> (forms may only post to the configured form service; without one, show phone/email/WhatsApp buttons)`,

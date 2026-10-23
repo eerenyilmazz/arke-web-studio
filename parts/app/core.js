@@ -2,7 +2,7 @@
 // Factory-owned: copied into every app site as app/parts/core.js and replaced by newer factory versions.
 // The agent never writes or edits this file.
 
-const SESSION_COOKIE = "__Host-sf_admin";
+const SESSION_COOKIE = "__Host-arke_admin";
 const SESSION_HOURS = 12;
 const LOGIN_FAILS_ALLOWED = 5;
 const LOGIN_WINDOW_SECONDS = 15 * 60;

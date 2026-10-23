@@ -27,7 +27,7 @@ Birden çok kişi aynı müşteriler üzerinde çalışacaksa bir Git deposu üz
 10. [Klasör yapısı ve mimari](#klasör-yapısı-ve-mimari)
 11. [Geliştirme](#geliştirme)
 12. [Sorun giderme](#sorun-giderme)
-13. [Ad değişikliği](#ad-değişikliği-site-factory--arke-web-studio)
+13. [Ad değişikliği](#ad-değişikliği-arke-web-studio--arke-web-studio)
 
 ---
 
@@ -210,7 +210,7 @@ Panel, uygulama türündeki her müşteriye parçaları otomatik kurar:
 - `app/worker.js` (sadece o türün parçalarıyla oluşturulur)
 - `app/parts/`
 - `app/migrations/`
-- `site/js/sf-parts.js`
+- `site/js/arke-parts.js`
 
 Yeni bir fabrika sürümü parça kodunu yeniler; uygulanmış veritabanı değişikliklerine hiç dokunmaz.
 
@@ -228,7 +228,7 @@ Token Cloudflare ile denenir ve `~/.config/arke-web-studio/accounts.json` dosyas
 - bir daha gösterilmez, yedeklere ve raporlara girmez;
 - agent süreçleri bu dosyayı hiç okumaz (`ARKE_NO_ACCOUNTS=1`).
 
-Ortam değişkeniyle tanımlanan hesap (`ARKE_CF_MANAGED_API_TOKEN` / `ARKE_CF_MANAGED_ACCOUNT_ID`; eski `SF_` önekiyle de) hâlâ çalışır.
+Ortam değişkeniyle tanımlanan hesap (`ARKE_CF_MANAGED_API_TOKEN` / `ARKE_CF_MANAGED_ACCOUNT_ID`) de çalışır.
 Panelde kayıtlı bir hesap varsa öncelik onundur.
 
 **Uygulama sitelerinde** yayın şu sırayla ilerler:
@@ -398,33 +398,3 @@ npm run schema       # Zod → schema/*.schema.json
 | Ekran görüntüsü alınmıyor | Chrome/Chromium yolu: `export ARKE_BROWSER=/yol/chrome` |
 
 Durum raporu almak için `npm run report -- ~/` komutunu çalıştırın. Rapor gizli bilgi içermez; destek isterken paylaşabilirsiniz.
-
----
-
-## Ad değişikliği: Site Factory → Arke Web Studio
-
-1.30.0 ile ürünün adı ve teknik adları değişti. **Eski kurulumlar hiçbir şey yapmadan çalışmaya devam eder:**
-
-| Eski | Yeni | Eski kurulumda |
-| --- | --- | --- |
-| Site Factory (`site-factory` paket, klasör, zip) | Arke Web Studio (`arke-web-studio`) | eski zip ve kopya da kabul edilir |
-| MCP sunucusu `site-factory` (`mcp__site-factory__*`) | `arke-web` (`mcp__arke-web__*`) | otomatik |
-| `../sf-clients`, `../sf-inbox` | `../arke-clients`, `../arke-inbox` | yeni klasör yoksa eskisi kullanılır |
-| `~/.config/site-factory` | `~/.config/arke-web-studio` | yeni klasör yoksa eskisi kullanılır |
-| `SF_…` ortam değişkenleri | `ARKE_…` | eski ad, yenisi tanımlı değilse geçerli sayılır |
-| `sf-panel`, `sf-update`, `sf-report` | `arke-panel`, `arke-update`, `arke-report` | `install.sh` ya da geçiş betiği yeni komutları ekler |
-| Worker adı `sf-<kısa-ad>` | yeni müşterilerde `arke-<kısa-ad>` | **yayınlanmış müşteriler eski Worker'larında kalır** (canlı siteler taşınmaz) |
-| Portal Worker'ı `sf-portal` | yeni kurulumda `arke-portal` | kurulu portal eski adıyla kalır (gönderilen linkler çalışır) |
-
-Eski klasörleri ve ayarları yeni adlara taşımak isteğe bağlıdır. Paneli kapatın, sonra:
-
-```bash
-bash scripts/migrate-name.sh
-```
-
-Betik sadece taşır (yeni ad zaten varsa dokunmaz, hiçbir şeyi silmez). Kurulum klasörünü de `arke-web-studio` olarak
-adlandırır ve kabuk komutlarını yeniler.
-
-**Bilerek değişmeyenler:** müşteri sitelerinin içinde çalışan küçük adlar (`data-sf-*` öznitelikleri,
-`js/sf-parts.js`, `SFMotion`, yönetim ekranının çerezi). Bunlar yayınlanmış sitelerin kodunda geçiyor;
-değiştirmek o siteleri bozar. Ayrıca uygulanmış veritabanı değişikliği dosyaları (`parts/migrations/`) hiç değiştirilmez.

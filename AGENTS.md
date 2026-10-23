@@ -31,7 +31,7 @@ These files are the single source of the rules. A job's prompt names the files t
   CSS, JS, SVG) with the site-file tools. Plain code only: no frameworks, build steps, CDNs or npm packages.
 - **App sites** (kind e-commerce, booking or restaurant): a custom site plus the factory's ready-made parts
   (catalogue, enquiry inbox, the client's admin screen; payments later). You place and design them following
-  `rules/parts.md`. Never write `app/`, `js/sf-parts.js` or payment code.
+  `rules/parts.md`. Never write `app/`, `js/arke-parts.js` or payment code.
 - **Template sites** (`corporate-v1`, `corporate-v2`, older clients): you write only config, content and images; the
   fixed template builds the site. Never write code for them (see "Template sites" below).
 

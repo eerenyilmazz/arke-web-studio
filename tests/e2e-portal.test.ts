@@ -17,7 +17,7 @@ import { PNG_1PX, tempFactory } from "./helpers.js";
  */
 const SLUG = "rose-cafe";
 const SECRET = "p".repeat(43);
-const PREVIEW = "https://sf-rose-cafe-preview.example.workers.dev";
+const PREVIEW = "https://arke-rose-cafe-preview.example.workers.dev";
 const executable = findBrowser();
 const factory = { ...tempFactory(), defaultTemplate: "custom" };
 let browser: Browser | null = null;
@@ -27,10 +27,10 @@ let portalUrl = "";
 const savedDir = process.env.ARKE_PORTAL_CONFIG_DIR;
 
 async function startWorker(): Promise<typeof worker> {
-  const dir = mkdtempSync(path.join(os.tmpdir(), "sf-portal-e2e-"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "arke-portal-e2e-"));
   cpSync(path.join(FACTORY_ROOT, "portal", "worker.js"), path.join(dir, "worker.js"));
   const config = {
-    name: "sf-portal",
+    name: "arke-portal",
     main: "worker.js",
     compatibility_date: "2026-06-01",
     kv_namespaces: [{ binding: "ARKE_PORTAL", id: "local" }],
@@ -57,7 +57,7 @@ beforeAll(async () => {
     return;
   }
   portalUrl = `http://${worker!.address === "localhost" ? "127.0.0.1" : worker!.address}:${worker!.port}`;
-  const cfg = mkdtempSync(path.join(os.tmpdir(), "sf-portal-cfg-e2e-"));
+  const cfg = mkdtempSync(path.join(os.tmpdir(), "arke-portal-cfg-e2e-"));
   writeFileSync(path.join(cfg, "portal.json"), JSON.stringify({ url: portalUrl, secret: SECRET, kvId: "local", at: "2026-10-18T10:00:00Z" }));
   process.env.ARKE_PORTAL_CONFIG_DIR = cfg;
 

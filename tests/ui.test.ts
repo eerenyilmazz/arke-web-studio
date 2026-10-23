@@ -66,7 +66,7 @@ beforeAll(async () => {
     return;
   }
   factory = tempFactory();
-  process.env.ARKE_PORTAL_CONFIG_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-ui-portal-")); // no portal set up
+  process.env.ARKE_PORTAL_CONFIG_DIR = mkdtempSync(path.join(os.tmpdir(), "arke-ui-portal-")); // no portal set up
   const port = await freePort();
   panel = createPanel({
     factory,

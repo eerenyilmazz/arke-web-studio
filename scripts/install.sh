@@ -34,7 +34,7 @@ say "  [OK] git, node $v"
 
 # 2. Where Arke Web Studio lives: this clone, or a fresh clone of REPO.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
-if [[ -n "$SCRIPT_DIR" && -f "$SCRIPT_DIR/../package.json" ]] && grep -qE '"name": "(arke-web-studio|site-factory)"' "$SCRIPT_DIR/../package.json"; then
+if [[ -n "$SCRIPT_DIR" && -f "$SCRIPT_DIR/../package.json" ]] && grep -q '"name": "arke-web-studio"' "$SCRIPT_DIR/../package.json"; then
   DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
   say "  [OK] mevcut klasör kullanılıyor: $DIR"
 elif [[ -f "$HOME_DIR/package.json" ]]; then

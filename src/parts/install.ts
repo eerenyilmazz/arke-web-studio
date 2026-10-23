@@ -14,12 +14,12 @@ import type { FactoryPart, ProductModule } from "../products/registry.js";
  *   parts/app/admin.html      the client's admin screen               → app/admin.html        (every app site)
  *   parts/app/<part>.js       one module per part                     → app/parts/<part>.js
  *   parts/migrations/NNNN_*   tables; numbers are global and fixed    → app/migrations/        (added, never changed)
- *   parts/site/sf-parts.js    site side: catalogue and forms          → site/js/sf-parts.js
+ *   parts/site/arke-parts.js    site side: catalogue and forms          → site/js/arke-parts.js
  *
  * app/worker.js is generated from the parts the kind uses, so a kind ships only its own code.
  */
 export const PARTS_DIR = path.join(FACTORY_ROOT, "parts");
-export const SITE_PARTS_JS = "js/sf-parts.js";
+export const SITE_PARTS_JS = "js/arke-parts.js";
 /** Written into the client by the panel, so the deploy tool knows which secrets the installed parts need. */
 export const ADMIN_PASSWORD_SECRET = "ADMIN_PASSWORD_HASH";
 export const SESSION_SECRET = "SESSION_SECRET";
@@ -104,7 +104,7 @@ export function installParts(paths: ClientPaths, module: ProductModule): Install
     }
   }
   writeIfChanged(path.join(paths.root, APP_ENTRY), workerSource(specs), written, APP_ENTRY);
-  if (specs.some((s) => s.site)) writeIfChanged(path.join(paths.root, "site", SITE_PARTS_JS), src("site", "sf-parts.js"), written, `site/${SITE_PARTS_JS}`);
+  if (specs.some((s) => s.site)) writeIfChanged(path.join(paths.root, "site", SITE_PARTS_JS), src("site", "arke-parts.js"), written, `site/${SITE_PARTS_JS}`);
 
   const record = readProductRecord(paths);
   const secrets = [...new Set(specs.flatMap((s) => s.secrets))].sort();
@@ -117,7 +117,7 @@ export function installParts(paths: ClientPaths, module: ProductModule): Install
 /** True when `text` is exactly the factory's site script: only then may it make requests (to this site's own API). */
 export function isFactorySiteScript(rel: string, text: string): boolean {
   if (rel !== SITE_PARTS_JS) return false;
-  const file = path.join(PARTS_DIR, "site", "sf-parts.js");
+  const file = path.join(PARTS_DIR, "site", "arke-parts.js");
   return existsSync(file) && sha(readFileSync(file, "utf8")) === sha(text);
 }
 

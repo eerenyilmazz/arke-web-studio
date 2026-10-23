@@ -72,7 +72,7 @@ const FAKE_PLAN = {
 const SIGNATURE_HTML = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="İmza hareketi"><meta name="robots" content="noindex"><title>İmza hareketi</title>
 <style>@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }</style><script src="/js/motion.js" defer></script></head>
 <body><svg viewBox="0 0 100 60"><rect class="base" x="10" y="30" width="80" height="20"/><path class="crust" d="M10 30 Q50 0 90 30" fill="none" stroke="#8A4B16"/></svg><h1>Ekmek Evi</h1>
-<script>document.addEventListener("DOMContentLoaded", function () { SFMotion.sequence([
+<script>document.addEventListener("DOMContentLoaded", function () { ArkeMotion.sequence([
 { target: ".base", keyframes: [{ transform: "scaleY(0)" }, { transform: "none" }], at: 0, duration: 500 },
 { target: ".crust", draw: true, at: 250, duration: 700 },
 { target: "h1", keyframes: [{ opacity: 0 }, { opacity: 1 }], at: 700, duration: 450 }]); });</script></body></html>`;
