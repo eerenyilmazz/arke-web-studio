@@ -273,6 +273,11 @@ Ayarlar → **Ekip**: ekibin özel Git deposunu (ör. GitHub'da özel bir depo y
 tahminle birleştirilmez, iki tarafın değişikliği de kaybolmaz. Değişiklikleri biriniz önce alır, sonra tekrar eşitlersiniz.
 Agent işi süren müşteri o eşitlemede atlanır.
 
+**Arke Web Studio'nun kendi deposu:** `main` dalına sadece depo sahibi gönderir. Ekip üyeleri kendi dallarında çalışıp
+pull request açar. Başkası `main`'e gönderirse `main koruması` işi (GitHub Actions) o gönderiyi
+`geri-alinan/<kullanıcı>-<no>` dalına taşır ve `main`'i eski hâline getirir; hiçbir değişiklik kaybolmaz. Bu, kazara
+gönderimlere karşı bir önlemdir; GitHub'ın kendi dal kuralları özel kişisel depolarda ücretli plan ister.
+
 ---
 
 ## Güncelleme
