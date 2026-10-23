@@ -23,6 +23,7 @@ Birden çok kişi aynı müşteriler üzerinde çalışacaksa bir Git deposu üz
 6. [Yayın ve Cloudflare](#yayın-ve-cloudflare)
 7. [Ekip çalışması](#ekip-çalışması)
 8. [Güncelleme](#güncelleme)
+   - [Başka bilgisayara kurma ve taşıma](#başka-bilgisayara-kurma-ve-taşıma)
 9. [Güvenlik modeli](#güvenlik-modeli)
 10. [Klasör yapısı ve mimari](#klasör-yapısı-ve-mimari)
 11. [Geliştirme](#geliştirme)
@@ -283,6 +284,28 @@ Geri almak için ekranda ve terminalde yazan `git reset --hard <önceki-commit>`
 Geri almak için `git reset --hard HEAD~1`.
 
 İki yolda da müşteriler, ayarlar, hesaplar, `.claude/settings.local.json`, `vendor/` ve `node_modules/` korunur.
+
+### Başka bilgisayara kurma ve taşıma
+
+**Claude kullanımı:** panel Claude'a kendisi bağlanmaz; her iş için o bilgisayardaki `claude` komutunu (Claude
+Code) çalıştırır. O bilgisayarda Claude Code'a hangi hesapla giriş yapıldıysa (abonelik ya da API anahtarı) o hesap
+kullanılır ve kullanım ona yazılır. Panel bu anahtarı görmez, saklamaz.
+
+Yeni bilgisayarda:
+1. Windows'ta WSL2 (Ubuntu); içinde `git` ve Node 22 (`nvm install 22`).
+2. Claude Code'u **WSL'in içine** kurun ([kurulum](https://docs.claude.com/en/docs/claude-code/setup)) ve bir kez
+   `claude` yazıp hesabınızla giriş yapın.
+3. Depo özelse önce `gh auth login`, sonra:
+   ```bash
+   gh repo clone <sahip>/<depo> ~/projects/arke-web-studio
+   bash ~/projects/arke-web-studio/scripts/install.sh
+   ```
+4. Yeni terminalde `arke-panel`; adınızı girin, Cloudflare token'ını yeniden ekleyin. Token her bilgisayarda o
+   bilgisayarın anahtarıyla şifrelenir (`~/.config/arke-web-studio`), taşınmaz.
+
+Müşteriler kendiliğinden gelmez. Ya iki bilgisayar Ayarlar → **Ekip**'te aynı özel depoyu bağlar (onaylar her
+bilgisayarda kendine ait kalır), ya da eski bilgisayarda Ayarlar → **Yedek** → "Şimdi yedekle" ile alınan dosya
+yenisinde `npm run restore-backup -- <yedek.tar.gz> <yeni-klasör>` ile açılır.
 
 ---
 
