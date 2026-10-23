@@ -147,7 +147,7 @@ export function slotValue(draft: Record<string, unknown>, field: SlotField): str
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
-/** The source client's facts as fixed places (Eren can edit them later in the library). */
+/** The source client's facts as fixed places (the operator can edit them later in the library). */
 function autoSlots(draft: Record<string, unknown>): Slot[] {
   const out: Slot[] = [];
   for (const field of SLOT_KEYS) {
@@ -160,7 +160,7 @@ function autoSlots(draft: Record<string, unknown>): Slot[] {
 /** A library design's folder as ClientPaths (only root is used: site files live in <root>/site). */
 const designPaths = (factory: FactoryConfig, id: string) => ({ root: safeJoin(root(factory), id) }) as ClientPaths;
 
-/** How many times each fixed place's text occurs in the design (0 = Eren typed something that is not there). */
+/** How many times each fixed place's text occurs in the design (0 = the operator typed something that is not there). */
 export function slotCounts(factory: FactoryConfig, id: string): number[] {
   const entry = listLibrary(factory).find((e) => e.id === id);
   if (!entry) throw new Error("Kütüphanede böyle bir tasarım yok.");

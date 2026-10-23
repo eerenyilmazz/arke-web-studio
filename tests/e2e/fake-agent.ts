@@ -122,7 +122,7 @@ async function main(): Promise<void> {
     const status = JSON.parse(await call("get_client_status", { slug })) as { designPlan?: { state: string } };
     await call("update_client_config", { slug, patch: COMPLETE_PATCH });
     await call("save_content", { slug, locale: "en", content: COMPLETE_CONTENT });
-    // A new design: the plan first, then stop until Eren approves it in the panel (rules/custom-site.md).
+    // A new design: the plan first, then stop until the operator approves it in the panel (rules/custom-site.md).
     if (status.designPlan?.state === "missing") {
       await call("save_design_plan", { slug, plan: FAKE_PLAN });
       await call("write_site_file", { slug, path: "brand/signature.html", content: SIGNATURE_HTML });

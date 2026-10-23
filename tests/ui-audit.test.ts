@@ -132,7 +132,7 @@ async function findings(page: Page): Promise<string[]> {
       tags: ["acil"],
     });
   }
-  // Hollin: plan, approval, built site. Northgate: a plan waiting for Eren (the plan card is audited too).
+  // Hollin: plan, approval, built site. Northgate: a plan waiting for the operator (the plan card is audited too).
   await call(base, "POST", "/api/clients/hollin/agent/create-site", { freeText: "Family bakery in Leeds." });
   await jobDone(base, "hollin", "create-site", 1);
   await call(base, "POST", "/api/clients/hollin/design-plan/approve", {});

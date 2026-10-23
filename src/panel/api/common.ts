@@ -49,7 +49,7 @@ export interface Route {
 
 export const SLUG = "([a-z0-9-]{3,40})";
 
-/** Library and similar helpers throw plain errors with Turkish messages: shown to Eren as a 400. */
+/** Library and similar helpers throw plain errors with Turkish messages: shown to the operator as a 400. */
 export function asHttp<T>(fn: () => T): T {
   try {
     return fn();
@@ -120,6 +120,7 @@ export function launchAgent(deps: ApiDeps, slug: string, kind: string, title: st
   const text = finalPrompt(withParts.startsWith(TOOLS_NOTE) ? withParts : `${TOOLS_NOTE}\n${withParts}`, {
     ...policy,
     panelLanguage: readSettings(deps.factory).panelLanguage,
+    operator: readSettings(deps.factory).profile,
     addons: addonsNote(readBusiness(deps.factory, slug)?.addons),
   });
   return runOrConflict(() => deps.jobs.startAgent(slug, kind, title, text, request, policy));
@@ -133,7 +134,7 @@ export function lastBuildOf(deps: ApiDeps, slug: string): BuildRecord | null {
 /**
  * After a design job: when the site has more than one language, the other languages are added by a separate
  * translation job on the cheaper model, instead of the design job writing every page twice.
- * Only when that design job ended with a passing build (`since` = its start): a job that stopped to ask Eren
+ * Only when that design job ended with a passing build (`since` = its start): a job that stopped to ask the operator
  * questions has no finished pages yet, and translating them would spend tokens on text that is about to change.
  */
 export function startTranslation(deps: ApiDeps, slug: string, since: string | null = null) {

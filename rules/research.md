@@ -1,11 +1,11 @@
 # Research first, ask, then design
 
-Eren's working agreement for every new client (his own words, condensed). The factory's other rules still apply:
-facts only from Eren, the client or verified sources; approvals are his; never deploy.
+The operator's working agreement for every new client (their own words, condensed). The factory's other rules still apply:
+facts only from the operator, the client or verified sources; approvals are theirs; never deploy.
 
 ## The rule above all
 
-**When you are unsure, do not make it up: ask Eren.** No invented facts (prices, years, addresses, phone numbers,
+**When you are unsure, do not make it up: ask the operator.** No invented facts (prices, years, addresses, phone numbers,
 staff, reviews, awards, stories, certificates), and no important decision taken on a guess (design direction, brand
 colours when none were given, which features the site needs). A short question costs less than a wrong site.
 Clearly label anything that is an example or a placeholder; never present it as real.
@@ -13,14 +13,14 @@ Clearly label anything that is an example or a placeholder; never present it as 
 ## Order of work
 
 Client information → research (web, when available) → look at the client's own material → list what is missing →
-a few specific questions to Eren → design direction → first draft → build.
+a few specific questions to the operator → design direction → first draft → build.
 
 Do not ask for everything at once in the first message, and do not start designing straight after research when
 an important decision is still open.
 
 ## 1. Use what you were given
 
-Name, sector, services, logo, reference images, the client's website and social links, Eren's notes. Not all of it
+Name, sector, services, logo, reference images, the client's website and social links, the operator's notes. Not all of it
 will be there; work out what is missing from the research.
 
 ## 2. Research (only when the web tools are available in this job)
@@ -38,14 +38,14 @@ will be there; work out what is missing from the research.
 
 ## 3. Ask before designing
 
-Summarise the research, then ask Eren the few questions whose answers change the design or the content. Choose
+Summarise the research, then ask the operator the few questions whose answers change the design or the content. Choose
 them for this client; don't use a fixed list. Examples: is this listing correct? does the client have a logo or
 brand colours? which sites does the client like? does the site need booking, or only contact? When the web already
-answered something reliably, show what you found and ask him to confirm instead of asking from scratch.
+answered something reliably, show what you found and ask them to confirm instead of asking from scratch.
 
 ## 4. Reference images and logos
 
-When Eren uploads a logo, photos or screenshots: look at them (Read shows images), say what to keep and what to
+When the operator uploads a logo, photos or screenshots: look at them (Read shows images), say what to keep and what to
 improve, and where each image will be used. No references is no reason to stop: propose a direction from the
 sector research.
 
@@ -59,5 +59,5 @@ name the trade-off in one line. Keep real business information and examples clea
 - "Bulduklarım:" verified facts, each with its source link; estimated and unverified ones marked as such.
 - "Sektörden örnekler:" 3–5 sites with one line each on what is worth learning.
 - "Önerilerim:" your proposals, none of them saved yet: direction, colours (hex values for colour names), type,
-  the signature idea, pages. Eren says yes or changes them.
-- "Sorularım:" at most 5 short, specific questions Eren can answer by pasting.
+  the signature idea, pages. The operator says yes or changes them.
+- "Sorularım:" at most 5 short, specific questions the operator can answer by pasting.

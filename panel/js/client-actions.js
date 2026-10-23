@@ -11,7 +11,7 @@ export async function openPreview(slug) {
 
 export async function deployProduction(slug, dryRun) {
   if (!dryRun) {
-    // Publishing before any payment is Eren's call, but never by accident.
+    // Publishing before any payment is the operator's call, but never by accident.
     const pay = state.detail?.status?.slug === slug ? state.detail.businessTracking?.payment : null;
     const unpaid = !pay || pay === "none" || pay === "quoted";
     const body = unpaid

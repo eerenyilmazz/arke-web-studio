@@ -4,7 +4,7 @@ import type { FactoryConfig } from "../config.js";
 import { readJsonIfExists, writeJson } from "../lib/files.js";
 
 /**
- * Panel-wide settings Eren changes on the settings page. Stored next to the client folders (not in the factory
+ * Panel-wide settings the operator changes on the settings page. Stored next to the client folders (not in the factory
  * folder, so updates keep them; the agent cannot write there, so it cannot change its own permissions).
  */
 const FILE = ".panel-settings.json";
@@ -32,8 +32,26 @@ const AgentRouteSchema = z
 export const SettingsSchema = z.object({
   /** The agent may search the web and read pages (business research, sector examples). */
   webResearch: z.boolean().default(true),
-  /** Language of the panel and of the agent's notes to Eren; client sites keep their own languages. */
+  /** Language of the panel and of the agent's notes to the operator; client sites keep their own languages. */
   panelLanguage: z.enum(["tr", "en"]).default("tr"),
+  /**
+   * Who uses this panel: their name and studio, asked on first start. The agent addresses them by name (the rules
+   * call them "the operator"); everyone runs their own panel with their own accounts.
+   */
+  profile: z
+    .object({
+      name: z
+        .string()
+        .trim()
+        .max(60)
+        .transform((v) => v.replace(/[\u0000-\u001f"<>`]/g, "")),
+      studio: z
+        .string()
+        .trim()
+        .max(80)
+        .transform((v) => v.replace(/[\u0000-\u001f"<>`]/g, "")),
+    })
+    .default({ name: "", studio: "" }),
   /** Who the proposal (Teklif) is from. */
   sender: z
     .object({
@@ -54,7 +72,7 @@ export const SettingsSchema = z.object({
     .default({ mode: "balanced", monthlyTokens: 0 }),
   /**
    * Per kind of job: which agent (Claude Code or Codex), which model, step limit and token cap. Empty or 0 = the
-   * package's value (budget.mode). Lets Eren send cheap work to a cheaper model or to another provider.
+   * package's value (budget.mode). Lets the operator send cheap work to a cheaper model or to another provider.
    */
   agents: z
     .object({
@@ -89,3 +107,6 @@ export function writeSettings(factory: FactoryConfig, input: unknown): Settings 
   writeJson(file(factory), data);
   return data;
 }
+
+/** The first-start profile is filled in (name at least). */
+export const profileComplete = (s: Settings): boolean => s.profile.name.length > 0;

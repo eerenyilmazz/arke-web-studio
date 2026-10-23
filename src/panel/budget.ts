@@ -78,7 +78,7 @@ export const PROFILES: Readonly<Record<BudgetMode, Profile>> = {
   },
 };
 
-/** Budget modes as Eren and the panel name them: packages (same words as the panel's PACKAGE_NAMES). */
+/** Budget modes as the operator and the panel name them: packages (same words as the panel's PACKAGE_NAMES). */
 export const PACKAGE_LABELS: Readonly<Record<BudgetMode, string>> = { economy: "Temel", balanced: "Standart", premium: "Premium" };
 
 /** The client's own mode (set in its business info) wins over the panel-wide one. */
@@ -111,7 +111,7 @@ export function resolvePolicy(factory: FactoryConfig, slug: string, kind: string
         : group === "design"
           ? p.design
           : p.edit;
-  // Eren's per-kind choices (provider, model, limits) win over the package; 0 / empty keep the package's value.
+  // The operator's per-kind choices (provider, model, limits) win over the package; 0 / empty keep the package's value.
   const route = settings.agents[group];
   const provider: AgentProvider = route?.provider || "claude";
   // A Claude model name means nothing to Codex: then Codex uses its own default model.

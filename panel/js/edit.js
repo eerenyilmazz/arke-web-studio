@@ -115,7 +115,7 @@ export async function editForm(id, d) {
   }
 }
 
-/** Contact form: Eren pastes the endpoint of a free form service; only he can set it, the agent only uses it. */
+/** Contact form: The operator pastes the endpoint of a free form service; only they can set it, the agent only uses it. */
 export function formCard(d) {
   const slug = d.status.slug;
   const cur = d.status.contactForm || null;
@@ -219,7 +219,7 @@ const TEXT_KIND_TR = {
 };
 
 /**
- * Every text of a page, each with its id (h1-1, p-3, meta-description…). Eren edits in place; the panel writes
+ * Every text of a page, each with its id (h1-1, p-3, meta-description…). The operator edits in place; the panel writes
  * the changes itself and rebuilds (no agent, no tokens). Only changed texts are sent.
  */
 async function textEditor(d) {

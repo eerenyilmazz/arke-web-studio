@@ -2,7 +2,7 @@ import { randomInt, timingSafeEqual } from "node:crypto";
 
 /**
  * Approvals from the panel. The code is created when the panel starts and printed only in the terminal
- * where Eren started it: it never goes to the browser, to the agent, or into a file. A wrong code counts;
+ * where the operator started it: it never goes to the browser, to the agent, or into a file. A wrong code counts;
  * after a few wrong tries the panel refuses approvals until it is restarted (new code).
  */
 const CODE_DIGITS = 6;

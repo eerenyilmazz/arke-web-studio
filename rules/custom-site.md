@@ -3,15 +3,15 @@
 For clients whose `template` is `custom`, you are the designer and the developer. There is no template:
 you design a brand identity for the business, then write the whole site (HTML, CSS, JavaScript, SVG)
 with `write_site_file`. `build_site` copies `site/` to `dist/`, adds the images from `assets/`, and checks
-the code, the brand and the basics. Eren reviews the result and approves it himself.
+the code, the brand and the basics. The operator reviews the result and approves it themselves.
 
 The bar: a small business owner opens the site and says "this is us". Not a theme with their name on it.
 
 ---
 
-## What Eren sold (extras)
+## What the operator sold (extras)
 
-When the prompt has a "What Eren sold to this client" list, it decides five things and wins over this file on
+When the prompt has a "What the operator sold to this client" list, it decides five things and wins over this file on
 them: a second language and its switch, light/dark theme and its toggle, a blog, a WhatsApp button, an online
 booking button. Build what is included and nothing that is not (a single-theme site has no toggle and no
 `prefers-color-scheme` switch). Without that list (clients from before extras existed), build as this file says.
@@ -40,14 +40,14 @@ or npm packages), no generated images, no external resources except Google Fonts
 `get_client_status`, then read `site.config.json` facts and `content/<locale>.json` (save content first if it is
 missing; it is the single source of facts). Run `generate_design_system` for a sector starting point.
 Never invent facts (prices, years, reviews, awards, addresses). Copy for visitors is written in the site's
-languages; if Eren wrote notes in Turkish, translate them. The market rules (`rules/markets.md`: language, spelling,
+languages; if the operator wrote notes in Turkish, translate them. The market rules (`rules/markets.md`: language, spelling,
 formats, legal pages) and `rules/local-seo.md` (titles, local facts, JSON-LD, images) apply to every page you write.
 
-## Design plan (new designs: approved by Eren before anything is built)
+## Design plan (new designs: approved by the operator before anything is built)
 
 When `get_client_status` shows `designPlan.state` other than `not-required`, the site is not designed straight away.
-First write the plan with `save_design_plan`, then **stop**: Eren reads it in the panel and approves it, or asks for
-a new idea with notes. Until he approves, the write tools refuse every site file except `brand/signature.html`
+First write the plan with `save_design_plan`, then **stop**: The operator reads it in the panel and approves it, or asks for
+a new idea with notes. Until they approve, the write tools refuse every site file except `brand/signature.html`
 (write it to show the motion live in the plan card). After approval, build exactly to the plan; any departure goes
 in the summary with its reason. The build fails without an approved plan, or when the plan changed after approval.
 
@@ -63,10 +63,10 @@ The plan (all names formal and in the site's main language; no jokes, puns or cu
 - `animations`: 0–4 supporting animations with formal names, trigger and what moves.
 - `differs` (only after a new-idea request): how this plan differs from the earlier ones.
 
-In the summary, write the plan out for Eren in formal Turkish: concept and source, palette, fonts, hero, pages, the
+In the summary, write the plan out for the operator in formal Turkish: concept and source, palette, fonts, hero, pages, the
 signature's name and its beats in order with timings. On a new-idea request, read the earlier plans
 (`design-plans/`): the new one has a different concept or source, hero composition and signature motion (not a
-variation), unless Eren's notes keep a part.
+variation), unless the operator's notes keep a part.
 
 ## Step 1: brand identity (required, before any page)
 
@@ -125,7 +125,7 @@ beats almost one to one (`at`, `duration`, `easing`, `draw`, `stagger`). After `
 fails for new designs when `brand/signature.html` is missing, has fewer animated steps than the plan's beats (at
 least 3), or has no reduced-motion state.
 
-**The brand board** (Eren shows it to the client as the "Marka Atölyesi" card, so it must stand on its own):
+**The brand board** (the operator shows it to the client as the "Marka Atölyesi" card, so it must stand on its own):
 
 - **tagline**: a few words in the site's main language that only this business could say. Not "Quality and trust".
 - **signature**: the one **signature motion** people remember the brand by (usually one of the animations above):
@@ -152,7 +152,7 @@ never replaced. Look at the file with Read (it shows you the image), then:
   hero or brand section too. Do **not** write `brand/logo.svg` and never redraw or "improve" the client's logo.
 - If the logo is low quality (tiny, blurry) or sits on a photo or coloured background (a JPG with a grey backdrop),
   still use that file: place it on a light plate (a rounded card in the logo's background tone) in the header and
-  hero, and ask Eren in the summary for a transparent PNG or SVG. Drawing your own version is never the fix.
+  hero, and ask the operator in the summary for a transparent PNG or SVG. Drawing your own version is never the fix.
 - The build fails when the client's logo file is not used, or when `brand/logo.svg` (a drawn logo) exists next to it.
 
 Then (only when the client has no logo) write `site/brand/logo.svg`: a real mark plus wordmark drawn in SVG (shapes and paths, using the brand
@@ -184,7 +184,7 @@ Plan before writing: palette roles, type scale, layout concept for each page, an
 
 ## Signature design (what every custom site must feel like)
 
-The brand board (Eren's "Marka Atölyesi" card) is the standard: dark or light, the brand is *felt* on every screen,
+The brand board (the operator's "Marka Atölyesi" card) is the standard: dark or light, the brand is *felt* on every screen,
 not written in a file. A site that is a heading, a paragraph and a price list on an empty background is a fail,
 however clean. Every custom site has all of these, designed for its own business (never copy the example's shapes):
 
@@ -326,14 +326,14 @@ do not exist, `<form>`, missing `404.html` or viewport meta, missing alt, lang o
 Then read every failed check and the Impeccable warnings (contrast, cramped padding, tells of generated
 design) and fix them in the files. Build again; stop after 3 failed builds and report.
 
-In your summary for Eren (Turkish, plain): the brand concept in one sentence, the palette and fonts, and each
+In your summary for the operator (Turkish, plain): the brand concept in one sentence, the palette and fonts, and each
 signature animation and where it appears. Never mention file paths or commands.
 
-## Design proposals (when Eren asks for options)
+## Design proposals (when the operator asks for options)
 
 When asked for three proposals, write `site/brand/options/{a,b,c}.json` (brand.json fields plus `"name"`, a two- or
 three-word title) and `site/brand/options/{a,b,c}-logo.svg`. Three genuinely different directions from the business's
-world; no pages, no build. When Eren picks one, it becomes `brand/brand.json` and `brand/logo.svg` and the whole site
+world; no pages, no build. When the operator picks one, it becomes `brand/brand.json` and `brand/logo.svg` and the whole site
 is written with it. Proposals are never published.
 
 ## Changing a custom site later

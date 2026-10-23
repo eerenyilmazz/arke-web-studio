@@ -13,7 +13,7 @@ import { PRODUCT_IDS, PRODUCTS, type ProductId, type ProductModule } from "../pr
  * plain path in tools/deploy.ts; this module only adds what an app needs, as one ordered pipeline:
  *
  *   resources (create once, ids kept in .factory/) → database backup → migrations (destructive ones only with
- *   Eren's typed confirmation) → secrets (stdin, never arguments) → wrangler deploy
+ *   The operator's typed confirmation) → secrets (stdin, never arguments) → wrangler deploy
  *
  * Preview and production never share data: each target has its own database and bucket. Everything that decides
  * what happens is written by the panel in .factory/, which the agent cannot write.
@@ -137,7 +137,7 @@ export function migrationFiles(clientRoot: string): MigrationFile[] {
     });
 }
 
-/** Statements that lose data: they need Eren's typed confirmation, and always come after a backup. */
+/** Statements that lose data: they need the operator's typed confirmation, and always come after a backup. */
 export function destructiveStatements(sql: string): string[] {
   const clean = sql.replace(/--[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
   const found: string[] = [];
@@ -239,7 +239,7 @@ const parseCreatedId = (out: string): string | null =>
 
 /**
  * Applies pending migrations after exporting the database (kept in .factory/db-backups/). Destructive statements
- * stop the publish unless Eren confirmed them for this publish.
+ * stop the publish unless the operator confirmed them for this publish.
  */
 export async function migrate(ctx: AppDeployContext, resources: TargetResources, allowDestructive: boolean): Promise<string[]> {
   if (!ctx.plan.database || !resources.database) return [];
@@ -249,7 +249,7 @@ export async function migrate(ctx: AppDeployContext, resources: TargetResources,
   if (risky.length && !allowDestructive)
     throw new FactoryError(
       `These migrations delete or overwrite data:\n- ${risky.join("\n- ")}`,
-      "Nothing was changed. Eren confirms them in the panel (a backup is taken first), or the migration is rewritten.",
+      "Nothing was changed. The operator confirms them in the panel (a backup is taken first), or the migration is rewritten.",
     );
   const backups = path.join(ctx.paths.factoryDir, BACKUPS_DIR);
   mkdirSync(backups, { recursive: true });
@@ -271,7 +271,10 @@ export async function migrate(ctx: AppDeployContext, resources: TargetResources,
 export function assertSecrets(plan: AppPlan, values: Readonly<Record<string, string>>): void {
   const missing = plan.secrets.filter((n) => !values[n]);
   if (missing.length)
-    throw new FactoryError(`Missing secret(s): ${missing.join(", ")}.`, "Eren enters them in the panel (client → Müşteri Bilgileri → Gizli anahtarlar).");
+    throw new FactoryError(
+      `Missing secret(s): ${missing.join(", ")}.`,
+      "The operator enters them in the panel (client → Müşteri Bilgileri → Gizli anahtarlar).",
+    );
 }
 
 /** Sends the client's secrets to the Worker in one call, through stdin. */

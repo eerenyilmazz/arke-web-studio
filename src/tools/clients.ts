@@ -96,7 +96,7 @@ export async function createClient(
     folder: paths.root,
     gitInitialised: git?.code === 0,
     templateFound: isCustom(template) || existsSync(path.join(factory.templatesDir, template, "package.json")),
-    next: "Call generate_questionnaire with round 1 and give the text to Eren to send to the client.",
+    next: "Call generate_questionnaire with round 1 and give the text to the operator to send to the client.",
   };
 }
 
@@ -148,7 +148,7 @@ export function generateQuestionnaire(factory: FactoryConfig, args: { slug: stri
     files: [`questionnaires/round-${args.round}.md`, `questionnaires/round-${args.round}.txt`],
     questionIds: q.questionIds,
     plainText: q.plainText,
-    note: "Give the plain text to Eren to send. Do not contact the client directly.",
+    note: "Give the plain text to the operator to send. Do not contact the client directly.",
   };
 }
 

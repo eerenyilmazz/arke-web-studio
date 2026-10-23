@@ -11,7 +11,7 @@ import { PNG_1PX, tempFactory } from "./helpers.js";
 /**
  * The client portal end to end: the Worker runs in Cloudflare's own runtime (workerd, started by the local wrangler,
  * with a local KV store), the panel talks to it over real HTTP, and a "client" uses the pages in a real browser.
- * Eren creates links → the client sends the form with photos → the panel collects them → the answers go to the agent →
+ * The operator creates links → the client sends the form with photos → the panel collects them → the answers go to the agent →
  * the client comments on the preview and approves → the comments go to the agent → links are closed and nothing is
  * left on the portal. Skipped without a Linux Chromium or when workerd cannot start; SF_E2E=off skips it on purpose.
  */
@@ -89,7 +89,7 @@ describe("end to end: the client portal in Cloudflare's runtime", { timeout: 300
     const card = page.locator(".portal-card");
     const linkUrl = async (kind: "f" | "r") => (await card.locator(".portal-url").allInnerTexts()).find((u) => u.includes(`/${kind}/`))!;
 
-    // 1. Eren creates the details-form link.
+    // 1. The operator creates the details-form link.
     await card.getByRole("button", { name: "Bilgi formu linki oluştur" }).click();
     await expect.poll(async () => (await card.locator(".portal-url").allInnerTexts()).some((u) => u.includes("/f/"))).toBe(true);
     const formUrl = await linkUrl("f");
@@ -108,7 +108,7 @@ describe("end to end: the client portal in Cloudflare's runtime", { timeout: 300
     await client.getByRole("button", { name: "Send" }).click();
     await expect.poll(() => client.locator("h1").textContent()).toMatch(/Thank you/);
 
-    // 3. Eren collects it: the answers in the panel, the real photo in the client's inbox, the fake one dropped.
+    // 3. The operator collects it: the answers in the panel, the real photo in the client's inbox, the fake one dropped.
     await card.getByRole("button", { name: "Gelenleri şimdi al" }).click();
     await expect.poll(() => card.locator(".portal-entry").count()).toBe(1);
     const inbox = readdirSync(path.join(factory.inboxDir, SLUG));
@@ -150,7 +150,7 @@ describe("end to end: the client portal in Cloudflare's runtime", { timeout: 300
     await client.getByRole("button", { name: "I approve" }).click();
     await expect.poll(() => client.locator("h1").textContent()).toMatch(/approval has been sent/);
 
-    // 6. Eren collects them: the approval is shown (for information), the comments go to the agent as data.
+    // 6. The operator collects them: the approval is shown (for information), the comments go to the agent as data.
     await page.locator(".portal-card").getByRole("button", { name: "Gelenleri şimdi al" }).click();
     await expect.poll(() => page.locator(".portal-approval").textContent()).toContain("Rose Hill");
     await expect.poll(() => page.locator(".portal-comment.open").count()).toBe(2);

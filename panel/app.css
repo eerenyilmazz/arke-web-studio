@@ -1181,3 +1181,7 @@ h2 { font-weight: 600; }
 .btn-primary:hover, .sidebar .btn-primary:hover, .btn-ok:hover { background: color-mix(in srgb, var(--primary) 86%, var(--accent)); border-color: color-mix(in srgb, var(--primary) 86%, var(--accent)); }
 [data-theme="dark"] .btn-ok { color: var(--primary-ink); }
 .brand-mark, [data-theme="dark"] .brand-mark { background: var(--accent); color: var(--accent-ink); border-radius: 6px; }
+.welcome-slot:empty { display: none; }
+.welcome-card { max-width: 560px; margin: 0 0 1.4rem; border-color: var(--accent); }
+.empty .welcome-card { margin: 0 auto 1.6rem; text-align: start; }
+#welcome-profile input, #profile-card input { width: 100%; }

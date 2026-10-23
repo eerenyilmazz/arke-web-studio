@@ -11,7 +11,7 @@ also use `rules/legacy-templates.md`.
 ## Choosing a design
 
 1. Start from the sector: a solicitor needs calm trust, a restaurant appetite, a salon style. Use `generate_design_system` output as the starting point.
-2. Client brand colours always win. Change only shade/lightness to meet contrast, and tell Eren.
+2. Client brand colours always win. Change only shade/lightness to meet contrast, and tell the operator.
 3. Template sites only: choose `design.personality` and `design.motif` (rules/legacy-templates.md).
 4. Write down in your summary *why* you chose the style, in one sentence.
 
@@ -55,7 +55,7 @@ Colours named anywhere in the client's text, in any language ("kırmızı ve siy
 - Bounce/elastic easing; animation on every element.
 - Stock photos of handshakes or people pointing at laptops.
 
-## Visual approval checklist (Eren, before the preview goes to the client)
+## Visual approval checklist (the operator, before the preview goes to the client)
 
 - [ ] Within 5 seconds it is clear what the business does and what to do next.
 - [ ] One clear call to action per page; contact is never more than one tap away.

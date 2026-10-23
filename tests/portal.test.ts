@@ -243,7 +243,7 @@ describe("portal endpoints of the panel", () => {
       const listed = JSON.parse((await call("GET", "/api/clients/rose-cafe/portal")).text) as { links: Array<{ token: string }> };
       expect(listed.links.some((l) => l.token === link.token)).toBe(true);
 
-      // A client comments through a review link; the panel pulls it and Eren marks it done.
+      // A client comments through a review link; the panel pulls it and the operator marks it done.
       const review = JSON.parse((await call("POST", "/api/clients/rose-cafe/portal/links", { kind: "review" })).text) as { url: string };
       await visit(`${review.url}/comment`, { method: "POST", body: new URLSearchParams({ page: "contact", text: "Add Sunday hours" }) });
       expect(JSON.parse((await call("POST", "/api/portal/pull")).text)).toMatchObject({ comments: 1 });

@@ -7,8 +7,8 @@ import type { FactoryConfig } from "../config.js";
 import { readSettings } from "./settings.js";
 
 /**
- * Backups of everything Eren cannot rebuild: client folders (with their version history), the design library
- * and the panel settings, as one .tar.gz in a folder he chose (e.g. a OneDrive folder). The inbox is included
+ * Backups of everything the operator cannot rebuild: client folders (with their version history), the design library
+ * and the panel settings, as one .tar.gz in a folder the operator chose (e.g. a OneDrive folder). The inbox is included
  * because uploads may not be saved yet. Old backups beyond KEEP are removed; nothing else is ever deleted.
  */
 const run = promisify(execFile);
@@ -28,7 +28,7 @@ export interface BackupResult {
 /** The backup folder must be an existing absolute directory outside the client folders. */
 export function checkBackupDir(dir: string, factory: FactoryConfig): string {
   if (!dir) throw new Error("Önce Ayarlar'dan bir yedek klasörü seç.");
-  if (!path.isAbsolute(dir)) throw new Error("Yedek klasörü tam yol olmalı (ör. /mnt/c/Users/eeren/OneDrive/Yedek).");
+  if (!path.isAbsolute(dir)) throw new Error("Yedek klasörü tam yol olmalı (ör. /mnt/c/Users/<kullanıcı>/OneDrive/Yedek).");
   if (!existsSync(dir) || !statSync(dir).isDirectory()) throw new Error("Yedek klasörü bulunamadı. Klasörü oluşturup tekrar dene.");
   const rel = path.relative(path.resolve(factory.clientsRoot), path.resolve(dir));
   if (!rel.startsWith("..") && !path.isAbsolute(rel)) throw new Error("Yedek klasörü müşteri klasörünün içinde olamaz.");
@@ -146,7 +146,7 @@ export async function verifyBackup(factory: FactoryConfig, file: string): Promis
 
 /**
  * Unpacks a backup into a NEW folder (it must not exist), never over the current clients. To switch to the
- * restored copy, Eren renames the folders himself (the README explains it); until then nothing changes.
+ * restored copy, the operator renames the folders themselves (the README explains it); until then nothing changes.
  */
 export async function restoreBackup(factory: FactoryConfig, archive: string, target: string): Promise<BackupCheck & { folder: string }> {
   const dest = path.resolve(target);

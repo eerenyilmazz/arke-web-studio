@@ -327,7 +327,7 @@ function reviewStep(box, f, submit) {
 
 /**
  * New client, step by step: business, package and price, logo and photos, information, then a summary. Nothing is
- * saved and no resources are used until the last step, where Eren sees everything and decides whether the site
+ * saved and no resources are used until the last step, where the operator sees everything and decides whether the site
  * starts now or later.
  */
 export function renderNew() {

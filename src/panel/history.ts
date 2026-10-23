@@ -40,7 +40,7 @@ export function readHistory(factory: FactoryConfig, slug: string): JobRecord[] {
 }
 
 /**
- * Everything Eren pasted or wrote about a client, one JSON line per agent job in .factory/inputs.jsonl.
+ * Everything the operator pasted or wrote about a client, one JSON line per agent job in .factory/inputs.jsonl.
  * Each agent job starts fresh, so facts that were only "noted" in an earlier job would otherwise be lost;
  * later jobs get these earlier inputs back (as client data) and can finish the site without asking again.
  */

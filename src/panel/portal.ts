@@ -13,7 +13,7 @@ import { localizedQuestion } from "../schema/questions-tr.js";
 import * as tools from "../tools.js";
 
 /**
- * The panel's side of the client portal (portal/worker.js on Eren's Cloudflare account).
+ * The panel's side of the client portal (portal/worker.js on the operator's Cloudflare account).
  *
  * The portal secret and address are kept in ~/.config/site-factory/portal.json: outside the client folders,
  * where agent jobs are refused reads (AGENT_DENIED_READS covers ~/.config), so no agent can call the portal.
@@ -70,7 +70,7 @@ export function portalStatus(): { configured: boolean; url: string | null; at: s
   return { configured: Boolean(c), url: c?.url ?? null, at: c?.at ?? null };
 }
 
-// ---------------------------------------------------------------- setup (wrangler, Eren's managed account)
+// ---------------------------------------------------------------- setup (wrangler, the operator's managed account)
 
 /** The person's own account (Ayarlar → Hesabım), else the environment variables. */
 function managedCreds(): { token: string; accountId: string } | null {

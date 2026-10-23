@@ -5,7 +5,7 @@ import { render } from "./router.js";
 
 const LINK_KIND_TR = { intake: "Bilgi formu", review: "Yorum ve onay" };
 
-/** Settings card: one-time setup on Eren's Cloudflare account. The secret is never shown. */
+/** Settings card: one-time setup on the operator's Cloudflare account. The secret is never shown. */
 export function portalSettingsCard() {
   const card = h(
     "section",

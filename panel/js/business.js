@@ -60,14 +60,14 @@ export function businessForm(d) {
   const due = h("input", { id: "biz-due", type: "date", value: b.paymentDue || "" });
   const note = h("textarea", { id: "biz-note", rows: 2, maxlength: 2000 });
   note.value = b.note || "";
-  const tags = h("input", { id: "biz-tags", placeholder: "ör. abim, acil, Ankara", value: (b.tags || []).join(", ") });
+  const tags = h("input", { id: "biz-tags", placeholder: "ör. tavsiye, acil, İzmir", value: (b.tags || []).join(", ") });
   const bmode = h(
     "select",
     { id: "biz-mode" },
     h("option", { value: "" }, "Varsayılan paket"),
     ...Object.entries(PACKAGE_NAMES).map(([k, v]) => h("option", { value: k, selected: b.budgetMode === k }, v)),
   );
-  // Eren's own costs for this client (same currency as the price): domain, stock photos, a form plan…
+  // The operator's own costs for this client (same currency as the price): domain, stock photos, a form plan…
   const costRows = h("div", { class: "cost-rows" });
   const addCost = (c = { label: "", amount: "" }) => {
     const row = h(
@@ -80,7 +80,7 @@ export function businessForm(d) {
     costRows.append(row);
   };
   (b.costs || []).forEach((c) => addCost(c));
-  // Extras: a client from before extras existed has none recorded; the list is saved only once Eren touches it,
+  // Extras: a client from before extras existed has none recorded; the list is saved only once the operator touches it,
   // so opening and saving the form never changes what the agent builds for that client.
   const mainLang = d.defaultLocale || (d.country === "TR" ? "tr" : "en");
   const extras = addonsEditor(b.addons || [], { prices: true, currencySign: CURRENCY_SIGNS[b.currency] || "", mainLang, idPrefix: "biz-ad" });

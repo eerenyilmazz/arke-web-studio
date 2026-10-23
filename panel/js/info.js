@@ -288,7 +288,7 @@ export async function tabAnswers(body, d, { compact = false } = {}) {
 export function uploadCard(slug, inbox, assets = [], logo = null) {
   const list = h("ul", { class: "files thumbs" });
   let current = { inbox, assets, logo };
-  // Every uploaded (inbox) and saved (assets) image, with "Logo olarak kullan": Eren decides, not the agent.
+  // Every uploaded (inbox) and saved (assets) image, with "Logo olarak kullan": The operator decides, not the agent.
   const draw = () => {
     const rows = [
       ...current.assets.map((f) => ({ ...f, from: "assets", state: "Sitede" })),

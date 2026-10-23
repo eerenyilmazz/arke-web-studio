@@ -180,7 +180,7 @@ export function nextAction(d) {
     setTimeout(() => $("#composer")?.focus(), 120);
   };
   if (working) return { text: "İşlem sürüyor. Tamamlandığında bildirim alacaksınız.", actions: [] };
-  // A new design waits for Eren's decision on its plan before anything is built.
+  // A new design waits for the operator's decision on its plan before anything is built.
   if (planWaiting(d))
     return {
       text: "Tasarım planını inceleyip onaylayınız.",
@@ -493,7 +493,7 @@ export function prepareCard(d) {
     fileCount.textContent = `${total} dosya eklendi`;
   });
 
-  // Eren's rule: research and questions before design. Unticked = the agent decides open design choices itself.
+  // The operator's rule: research and questions before design. Unticked = the agent decides open design choices itself.
   const askFirst = h("input", {
     type: "checkbox",
     id: "prep-ask",

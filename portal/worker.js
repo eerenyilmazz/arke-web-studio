@@ -1,9 +1,9 @@
-// Site Factory client portal: a small Cloudflare Worker on Eren's own account (free plan, Workers KV).
+// Site Factory client portal: a small Cloudflare Worker on the operator's own account (free plan, Workers KV).
 //
-// Clients open a link Eren sends them:
+// Clients open a link the operator sends them:
 //   /f/<token>  a form for their business details, logo and photos
 //   /r/<token>  the preview of their site, with comments and "Onaylıyorum"
-// The panel (on Eren's computer) creates the links and collects what arrives through /api/*, which needs the
+// The panel (on the operator's computer) creates the links and collects what arrives through /api/*, which needs the
 // portal secret (Bearer). What the panel has collected is deleted here, so the store stays small.
 //
 // Pages are plain HTML forms: no scripts, no cookies, no trackers. Everything a client typed is escaped.

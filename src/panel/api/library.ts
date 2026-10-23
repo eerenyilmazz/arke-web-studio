@@ -68,7 +68,7 @@ async function patchLibrary(deps: ApiDeps, req: IncomingMessage, res: ServerResp
   libraryDetail(deps, res, id!);
 }
 
-/** One line for the agent and for Eren: what the panel already filled from the design's fixed places. */
+/** One line for the agent and for the operator: what the panel already filled from the design's fixed places. */
 export function filledNote(r: ApplyResult): string {
   const done = r.filled.map((f) => `${f.label} (${f.count})`).join(", ");
   return [done ? `Panel filled: ${done}.` : "", r.missing.length ? `Not filled (client has no value yet): ${r.missing.join(", ")}.` : ""]

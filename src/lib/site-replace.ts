@@ -5,7 +5,7 @@ import { listSiteFiles, siteDir, writeSiteFile } from "./custom-site.js";
 
 /**
  * Exact, mechanical replacements in a custom site's files, done by the panel itself (no agent, no tokens):
- * a colour code, a sentence Eren copied from the site, an e-mail address. When a value is not found, the
+ * a colour code, a sentence the operator copied from the site, an e-mail address. When a value is not found, the
  * caller falls back to an agent job, so nothing is changed by guessing.
  */
 const TEXT_FILES = /\.(html|css|js|svg|json|txt|xml|webmanifest)$/i;

@@ -3,6 +3,17 @@
 // where {} stands in the English. Missing entries simply stay Turkish. Generated once, then edited by hand.
 export const EN = {
   exact: {
+    "Hoş geldiniz": "Welcome",
+    Profil: "Profile",
+    Başla: "Start",
+    Adınız: "Your name",
+    "Stüdyo adı (isteğe bağlı)": "Studio name (optional)",
+    "Profil kaydedildi.": "Profile saved.",
+    "Ad Soyad": "Full name",
+    "ör. Atölye Web": "e.g. Atelier Web",
+    "Bu panel size özel: kendi müşterileriniz, kendi hesaplarınız. Agent size adınızla hitap eder; onaylar yalnızca sizdedir.":
+      "This panel is yours: your own clients, your own accounts. The agent addresses you by name; approvals are yours alone.",
+    "Agent size bu adla hitap eder. Stüdyo adı isteğe bağlıdır.": "The agent addresses you by this name. The studio name is optional.",
     "Müşteri Yönetim Ekranı": "Client Admin Screen",
     "Katalog ve gelen mesajlar için müşterinin kendi ekranı.": "The client's own screen for the catalogue and incoming messages.",
     "Site, müşterinin kendi yönetim ekranıyla gelir (site adresi/admin). Kayıtları ve gelen mesajları oradan yönetir.":
@@ -685,7 +696,7 @@ export const EN = {
     "Teklif verildi": "Quote given",
     "Kapora alındı": "Deposit received",
     Ödendi: "Paid",
-    "ör. abim, acil, Ankara": "e.g. referral, urgent, London",
+    "ör. tavsiye, acil, İzmir": "e.g. referral, urgent, London",
     "Gider (ör. alan adı)": "Cost (e.g. domain)",
     "Gider adı": "Cost name",
     "İş bilgileri kaydedildi.": "Business details saved.",
@@ -949,7 +960,8 @@ export const EN = {
     "Araç hatası": "Tool error",
     "Önizleme için panelden bir müşteri seçin.": "Choose a client in the panel for the preview.",
     "Önce Ayarlar'dan bir yedek klasörü seç.": "First choose a backup folder in Settings.",
-    "Yedek klasörü tam yol olmalı (ör. /mnt/c/Users/eeren/OneDrive/Yedek).": "The backup folder must be a full path (e.g. /mnt/c/Users/eeren/OneDrive/Backup).",
+    "Yedek klasörü tam yol olmalı (ör. /mnt/c/Users/<kullanıcı>/OneDrive/Yedek).":
+      "The backup folder must be a full path (e.g. /mnt/c/Users/<user>/OneDrive/Backup).",
     "Yedek klasörü bulunamadı. Klasörü oluşturup tekrar dene.": "Backup folder not found. Create the folder and try again.",
     "Yedek klasörü müşteri klasörünün içinde olamaz.": "The backup folder cannot be inside the client folder.",
     "Geçersiz yedek adı.": "Invalid backup name.",
@@ -1060,7 +1072,7 @@ export const EN = {
     orta: "medium",
     "Adres:": "Address:",
     "· kuruldu:": "· set up:",
-    "/mnt/c/Users/eeren/OneDrive/SiteFactory-Yedek": "/mnt/c/Users/eeren/OneDrive/SiteFactory-Backup",
+    "/mnt/c/Users/<kullanıcı>/OneDrive/SiteFactory-Yedek": "/mnt/c/Users/<user>/OneDrive/SiteFactory-Backup",
     Slogan: "Tagline",
     Almanca: "German",
     Hizmetler: "Services",

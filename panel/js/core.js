@@ -197,7 +197,7 @@ export const isBusy = () => Boolean(state.running && state.running.status === "r
 
 // ---------------------------------------------------------------- budget
 
-/** The three packages (budget modes economy / balanced / premium in the code) as Eren and his clients see them. */
+/** The three packages (budget modes economy / balanced / premium in the code) as the operator and their clients see them. */
 export const PACKAGE_NAMES = { economy: "Temel", balanced: "Standart", premium: "Premium" };
 
 export const fmtTokens = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n || 0));

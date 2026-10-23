@@ -54,9 +54,9 @@ export interface ClientStatus {
   readonly contentHash: string;
   /** Research saved by an earlier job (save_research_notes): reuse it instead of searching the web again. */
   readonly researchNotes: { savedAt: string; text: string } | null;
-  /** Where a contact form may post (set by Eren in the panel), or null: then no <form>, only contact buttons. */
+  /** Where a contact form may post (set by the operator in the panel), or null: then no <form>, only contact buttons. */
   readonly contactForm: { action: string; accessKey?: string } | null;
-  /** New designs: the plan Eren approves before the site is built (rules/custom-site.md, "Design plan"). */
+  /** New designs: the plan the operator approves before the site is built (rules/custom-site.md, "Design plan"). */
   readonly designPlan: { state: PlanState; next: string | null };
 }
 
@@ -146,19 +146,19 @@ export function clientStatus(factory: FactoryConfig, slug: string): ClientStatus
     nextStep = "Write the missing text for every locale with save_content.";
   } else if (!valid.content) {
     stage = "awaiting-content-approval";
-    nextStep = "Show Eren the content summary. He approves in a terminal: npm run approve -- <slug> content";
+    nextStep = "Show the operator the content summary. They approve in a terminal: npm run approve -- <slug> content";
   } else if (!buildCurrent) {
     stage = "build";
     nextStep = lastBuild && lastBuild.hash === hash ? "Fix the failures in quality-report.md, then build_site again." : "Run build_site.";
   } else if (!valid.visual) {
     stage = "awaiting-visual-approval";
-    nextStep = "Ask Eren to review the built site against the design checklist. He approves with: npm run approve -- <slug> visual";
+    nextStep = "Ask the operator to review the built site against the design checklist. They approve with: npm run approve -- <slug> visual";
   } else if (lastDeploy?.hash === hash && lastDeploy.target === "production") {
     stage = "live";
     nextStep = "Site is live with the current content. For changes: edit config/content, then build again.";
   } else if (!valid.production) {
     stage = "awaiting-production-approval";
-    nextStep = "Deploy a preview (deploy target=preview) for the client; after their OK, Eren runs: npm run approve -- <slug> production";
+    nextStep = "Deploy a preview (deploy target=preview) for the client; after their OK, the operator runs: npm run approve -- <slug> production";
   } else {
     stage = "ready-to-deploy";
     nextStep = "Run deploy with target=production.";

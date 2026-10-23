@@ -80,7 +80,7 @@ function registerClientTools(server: McpServer, factory: FactoryConfig): void {
         slug,
         businessName: z.string().min(1).max(80),
         industry: z.string().min(2).max(60).describe("Short sector name in English, e.g. 'hair salon', 'family law solicitor'"),
-        hostingModel: z.enum(["managed", "client"]).describe("managed = our Cloudflare account; client = the client's own. Ask Eren."),
+        hostingModel: z.enum(["managed", "client"]).describe("managed = our Cloudflare account; client = the client's own. Ask the operator."),
         extraLocale: z.enum(LOCALES).optional().describe("Second language, only if the client asked for one"),
         country: z
           .enum(tools.COUNTRIES)
@@ -108,7 +108,7 @@ function registerClientTools(server: McpServer, factory: FactoryConfig): void {
     {
       title: "Generate client questionnaire",
       description:
-        "Writes the client form (markdown + plain text) and returns the plain text for Eren to send. Round 1 = the 10 essentials; round 2 = only what is still missing, sector extras and a 'later' interest checklist.",
+        "Writes the client form (markdown + plain text) and returns the plain text for the operator to send. Round 1 = the 10 essentials; round 2 = only what is still missing, sector extras and a 'later' interest checklist.",
       inputSchema: { slug, round: z.union([z.literal(1), z.literal(2)]), replyBy: z.string().max(40).optional().describe("e.g. 'Friday 24 October'") },
     },
     handler(factory, "generate_questionnaire", (a: { slug: string; round: 1 | 2; replyBy?: string }) => tools.generateQuestionnaire(factory, a)),
@@ -119,7 +119,7 @@ function registerClientTools(server: McpServer, factory: FactoryConfig): void {
     {
       title: "Update client config",
       description:
-        "Deep-merges a partial patch into site.config.json (objects merge, arrays replace). Rejects the whole patch if any value is invalid; missing fields are fine. Put answers that fit no field in `unmapped` and ask Eren, never drop them.",
+        "Deep-merges a partial patch into site.config.json (objects merge, arrays replace). Rejects the whole patch if any value is invalid; missing fields are fine. Put answers that fit no field in `unmapped` and ask the operator, never drop them.",
       inputSchema: {
         slug,
         patch: z.record(z.string(), z.unknown()).describe("Partial site config, e.g. { contact: { email: 'a@b.co.uk' } }"),
@@ -283,14 +283,14 @@ function registerSiteFileTools(server: McpServer, factory: FactoryConfig): void 
   );
 }
 
-/** The design plan for new designs: saved by the agent, approved only by Eren in the panel. */
+/** The design plan for new designs: saved by the agent, approved only by the operator in the panel. */
 function registerPlanTool(server: McpServer, factory: FactoryConfig): void {
   server.registerTool(
     "save_design_plan",
     {
       title: "Save design plan",
       description:
-        "New designs: how you will design the site, for Eren to approve before any page is written (rules/custom-site.md, 'Design plan'). Formal names in the site's main language. Saving never approves; after saving, stop and summarise the plan.",
+        "New designs: how you will design the site, for the operator to approve before any page is written (rules/custom-site.md, 'Design plan'). Formal names in the site's main language. Saving never approves; after saving, stop and summarise the plan.",
       inputSchema: {
         slug,
         plan: z

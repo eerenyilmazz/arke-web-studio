@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Extras Eren sells on top of the base site, chosen per client (Business Tracking, or the new-client form).
+ * Extras the operator sells on top of the base site, chosen per client (Business Tracking, or the new-client form).
  * The list decides two things: the proposal (a line and a price each) and what the agent builds. A client with no
  * list at all (made before 1.19.0) keeps the old behaviour: the agent follows rules/custom-site.md as before.
  */
@@ -48,23 +48,23 @@ const INSTRUCTIONS: Readonly<Record<AddonId, { included: (a: Addon) => string; e
     excluded: "One theme only: design the site in a single (light or dark) look that suits the brand; no theme toggle and no prefers-color-scheme switch.",
   },
   blog: {
-    included: () => "A blog: a Blog link in the menu and a blog index page. Posts come only from Eren's 'Blog post' jobs; never invent posts.",
+    included: () => "A blog: a Blog link in the menu and a blog index page. Posts come only from the operator's 'Blog post' jobs; never invent posts.",
     excluded: "No blog: no blog page or blog link.",
   },
   whatsapp: {
     included: () =>
-      "A WhatsApp button (class float-btn, with the pre-filled message if there is one) using whatsapp.number. If there is no number, leave it out and ask Eren for it.",
+      "A WhatsApp button (class float-btn, with the pre-filled message if there is one) using whatsapp.number. If there is no number, leave it out and ask the operator for it.",
     excluded: "No WhatsApp button (a WhatsApp link in the contact details is fine when there is a number).",
   },
   booking: {
     included: () =>
-      "Online booking: a clear 'Book online' call to action on every page, linking to integrations.bookingUrl. If there is no link, leave it out and ask Eren for it.",
+      "Online booking: a clear 'Book online' call to action on every page, linking to integrations.bookingUrl. If there is no link, leave it out and ask the operator for it.",
     excluded: "No online booking button.",
   },
 };
 
 /**
- * The part of an agent prompt that says what Eren sold. Null for a client without a list (old clients), so their
+ * The part of an agent prompt that says what the operator sold. Null for a client without a list (old clients), so their
  * jobs run exactly as before.
  */
 export function addonsNote(addons: readonly Addon[] | undefined): string | null {
@@ -74,7 +74,7 @@ export function addonsNote(addons: readonly Addon[] | undefined): string | null 
     const a = chosen.get(id);
     return `- ${a ? INSTRUCTIONS[id].included(a) : INSTRUCTIONS[id].excluded}`;
   });
-  return ["What Eren sold to this client (it overrides rules/custom-site.md on these points; build exactly this, nothing more):", ...lines].join("\n");
+  return ["What the operator sold to this client (it overrides rules/custom-site.md on these points; build exactly this, nothing more):", ...lines].join("\n");
 }
 
 /** Sum of the extras' prices (those without a price count as 0). */

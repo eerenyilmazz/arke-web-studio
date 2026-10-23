@@ -17,7 +17,7 @@ import { dirHash, readJsonIfExists } from "../lib/files.js";
 import { clientPaths } from "../lib/paths.js";
 
 /**
- * A read-only health report of the whole factory, for Eren to send after a test run: versions and set-up, every
+ * A read-only health report of the whole factory, for the operator to send after a test run: versions and set-up, every
  * client's state (build, approvals, deploys, payment, portal, recent jobs, the agent's tool calls) and automatic
  * checks of the promises the factory makes (approvals human-only, the agent never publishes, no secret in any client
  * file, nothing left on the portal). Secrets are never written: settings show only whether a value is set, and every
@@ -194,7 +194,7 @@ function buildPart(c: Ctx): void {
 
 function approvalPart(c: Ctx): void {
   const { paths, lines, add, username } = c;
-  // Approvals: valid now, and who gave them (only Eren, from the panel or the terminal).
+  // Approvals: valid now, and who gave them (only the operator, from the panel or the terminal).
   const approvals = readApprovals(paths.approvals);
   const { valid } = approvalState(paths.root, paths.approvals, c.status.lastBuild?.distHash ?? null);
   c.valid = valid;

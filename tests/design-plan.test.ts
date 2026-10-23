@@ -21,7 +21,7 @@ async function client() {
 }
 
 describe("design plan", () => {
-  it("leaves older sites alone, and for new designs refuses pages until Eren approves the plan", async () => {
+  it("leaves older sites alone, and for new designs refuses pages until the operator approves the plan", async () => {
     const { f, paths } = await client();
     const write = (p: string) => () => tools.writeSiteFileTool(f, { slug: SLUG, path: p, content: "<!doctype html><title>x</title>" });
     expect(planState(paths)).toBe("not-required");
@@ -37,7 +37,7 @@ describe("design plan", () => {
     expect(() => tools.saveDesignPlanTool(f, { slug: SLUG, plan: { ...PLAN, signature: { ...PLAN.signature, beats: [] } } })).toThrow(/signature\.beats/);
     expect(tools.saveDesignPlanTool(f, { slug: SLUG, plan: PLAN }).state).toBe("awaiting");
     expect(planState(paths)).toBe("awaiting");
-    expect(write("about/index.html")).toThrow(/waiting for Eren's approval/);
+    expect(write("about/index.html")).toThrow(/waiting for the operator's approval/);
 
     approvePlan(paths, "panel:eren");
     expect(planState(paths)).toBe("approved");
@@ -47,7 +47,7 @@ describe("design plan", () => {
     const file = path.join(paths.root, "design-plan.json");
     writeFileSync(file, readFileSync(file, "utf8").replace("Katmanlı Kabarma", "Başka Bir Şey"));
     expect(planState(paths)).toBe("changed");
-    expect(write("about/index.html")).toThrow(/changed after Eren approved/);
+    expect(write("about/index.html")).toThrow(/changed after the operator approved/);
   });
 
   it("keeps earlier plans for a new idea, starts over on a redesign, and a chosen proposal waives the plan", async () => {
@@ -73,7 +73,7 @@ describe("design plan", () => {
     requirePlan(paths);
     const r = await tools.buildSite(f, { slug: SLUG });
     expect(r.passed).toBe(false);
-    expect(readFileSync(paths.qualityReport, "utf8")).toMatch(/Design plan \(approved by Eren\) \| FAIL/);
+    expect(readFileSync(paths.qualityReport, "utf8")).toMatch(/Design plan \(approved by the operator\) \| FAIL/);
   });
 });
 

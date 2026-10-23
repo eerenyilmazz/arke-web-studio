@@ -38,7 +38,7 @@ export async function deploy(
     slug: string;
     target: "preview" | "production";
     dryRun?: boolean;
-    /** App sites: Eren confirmed migrations that delete or overwrite data, for this publish only (panel only). */
+    /** App sites: The operator confirmed migrations that delete or overwrite data, for this publish only (panel only). */
     allowDestructive?: boolean;
     /** Progress lines for the panel's job log. */
     log?: (line: string) => void;
@@ -52,7 +52,10 @@ export async function deploy(
 
   const blockers = deployBlockers(args.target, build, hash, valid, () => dirHash(paths.distDir));
   if (blockers.length > 0) {
-    throw new FactoryError(`Deploy blocked:\n- ${blockers.join("\n- ")}`, "Approvals are given by Eren in a terminal. Never try to create them yourself.");
+    throw new FactoryError(
+      `Deploy blocked:\n- ${blockers.join("\n- ")}`,
+      "Approvals are given by the operator in a terminal. Never try to create them yourself.",
+    );
   }
 
   // Preview is its own Worker on workers.dev (never the custom domain), so the client can review it
@@ -136,7 +139,7 @@ export async function deploy(
     outputTail: args.dryRun || url === null ? output.slice(-1200) : undefined,
     next:
       args.target === "preview"
-        ? "Send the preview URL to Eren for the client. After the client's OK, Eren gives the production approval."
+        ? "Send the preview URL to the operator for the client. After the client's OK, the operator gives the production approval."
         : routes
           ? "Check the custom domain loads over HTTPS. DNS for the domain must be on Cloudflare."
           : "Live on workers.dev. Connect the domain once DNS is on Cloudflare (set site.domain, rebuild, deploy).",
@@ -243,7 +246,7 @@ async function wranglerOnWorker(
 export async function undeploy(factory: FactoryConfig, args: { slug: string; target: "preview" | "production" }, runner: typeof run = run) {
   const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
   const workerName = workerFor(config, args.target);
-  // --force: no interactive question (the panel already asked Eren).
+  // --force: no interactive question (the panel already asked the operator).
   const { code, output } = await wranglerOnWorker(factory, config, ["delete", workerName, "--force"], runner);
   // Already gone (deleted in the Cloudflare dashboard, or never published) is the wanted end state.
   const missing = /10007|does not exist|not found/i.test(output);
@@ -269,7 +272,7 @@ export async function rollback(factory: FactoryConfig, args: { slug: string; tar
   const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
   const workerName = workerFor(config, args.target);
   const message = `Site Factory: rolled back by ${args.by}`.slice(0, 100);
-  // No version id: wrangler takes the version before the current one. --yes: the panel already asked Eren.
+  // No version id: wrangler takes the version before the current one. --yes: the panel already asked the operator.
   const { code, output } = await wranglerOnWorker(factory, config, ["rollback", "--name", workerName, "--message", message, "--yes"], runner);
   if (code !== 0) {
     const hint = /no previous|only one|at least two|cannot rollback/i.test(output)

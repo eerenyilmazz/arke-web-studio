@@ -106,7 +106,7 @@ async function startDeploy(deps: ApiDeps, req: IncomingMessage, res: ServerRespo
       `Yayın: ${target}${dryRun ? " (deneme)" : ""}`,
       async (log) => {
         log("Onaylar ve build kontrol ediliyor, wrangler çalışıyor…");
-        // App sites: migrations that delete data run only when Eren typed the client's short name for this publish.
+        // App sites: migrations that delete data run only when the operator typed the client's short name for this publish.
         const allowDestructive = body.allowDestructive === true && body.confirm === s;
         const r = await tools.deploy(deps.factory, { slug: s, target, dryRun, allowDestructive, log });
         if (r.outputTail) log(r.outputTail);

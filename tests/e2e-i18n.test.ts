@@ -60,7 +60,7 @@ describe("panel in English", { timeout: 300_000 }, () => {
     await page.waitForURL(new RegExp(`#/musteri/${SLUG}`));
     expect((await jobDone(base, SLUG, "create-site", 1)).status).toBe("succeeded");
 
-    // Switch from the settings screen, as Eren would; the page reloads in English.
+    // Switch from the settings screen, as the operator would; the page reloads in English.
     await page.goto(`${base}/#/ayarlar`);
     await page.waitForSelector("#panel-lang:not([disabled])");
     await Promise.all([page.waitForEvent("load"), page.selectOption("#panel-lang", "en")]);

@@ -1,4 +1,4 @@
-// Design plan: the agent describes how it will design the site before building anything; Eren approves it
+// Design plan: the agent describes how it will design the site before building anything; the operator approves it
 // (then the site is built to it) or asks for a new idea with notes.
 import { signatureFrame } from "./brand.js";
 import { api, guarded, h, isBusy, toast } from "./core.js";
@@ -141,7 +141,7 @@ function planBody(plan, signatureHtml) {
   );
 }
 
-/** The plan card on the Düzenleme tab while a plan waits for Eren. */
+/** The plan card on the Düzenleme tab while a plan waits for the operator. */
 export function planCard(d) {
   const slug = d.status.slug;
   const card = h(

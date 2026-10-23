@@ -17,6 +17,16 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Herkes için tek panel: kişisel izler kaldırıldı (1.28.0)
+
+Site Factory artık tek bir kişiye göre yazılmış değil; her kullanıcı kendi panelini kendi adıyla kullanır.
+- **İlk açılışta profil:** ana ekranda "Hoş geldiniz" kartı çıkar ve ad, stüdyo adı (isteğe bağlı) ve panel dilini sorar. Kart engellemez; dilediğiniz zaman Ayarlar → Hesabım → Profil'den değiştirebilirsiniz.
+- **Agent size adınızla hitap eder.** Kurallarda, araç mesajlarında ve agent komutlarında geçen kişi adı kaldırıldı; hepsinde "the operator" (paneli kullanan kişi) yazıyor. Her işe profilden tek satır eklenir: "the operator is <ad> of <stüdyo>".
+- **Teklif gönderen bilgisi boşsa** stüdyo adı (o da yoksa ad) kullanılır.
+- **Örnekler genelleştirildi:** yedek klasörü yolu ve etiket örneklerinden kişisel bilgiler çıkarıldı.
+- **Yeni bir test**, kodda, kurallarda, panelde ve portalda tek bir kişinin adı geçerse uyarır.
+- Onay kuralları değişmedi: onaylar yine yalnızca paneli kullanan kişidedir; agent onay veremez.
+
 ## Panel ArkeLab görünümünde (1.27.1)
 
 Panelin renk teması ve yazı tipi ArkeLab'ın tasarım sistemine (`DESIGN.md`) uyarlandı; panel ArkeLab'ın içinde aynı ürün gibi görünecek. Ekranların yapısı ve işleyişi değişmedi.

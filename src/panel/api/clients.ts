@@ -130,7 +130,7 @@ function putNotifyWebhook(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   return putAppSecret(deps, req, res, slug!, "url", setNotifyWebhook);
 }
 
-/** The design plan for Eren to read: state, the plan, how many earlier ones, and the signature preview if written. */
+/** The design plan for the operator to read: state, the plan, how many earlier ones, and the signature preview if written. */
 function designPlan(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
@@ -144,7 +144,7 @@ function designPlan(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [
   });
 }
 
-/** Eren approves the plan in the panel (never the agent: the approval is written in .factory/). */
+/** The operator approves the plan in the panel (never the agent: the approval is written in .factory/). */
 function approveDesignPlan(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
@@ -408,7 +408,7 @@ function serveClientImage(deps: ApiDeps, _req: IncomingMessage, res: ServerRespo
   res.end(readFileSync(file));
 }
 
-/** Eren marks a file as the client's logo: saved (checked like save_asset) and set as brand.logo. No agent needed. */
+/** The operator marks a file as the client's logo: saved (checked like save_asset) and set as brand.logo. No agent needed. */
 async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
@@ -417,7 +417,7 @@ async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse,
   const name = safeFileName(str(body, "name", { max: 120 })!);
   const from = str(body, "from", { max: 10 });
   // The same file as another client's logo is almost always a mix-up (a pickle shop's logo for a barber):
-  // refused unless Eren confirms it, before anything is saved or any job is paid for.
+  // refused unless the operator confirms it, before anything is saved or any job is paid for.
   const candidate =
     from === "inbox" ? safeJoin(deps.factory.inboxDir, s, name) : from === "assets" ? safeJoin(clientPaths(deps.factory.clientsRoot, s).assetsDir, name) : null;
   const owner = candidate && existsSync(candidate) ? logoUsedElsewhere(deps.factory, s, candidate) : null;
@@ -442,13 +442,13 @@ async function setLogo(deps: ApiDeps, req: IncomingMessage, res: ServerResponse,
     deps.factory,
     s,
     "logo",
-    `Eren set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom-site.md); never draw a replacement.`,
+    `The operator set the client's logo in the panel: ${relPath}. Build the brand from this logo (rules/custom-site.md); never draw a replacement.`,
   );
   sendJson(res, 200, { logo: relPath });
 }
 
 /**
- * Eren takes the logo off (a wrong or unwanted file): brand.logo is cleared and the next design job draws a
+ * The operator takes the logo off (a wrong or unwanted file): brand.logo is cleared and the next design job draws a
  * wordmark. The file stays among the images; deleting it is a separate, explicit step.
  */
 async function removeLogo(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
@@ -467,7 +467,7 @@ async function removeLogo(deps: ApiDeps, _req: IncomingMessage, res: ServerRespo
     deps.factory,
     s,
     "logo",
-    `Eren removed the client's logo (${previous}) in the panel. Do not use that file as the logo any more; draw a wordmark (brand/logo.svg) from the business name in the next design job.`,
+    `The operator removed the client's logo (${previous}) in the panel. Do not use that file as the logo any more; draw a wordmark (brand/logo.svg) from the business name in the next design job.`,
   );
   sendJson(res, 200, { logo: null });
 }

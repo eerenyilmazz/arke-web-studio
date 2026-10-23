@@ -3,6 +3,7 @@ import { locale } from "./i18n.js";
 import { businessLine, CURRENCY_SIGNS } from "./business.js";
 import { api, avatar, h, isBusy, plainOf, state, stepIndex, STEPS } from "./core.js";
 import { render } from "./router.js";
+import { welcomeSlot } from "./profile.js";
 
 // ---------------------------------------------------------------- home and new client
 
@@ -12,6 +13,7 @@ export function renderHome() {
     return h(
       "section",
       { class: "empty" },
+      welcomeSlot(),
       h("h1", { text: "İlk müşteriyi ekleyin" }),
       h("p", { class: "muted", text: "Adını ve sektörünü yaz, bildiklerini yapıştır; agent markayı tasarlar ve siteyi hazırlar." }),
       h("p", { style: "margin-top:1.2rem" }, h("a", { class: "btn btn-primary btn-lg", href: "#/yeni" }, "Yeni Müşteri")),
@@ -26,7 +28,7 @@ export function renderHome() {
     ["done", "Yayında", "Canlı siteler"],
   ];
   const order = { agent: 0, you: 1, bad: 2, client: 3, done: 4 };
-  // Grouping and filters (kept per browser): by step, by sector or by Eren's own tags.
+  // Grouping and filters (kept per browser): by step, by sector or by the operator's own tags.
   const pref = (() => {
     try {
       return JSON.parse(localStorage.getItem("sf-dash") || "{}");
@@ -97,6 +99,7 @@ export function renderHome() {
   return h(
     "section",
     { class: "dash" },
+    welcomeSlot(),
     h(
       "div",
       { class: "dash-head" },

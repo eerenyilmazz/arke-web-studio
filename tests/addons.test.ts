@@ -24,8 +24,8 @@ describe("extras sold per client", () => {
     expect(some).toMatch(/second language \(German\)/);
     expect(some).toMatch(/No online booking button/);
     const prompt = finalPrompt("Do it.", { skills: "none", screenshots: true, addons: some });
-    expect(prompt).toContain("What Eren sold to this client");
-    expect(finalPrompt("Do it.", { skills: "none", screenshots: true, addons: null })).not.toContain("What Eren sold");
+    expect(prompt).toContain("What the operator sold to this client");
+    expect(finalPrompt("Do it.", { skills: "none", screenshots: true, addons: null })).not.toContain("What the operator sold");
   });
 
   it("keeps old business records as they are and counts extras into the total and profit", async () => {

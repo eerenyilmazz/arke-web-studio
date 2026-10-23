@@ -8,7 +8,7 @@ import { clientPaths } from "../lib/paths.js";
 import { AddonsSchema } from "./addons.js";
 
 /**
- * Sales tracking per client (quote, payment, delivery date, a note), for Eren and his brother.
+ * Sales tracking per client (quote, payment, delivery date, a note), for the operator.
  * Kept in .factory/business.json: panel only, never shown to the agent, not part of the site.
  */
 const FILE = "business.json";
@@ -31,9 +31,9 @@ export const BusinessSchema = z.object({
     .nullable()
     .default(null),
   note: z.string().max(2000).default(""),
-  /** Eren's own labels for grouping clients (e.g. "abim", "acil", "Ankara"). */
+  /** The operator's own labels for grouping clients (e.g. "tavsiye", "acil", "İzmir"). */
   tags: z.array(z.string().trim().min(1).max(24)).max(8).default([]),
-  /** Eren's own costs for this client, in the same currency as the price (domain, stock photos, a form plan…). */
+  /** The operator's own costs for this client, in the same currency as the price (domain, stock photos, a form plan…). */
   costs: z
     .array(z.object({ label: z.string().trim().min(1).max(60), amount: z.number().nonnegative().max(10_000_000) }))
     .max(20)

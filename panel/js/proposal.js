@@ -172,7 +172,7 @@ const KIND_LABEL = {
 };
 
 /**
- * What the client asked for and what was done, from the job history: date, request, result, and for Eren the
+ * What the client asked for and what was done, from the job history: date, request, result, and for the operator the
  * resources used. Editable before printing; "Kaynak" columns can be hidden for the client's copy.
  */
 export function workReport(d) {
@@ -415,7 +415,9 @@ async function proposalSheet(body, d, switcher) {
     api("GET", "/api/settings").catch(() => ({ sender: {} })),
     api("GET", `/api/clients/${slug}/brand`).catch(() => null),
   ]);
-  const s = settings.sender || {};
+  // The sender falls back to the profile (studio, else name) until the proposal's own fields are filled in.
+  const s = { ...(settings.sender || {}) };
+  if (!s.name) s.name = settings.profile?.studio || settings.profile?.name || "";
   const b = d.businessTracking || {};
   const today = new Date();
   const no = `T-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}-${slug.slice(0, 6).toUpperCase()}`;
@@ -426,7 +428,7 @@ async function proposalSheet(body, d, switcher) {
   const extraName = (a) => (a.id === "language" && a.value ? `${addonLabel(a.id)} (${LANG_NAMES[a.value] || a.value})` : addonLabel(a.id));
   const palette = Object.entries(brand?.brand?.palette || d.design?.palette || {}).filter(([, v]) => /^#[0-9a-f]{6}$/i.test(String(v)));
   const logo = brand?.clientLogo || (brand?.logoSvg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(brand.logoSvg)}` : null);
-  // Editable on screen before printing (not saved): Eren adjusts wording per client.
+  // Editable on screen before printing (not saved): The operator adjusts wording per client.
   const editable = (tag, text, cls = "") => h(tag, { class: cls, contenteditable: "true", spellcheck: "true", text });
   const sheet = h(
     "article",

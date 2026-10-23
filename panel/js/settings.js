@@ -4,6 +4,7 @@ import { $, api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODEL_TR, PA
 import { askNotifyPermission, chime } from "./jobs.js";
 import { portalSettingsCard } from "./portal.js";
 import { accountCard } from "./account.js";
+import { profileCard } from "./profile.js";
 
 // ---------------------------------------------------------------- settings: publishing setup
 
@@ -102,7 +103,7 @@ export async function renderSettings() {
     h(
       "div",
       { class: "settings stack" },
-      group("hesap", "Hesabım", accountCard()),
+      group("hesap", "Hesabım", profileCard(), accountCard()),
       group("genel", "Genel", languageCard(), senderCard(), notifications, approvalCode),
       group("kullanim", "Kaynak Kullanımı", budgetCard(), agentsCard(), profitSettingsCard(), webResearchCard()),
       group("yayin", "Yayın", cloudflare, portalSettingsCard()),
@@ -219,9 +220,9 @@ export function senderCard() {
   );
 }
 
-/** Backups to a folder Eren chooses; automatic after jobs (at most every 30 minutes) and on demand. */
+/** Backups to a folder the operator chooses; automatic after jobs (at most every 30 minutes) and on demand. */
 export function backupCard() {
-  const dir = h("input", { id: "bk-dir", placeholder: "/mnt/c/Users/eeren/OneDrive/SiteFactory-Yedek", maxlength: 400 });
+  const dir = h("input", { id: "bk-dir", placeholder: "/mnt/c/Users/<kullanıcı>/OneDrive/SiteFactory-Yedek", maxlength: 400 });
   const list = h("ul", { class: "files" });
   const status = h("p", { class: "small", role: "status" });
   /** Unpacks the backup in a temporary folder and checks every client in it; the real folders are not touched. */
@@ -295,7 +296,7 @@ export function backupCard() {
   );
 }
 
-/** Panel language. Client sites keep their own languages; the agent writes its notes to Eren in this language. */
+/** Panel language. Client sites keep their own languages; the agent writes its notes to the operator in this language. */
 export function languageCard() {
   const select = h("select", { id: "panel-lang", disabled: true }, ...Object.entries(LANGS).map(([k, v]) => h("option", { value: k, "data-no-i18n": "" }, v)));
   select.value = getLang();

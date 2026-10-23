@@ -12,7 +12,7 @@ import { finalPrompt } from "../src/panel/prompts.js";
 import { tempFactory } from "./helpers.js";
 
 describe("agent per kind of job (Claude Code or Codex)", () => {
-  it("follows Eren's per-kind settings, else the package", () => {
+  it("follows the operator's per-kind settings, else the package", () => {
     const f = tempFactory();
     expect(jobGroup("create-site")).toBe("design");
     expect(jobGroup("edit-text")).toBe("edit");

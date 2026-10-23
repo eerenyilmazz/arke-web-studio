@@ -11,7 +11,7 @@ import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } fr
 const SLUG = "willow-thread";
 const NEW_CLIENT = { slug: SLUG, businessName: "Willow & Thread", industry: "bridal salon", hostingModel: "managed" as const };
 
-/** A client with content approval and a passing build: the point where Eren gives the visual approval. */
+/** A client with content approval and a passing build: the point where the operator gives the visual approval. */
 async function builtClient() {
   const f = tempFactory();
   installStubTemplate(f.templatesDir);

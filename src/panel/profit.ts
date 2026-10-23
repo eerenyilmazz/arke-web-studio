@@ -6,9 +6,9 @@ import { readSettings } from "./settings.js";
 import * as tools from "../tools.js";
 
 /**
- * Money per client: the price in the proposal, minus Eren's own costs for that client (domain, stock photos…),
+ * Money per client: the price in the proposal, minus the operator's own costs for that client (domain, stock photos…),
  * minus what the agent cost. Claude reports a USD cost per job; Codex does not, so its jobs are priced from the
- * "USD per million units" setting. USD is turned into the client's currency with the rate Eren enters.
+ * "USD per million units" setting. USD is turned into the client's currency with the rate the operator enters.
  * Nothing here is sent anywhere; it is arithmetic on files the panel already keeps.
  */
 export interface ClientProfit {

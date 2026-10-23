@@ -36,14 +36,14 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
     if (plan !== "not-required")
       results.push(
         plan === "approved"
-          ? { name: "Design plan (approved by Eren)", status: "pass", detail: "Built to the approved plan." }
+          ? { name: "Design plan (approved by the operator)", status: "pass", detail: "Built to the approved plan." }
           : {
-              name: "Design plan (approved by Eren)",
+              name: "Design plan (approved by the operator)",
               status: "fail",
               detail:
                 plan === "changed"
-                  ? "design-plan.json changed after approval; Eren must approve it again."
-                  : "No approved design plan yet: Eren approves it in the panel first.",
+                  ? "design-plan.json changed after approval; the operator must approve it again."
+                  : "No approved design plan yet: The operator approves it in the panel first.",
             },
       );
     if (results.some((r) => r.status === "fail")) {
@@ -111,7 +111,7 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
     // Log only when something failed: it is long and costs tokens on every successful build.
     buildLogTail: !record.passed && buildOutput ? buildOutput.slice(-1500) : undefined,
     next: record.passed
-      ? "Ask Eren to open dist/ locally and review it against the design checklist (visual approval)."
+      ? "Ask the operator to open dist/ locally and review it against the design checklist (visual approval)."
       : isCustom(config.template)
         ? "Fix the failed checks in config, content or the site files (write_site_file), then build again."
         : "Fix the failed checks (config/content only, never the template), then build again.",

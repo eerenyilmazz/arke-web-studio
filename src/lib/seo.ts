@@ -102,7 +102,7 @@ export function checkImages(distDir: string): CheckResult {
     return count ? [`${path.relative(distDir, file).split(path.sep).join("/")}: ${count} <img> without width/height`] : [];
   });
   const notes = [
-    ...heavy.slice(0, MAX_IMAGES_LISTED).map((f) => `${f.rel} is ${f.kb} KB (aim under 300 KB; ask Eren for a smaller file)`),
+    ...heavy.slice(0, MAX_IMAGES_LISTED).map((f) => `${f.rel} is ${f.kb} KB (aim under 300 KB; ask the operator for a smaller file)`),
     ...unsized.slice(0, MAX_IMAGES_LISTED),
   ];
   return notes.length

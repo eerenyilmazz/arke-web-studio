@@ -39,15 +39,15 @@ import { filledNote } from "./library.js";
 
 /**
  * Agent jobs started from the panel, one entry per kind. Each entry checks its input and returns the prompt and
- * the texts shown to Eren; starting, history and snapshots are shared (startAgent). A new kind of job is one
+ * the texts shown to the operator; starting, history and snapshots are shared (startAgent). A new kind of job is one
  * new entry here, no change elsewhere in this file (the route accepts exactly the kinds listed).
  */
 interface JobSpec {
   readonly prompt: string;
   readonly title: string;
-  /** Shown in the job list as what Eren asked for. */
+  /** Shown in the job list as what the operator asked for. */
   readonly request: string;
-  /** What Eren gave in this job, kept for later jobs (answers as "question: answer" lines). */
+  /** What the operator gave in this job, kept for later jobs (answers as "question: answer" lines). */
   readonly input?: string;
   /** Runs only once the job has started (e.g. marking client comments as sent). */
   readonly afterStart?: () => void;
@@ -132,7 +132,7 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     };
     const hasInput = pasted.freeText.trim() !== "" || Object.values(pasted.answers).some((a) => a.trim()) || pasted.files.length > 0;
     const libraryId = str(body, "libraryId", { optional: true, max: 41 });
-    // A new design (no brand yet, or a library start) goes through the design plan Eren approves first.
+    // A new design (no brand yet, or a library start) goes through the design plan the operator approves first.
     const cp = clientPaths(deps.factory.clientsRoot, slug);
     if (isCustomClient(ctx) && (libraryId || !existsSync(path.join(cp.root, "site", "brand", "brand.json")))) requirePlan(cp);
     let libraryName: string | undefined;
@@ -185,7 +185,7 @@ const JOBS: Readonly<Record<string, JobBuilder>> = {
     requireCustom(ctx, "Tasarım önerileri serbest tasarımlı sitelerde var. Önce 'Serbest tasarıma geç'.");
     const option = str(ctx.body, "option", { max: 1 })!;
     if (!(OPTION_IDS as readonly string[]).includes(option)) throw new HttpError(400, "Öneri a, b ya da c olmalı.");
-    // Choosing one of the three full proposals is Eren's approval of that direction.
+    // Choosing one of the three full proposals is the operator's approval of that direction.
     waivePlan(clientPaths(ctx.deps.factory.clientsRoot, ctx.slug));
     return {
       prompt: chooseConceptPrompt(ctx.slug, option),

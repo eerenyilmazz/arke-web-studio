@@ -1,5 +1,5 @@
 /**
- * Every visible text of a page, each with a stable id, so Eren can edit texts in the panel without copying them
+ * Every visible text of a page, each with a stable id, so the operator can edit texts in the panel without copying them
  * from the site and without an agent job (no tokens).
  *
  * Custom sites: the texts are read from the page's HTML (headings, paragraphs, list items, links, buttons, the
@@ -143,14 +143,14 @@ export function htmlTexts(html: string): TextItem[] {
 
 export interface TextChange {
   readonly id: string;
-  /** The text Eren saw; if the page changed meanwhile, nothing is written. */
+  /** The text the operator saw; if the page changed meanwhile, nothing is written. */
   readonly oldText: string;
   readonly newText: string;
 }
 
 /**
  * Applies changes by id. Returns the new HTML, or throws with the ids that no longer match (the page changed
- * since Eren opened it). Whitespace inside the old text is compared loosely, as it is shown collapsed.
+ * since the operator opened it). Whitespace inside the old text is compared loosely, as it is shown collapsed.
  */
 export function applyHtmlChanges(html: string, changes: readonly TextChange[]): string {
   const located = new Map(locate(html).map((t) => [t.id, t]));

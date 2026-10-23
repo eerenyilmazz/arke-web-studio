@@ -99,7 +99,7 @@ async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRespons
     });
   } else if (before.template === "custom") {
     const prompt = [
-      `Site Factory, client "${s}". Eren changed these contact details in the panel (already saved in site.config.json):`,
+      `Site Factory, client "${s}". The operator changed these contact details in the panel (already saved in site.config.json):`,
       ...changes.map((c) => `- ${c}`),
       "Update every place in the site files where the old values appear: header, footer, contact page, buttons (tel:, mailto:, wa.me links) and the JSON-LD. Show phone numbers in the usual local format. Change nothing else. Then build_site; if a check fails, fix it and build again.",
       "Finish with one or two sentences in Turkish saying what you changed.",
@@ -111,7 +111,7 @@ async function quickEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRespons
   sendJson(res, 202, serialiseJob(job));
 }
 
-/** Eren's contact form endpoint for this client (.factory/form.json, never writable by the agent). Empty = remove. */
+/** The operator's contact form endpoint for this client (.factory/form.json, never writable by the agent). Empty = remove. */
 async function saveForm(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): Promise<void> {
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
@@ -218,10 +218,10 @@ async function editColors({ deps, slug, paths, draft, custom, body }: EditContex
     needsAgent: custom,
     summary,
     lines: [
-      "Eren changed these brand colours in the panel:",
+      "The operator changed these brand colours in the panel:",
       ...changes.map((c) => `- ${c.name}: ${c.from} → ${c.to}`),
       "Replace each old value with the new one in brand/brand.json (palette), every css, js, html and svg file of the site and brand/signature.html, including tints you derived from it (rgb/hsl forms and lighter or darker variants: derive them again from the new colour). Mirror the change into design.palette in the config if that colour is there.",
-      "If a text/background pair now fails AA contrast, adjust only the lightness of the derived tone, not Eren's colour, and say so.",
+      "If a text/background pair now fails AA contrast, adjust only the lightness of the derived tone, not the operator's colour, and say so.",
     ],
   };
 }
@@ -241,7 +241,7 @@ function editPages({ deps, slug, draft, custom, body }: EditContext): EditResult
     needsAgent: custom || add.length > 0,
     summary: [add.length ? `eklenen: ${add.join(", ")}` : "", remove.length ? `kaldırılan: ${remove.join(", ")}` : ""].filter(Boolean).join("; "),
     lines: [
-      `Eren changed the site's pages in the panel. Pages now: ${next.join(", ")}.`,
+      `The operator changed the site's pages in the panel. Pages now: ${next.join(", ")}.`,
       ...(remove.length
         ? [
             `Remove: ${remove.join(", ")}. Delete their files (delete_site_file for custom sites), remove them from every navigation, footer, sitemap and internal link.`,
@@ -249,7 +249,7 @@ function editPages({ deps, slug, draft, custom, body }: EditContext): EditResult
         : []),
       ...(add.length
         ? [
-            `Add: ${add.join(", ")}. Set config.pages to the list above (with sections for template sites). Design the new pages in the existing brand and layout system, with content only from this client's facts. If a page has no facts to fill it (a gallery without photos), do not invent: tell Eren what is needed and do not add that page.`,
+            `Add: ${add.join(", ")}. Set config.pages to the list above (with sections for template sites). Design the new pages in the existing brand and layout system, with content only from this client's facts. If a page has no facts to fill it (a gallery without photos), do not invent: tell the operator what is needed and do not add that page.`,
           ]
         : []),
     ],
@@ -293,7 +293,7 @@ function editServices({ deps, slug, paths, draft, custom, body }: EditContext): 
     needsAgent: custom || others.length > 0,
     summary: `${withIcons.length} hizmet`,
     lines: [
-      `Eren edited the services and prices in the panel. They are saved in content/${locale}.json; this is the exact list, in order:`,
+      `The operator edited the services and prices in the panel. They are saved in content/${locale}.json; this is the exact list, in order:`,
       ...withIcons.map((x, i) => `${i + 1}. ${x.title}${x.price ? ` — ${x.price}` : ""}: ${x.description}`),
       ...(others.length ? [`Translate the same list into content for ${others.join(", ")} with save_content (same order and prices).`] : []),
       ...(custom
@@ -313,7 +313,7 @@ function editForm({ paths }: EditContext): EditResult {
     needsAgent: true,
     summary: "form eklendi",
     lines: [
-      `Eren set up a contact form service for this client. Add a contact form to the contact page (and remove any note that there is no form): <form action="${form.action}" method="POST">, fields name, email (type=email, required), phone (optional) and message (required), each with a visible label; a hidden honeypot field; a submit button in the brand's style.`,
+      `The operator set up a contact form service for this client. Add a contact form to the contact page (and remove any note that there is no form): <form action="${form.action}" method="POST">, fields name, email (type=email, required), phone (optional) and message (required), each with a visible label; a hidden honeypot field; a submit button in the brand's style.`,
       ...(form.accessKey ? [`Web3Forms needs <input type="hidden" name="access_key" value="${form.accessKey}">.`] : []),
       "Keep the phone, WhatsApp and e-mail buttons next to it. Never use any other form address.",
     ],
@@ -357,7 +357,7 @@ function customPages(paths: ClientPaths, locales: readonly string[]): string[] {
 }
 
 /**
- * Every text of a page with its id (custom sites: from the HTML; template sites: the content fields), so Eren
+ * Every text of a page with its id (custom sites: from the HTML; template sites: the content fields), so the operator
  * edits them in place instead of copying text from the site.
  */
 function pageTexts(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug]: string[]): void {
@@ -453,8 +453,8 @@ async function editText(ctx: EditContext): Promise<EditResult> {
     needsAgent: true,
     summary,
     lines: [
-      `Eren wants one text changed on the "${page}" page (all languages if the text exists in several).`,
-      "Current text (as he sees it on the site):",
+      `The operator wants one text changed on the "${page}" page (all languages if the text exists in several).`,
+      "Current text (as the operator sees it on the site):",
       `«${oldText}»`,
       "New text, exactly as written:",
       `«${newText}»`,
@@ -472,7 +472,7 @@ const EDITS: Readonly<Record<EditType, (ctx: EditContext) => EditResult | Promis
 };
 
 /**
- * Structured edits from the panel's "Düzenle" cards. Eren fills a form instead of writing to the agent; the panel
+ * Structured edits from the panel's "Düzenle" cards. The operator fills a form instead of writing to the agent; the panel
  * validates it, saves what it can itself, and gives the agent an exact, narrow instruction (or none at all).
  */
 async function structuredEdit(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug, type]: string[]): Promise<void> {

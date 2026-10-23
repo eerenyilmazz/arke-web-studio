@@ -53,8 +53,8 @@ Load the script once per page that uses a part: `<script src="/js/sf-parts.js" d
 - Do not add an `action` attribute: the script sends the form.
 - The form gets `data-state="sent"` or `data-state="error"`; style those states.
 - Keep the phone, e-mail and WhatsApp buttons next to the form.
-- New messages appear in the client's admin screen, and in the notification address if Eren set one.
+- New messages appear in the client's admin screen, and in the notification address if the operator set one.
 
 ## The admin screen
 
-The client manages the catalogue and messages at `/admin`, with a password Eren sets in the panel. Do not link to it from the public pages. Do not mention it in page text.
+The client manages the catalogue and messages at `/admin`, with a password the operator sets in the panel. Do not link to it from the public pages. Do not mention it in page text.

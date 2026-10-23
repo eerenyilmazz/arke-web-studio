@@ -26,19 +26,19 @@ import type { ClientPaths } from "../lib/paths.js";
 // ---------------------------------------------------------------- custom site files
 
 /**
- * New designs wait for Eren's approval of the design plan: until then only the signature preview may be written,
- * so no tokens go into pages he has not agreed to.
+ * New designs wait for the operator's approval of the design plan: until then only the signature preview may be written,
+ * so no tokens go into pages the operator has not agreed to.
  */
 function assertPlanAllows(paths: ClientPaths, rel: string): void {
   const state = planState(paths);
   if (state === "not-required" || state === "approved" || allowedBeforeApproval(rel)) return;
   throw new FactoryError(
     state === "changed"
-      ? "Nothing written: design-plan.json changed after Eren approved it."
-      : `Nothing written: the design plan is ${state === "missing" ? "not written yet" : "waiting for Eren's approval"}.`,
+      ? "Nothing written: design-plan.json changed after the operator approved it."
+      : `Nothing written: the design plan is ${state === "missing" ? "not written yet" : "waiting for the operator's approval"}.`,
     state === "missing"
-      ? "Write it with save_design_plan (site/brand/signature.html may show the motion), then stop and summarise it for Eren."
-      : "Stop here and tell Eren the plan is waiting for his approval in the panel.",
+      ? "Write it with save_design_plan (site/brand/signature.html may show the motion), then stop and summarise it for the operator."
+      : "Stop here and tell the operator the plan is waiting for their approval in the panel.",
   );
 }
 
@@ -60,7 +60,7 @@ export function saveDesignPlanTool(factory: FactoryConfig, args: { slug: string;
     saved: true,
     state: "awaiting",
     earlierPlans: earlier,
-    next: "Stop now. Summarise the plan for Eren in the panel's language (formal names, the signature storyboard in order); he approves it or asks for a new idea.",
+    next: "Stop now. Summarise the plan for the operator in the panel's language (formal names, the signature storyboard in order); they approve it or asks for a new idea.",
   };
 }
 

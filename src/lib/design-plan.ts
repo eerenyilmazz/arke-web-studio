@@ -7,7 +7,7 @@ import type { ClientPaths } from "./paths.js";
 
 /**
  * Design plan: before a new design is built, the agent describes how it will design the site (concept, palette,
- * type, hero, pages, the signature motion as a timed storyboard) and stops. Eren reads it in the panel and either
+ * type, hero, pages, the signature motion as a timed storyboard) and stops. The operator reads it in the panel and either
  * approves it (then the site is built exactly to it) or asks for a new idea with notes.
  *
  * The plan lives in the client folder (design-plan.json, never published). The approval is written by the panel in
@@ -145,12 +145,12 @@ export function resetPlanApproval(p: ClientPaths): void {
   rmSync(path.join(p.factoryDir, APPROVAL_FILE), { force: true });
 }
 
-/** Panel only: Eren chose a full design proposal (3 proposals) himself; that choice is the approval. */
+/** Panel only: The operator chose a full design proposal (3 proposals) themselves; that choice is the approval. */
 export function waivePlan(p: ClientPaths): void {
   rmSync(path.join(p.factoryDir, REQUIRED_FILE), { force: true });
 }
 
-/** Panel only (Eren's click): approves the plan as it is now. */
+/** Panel only (the operator's click): approves the plan as it is now. */
 export function approvePlan(p: ClientPaths, by: string): { hash: string } {
   const file = planPath(p);
   if (!readPlan(p)) throw new Error("Onaylanacak bir tasarım planı yok.");
@@ -170,10 +170,10 @@ export function planStatus(p: ClientPaths): { state: PlanState; next: string | n
   const next: Record<PlanState, string | null> = {
     "not-required": null,
     missing:
-      "Before any design work: write the design plan with save_design_plan (and optionally site/brand/signature.html to show the motion), then STOP and summarise it for Eren. Write no pages.",
-    awaiting: "The design plan waits for Eren's approval in the panel. Do not design or write pages; stop and say so.",
+      "Before any design work: write the design plan with save_design_plan (and optionally site/brand/signature.html to show the motion), then STOP and summarise it for the operator. Write no pages.",
+    awaiting: "The design plan waits for the operator's approval in the panel. Do not design or write pages; stop and say so.",
     approved: "The design plan is approved: build the site exactly to it (design-plan.json).",
-    changed: "design-plan.json changed after Eren approved it. Do not build; tell Eren the plan needs approving again.",
+    changed: "design-plan.json changed after the operator approved it. Do not build; tell the operator the plan needs approving again.",
   };
   return { state, next: next[state] };
 }

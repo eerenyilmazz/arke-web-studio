@@ -371,7 +371,7 @@ describe("prepare site (create-site job)", () => {
     expect(again.status).toBe(202);
     // No new input: only the earlier paste comes back, marked as earlier information.
     expect(calls[1]!.stdin.match(/\n<client_data>\n/g)).toHaveLength(1);
-    expect(calls[1]!.stdin).toContain("Earlier information Eren gave about this client");
+    expect(calls[1]!.stdin).toContain("Earlier information the operator gave about this client");
 
     const detail = (await (await fetch(`${base}/api/clients/reinware`, { headers: auth })).json()) as { siteApproveCommand: string };
     expect(detail.siteApproveCommand).toBe("npm run approve -- reinware site");
@@ -457,7 +457,7 @@ describe("research first", () => {
     expect(on.args[on.args.indexOf("--allowedTools") + 1]).toMatch(/WebSearch,WebFetch/);
     expect(on.args[on.args.indexOf("--disallowedTools") + 1]).not.toMatch(/WebFetch/);
     expect(on.stdin).toMatch(/STOP before design/);
-    expect(on.stdin).toMatch(/choose nothing for him/);
+    expect(on.stdin).toMatch(/choose nothing for them/);
     expect(on.stdin).not.toMatch(/Senin yerine seçtiklerim:" choices/);
     expect(on.stdin).toMatch(/Önerilerim:" your proposals/);
     expect(on.stdin).toMatch(/do not make it up/);
@@ -871,7 +871,7 @@ describe("1.13: archive, texts by id, extra page, logo checks", () => {
     };
     expect(detail.brandStale).toBeTruthy();
     expect(detail.sharedLogo?.slug).toBe("pickle-co");
-    // A design job is not started with another client's logo unless Eren confirms it.
+    // A design job is not started with another client's logo unless the operator confirms it.
     const job = await fetch(`${base}/api/clients/barber-co/agent/redesign`, { method: "POST", headers: json, body: "{}" });
     expect(job.status).toBe(409);
     expect(calls.length).toBe(0);
@@ -1231,7 +1231,7 @@ describe("earlier inputs are kept between agent jobs", () => {
     });
     expect(second.status).toBe(202);
     const prompt = calls[1]!.stdin;
-    expect(prompt).toContain("Earlier information Eren gave about this client");
+    expect(prompt).toContain("Earlier information the operator gave about this client");
     expect(prompt).toContain("Saç kesimi 500 TL");
     expect(prompt.lastIndexOf("<client_data>")).toBeLessThan(prompt.lastIndexOf("Saç kesimi 500 TL"));
   });

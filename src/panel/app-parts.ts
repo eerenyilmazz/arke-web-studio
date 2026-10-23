@@ -15,7 +15,7 @@ import { PRODUCTS } from "../products/registry.js";
 
 /**
  * The panel's side of the ready-made parts: installs them for app sites and keeps the secrets they need. The
- * session key is made here once (nobody types it); the admin password is set by Eren and only its hash is kept.
+ * session key is made here once (nobody types it); the admin password is set by the operator and only its hash is kept.
  */
 export function prepareAppParts(paths: ClientPaths, slug: string): InstallResult {
   const module = PRODUCTS[readProductRecord(paths).product];

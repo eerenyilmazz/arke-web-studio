@@ -8,7 +8,7 @@ import { CODE, apiGet, type Browser, type FakePanel, findBrowser, idle, jobDone,
 import { PNG_1PX, tempFactory } from "./helpers.js";
 
 /**
- * End to end, in a real browser, the way Eren works: new client from the form → the agent job builds the site
+ * End to end, in a real browser, the way the operator works: new client from the form → the agent job builds the site
  * through the real MCP server → approval with the terminal code (a wrong code first) → a trial publish → a change
  * request that rebuilds the site and resets the approval. Only the model is replaced, by tests/e2e/fake-agent.ts,
  * which follows a fixed script and fails the job if the agent's boundaries are broken (Cloudflare variables in its
@@ -96,7 +96,7 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     expect(existsSync(path.join(paths.assetsDir, assets[0]!.name))).toBe(true);
     expect(existsSync(path.join(factory.inboxDir, SLUG, "loaves.png"))).toBe(true); // the photo waits for the agent
     expect(fp.agentRuns[0]!.args).toContain("--disallowedTools");
-    // A new design stops at its plan: nothing is built until Eren approves it.
+    // A new design stops at its plan: nothing is built until the operator approves it.
     expect(created.summary).toContain("Tasarım planı hazır");
     expect(existsSync(path.join(paths.distDir, "index.html"))).toBe(false);
     expect(existsSync(path.join(paths.root, "site", "index.html"))).toBe(false);
@@ -120,7 +120,7 @@ describe("end to end: new client to a trial publish", { timeout: 300_000 }, () =
     expect(built.status, built.summary).toBe("succeeded");
     expect(existsSync(path.join(paths.distDir, "index.html"))).toBe(true);
     const report = readFileSync(paths.qualityReport, "utf8");
-    expect(report).toMatch(/Design plan \(approved by Eren\) \| PASS/);
+    expect(report).toMatch(/Design plan \(approved by the operator\) \| PASS/);
     expect(report).toMatch(/Signature motion .* \| PASS/);
 
     // 2. The panel shows the next step: review and approve. A wrong code is refused, the right one approves.

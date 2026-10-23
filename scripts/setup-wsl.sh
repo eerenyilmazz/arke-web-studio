@@ -35,7 +35,7 @@ esac
 echo "== 2. Tools"
 if has git; then
   pass "git $(git --version | awk '{print $3}')"
-  [[ -n "$(git config --global user.name || true)" ]] && pass "git user.name set" || bad "git user.name missing: git config --global user.name \"Eren ...\""
+  [[ -n "$(git config --global user.name || true)" ]] && pass "git user.name set" || bad "git user.name missing: git config --global user.name \"Ad Soyad\""
   [[ -n "$(git config --global user.email || true)" ]] && pass "git user.email set" || bad "git user.email missing: git config --global user.email \"you@example.com\""
   [[ "$(git config --global core.autocrlf || echo unset)" == "true" ]] && note "core.autocrlf=true: set it to input inside WSL (git config --global core.autocrlf input)" || pass "core.autocrlf ok"
 else

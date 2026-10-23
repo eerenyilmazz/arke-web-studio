@@ -290,7 +290,7 @@ describe("design library", () => {
     tools.saveContent(f, { slug: "other-shop", locale: "en", content: COMPLETE_CONTENT });
     expect(() => lib.applyLibraryDesign(f, SLUG, meta.id)).toThrow(/zaten/);
     expect(meta.slots).toContainEqual({ text: "Willow & Thread", field: "name" });
-    // Eren marks one more fixed place, for a fact the new client does not have yet.
+    // The operator marks one more fixed place, for a fact the new client does not have yet.
     const w = (p: string, c: string) => tools.writeSiteFileTool(f, { slug: "other-shop", path: p, content: c });
     const designHome = path.join(f.clientsRoot, "_library", meta.id, "site", "index.html");
     const { readFileSync, writeFileSync } = await import("node:fs");
@@ -324,7 +324,7 @@ describe("design library", () => {
 });
 
 describe("contact form per client", () => {
-  it("accepts only the form address Eren set (from .factory), and tells the agent", async () => {
+  it("accepts only the form address the operator set (from .factory), and tells the agent", async () => {
     const { f, paths } = await customClient();
     writeGoodSite(f);
     const { writeFileSync, mkdirSync } = await import("node:fs");

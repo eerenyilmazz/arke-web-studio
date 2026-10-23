@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 /**
- * A client's contact form endpoint, set by Eren in the panel and stored in .factory/form.json (the agent cannot
+ * A client's contact form endpoint, set by the operator in the panel and stored in .factory/form.json (the agent cannot
  * write there, so a web page or client text can never redirect form posts somewhere else). Only well-known
  * form services are accepted; the global SF_FORM_ACTION still works as a fallback for every client.
  */
