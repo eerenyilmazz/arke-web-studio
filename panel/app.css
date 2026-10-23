@@ -1201,3 +1201,42 @@ h2 { font-weight: 600; }
   /* A card alone in its group, and the wide tables, take the whole row. */
   .settings-group > .settings-title + :last-child, .settings-group > :has(.agent-row), #team-card, #update-card { grid-column: 1 / -1; }
 }
+
+/* ---------- 2.1.0: new client — kinds as one row of segments; hints under their fields ---------- */
+.help-after { margin-top: .35rem; }
+.kind-seg { display: flex; flex-wrap: wrap; gap: 3px; padding: 3px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; width: fit-content; max-width: 100%; }
+.kind-opt { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .85rem; border-radius: 6px; font-weight: 600; font-size: .9rem; color: var(--ink-2); cursor: pointer; transition: background-color var(--t-hover) ease, color var(--t-hover) ease; }
+.kind-opt:hover { color: var(--ink); }
+.kind-opt:has(input:checked) { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line-strong); }
+.kind-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kind-opt.is-soon { cursor: not-allowed; color: var(--ink-3); }
+.kind-soon { font-weight: 500; font-size: .74rem; padding: .05rem .4rem; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); color: var(--ink-3); }
+.kind-summary-line { margin-top: .45rem; min-height: 1.2em; }
+
+/* ---------- 2.1.0: analysis filters — search, quick views, the rest behind "Filtre ekle", chosen ones as chips ---------- */
+.filter-more { position: relative; }
+.filter-more > summary { list-style: none; cursor: pointer; }
+.filter-more > summary::-webkit-details-marker { display: none; }
+.filter-more > summary::after { content: " ▾"; }
+.filter-pop { position: absolute; z-index: 6; inset-inline-start: 0; top: calc(100% + .4rem); display: grid; grid-template-columns: repeat(2, minmax(10rem, 1fr)); gap: .6rem .8rem; padding: .9rem; min-width: 24rem; max-width: min(34rem, 92vw); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 9px; box-shadow: 0 10px 30px rgb(0 0 0 / .25); }
+.filter-field { display: grid; gap: .25rem; font-size: .8rem; font-weight: 600; color: var(--ink-2); }
+.filter-field select { width: 100%; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: -.3rem 0 1rem; }
+.filter-chips:empty { display: none; }
+.filter-chip { min-height: 1.9rem; font-size: .8rem; }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--ink-2); }
+@media (max-width: 640px) { .filter-pop { grid-template-columns: 1fr; min-width: 0; width: 88vw; } }
+
+/* ---------- 2.1.0: settings as tabs (one section at a time) ---------- */
+.settings-nav a[aria-current="page"] { background: var(--primary); color: var(--primary-ink); }
+.settings-group + .settings-group { margin-top: 0; }
+
+/* ---------- 2.1.0: the top bar always stays above the page (an open menu lifts its card, but never over the bar) ---------- */
+.topbar { z-index: 15; }
+.toast { z-index: 30; }
+/* Client details tabs: one line that scrolls sideways when the column is narrow; the active tab like the settings nav. */
+.info-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; width: 100%; margin-bottom: 1rem; }
+.info-tabs button { white-space: nowrap; flex: 0 0 auto; }
+.info-tabs button[aria-selected="true"] { background: var(--primary); color: var(--primary-ink); }
+/* With tabs the section heading repeats the tab name. */
+.settings-group > .settings-title { display: none; }

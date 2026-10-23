@@ -109,35 +109,67 @@ export function versionsCard(d) {
 
 /** What the agent knows: the texts on the site, the answers and files, and the optional questionnaire. */
 export async function tabInfo(body, d) {
-  const section = (title, sub) => {
+  // Sections one at a time, chosen from a row of tabs (no long scrolling page). The last one opened is remembered.
+  const sections = [];
+  const section = (key, title, sub) => {
     const el = h(
       "section",
-      { class: "info-section" },
+      { class: "info-section", "data-key": key },
       h("div", { class: "info-head" }, h("h2", { text: title }), sub && h("p", { class: "muted small", text: sub })),
     );
-    body.append(el);
+    sections.push({ key, title, el });
     return el;
   };
-  section("İş Takibi", "Teklif, ödeme ve teslim tarihi. Yalnızca panelde tutulur; siteye ve asistana iletilmez.").append(businessForm(d));
-  section("Müşteri Linkleri", "Müşteriye form ya da önizleme linki gönderin; gelen bilgiler, yorumlar ve onay burada görünür.").append(portalCard(d));
+  section("is", "İş Takibi", "Teklif, ödeme ve teslim tarihi. Yalnızca panelde tutulur; siteye ve asistana iletilmez.").append(businessForm(d));
+  section("linkler", "Müşteri Linkleri", "Müşteriye form ya da önizleme linki gönderin; gelen bilgiler, yorumlar ve onay burada görünür.").append(
+    portalCard(d),
+  );
   const appCard = await appPartsCard(d.status.slug);
-  if (appCard) section("Müşteri Yönetim Ekranı", "Katalog ve gelen mesajlar için müşterinin kendi ekranı.").append(appCard);
+  if (appCard) section("yonetim", "Yönetim Ekranı", "Katalog ve gelen mesajlar için müşterinin kendi ekranı.").append(appCard);
   if (d.status.openQuestions.length) {
-    const miss = section("Eksik Bilgiler", "Yanıtları Düzenleme sekmesindeki bilgi alanına yapıştırınız.");
+    const miss = section("eksik", "Eksik Bilgiler", "Yanıtları Düzenleme sekmesindeki bilgi alanına yapıştırınız.");
     miss.append(h("ul", { class: "missing" }, ...d.status.openQuestions.map((q) => h("li", { title: q.text, text: MISSING_TR[q.id] || q.text }))));
   }
-  tabContent(section("Sitedeki Metinler", "Değiştirmek için Düzenleme → Metin formunu kullanınız."), d);
-  section("Logo ve Görseller", 'Yüklenen dosyalar siteye eklenir; logoyu seçmek için "Logo olarak kullan"ı kullanınız.').append(
+  tabContent(section("metinler", "Metinler", "Değiştirmek için Düzenleme → Metin formunu kullanınız."), d);
+  section("gorseller", "Logo ve Görseller", 'Yüklenen dosyalar siteye eklenir; logoyu seçmek için "Logo olarak kullan"ı kullanınız.').append(
     uploadCard(d.status.slug, d.inbox, d.assets, d.logo),
   );
-  const pub = section("Onay ve Yayın", "Onay kodu yalnızca paneli başlattığınız terminalde görünür.");
+  const pub = section("yayin", "Onay ve Yayın", "Onay kodu yalnızca paneli başlattığınız terminalde görünür.");
   tabPublish(pub, d);
   tabBuild(pub, d);
-  const more = h("details", { class: "card advanced" }, h("summary", { text: "Müşteriye soru formu göndermek ya da formu soru soru girmek (isteğe bağlı)" }));
-  body.append(more);
-  tabQuestions(more, d, { compact: true });
-  await tabAnswers(more, d, { compact: true });
+  const forms = section("form", "Soru Formu", "Müşteriye soru formu göndermek ya da formu soru soru girmek (isteğe bağlı).");
+  tabQuestions(forms, d, { compact: true });
+  await tabAnswers(forms, d, { compact: true });
+
+  const nav = h("div", { class: "seg info-tabs", role: "tablist", "aria-label": "Müşteri bilgileri bölümleri" });
+  const show = (key) => {
+    const pick = sections.some((x) => x.key === key) ? key : sections[0].key;
+    for (const x of sections) x.el.hidden = x.key !== pick;
+    for (const b of nav.children) b.setAttribute("aria-selected", String(b.dataset.key === pick));
+    try {
+      localStorage.setItem(INFO_TAB_KEY, pick);
+    } catch {
+      /* private window */
+    }
+  };
+  nav.append(
+    ...sections.map((x) => h("button", { type: "button", role: "tab", "data-key": x.key, id: `info-tab-${x.key}`, onclick: () => show(x.key) }, x.title)),
+  );
+  body.append(nav, ...sections.map((x) => x.el));
+  let first = "";
+  try {
+    first = localStorage.getItem(INFO_TAB_KEY) || "";
+  } catch {
+    /* private window */
+  }
+  // Without a remembered choice: publishing when the site waits for approval or is live, else the business details.
+  const atPublishing =
+    ["awaiting-visual-approval", "awaiting-production-approval", "ready-to-deploy", "live"].includes(d.status.stage) ||
+    (d.status.stage === "awaiting-content-approval" && Boolean(d.status.lastBuild?.passed));
+  if (!first) first = atPublishing ? "yayin" : "is";
+  show(first);
 }
+const INFO_TAB_KEY = "arke-info-tab";
 
 // ---------------------------------------------------------------- tab: questions
 

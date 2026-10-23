@@ -170,7 +170,7 @@ export function planStatus(p: ClientPaths): { state: PlanState; next: string | n
   const next: Record<PlanState, string | null> = {
     "not-required": null,
     missing:
-      "Before any design work: write the design plan with save_design_plan (and optionally site/brand/signature.html to show the motion), then STOP and summarise it for the operator. Write no pages.",
+      "Before any design work: write site/brand/signature.html (the motion's live demo), then the design plan with save_design_plan, then STOP and summarise it for the operator. Write no pages.",
     awaiting: "The design plan waits for the operator's approval in the panel. Do not design or write pages; stop and say so.",
     approved: "The design plan is approved: build the site exactly to it (design-plan.json).",
     changed: "design-plan.json changed after the operator approved it. Do not build; tell the operator the plan needs approving again.",

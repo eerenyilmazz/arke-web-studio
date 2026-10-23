@@ -41,6 +41,10 @@ Only the pages listed in `config.pages`. Every page:
 - **Light and dark**: build the dark palette from the brand colours (`:root[data-theme="dark"]` and
   `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {…} }`). The toggle is the factory's part,
   never hand-written (see "Factory parts" below). A single-theme site (when the extras say so) has neither.
+- **One theme per page.** In the light theme every section, the header and the footer have light backgrounds; in the
+  dark theme all of them are dark. No inverted bands: no dark hero, stats strip or footer on a light page, no white
+  section on a dark page. Emphasis comes from the palette's accent, tints of the same theme, borders, scale and type,
+  never from switching a section to the other theme. A single-theme site keeps its one theme everywhere.
 
 ### Factory parts (do not write your own)
 

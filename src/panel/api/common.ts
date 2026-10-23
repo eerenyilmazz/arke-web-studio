@@ -119,7 +119,9 @@ export function launchAgent(deps: ApiDeps, slug: string, kind: string, title: st
   }
   // App sites get the factory's ready-made parts (catalogue, admin screen, inbox) before the agent places them.
   const parts = prepareAppParts(clientPaths(deps.factory.clientsRoot, slug), slug);
-  const withParts = parts.installed ? `${prompt}\n${PARTS_NOTE}` : prompt;
+  // Every tool call names the client; saying it once here avoids calls without a slug.
+  const withSlug = `${prompt}\nThis job is about client slug "${slug}": pass slug "${slug}" to every tool call that takes one.`;
+  const withParts = parts.installed ? `${withSlug}\n${PARTS_NOTE}` : withSlug;
   const text = finalPrompt(withParts.startsWith(TOOLS_NOTE) ? withParts : `${TOOLS_NOTE}\n${withParts}`, {
     ...policy,
     panelLanguage: readSettings(deps.factory).panelLanguage,

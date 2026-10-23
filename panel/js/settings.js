@@ -1,6 +1,6 @@
 // Settings: publishing, budget, sender, backups, web research.
 import { getLang, LANGS, locale, setLang } from "./i18n.js";
-import { $, api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODEL_TR, PACKAGE_NAMES, toast } from "./core.js";
+import { api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODEL_TR, PACKAGE_NAMES, toast } from "./core.js";
 import { askNotifyPermission, chime } from "./jobs.js";
 import { portalSettingsCard } from "./portal.js";
 import { accountCard } from "./account.js";
@@ -33,9 +33,10 @@ export async function renderSettings() {
         "a",
         {
           href: `#ayar-${id}`,
+          "data-tab": id,
           onclick: (e) => {
             e.preventDefault();
-            $(`#ayar-${id}`)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+            showTab(id);
           },
         },
         label,
@@ -99,7 +100,23 @@ export async function renderSettings() {
       h("button", { class: "btn btn-sm", type: "button", onclick: () => chime(true) }, "Sesi Dene"),
     ),
   );
-  return h(
+  // One section at a time (the nav works as tabs); the last one opened is remembered in this browser.
+  const showTab = (id) => {
+    const groups = page.querySelectorAll(".settings-group");
+    const known = [...groups].some((g) => g.id === `ayar-${id}`);
+    const tab = known ? id : "hesap";
+    for (const g of groups) g.hidden = g.id !== `ayar-${tab}`;
+    for (const a of nav.querySelectorAll("a")) {
+      if (a.dataset.tab === tab) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    }
+    try {
+      localStorage.setItem(TAB_KEY, tab);
+    } catch {
+      /* private window: the first tab opens next time */
+    }
+  };
+  const page = h(
     "div",
     { class: "settings-page" },
     h("div", { class: "settings-head", "data-enter": "0" }, h("h1", { text: "Ayarlar" }), nav),
@@ -115,7 +132,23 @@ export async function renderSettings() {
       group("guncelleme", "Güncelleme", updateCard()),
     ),
   );
+  // Links inside the page to another section (e.g. "(Hesabım)") open that tab.
+  page.addEventListener("click", (e) => {
+    const a = e.target.closest?.('a[href^="#ayar-"]');
+    if (!a || nav.contains(a)) return;
+    e.preventDefault();
+    showTab(a.getAttribute("href").slice("#ayar-".length));
+  });
+  let first = "hesap";
+  try {
+    first = localStorage.getItem(TAB_KEY) || "hesap";
+  } catch {
+    /* private window */
+  }
+  showTab(first);
+  return page;
 }
+const TAB_KEY = "arke-settings-tab";
 
 /** Budget mode, monthly budget and this month's use. */
 export function budgetCard() {

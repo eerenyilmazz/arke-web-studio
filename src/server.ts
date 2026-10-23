@@ -127,7 +127,10 @@ function registerClientTools(server: McpServer, factory: FactoryConfig): void {
         laterInterests: z.array(z.string()).optional().describe("Ids of ticked 'later' items, e.g. later-qr-code"),
       },
     },
-    handler(factory, "update_client_config", (a: Parameters<typeof tools.updateClientConfig>[1]) => tools.updateClientConfig(factory, a)),
+    handler(factory, "update_client_config", (a: Parameters<typeof tools.updateClientConfig>[1]) => {
+      tools.assertBusinessNameKept(factory, a);
+      return tools.updateClientConfig(factory, a);
+    }),
   );
 }
 

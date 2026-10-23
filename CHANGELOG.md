@@ -2,6 +2,32 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.1.0: ilk gerçek denemeden çıkan düzeltmeler
+
+**Panel**
+- **Site türü:** dört büyük kart yerine tek satırlık bir seçici; seçilen türün açıklaması altında görünüyor, hazır olmayan türlerde "yakında" yazıyor.
+- **Yeni müşteri formu:** açıklamalar kutuların altına alındı; İşletme adı ve Kısa ad kutuları artık aynı hizada.
+- **Ayarlar sekmeli:** her seferinde tek bölüm görünüyor (Hesabım, Genel, Ekip…), son açılan bölüm hatırlanıyor. Sayfa içindeki bölüm linkleri ilgili sekmeyi açıyor.
+- **Müşteri Bilgileri sekmeli:** İş Takibi, Müşteri Linkleri, Metinler, Logo ve Görseller, Onay ve Yayın, Soru Formu ayrı sekmeler. Site onay bekliyorsa ya da yayındaysa ilk açılışta Onay ve Yayın sekmesi geliyor.
+- **Analiz filtreleri sade:** arama, Hepsi / Gecikenler / Kontrol hatası görünümleri ve "Filtre ekle" düğmesi var. Seçili filtreler, tek tıkla kaldırılabilen küçük etiketler olarak görünüyor.
+- **Adım çubuğu doğru:** site henüz kurulmamışken "Onay Bekleniyor" yerine "Site Oluşturuluyor" görünüyor.
+- **Menü ve üst bar:** açık bir menü artık üst barın üstüne binmiyor.
+- **İş sürerken:** "Site oluşturuluyor" kartında yazı kutusu ve düğmeler gizleniyor.
+- **3 tasarım önerisi:** artık önce onay soruyor; onaylı bir plan varsa bunu ayrıca belirtiyor.
+- **Profil:** "Stüdyo adı" alanı kaldırıldı (2.0.1).
+
+**Agent**
+- **Talep doğru işe gidiyor:** site henüz kurulmamışken Özel Talep'e yazılanlar değişiklik işi olarak değil, "Siteyi hazırla"nın devamı olarak gidiyor. Böylece önceki bütün bilgiler de işe dahil oluyor.
+- **Bilgiler kendi alanlarına kaydediliyor:** iletişim, çalışma saatleri, sosyal medya, WhatsApp ve şirket unvanı hemen kaydediliyor. Hizmet, fiyat, SSS ve yorumlar metinler yazılırken kendi alanlarına taşınıyor; alanı olan bilgi "eşlenmemiş notlar"da kalmıyor.
+- **En fazla 5 soru:** sadece site için gerçekten gerekli bilgiler soruluyor. Panelde senin ayarladığın konular (form servisi, barındırma, diller, ekler) ve isteğe bağlı şeyler (harita linki, beğenilen siteler) sorulmuyor.
+- **İşletme adı korunuyor:** agent işletme adını değiştiremiyor. Şirket unvanını ayrı bir alana yazıyor; farklı bir ad görürse sana soruyor.
+- **Her işte müşterinin kısa adı veriliyor;** araçlar artık kısa ad olmadan çağrılmıyor.
+- **Sade dil:** özetlerde dosya, alan ve araç adları geçmiyor.
+- **Tasarım planı:**
+  - Başlık yazı tipi sistem fontu olamıyor; karakterli bir Google Font gerekiyor.
+  - İmza hareketinin canlı önizlemesi yazılmadan plan kaydedilmiyor.
+- **Tek tema:** açık temada bütün sayfa açık, koyu temada bütün sayfa koyu. Yarı açık yarı koyu bantlar artık yok.
+
 ## 2.0.1: geniş ekran düzeni, profil sadeleşti
 
 - **Geniş ekranlarda sayfalar ortalandı:** Yeni Müşteri, Arşiv ve boş ana ekran artık sol kenara yaslı durmuyor.

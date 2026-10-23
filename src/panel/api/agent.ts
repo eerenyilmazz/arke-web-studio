@@ -301,12 +301,25 @@ export const agentRoutes: Route[] = [
   { method: "POST", pattern: new RegExp(`^/api/clients/${SLUG}/agent/(${Object.keys(JOBS).join("|")})$`), handler: startAgent },
 ];
 
-async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug, kind]: string[]): Promise<void> {
+/** A site exists once the agent has written its first page (custom sites) or a build has run (template sites). */
+function siteStarted(deps: ApiDeps, slug: string): boolean {
+  const cp = clientPaths(deps.factory.clientsRoot, slug);
+  return existsSync(path.join(cp.root, "site", "index.html")) || existsSync(path.join(cp.distDir, "index.html"));
+}
+
+async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [slug, asked]: string[]): Promise<void> {
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
-  const build = JOBS[kind!];
-  if (!build) throw new HttpError(404, "Bilinmeyen iş türü.");
-  const body = await readJsonBody(req, JSON_LIMIT);
+  if (!JOBS[asked!]) throw new HttpError(404, "Bilinmeyen iş türü.");
+  let kind = asked!;
+  let body = await readJsonBody(req, JSON_LIMIT);
+  // Before there is a site, what the operator types in "Özel Talep" answers the agent's questions: it continues
+  // "Siteyi hazırla" (with everything given before) instead of a change job that has nothing to change.
+  if (kind === "revise" && !siteStarted(deps, s)) {
+    kind = "create-site";
+    body = { freeText: str(body, "request", { max: 4000 }) ?? "", askFirst: true };
+  }
+  const build = JOBS[kind]!;
   // A design job with another client's logo wastes the whole job: stop before spending anything.
   const owner = DESIGN_KINDS.has(kind!) ? sharedLogo(deps.factory, s) : null;
   if (owner && body.allowSharedLogo !== true) {

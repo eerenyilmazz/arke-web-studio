@@ -238,28 +238,49 @@ function pricingFields(country, lang, currency) {
  * The kind of site (Web Stüdyosu): Tanıtım today; E-ticaret, Randevu and Restoran-Kafe are listed as "Yakında"
  * until their factory parts are ready. Read from the server, so a kind becomes selectable without a panel change.
  */
+/** A labelled field with its hint under the box, so boxes side by side stay level. */
+const withHint = (id, label, input, hint) => h("label", { for: id }, label, input, h("span", { class: "help help-after", text: hint }));
+
 function productField() {
-  const group = h("div", { class: "kind-choice", role: "radiogroup", "aria-label": "Site türü" });
+  // One row of segments (the kinds), and one line under it saying what the chosen kind is. Kinds that are not
+  // ready yet stay visible but cannot be chosen.
+  const group = h("div", { class: "kind-seg", role: "radiogroup", "aria-label": "Site türü" });
+  const summary = h("p", { class: "muted small kind-summary-line", "aria-live": "polite" });
   let chosen = "showcase";
   const names = { showcase: "Tanıtım sitesi" };
+  const summaries = {};
+  const showSummary = () => {
+    summary.textContent = summaries[chosen] || "";
+  };
   const draw = (products) => {
     group.replaceChildren(
       ...products.map((p) => {
         names[p.id] = p.name;
+        summaries[p.id] = p.summary;
         const soon = p.status !== "active";
-        const input = h("input", { type: "radio", name: "nc-kind", value: p.id, checked: p.id === chosen, disabled: soon, id: `nc-kind-${p.id}` });
+        const input = h("input", {
+          type: "radio",
+          name: "nc-kind",
+          value: p.id,
+          checked: p.id === chosen,
+          disabled: soon,
+          id: `nc-kind-${p.id}`,
+          class: "sr-only",
+        });
         input.addEventListener("change", () => {
           chosen = p.id;
+          showSummary();
         });
         return h(
           "label",
-          { class: `kind-card${soon ? " is-soon" : ""}`, for: input.id },
+          { class: `kind-opt${soon ? " is-soon" : ""}`, for: input.id, title: p.summary || null },
           input,
-          h("span", { class: "kind-name" }, p.name, soon ? h("span", { class: "badge", text: "Yakında" }) : null),
-          h("span", { class: "kind-summary", text: p.summary }),
+          h("span", { text: p.name }),
+          soon ? h("span", { class: "kind-soon", text: "yakında" }) : document.createDocumentFragment(),
         );
       }),
     );
+    showSummary();
   };
   draw([{ id: "showcase", name: "Tanıtım sitesi", summary: "", status: "active" }]);
   api("GET", "/api/products")
@@ -268,7 +289,7 @@ function productField() {
       /* the showcase choice stays; the others appear when the panel is up to date */
     });
   return {
-    el: h("div", { class: "nc-field" }, h("span", { class: "nc-label", text: "Site türü" }), group),
+    el: h("div", { class: "nc-field" }, h("span", { class: "nc-label", text: "Site türü" }), group, summary),
     value: () => chosen,
     label: () => names[chosen] || chosen,
   };
@@ -378,15 +399,9 @@ export function renderNew() {
           "div",
           { class: "two" },
           h("label", { for: "nc-name" }, "İşletme adı", name),
-          h("label", { for: "nc-slug" }, "Kısa ad", h("span", { class: "help", text: "Klasör ve adres için; otomatik dolar, sonradan değişmez." }), slug),
+          withHint("nc-slug", "Kısa ad", slug, "Klasör ve adres için; otomatik dolar, sonradan değişmez."),
         ),
-        h(
-          "label",
-          { for: "nc-industry" },
-          "Sektör",
-          h("span", { class: "help", text: "İngilizce kısa ad en iyi sonucu verir: barber shop, pickle shop, dentist." }),
-          industry,
-        ),
+        withHint("nc-industry", "Sektör", industry, "İngilizce kısa ad en iyi sonucu verir: barber shop, pickle shop, dentist."),
         h("div", { class: "two" }, h("label", { for: "nc-country" }, "Ülke", country), h("label", { for: "nc-lang" }, "Site dili", lang)),
         h("div", { class: "nc-field" }, h("span", { class: "nc-label", text: "Barındırma" }), hostingChoice),
         library.el,

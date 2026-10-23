@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { rmSync,  mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -33,6 +33,13 @@ describe("design plan", () => {
     expect(write("brand/signature.html")).not.toThrow(); // the motion preview is allowed
     expect(() => tools.deleteSiteFileTool(f, { slug: SLUG, path: "index.html" })).toThrow(/design plan/);
 
+    // Without the live demo of the motion, or with a system font for the headings, no plan is saved.
+    rmSync(path.join(paths.root, "site", "brand", "signature.html"));
+    expect(() => tools.saveDesignPlanTool(f, { slug: SLUG, plan: PLAN })).toThrow(/no live demo/);
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/signature.html", content: "<!doctype html><title>demo</title>" });
+    expect(() => tools.saveDesignPlanTool(f, { slug: SLUG, plan: { ...PLAN, fonts: { heading: "system-ui, Arial, sans-serif", body: "Nunito" } } })).toThrow(
+      /system font/,
+    );
     // A plan with an informal shape is refused with the fields to use.
     expect(() => tools.saveDesignPlanTool(f, { slug: SLUG, plan: { ...PLAN, signature: { ...PLAN.signature, beats: [] } } })).toThrow(/signature\.beats/);
     expect(tools.saveDesignPlanTool(f, { slug: SLUG, plan: PLAN }).state).toBe("awaiting");
@@ -53,6 +60,7 @@ describe("design plan", () => {
   it("keeps earlier plans for a new idea, starts over on a redesign, and a chosen proposal waives the plan", async () => {
     const { f, paths } = await client();
     requirePlan(paths);
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/signature.html", content: "<!doctype html><title>demo</title>" });
     tools.saveDesignPlanTool(f, { slug: SLUG, plan: PLAN });
     approvePlan(paths, "panel:eren");
     tools.saveDesignPlanTool(f, {

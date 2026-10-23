@@ -3,6 +3,25 @@
 // where {} stands in the English. Missing entries simply stay Turkish. Generated once, then edited by hand.
 export const EN = {
   exact: {
+    yakında: "soon",
+    "Kontrol hatası": "Check failures",
+    "Seçili filtreler": "Chosen filters",
+    "Müşteri bilgileri bölümleri": "Client details sections",
+    "Filtre ekle": "Add filter",
+    Temizle: "Clear",
+    "Filtreyi kaldır": "Remove filter",
+    Hepsi: "All",
+    "Yönetim Ekranı": "Admin Screen",
+    Metinler: "Texts",
+    "Soru Formu": "Questionnaire",
+    "Müşteriye soru formu göndermek ya da formu soru soru girmek (isteğe bağlı).":
+      "Send the client a questionnaire, or enter it question by question (optional).",
+    "3 tasarım önerisi hazırlansın mı?": "Prepare 3 design proposals?",
+    "Bu müşterinin onaylı bir tasarım planı var. Öneriler ayrı bir tasarım işidir ve kaynak harcar; birini seçerseniz site o öneriyle yeniden kurulur ve onaylı planın yerine geçer.":
+      "This client has an approved design plan. Proposals are a separate design job and use resources; choosing one rebuilds the site with it and replaces the approved plan.",
+    "Üç farklı marka önerisi hazırlanır; bu bir tasarım işidir ve kaynak harcar. Beğendiğinizi Marka Kimliği sekmesinden seçersiniz.":
+      "Three different brand proposals are prepared; this is a design job and uses resources. You choose the one you like on the Brand Identity tab.",
+    "Önerileri Hazırla": "Prepare the Proposals",
     "Agent size bu adla hitap eder.": "The agent addresses you by this name.",
     Güncelleme: "Updates",
     Ekip: "Team",

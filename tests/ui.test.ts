@@ -285,8 +285,8 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     await expect.poll(() => page.locator("#account-cloudflare").textContent()).toContain("Henüz bir Cloudflare hesabı eklenmedi");
     expect(await page.locator("#acc-token").getAttribute("type")).toBe("password");
     await page.goto(`${base}/#/yeni`);
-    await page.waitForSelector(".kind-card");
-    await expect.poll(() => page.locator(".kind-card").count()).toBe(4);
+    await page.waitForSelector(".kind-opt");
+    await expect.poll(() => page.locator(".kind-opt").count()).toBe(4);
     expect(await page.locator("#nc-kind-showcase").isChecked()).toBe(true);
     expect(await page.locator("#nc-kind-ecommerce").isDisabled()).toBe(true);
     expect(errors).toEqual([]);

@@ -4,6 +4,7 @@ import { tabBrand } from "./brand.js";
 import { planCard, planWaiting } from "./design-plan.js";
 import { archiveClient, deployProduction, openPreview } from "./client-actions.js";
 import {
+  ask,
   $,
   api,
   avatar,
@@ -62,9 +63,7 @@ export async function renderClient(view, slug, tab) {
       { class: "menu-items" },
       h("button", { type: "button", disabled: isBusy(), onclick: () => runTask(slug, "build", {}) }, "Siteyi yeniden oluştur"),
       h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "fix-build", {}) }, "Hataları otomatik düzelt"),
-      d.template === "custom"
-        ? h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "concepts", {}) }, "3 tasarım önerisi hazırla")
-        : null,
+      d.template === "custom" ? h("button", { type: "button", disabled: isBusy(), onclick: () => askConcepts(d) }, "3 tasarım önerisi hazırla") : null,
       d.template === "custom" && d.locales.length > 1
         ? h("button", { type: "button", disabled: isBusy(), onclick: () => runAgent(slug, "translate", {}) }, "Diğer dilleri güncelle")
         : null,
@@ -146,8 +145,33 @@ export async function renderClient(view, slug, tab) {
  * One line under the client's name: where the site is (four steps) and the one thing to do now. Replaces the
  * large cards; the long forms (pasting information) live in the Düzenleme tab.
  */
+/**
+ * The step the operator sees. While nothing is built yet the site is still being made, even when the texts wait for
+ * approval (custom sites approve the built site, not the texts); a running job on a new client is step 2 too.
+ */
+export function shownStep(d) {
+  let step = stepIndex(d.status.stage);
+  const built = Boolean(d.status.lastBuild?.passed);
+  if (step === 2 && d.status.stage === "awaiting-content-approval" && !built) step = 1;
+  if (step === 0 && isBusy() && state.running?.slug === d.status.slug) step = 1;
+  return step;
+}
+
+/** Three proposals cost a full design job: asked first, and the dialog says when a plan is already approved. */
+async function askConcepts(d) {
+  const approved = d.status.designPlan?.state === "approved";
+  const yes = await ask({
+    title: "3 tasarım önerisi hazırlansın mı?",
+    body: approved
+      ? "Bu müşterinin onaylı bir tasarım planı var. Öneriler ayrı bir tasarım işidir ve kaynak harcar; birini seçerseniz site o öneriyle yeniden kurulur ve onaylı planın yerine geçer."
+      : "Üç farklı marka önerisi hazırlanır; bu bir tasarım işidir ve kaynak harcar. Beğendiğinizi Marka Kimliği sekmesinden seçersiniz.",
+    confirm: "Önerileri Hazırla",
+  });
+  if (yes) await runAgent(d.status.slug, "concepts", {});
+}
+
 export function statusStrip(d) {
-  const step = stepIndex(d.status.stage);
+  const step = shownStep(d);
   const a = nextAction(d);
   return h(
     "section",
@@ -533,8 +557,9 @@ export function prepareCard(d) {
         ? "Bilgiler kaydediliyor, tasarım hazırlanıyor ve sayfalar oluşturuluyor. İşlem birkaç dakika sürer; ilerlemeyi aşağıdan takip edebilirsiniz."
         : "Bilgileri yapıştırınız, varsa logo ve görselleri ekleyiniz. Eksik bilgi olursa size sorulur.",
     }),
-    h("label", { for: "prep-text", class: "sr-only" }, "Müşteri bilgileri"),
-    box,
+    // While the job runs, the card only says what is happening: no box to type into, no buttons.
+    working ? null : h("label", { for: "prep-text", class: "sr-only" }, "Müşteri bilgileri"),
+    working ? null : box,
     working ? null : infoGuide(box, (v) => (draft.freeText = v)),
     working || d.template !== "custom" ? null : h("label", { for: "prep-lib", class: "small row nowrap" }, startFrom),
     working
@@ -545,15 +570,17 @@ export function prepareCard(d) {
           askFirst,
           " Önce araştırma yapılsın ve sorular bana iletilsin (önerilir). Kapalıysa açık tasarım kararları otomatik verilir; bilgi yine uydurulmaz.",
         ),
-    h(
-      "div",
-      { class: "row" },
-      h("button", { class: "btn btn-primary", type: "button", disabled: busy, onclick: go }, ranBefore ? "Devam Et" : "Siteyi Oluştur"),
-      h("label", { for: "prep-files", class: "btn", style: working ? "pointer-events:none;opacity:.5" : "" }, "Logo ve Görsel Ekle"),
-      fileInput,
-      fileCount,
-      h("a", { href: `#/musteri/${slug}/bilgiler`, class: "small", style: "margin-inline-start:auto" }, "Müşteriye soru formu gönder"),
-    ),
+    working
+      ? null
+      : h(
+          "div",
+          { class: "row" },
+          h("button", { class: "btn btn-primary", type: "button", disabled: busy, onclick: go }, ranBefore ? "Devam Et" : "Siteyi Oluştur"),
+          h("label", { for: "prep-files", class: "btn", style: working ? "pointer-events:none;opacity:.5" : "" }, "Logo ve Görsel Ekle"),
+          fileInput,
+          fileCount,
+          h("a", { href: `#/musteri/${slug}/bilgiler`, class: "small", style: "margin-inline-start:auto" }, "Müşteriye soru formu gönder"),
+        ),
   );
 }
 

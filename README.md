@@ -150,7 +150,7 @@ Müşteri sayfasında solda canlı önizleme (telefon/masaüstü) ve sürüm ge�
 - **Marka Kimliği:** marka kartı (logo, slogan, renkler, canlı imza hareketi, tipografi), kütüphaneye kaydetme,
   "Markayla yeniden tasarla".
 - **Teklif:** yazdırılabilir teklif ve iş raporu.
-- **Müşteri Bilgileri:** iş takibi, müşteri linkleri (portal), eksik bilgiler, metinler, dosyalar, onay ve yayın.
+- **Müşteri Bilgileri** (sekmeli): iş takibi, müşteri linkleri (portal), eksik bilgiler, metinler, logo ve görseller, onay ve yayın, soru formu.
   Uygulama sitelerinde ayrıca **Müşteri Yönetim Ekranı** bölümü bulunur.
 
 ### Onay ve yayın
@@ -167,7 +167,7 @@ kaldırma da panelden yapılır. Canlı sitede bu iki işlem müşterinin kısa 
 - **Analiz:** müşteri, iş, maliyet ve site verileri; filtreler, KPI'lar, para birimine göre toplamlar, CSV dışa aktarma.
 - **Tasarım Kütüphanesi:** beğendiğiniz tasarımları saklayın, yeni müşteride başlangıç olarak kullanın. Eski müşterinin bilgileri sitede kalırsa derleme durur.
 - **Arşiv:** müşteri silinmez; klasörleri `_archive/` altına taşınır.
-- **Ayarlar:** Hesabım (profil, Cloudflare), Genel (dil, teklif, bildirimler), Ekip, Kaynak Kullanımı (paket, agent ve model, kâr, internet araştırması), Yayın (portal), Yedek, Güncelleme.
+- **Ayarlar** (sekmeli; bir seferde tek bölüm): Hesabım (profil, Cloudflare), Genel (dil, teklif, bildirimler), Ekip, Kaynak Kullanımı (paket, agent ve model, kâr, internet araştırması), Yayın (portal), Yedek, Güncelleme.
 
 ### Komut satırı (isteğe bağlı)
 

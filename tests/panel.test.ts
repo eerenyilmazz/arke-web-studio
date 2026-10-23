@@ -58,6 +58,13 @@ function fakeSpawn(calls: SpawnCall[], events: object[], exitCode = 0) {
   };
 }
 
+/** A first page, so the client counts as having a site (change jobs need one). */
+function withSite(factory: ReturnType<typeof tempFactory>, slug: string) {
+  const dir = path.join(clientPaths(factory.clientsRoot, slug).root, "site");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, "index.html"), "<!doctype html><title>x</title>");
+}
+
 async function start(spawn?: ReturnType<typeof fakeSpawn>, approvalCode?: string, verifyCloudflare?: PanelOptions["verifyCloudflare"]) {
   const factory = tempFactory();
   const port = await freePort();
@@ -597,6 +604,7 @@ describe("token budget", () => {
       body: JSON.stringify({ slug: "cheap-co", businessName: "Cheap", industry: "bakery", hostingModel: "managed" }),
     });
     await fetch(`${base}/api/clients/cheap-co/business`, { method: "PUT", headers: json, body: JSON.stringify({ budgetMode: "economy" }) });
+    withSite(factory, "cheap-co"); // a change job needs a site to change
     const res = await fetch(`${base}/api/clients/cheap-co/agent/revise`, {
       method: "POST",
       headers: json,
@@ -631,16 +639,35 @@ describe("token budget", () => {
     void factory;
   });
 
+  it("sends a request typed before there is a site to the site preparation, with everything given before", async () => {
+    const calls: SpawnCall[] = [];
+    const { base, auth } = await start(fakeSpawn(calls, [{ type: "result", subtype: "success", result: "ok" }]));
+    const json = { ...auth, "Content-Type": "application/json" };
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "early-co", businessName: "Early", industry: "bakery", hostingModel: "managed" }),
+    });
+    const job = (await (
+      await fetch(`${base}/api/clients/early-co/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "Renkler uygun, sormadan devam." }) })
+    ).json()) as { title: string };
+    expect(job.title).toBe("Siteyi hazırla");
+    expect(calls[0]!.stdin).toMatch(/Prepare this client's website/);
+    expect(calls[0]!.stdin).toContain("Renkler uygun, sormadan devam.");
+    expect(calls[0]!.stdin).toContain('pass slug "early-co" to every tool call');
+  });
+
   it("stops a job that passes its token cap", async () => {
     const calls: SpawnCall[] = [];
     const big = [{ type: "assistant", message: { id: "big", usage: usage(500_000, 1000), content: [{ type: "text", text: "çok" }] } }];
-    const { base, auth } = await start(fakeSpawn(calls, big));
+    const { base, auth, factory } = await start(fakeSpawn(calls, big));
     const json = { ...auth, "Content-Type": "application/json" };
     await fetch(`${base}/api/clients`, {
       method: "POST",
       headers: json,
       body: JSON.stringify({ slug: "cap-co", businessName: "Cap", industry: "bakery", hostingModel: "managed" }),
     });
+    withSite(factory, "cap-co");
     const job = (await (
       await fetch(`${base}/api/clients/cap-co/agent/revise`, { method: "POST", headers: json, body: JSON.stringify({ request: "x" }) })
     ).json()) as { id: string };
@@ -984,6 +1011,7 @@ describe("design plan in the panel", () => {
     expect((await plan()).state).toBe("missing");
     expect((await fetch(`${base}/api/clients/plan-shop/design-plan/approve`, { method: "POST", headers: json, body: "{}" })).status).toBe(409);
 
+    tools.writeSiteFileTool(factory, { slug: "plan-shop", path: "brand/signature.html", content: "<!doctype html><title>demo</title>" });
     tools.saveDesignPlanTool(factory, { slug: "plan-shop", plan: PLAN });
     expect((await plan()).state).toBe("awaiting");
     const newIdea = await fetch(`${base}/api/clients/plan-shop/agent/new-plan`, {

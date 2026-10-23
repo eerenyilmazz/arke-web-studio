@@ -62,6 +62,7 @@ describe("panel in English", { timeout: 300_000 }, () => {
 
     // Switch from the settings screen, as the operator would; the page reloads in English.
     await page.goto(`${base}/#/ayarlar`);
+    await page.click('.settings-nav a[data-tab="genel"]'); // settings open one section at a time
     await page.waitForSelector("#panel-lang:not([disabled])");
     await Promise.all([page.waitForEvent("load"), page.selectOption("#panel-lang", "en")]);
     await page.waitForSelector("#view h1");
@@ -105,6 +106,7 @@ describe("panel in English", { timeout: 300_000 }, () => {
 
     // Back to Turkish: the setting is kept on the server and the panel draws in Turkish again.
     await page.goto(`${base}/#/ayarlar`);
+    await page.click('.settings-nav a[data-tab="genel"]'); // settings open one section at a time
     await page.waitForSelector("#panel-lang:not([disabled])");
     await Promise.all([page.waitForEvent("load"), page.selectOption("#panel-lang", "tr")]);
     await page.waitForSelector("#view h1");

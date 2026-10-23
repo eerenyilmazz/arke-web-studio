@@ -170,6 +170,21 @@ function dropOrphanSections(merged: Record<string, unknown>, patch: Record<strin
   }
 }
 
+/**
+ * The business name is the operator's: they typed it when creating the client and change it in the panel. The agent
+ * may not rename the business (a legal title like "… Ltd. Şti." goes under legal.companyName instead).
+ */
+export function assertBusinessNameKept(factory: FactoryConfig, args: { slug: string; patch: Record<string, unknown> }): void {
+  const wanted = (args.patch.business as { name?: unknown } | undefined)?.name;
+  if (wanted === undefined) return;
+  const current = (readDraftConfig(openClient(factory, assertSlug(args.slug))) as { business?: { name?: string } }).business?.name ?? "";
+  if (current && wanted !== current)
+    throw new FactoryError(
+      `Nothing saved: business.name is "${current}" and only the operator changes it.`,
+      "Leave business.name out of the patch. Put a legal title under legal.companyName, and ask the operator in your summary whether the site should use another name.",
+    );
+}
+
 export function updateClientConfig(
   factory: FactoryConfig,
   args: {

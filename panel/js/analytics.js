@@ -335,27 +335,75 @@ export async function renderAnalytics() {
     csvBtn.onclick = () => download(rows);
   };
 
+  // Quick views replace the two checkboxes: everything, late ones, ones with failing checks.
+  const VIEWS = [
+    ["", "Hepsi"],
+    ["late", "Gecikenler"],
+    ["broken", "Kontrol hatası"],
+  ];
+  const viewOf = () => (prefs.late ? "late" : prefs.broken ? "broken" : "");
+  const views = h("div", { class: "seg", role: "group", "aria-label": "Görünüm" });
+  const drawViews = () =>
+    views.replaceChildren(
+      ...VIEWS.map(([id, label]) =>
+        h(
+          "button",
+          {
+            type: "button",
+            "aria-pressed": String(viewOf() === id),
+            onclick: () => {
+              prefs.late = id === "late";
+              prefs.broken = id === "broken";
+              drawViews();
+              draw();
+            },
+          },
+          label,
+        ),
+      ),
+    );
+  // Chosen filters as small removable labels under the bar.
+  const chips = h("div", { class: "filter-chips", "aria-label": "Seçili filtreler" });
+  const drawChips = () => {
+    const active = FILTERS.filter((f) => prefs[f.id]);
+    chips.replaceChildren(
+      ...active.map((f) =>
+        h(
+          "button",
+          {
+            type: "button",
+            class: "chip filter-chip",
+            title: "Filtreyi kaldır",
+            onclick: () => {
+              delete prefs[f.id];
+              const sel = document.getElementById(`an-${f.id}`);
+              if (sel) sel.value = "";
+              drawChips();
+              draw();
+            },
+          },
+          `${f.label}: ${f.name(prefs[f.id])}`,
+          h("span", { "aria-hidden": "true", text: " ✕" }),
+        ),
+      ),
+      active.length || prefs.q || viewOf() ? clear : document.createDocumentFragment(),
+    );
+  };
+
   const select = (f) => {
     const values = [...new Set(all.flatMap((r) => [f.of(r)].flat()))].filter((v) => v !== undefined).sort();
     const el = h(
       "select",
       { id: `an-${f.id}`, "aria-label": f.label },
-      h("option", { value: "", text: `${f.label}: hepsi` }),
+      h("option", { value: "", text: "Hepsi" }),
       ...values.map((v) => h("option", { value: v, text: f.name(v), selected: prefs[f.id] === v })),
     );
     el.addEventListener("change", () => {
       prefs[f.id] = el.value;
+      drawChips();
       draw();
     });
-    return el;
-  };
-  const check = (id, label) => {
-    const box = h("input", { type: "checkbox", id: `an-${id}`, checked: Boolean(prefs[id]) });
-    box.addEventListener("change", () => {
-      prefs[id] = box.checked;
-      draw();
-    });
-    return h("label", { class: "check", for: `an-${id}` }, box, label);
+    return h("label", { class: "filter-field", for: el.id }, f.label, el);
   };
   const search = h("input", { type: "search", id: "an-q", placeholder: "Ara: ad, sektör, etiket", value: prefs.q || "", "aria-label": "Ara" });
   search.addEventListener("input", () => {
@@ -365,8 +413,8 @@ export async function renderAnalytics() {
   const csvBtn = h("button", { type: "button", class: "btn btn-sm", id: "an-csv" }, "CSV indir");
   const clear = h("button", {
     type: "button",
-    class: "btn btn-sm",
-    text: "Filtreleri temizle",
+    class: "btn btn-sm btn-ghost",
+    text: "Temizle",
     onclick: () => {
       for (const k of ["q", "late", "broken", ...FILTERS.map((f) => f.id)]) delete prefs[k];
       savePrefs(prefs);
@@ -374,6 +422,19 @@ export async function renderAnalytics() {
     },
   });
 
+  const more = h(
+    "details",
+    { class: "filter-more" },
+    h("summary", { class: "btn btn-sm" }, "Filtre ekle"),
+    h("div", { class: "filter-pop" }, ...FILTERS.map(select)),
+  );
+  // The filter panel closes when you click anywhere else.
+  document.addEventListener("click", function closeMore(e) {
+    if (!document.contains(more)) return document.removeEventListener("click", closeMore);
+    if (more.open && !more.contains(e.target)) more.open = false;
+  });
+  drawViews();
+  drawChips();
   draw();
   return h(
     "section",
@@ -389,7 +450,8 @@ export async function renderAnalytics() {
       ),
       csvBtn,
     ),
-    h("div", { class: "filters" }, search, ...FILTERS.map(select), check("late", "Gecikenler"), check("broken", "Kontrol hatası olanlar"), clear),
+    h("div", { class: "filters" }, search, views, more),
+    chips,
     holder,
   );
 }

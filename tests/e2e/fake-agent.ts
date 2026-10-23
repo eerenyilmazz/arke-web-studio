@@ -124,8 +124,8 @@ async function main(): Promise<void> {
     await call("save_content", { slug, locale: "en", content: COMPLETE_CONTENT });
     // A new design: the plan first, then stop until the operator approves it in the panel (rules/custom/plan.md).
     if (status.designPlan?.state === "missing") {
-      await call("save_design_plan", { slug, plan: FAKE_PLAN });
       await call("write_site_file", { slug, path: "brand/signature.html", content: SIGNATURE_HTML });
+      await call("save_design_plan", { slug, plan: FAKE_PLAN });
       await client.close();
       finish(true, `Tasarım planı hazır: ${FAKE_PLAN.signature.name}. Onayınızı bekliyor. Okunan bilgi: ${pasted.replace(/\s+/g, " ").slice(0, 300)}`);
     }

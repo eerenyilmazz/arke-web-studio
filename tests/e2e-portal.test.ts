@@ -86,6 +86,7 @@ describe("end to end: the client portal in Cloudflare's runtime", { timeout: 300
     const { base } = fp;
     const portalOrigin = new RegExp(`^${portalUrl.replace(/[.]/g, "\\.")}`);
     const { page, errors } = await openPanel(browser, base, `#/musteri/${SLUG}/bilgiler`, portalOrigin);
+    await page.click("#info-tab-linkler"); // client details open one section at a time (remembered afterwards)
     const card = page.locator(".portal-card");
     const linkUrl = async (kind: "f" | "r") => (await card.locator(".portal-url").allInnerTexts()).find((u) => u.includes(`/${kind}/`))!;
 

@@ -1,5 +1,5 @@
 import { isAppSite, readProductRecord } from "../deploy/app.js";
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { FACTORY_ROOT, type FactoryConfig } from "../config.js";
 import { RESEARCH_FILE, openClient, readDraftConfig } from "../lib/client.js";
@@ -12,6 +12,7 @@ import {
   siteMap,
   deleteSiteFile,
   isCustom,
+  SIGNATURE_FILE,
   listSiteFiles,
   readSiteFile,
   writeSiteFile,
@@ -37,10 +38,14 @@ function assertPlanAllows(paths: ClientPaths, rel: string): void {
       ? "Nothing written: design-plan.json changed after the operator approved it."
       : `Nothing written: the design plan is ${state === "missing" ? "not written yet" : "waiting for the operator's approval"}.`,
     state === "missing"
-      ? "Write it with save_design_plan (site/brand/signature.html may show the motion), then stop and summarise it for the operator."
+      ? "Write site/brand/signature.html (the motion's live demo) first, then the plan with save_design_plan; then stop and summarise it for the operator."
       : "Stop here and tell the operator the plan is waiting for their approval in the panel.",
   );
 }
+
+/** System and generic families: not a brand's heading face. */
+const GENERIC_FONTS =
+  /^(system-ui|-apple-system|blinkmacsystemfont|segoe ui|roboto|arial|helvetica( neue)?|verdana|tahoma|times( new roman)?|georgia|sans-serif|serif|monospace|ui-[a-z-]+|inherit)$/i;
 
 /** The agent's design plan for a new design (rules/custom/plan.md). Saving it never approves it. */
 export function saveDesignPlanTool(factory: FactoryConfig, args: { slug: string; plan: unknown }) {
@@ -53,6 +58,22 @@ export function saveDesignPlanTool(factory: FactoryConfig, args: { slug: string;
         .map((i) => `${i.path.join(".") || "plan"} (${i.message})`)
         .join("; ")}`,
       "Fields: concept, source, tone[2–4], palette[3–6]{name,hex,role}, fonts{heading,body,mono?}, hero, pages[]{name,sections[]{name,purpose}}, signature{name,idea,trigger,beats[3–8]{atMs,durationMs,what,easing},totalMs,reducedMotion}, animations[]{name,trigger,what}, differs?",
+    );
+  // The heading font carries the brand: a real typeface, never the system stack.
+  const heading = parsed.data.fonts.heading
+    .split(",")[0]!
+    .trim()
+    .replace(/^["']|["']$/g, "");
+  if (GENERIC_FONTS.test(heading))
+    throw new FactoryError(
+      `Plan not saved: the heading font "${heading}" is a system font.`,
+      "Choose a typeface with character for the headings (a Google Font that fits the concept), and say why in the plan.",
+    );
+  // The operator judges the motion by watching it: the live demo comes before the plan.
+  if (!existsSync(path.join(paths.root, "site", SIGNATURE_FILE)))
+    throw new FactoryError(
+      "Plan not saved: the signature motion has no live demo yet.",
+      `Write site/${SIGNATURE_FILE} first (the storyboard's beats as a small self-contained page), then save the plan.`,
     );
   const earlier = previousPlans(paths).length;
   savePlan(paths, parsed.data);
