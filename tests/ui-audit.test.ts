@@ -229,10 +229,13 @@ async function findings(page: Page): Promise<string[]> {
     for (const [vw, vh, tag] of [
       [1360, 860, "d"],
       [390, 844, "m"],
+      [1024, 720, "t"],
     ] as const) {
       for (const [name, hash, act] of screens) {
         // ARKE_SHOT_ONLY=yeni,c-qe narrows the run while iterating on a screen.
         if (ONLY.length && !ONLY.some((o) => name.startsWith(o))) continue;
+        // A small laptop width, for the screens with side columns (settings, the new-client form, quick edit).
+        if (tag === "t" && !/^(ayarlar|yeni|c-duzenle|c-qe-colors)/.test(name)) continue;
         const page = await browser!.newPage({ viewport: { width: vw, height: vh } });
         const errors: string[] = [];
         page.on("pageerror", (e) => errors.push(e.message));

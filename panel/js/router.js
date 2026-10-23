@@ -52,6 +52,8 @@ export async function render() {
   await loadClients();
   const r = route();
   const view = $("#view");
+  // The settings sections live in the main menu while Ayarlar is open; a new page starts without them.
+  document.querySelector(".main-nav .settings-nav")?.remove();
   document.body.dataset.view = r.view; // the home table already lists every client, so the rail hides its list there
   for (const a of document.querySelectorAll(".main-nav a")) {
     const on =

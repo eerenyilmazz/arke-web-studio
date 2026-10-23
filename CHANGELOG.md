@@ -2,6 +2,13 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.2.1: Ayarlarda tek menü
+
+- Geniş ekranda Ayarlar bölümleri (Hesabım, Genel, Ekip…) artık sol ana menüde, "Ayarlar"ın altında açılıyor. Yan yana iki menü yok. Telefonda bölümler sayfanın üstünde kalıyor.
+- Sayfanın sağa kayıp kesilmesi düzeldi; içerik tek sütun ve ortada.
+- Bölümle aynı adı taşıyan kartın başlığı (ör. Yedek altında "Yedek") tekrar etmiyor.
+- Ekran denetimine 1024 piksel genişlik eklendi.
+
 ## 2.2.0: Hızlı Düzenleme, Yeni Müşteri ve Ayarlar yeniden tasarlandı
 
 **Hızlı Düzenleme**

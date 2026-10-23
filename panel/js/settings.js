@@ -25,7 +25,7 @@ export async function renderSettings() {
         h("h2", { class: "set-section-title", text: title }),
         h("p", { class: "muted small", text: SECTION_NOTES[id] }),
       ),
-      ...cards.map(asPanel),
+      ...cards.map((c) => asPanel(c, title)),
     );
   const nav = h(
     "nav",
@@ -159,6 +159,7 @@ export async function renderSettings() {
     e.preventDefault();
     showTab(a.getAttribute("href").slice("#ayar-".length));
   });
+  placeNav(nav, page);
   let first = "hesap";
   try {
     first = localStorage.getItem(TAB_KEY) || "hesap";
@@ -169,6 +170,34 @@ export async function renderSettings() {
   return page;
 }
 const TAB_KEY = "arke-settings-tab";
+const RAIL_QUERY = "(min-width: 861px)";
+
+/**
+ * On wide screens the section list sits in the main menu, under "Ayarlar", so there is one navigation column; on
+ * phones (where the main menu is a single bar) it stays at the top of the page. The router removes it on leaving.
+ */
+function placeNav(nav, page) {
+  const media = window.matchMedia(RAIL_QUERY);
+  const place = () => {
+    const anchor = document.querySelector('.main-nav a[data-nav="settings"]');
+    // A list left by an earlier draw of the page goes.
+    for (const other of document.querySelectorAll(".main-nav .settings-nav")) if (other !== nav) other.remove();
+    if (media.matches && anchor) {
+      nav.classList.add("in-rail");
+      anchor.after(nav);
+    } else {
+      nav.classList.remove("in-rail");
+      page.querySelector(".settings-side")?.append(nav);
+    }
+  };
+  media.addEventListener("change", () => (page.isConnected ? place() : nav.remove()));
+  // The page is put on screen by the router after this returns; wait for it (a few frames at most).
+  const whenShown = (tries = 0) => {
+    if (page.isConnected) place();
+    else if (tries < 30) requestAnimationFrame(() => whenShown(tries + 1));
+  };
+  whenShown();
+}
 
 const NAV = [
   [
@@ -216,7 +245,7 @@ const isActions = (el) =>
  * Gives a settings card a header (title, note, badge), a body and a footer for its buttons, without changing what the
  * card does: its nodes are moved, never rebuilt. Cards that redraw themselves later are restructured again.
  */
-function asPanel(card) {
+function asPanel(card, sectionTitle) {
   card.classList.add("set-panel");
   const shape = () => {
     const items = [...card.children].flatMap((c) => (c.classList.contains("set-part") ? [...c.children] : [c]));
@@ -224,6 +253,9 @@ function asPanel(card) {
     while (items.length && (items[0].tagName === "H2" || (items[0].matches(".row, div") && items[0].querySelector(":scope > h2")))) head.push(items.shift());
     while (head.length && items.length && items[0].matches("p.muted.small") && head.length < 3) head.push(items.shift());
     const foot = items.length > 1 && isActions(items.at(-1)) ? items.pop() : null;
+    // A card named like its section ("Yedek" under "Yedek") keeps its title for screen readers only.
+    const title = head.find((x) => x.tagName === "H2") || head[0]?.querySelector?.(":scope > h2");
+    title?.classList.toggle("sr-only", title.textContent.trim() === sectionTitle);
     observer.disconnect();
     card.replaceChildren(
       ...(head.length ? [h("header", { class: "set-part set-head" }, ...head)] : []),
