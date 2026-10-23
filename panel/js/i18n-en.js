@@ -3,6 +3,15 @@
 // where {} stands in the English. Missing entries simply stay Turkish. Generated once, then edited by hand.
 export const EN = {
   exact: {
+    "Kişisel veri": "Personal data",
+    Kural: "Law",
+    "Form mesajları": "Form messages",
+    "Kişinin talebi": "A person's request",
+    "Veri bölgesi": "Data region",
+    "Avrupa Birliği": "European Union",
+    "Cloudflare varsayılanı": "Cloudflare default",
+    "Pazara göre belirlenir. Veri bölgesi veritabanı ilk kurulurken seçilir, sonradan değiştirilemez. Gizlilik metni bu bilgilere göre yazılır; müşteri yayından önce okumalı.":
+      "Set by market. The data region is chosen when the database is first created and cannot be changed later. The privacy notice is written from these facts; the client should read it before going live.",
     "Metinlerde ara…": "Search texts…",
     "Siteye formu ekle": "Add the form to the site",
     "okunurluk düşük": "low readability",
@@ -1757,5 +1766,7 @@ export const EN = {
     ["{}, fiyat yok", "{}, no price"],
     ["{} görsel", "{} images"],
     ["{} metin", "{} texts"],
+    ["{} ay sonra otomatik silinir", "deleted automatically after {} months"],
+    ["en geç {} gün içinde yanıtlanır (yönetim ekranı → Kişisel veri)", "answered within {} days at the latest (admin screen → Personal data)"],
   ],
 };

@@ -88,7 +88,7 @@ export async function deploy(
   const runner = args.runner ?? run;
   if (app) {
     // App sites: resources, backup, migrations and secrets before the Worker itself (src/deploy/app.ts).
-    const plan = appPlanFor(PRODUCTS[product.product], product);
+    const plan = appPlanFor(PRODUCTS[product.product], product, config.business.country);
     let resources = readResources(paths)[args.target] ?? {};
     if (!args.dryRun && creds) {
       const ctx: AppDeployContext = {

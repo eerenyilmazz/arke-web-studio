@@ -56,7 +56,7 @@ describe("markets", () => {
     expect(isExcluded(".claude/skills/impeccable/reference/ios.md")).toBe(true);
     expect(isExcluded(".claude/skills/impeccable/reference/typeset.md")).toBe(false);
     expect(searchKnowledge(FACTORY_ROOT, "iOS SwiftUI navigation bar", 8).some((h) => h.source.includes("/ios.md"))).toBe(false);
-    expect(searchKnowledge(FACTORY_ROOT, "KVKK aydinlatma metni form", 3)[0]!.source).toBe("rules/markets.md");
+    expect(searchKnowledge(FACTORY_ROOT, "KVKK aydinlatma metni form", 3)[0]!.source).toBe("rules/privacy.md");
   });
 });
 

@@ -12,8 +12,9 @@ dosyasında. Bir adım bittiğinde buradan "Tamamlananlar"a taşınır.
 | 3 | Ortak hazır parçalar: katalog, gelen kutusu, müşterinin yönetim ekranı | ✅ 1.27.0 |
 | — | Globalleşme: profil, kişisel izlerin kaldırılması, kolay kurulum, panelden güncelleme, ekip eşitleme, ArkeLab görünümü | ✅ 1.27.1–1.29.0 |
 | — | Yeni ad: Arke Web Studio, teknik adlar dahil (temiz başlangıç) | ✅ 2.0.0 |
-| 3b | **Pazara göre kişisel veri profili** (KVKK, GDPR): saklama süresi, otomatik silme, kişinin verisini bulma, dışa aktarma ve silme, AB müşterileri için AB veri bölgesi, bildirim metinleri | sıradaki |
-| 4 | **E-ticaret:** sepet, sipariş, ödeme paketleri, yasal sayfalar (mesafeli satış, iade, KVKK/GDPR), ödeme testi onayı, panelde müşteri anahtarları | planlandı |
+| — | Yeni panel ekranları: Hızlı Düzenleme, Yeni Müşteri, Ayarlar | ✅ 2.2.0–2.2.2 |
+| 3b | Pazara göre kişisel veri profili (KVKK, GDPR): saklama süresi, otomatik silme, kişinin verisini bulma, dışa aktarma ve silme, AB veri bölgesi, bildirim metinleri | ✅ 2.3.0 |
+| 4 | **E-ticaret:** sepet, sipariş, ödeme paketleri, yasal sayfalar (mesafeli satış, iade, KVKK/GDPR), ödeme testi onayı, panelde müşteri anahtarları | sıradaki |
 | 5 | **Randevu:** hizmetler, personel, takvim, hatırlatma | planlandı |
 | 6 | **Restoran ve kafe:** menü, masada QR menü, rezervasyon, isteğe bağlı paket sipariş | planlandı |
 | 7 | **ArkeLab entegrasyonu:** Web Stüdyosu paketi, agent kılavuzu, Cloudflare hesabı ArkeLab'ın şifreli deposunda, Arke Web Studio MCP'nin proje terminallerinde çalışması | planlandı |
@@ -24,7 +25,8 @@ dosyasında. Bir adım bittiğinde buradan "Tamamlananlar"a taşınır.
 - **Panele uzaktan erişim:** önerilen yol Tailscale ile parolalı giriş; henüz karar verilmedi.
 - **Ödeme sağlayıcısı sırası:** ilk paket iyzico, PayTR ya da Stripe olacak; seçilmedi.
 - **Ekip eşitlemede müşteri seçimi:** şu an tüm yerel müşteriler gönderiliyor; müşteri bazında seçim gerekebilir.
-- **Kural metinlerinin hukuki kontrolü:** KVKK ve GDPR metin şablonları satıştan önce bir avukata kontrol ettirilmeli.
+- **Kural metinlerinin hukuki kontrolü:** KVKK ve GDPR metin şablonları (`rules/privacy.md`) ve yurt dışı aktarım konusu satıştan önce bir avukata kontrol ettirilmeli (`docs/privacy.md`).
+- **İngilizce yönetim ekranı:** müşterinin yönetim ekranı şu an yalnızca Türkçe; İngiltere ve AB müşterileri için gerekli.
 
 ## Kararlar
 

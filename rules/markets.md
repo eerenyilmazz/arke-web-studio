@@ -33,7 +33,9 @@ What every market needs:
 - **No cookies by default**, so no cookie banner. Anything that would set non-essential cookies (analytics, embedded
   maps or videos) needs consent first, so the factory does not add them.
 - **A privacy notice when the site collects personal data**, which means whenever there is a contact form. Without a
-  form (phone, email and WhatsApp links only) a short privacy paragraph in the footer is enough.
+  form (phone, email and WhatsApp links only) a short privacy paragraph in the footer is enough. The notice's facts
+  (retention, request deadline, data region) and templates are in `rules/privacy.md`; take them from
+  `get_client_status` → `privacy`, never from memory.
 
 Per market:
 

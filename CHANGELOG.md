@@ -2,6 +2,21 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.3.0: Kişisel veri profili (KVKK / UK GDPR / GDPR)
+
+**Uygulama siteleri**
+- **Otomatik silme:** form mesajları 12 ay sonra her gece siliniyor (sipariş ve randevu kayıtları için süreler hazır). Süreler pazara göre Worker'a ayar olarak gidiyor; günlük tetikleyici yayında otomatik kuruluyor.
+- **Kişisel veri bölümü (yönetim ekranı):** kişiyi e-posta, telefon (boşluk ve işaretlerden bağımsız) ya da adla bulma, kayıtlarını JSON olarak indirme ve seçilenleri silme. Talep süresi ekranda yazıyor.
+- **İşlem kaydı:** otomatik silme, dışa aktarma ve silme işlemleri kişinin kimliği olmadan kaydediliyor (işlem, tarih, sayı). Yeni tablo `0004_privacy.sql`.
+- **IP adresi tutulmuyor:** hız sınırları IP'nin siteye özel anahtarlı özetini tutuyor ve bir günde siliyor.
+- **AB bölgesi:** İngiltere ve AB müşterilerinde veritabanı ve görsel deposu AB bölgesinde oluşturuluyor. Mevcut bir veritabanı AB'de değilse yayın uyarı yazıyor (bölge sonradan değiştirilemez).
+- Gelen kutusunda tek mesaj silme.
+
+**Panel ve agent**
+- Müşteri Bilgileri → Yönetim Ekranı kartında kişisel veri profili: kural, saklama süresi, talep süresi, veri bölgesi.
+- `get_client_status` artık `privacy` bilgisini veriyor; agent gizlilik metnini bu bilgilerle ve `rules/privacy.md` şablonlarıyla yazıyor (KVKK Aydınlatma Metni, UK/AB ve ABD gizlilik bildirimi).
+- Kaynaklar ve kararlar: `docs/privacy.md`. Şablonlar satıştan önce avukata kontrol ettirilmeli.
+
 ## 2.2.2: Metin listesinde "!doctype html>" satırı
 
 - Hızlı Düzenleme → Metin listesinde sayfanın `<!doctype html>` satırı metin gibi görünüyordu. Artık doctype, XML bildirimi ve benzeri satırlar atlanıyor. Diğer metinlerin kimlikleri değişmedi.

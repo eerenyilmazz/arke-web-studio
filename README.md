@@ -216,6 +216,13 @@ Bu kodlar `parts/` klasöründe, testlerden geçmiş hazır kodlardır. Böylece
   - 15 dakikada 5 hatalı denemeden sonra giriş kilitlenir.
   - Değişiklikler sadece sitenin kendisinden kabul edilir.
   - Arama motorlarına kapalıdır.
+- **Kişisel veri (KVKK / UK GDPR / GDPR):** kurallar müşterinin pazarına göre seçilir (`src/lib/privacy.ts`, ayrıntı ve kaynaklar `docs/privacy.md`).
+  - Form mesajları 12 ay sonra her gece otomatik silinir; sipariş kayıtları pazarın yasal süresi kadar tutulur.
+  - Yönetim ekranında **Kişisel veri** bölümü: kişiyi e-posta, telefon ya da adla bulma, kayıtlarını indirme (JSON) ve silme. Talebin yanıt süresi (KVKK 30 gün, GDPR bir ay) ekranda yazar.
+  - Yapılan işlemler kişinin kimliği olmadan kaydedilir (işlem, tarih, kayıt sayısı).
+  - Hız sınırları ziyaretçinin IP adresini değil, siteye özel bir özetini (hash) tutar ve bir günde siler.
+  - İngiltere ve AB müşterilerinde veritabanı ve görsel deposu **AB bölgesinde** kurulur. Bölge ilk kurulumda seçilir, sonradan değiştirilemez.
+  - Gizlilik metni şablonları `rules/privacy.md`'de; agent bunları müşterinin bilgileriyle doldurur.
 - **Sırada:** sepet ve ödeme paketleri (iyzico, PayTR, Stripe; her biri hazır ve test edilmiş), yasal sayfalar, randevu takvimi, QR menü.
 
 Panel, uygulama türündeki her müşteriye parçaları otomatik kurar:

@@ -5,6 +5,7 @@ import { FactoryError } from "../lib/errors.js";
 import type { RunOptions, RunResult } from "../lib/exec.js";
 import { readJsonIfExists, writeJson } from "../lib/files.js";
 import type { ClientPaths } from "../lib/paths.js";
+import { type Jurisdiction, type PrivacyProfile, privacyProfile } from "../lib/privacy.js";
 import { PRODUCT_IDS, PRODUCTS, type ProductId, type ProductModule } from "../products/registry.js";
 
 /**
@@ -25,6 +26,8 @@ const BACKUPS_DIR = "db-backups";
 export const APP_ENTRY = "app/worker.js";
 export const MIGRATIONS_DIR = "app/migrations";
 export const WORKER_FIRST = ["/api/*", "/admin", "/admin/*", "/media/*"] as const;
+/** The daily clean-up (personal data past its retention, old rate-limit rows), at a quiet hour UTC. */
+export const PURGE_CRON = "23 3 * * *";
 const PLACEHOLDER_DB_ID = "00000000-0000-0000-0000-000000000000";
 
 export type Target = "preview" | "production";
@@ -56,12 +59,15 @@ export interface AppPlan {
   readonly media: boolean;
   readonly secrets: readonly string[];
   readonly optionalSecrets: readonly string[];
+  /** The client's personal-data profile (by market): data region and retention (src/lib/privacy.ts). */
+  readonly privacy: PrivacyProfile;
 }
 
-/** What an app needs, from the parts its kind is built from and the secrets its installed parts asked for. */
-export function appPlanFor(module: ProductModule, record: ProductRecord): AppPlan {
+/** What an app needs, from the parts its kind is built from, the secrets its parts asked for and the client's market. */
+export function appPlanFor(module: ProductModule, record: ProductRecord, country?: string): AppPlan {
   const parts = new Set(module.parts);
   return {
+    privacy: privacyProfile(country),
     database: ["catalog", "cart", "calendar", "admin"].some((p) => parts.has(p as never)),
     media: ["catalog", "menu-qr"].some((p) => parts.has(p as never)),
     secrets: [...new Set(record.secrets ?? [])].sort(),
@@ -77,8 +83,8 @@ export function resourceNames(slug: string, target: Target) {
 }
 
 interface TargetResources {
-  database?: { name: string; id: string };
-  bucket?: { name: string };
+  database?: { name: string; id: string; jurisdiction?: Jurisdiction };
+  bucket?: { name: string; jurisdiction?: Jurisdiction };
 }
 type ResourcesFile = Partial<Record<Target, TargetResources>>;
 
@@ -112,7 +118,30 @@ export function appWranglerConfig(opts: {
           ],
         }
       : {}),
-    ...(opts.plan.media ? { r2_buckets: [{ binding: "MEDIA", bucket_name: opts.resources.bucket?.name ?? "pending" }] } : {}),
+    ...(opts.plan.media
+      ? {
+          r2_buckets: [
+            {
+              binding: "MEDIA",
+              bucket_name: opts.resources.bucket?.name ?? "pending",
+              ...(opts.resources.bucket?.jurisdiction ? { jurisdiction: opts.resources.bucket.jurisdiction } : {}),
+            },
+          ],
+        }
+      : {}),
+    // Retention reaches the Worker as plain settings; the daily trigger deletes what is past it (core.js scheduled).
+    ...(opts.plan.database
+      ? {
+          vars: {
+            ARKE_PRIVACY_LAW: opts.plan.privacy.law,
+            ARKE_RETENTION_MESSAGES_DAYS: String(opts.plan.privacy.retentionDays.messages),
+            ARKE_RETENTION_BOOKINGS_DAYS: String(opts.plan.privacy.retentionDays.bookings),
+            ARKE_RETENTION_ORDERS_DAYS: String(opts.plan.privacy.retentionDays.orders),
+            ARKE_REQUEST_DAYS: String(opts.plan.privacy.requestDays),
+          },
+          triggers: { crons: [PURGE_CRON] },
+        }
+      : {}),
     ...(opts.routes ? { routes: opts.routes } : {}),
   };
 }
@@ -205,20 +234,28 @@ export async function ensureResources(ctx: AppDeployContext): Promise<TargetReso
   const all = readResources(ctx.paths);
   const have: TargetResources = { ...(all[ctx.target] ?? {}) };
   const names = resourceNames(ctx.slug, ctx.target);
+  // The data region is chosen when a resource is created and cannot be changed later (Cloudflare D1 and R2).
+  const region = ctx.plan.privacy.jurisdiction;
+  const regionArgs = region ? ["--jurisdiction", region] : [];
   if (ctx.plan.database && !have.database) {
     const list = await wrangler(ctx, ["d1", "list", "--json"]);
     const found = parseD1List(list).find((d) => d.name === names.database);
-    const id = found?.uuid ?? parseCreatedId(await wrangler(ctx, ["d1", "create", names.database]));
+    const id = found?.uuid ?? parseCreatedId(await wrangler(ctx, ["d1", "create", names.database, ...regionArgs]));
     if (!id) throw new FactoryError(`Could not read the id of database ${names.database}.`);
-    have.database = { name: names.database, id };
-    ctx.log(`Veritabanı hazır: ${names.database}`);
+    // A database found by name keeps whatever region it was made in; only one created here is known to be in it.
+    have.database = { name: names.database, id, ...(region && !found ? { jurisdiction: region } : {}) };
+    ctx.log(`Veritabanı hazır: ${names.database}${region && !found ? " (AB bölgesi)" : ""}`);
   }
   if (ctx.plan.media && !have.bucket) {
-    const list = await wrangler(ctx, ["r2", "bucket", "list"]);
-    if (!new RegExp(`\\b${names.bucket}\\b`).test(list)) await wrangler(ctx, ["r2", "bucket", "create", names.bucket]);
-    have.bucket = { name: names.bucket };
-    ctx.log(`Görsel deposu hazır: ${names.bucket}`);
+    const list = await wrangler(ctx, ["r2", "bucket", "list", ...regionArgs]);
+    if (!new RegExp(`\\b${names.bucket}\\b`).test(list)) await wrangler(ctx, ["r2", "bucket", "create", names.bucket, ...regionArgs]);
+    have.bucket = { name: names.bucket, ...(region ? { jurisdiction: region } : {}) };
+    ctx.log(`Görsel deposu hazır: ${names.bucket}${region ? " (AB bölgesi)" : ""}`);
   }
+  if (region && have.database && have.database.jurisdiction !== region)
+    ctx.log(
+      `Uyarı: ${have.database.name} AB bölgesinde oluşturulmamış. Bölge sonradan değiştirilemez; veriler AB'de tutulmalıysa veritabanı yeniden kurulmalı.`,
+    );
   writeJson(path.join(ctx.paths.factoryDir, RESOURCES_FILE), { ...all, [ctx.target]: have });
   return have;
 }

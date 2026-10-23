@@ -36,7 +36,12 @@ interface PartSpec {
   readonly optionalSecrets: readonly string[];
 }
 
-const CORE: PartSpec = { migrations: ["0001_core.sql"], site: false, secrets: [ADMIN_PASSWORD_SECRET, SESSION_SECRET], optionalSecrets: [] };
+const CORE: PartSpec = {
+  migrations: ["0001_core.sql", "0004_privacy.sql"],
+  site: false,
+  secrets: [ADMIN_PASSWORD_SECRET, SESSION_SECRET],
+  optionalSecrets: [],
+};
 
 /** Parts that are ready today; the others (cart, payments, calendar, menu-qr, legal-pages) come in later steps. */
 export const READY_PARTS: Partial<Record<FactoryPart, PartSpec>> = {

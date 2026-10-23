@@ -7,10 +7,11 @@ import { describe, expect, it } from "vitest";
 // @ts-expect-error plain JS module without types
 import catalog from "../parts/app/catalog.js";
 // @ts-expect-error plain JS module without types
-import { createApp, verifyPassword } from "../parts/app/core.js";
+import { createApp, purge, verifyPassword } from "../parts/app/core.js";
 // @ts-expect-error plain JS module without types
 import inbox from "../parts/app/inbox.js";
 import { readProductRecord, writeProductRecord, WORKER_FIRST, appWranglerConfig } from "../src/deploy/app.js";
+import { privacyProfile } from "../src/lib/privacy.js";
 import { fileProblems } from "../src/lib/custom-site.js";
 import { hashAdminPassword, installParts, isFactorySiteScript, PARTS_DIR, SITE_PARTS_JS, workerSource } from "../src/parts/install.js";
 import { PRODUCTS } from "../src/products/registry.js";
@@ -208,6 +209,49 @@ describe("ready-made parts: the app Worker", () => {
     }
   });
 
+  it("handles personal data: hashed addresses, find, download and delete on request, daily clean-up past retention", async () => {
+    const { env, call, signIn } = setup({ ARKE_PRIVACY_LAW: "KVKK", ARKE_RETENTION_MESSAGES_DAYS: "365" });
+    const post = (body: object, ip = "203.0.113.9") =>
+      call("/api/inbox", { method: "POST", body: JSON.stringify(body), headers: { "Content-Type": "application/json" }, ip });
+    await post({ name: "Ayşe Yılmaz", contact: "ayse@example.com", message: "Randevu almak istiyorum" });
+    await post({ name: "Ayşe Y.", contact: "+90 534 985 63 19", message: "Fiyat?" });
+    await post({ name: "Can", contact: "can@example.com", message: "Merhaba" });
+    // Rate limits never keep the visitor's address itself.
+    const buckets = (env.DB.raw.prepare("SELECT bucket FROM rate_hits").all() as Array<{ bucket: string }>).map((r) => r.bucket);
+    expect(buckets.length).toBeGreaterThan(0);
+    expect(buckets.join(" ")).not.toContain("203.0.113.9");
+
+    const cookie = await signIn();
+    const get = (p: string) => call(p, { headers: { Cookie: cookie } });
+    const info = (await (await get("/api/admin/privacy")).json()) as { law: string; requestDays: number; retentionDays: { messages: number } };
+    expect(info).toMatchObject({ law: "KVKK", requestDays: 30, retentionDays: { messages: 365 } });
+    expect((await get("/api/admin/privacy/find?q=ay")).status).toBe(400); // too short to search safely
+    const byMail = (await (await get("/api/admin/privacy/find?q=AYSE@example.com")).json()) as { results: Array<{ id: number; part: string }> };
+    expect(byMail.results).toHaveLength(1);
+    // A phone number matches without spaces or the plus sign.
+    const byDigits = (await (await get("/api/admin/privacy/find?q=0534 985 63 19")).json()) as { results: Array<{ id: number; part: string }> };
+    expect(byDigits.results).toHaveLength(1);
+    const exported = await get("/api/admin/privacy/export?q=ay%C5%9Fe");
+    expect(exported.headers.get("Content-Disposition")).toContain("attachment");
+    expect(((await exported.json()) as { records: unknown[] }).records).toHaveLength(2);
+
+    // Erasing needs a session and a request from the site, like every change.
+    const items = [...byMail.results, ...byDigits.results].map((r) => ({ part: r.part, id: r.id }));
+    expect((await call("/api/admin/privacy/erase", { method: "POST", body: JSON.stringify({ items }) })).status).toBe(401);
+    const erased = (await (await call("/api/admin/privacy/erase", send(cookie, { items }))).json()) as { erased: number };
+    expect(erased.erased).toBe(2);
+    expect(env.DB.raw.prepare("SELECT name FROM inbox").all()).toEqual([{ name: "Can" }]);
+
+    // The daily clean-up deletes what is past retention and logs only how many.
+    env.DB.raw.prepare("UPDATE inbox SET created_at = ?").run(new Date(Date.now() - 400 * 86_400_000).toISOString());
+    await post({ name: "Yeni", contact: "yeni@example.com", message: "x" }, "198.51.100.1");
+    expect(await purge(env, [inbox])).toBe(1);
+    expect(env.DB.raw.prepare("SELECT name FROM inbox").all()).toEqual([{ name: "Yeni" }]);
+    const log = (await (await get("/api/admin/privacy")).json()) as { log: Array<{ action: string; count: number }> };
+    expect(log.log.map((l) => `${l.action}:${l.count}`)).toEqual(["purge:1", "erase:2", "export:2"]);
+    expect(JSON.stringify(log)).not.toMatch(/ayse|Ayşe|example\.com/);
+  });
+
   it("says plainly when the admin screen is not set up yet, and hides internal errors", async () => {
     const { call } = setup({ ADMIN_PASSWORD_HASH: undefined });
     const s = (await (await call("/api/admin/session")).json()) as { configured: boolean };
@@ -243,7 +287,7 @@ describe("ready-made parts: installing into a client", () => {
     const worker = readFileSync(path.join(shop.root, "app", "worker.js"), "utf8");
     expect(worker).toContain('import catalog from "./parts/catalog.js"');
     expect(worker).toContain("parts: [catalog, notifications]");
-    expect(readdirSync(path.join(shop.root, "app", "migrations"))).toEqual(["0001_core.sql", "0002_catalog.sql", "0003_inbox.sql"]);
+    expect(readdirSync(path.join(shop.root, "app", "migrations"))).toEqual(["0001_core.sql", "0002_catalog.sql", "0003_inbox.sql", "0004_privacy.sql"]);
     expect(readProductRecord(shop)).toEqual({
       product: "booking",
       secrets: ["ADMIN_PASSWORD_HASH", "SESSION_SECRET"],
@@ -282,10 +326,20 @@ describe("ready-made parts: installing into a client", () => {
     const cfg = appWranglerConfig({
       workerName: "w",
       compatibilityDate: "2025-01-01",
-      plan: { database: true, media: true, secrets: [], optionalSecrets: [] },
+      plan: { database: true, media: true, secrets: [], optionalSecrets: [], privacy: privacyProfile("TR") },
       resources: {},
     });
     expect(cfg.assets.run_worker_first).toEqual([...WORKER_FIRST]);
+    // Türkiye: KVKK, no EU region; the retention reaches the Worker.
+    expect(cfg.r2_buckets?.[0]).not.toHaveProperty("jurisdiction");
+    expect(cfg.vars).toMatchObject({ ARKE_PRIVACY_LAW: "KVKK", ARKE_RETENTION_ORDERS_DAYS: String(3 * 365) });
+  });
+
+  it("picks the personal-data profile by market, the strictest for an unknown one", () => {
+    expect(privacyProfile("TR")).toMatchObject({ law: "KVKK", jurisdiction: null, requestDays: 30 });
+    expect(privacyProfile("gb")).toMatchObject({ law: "UK_GDPR", jurisdiction: "eu" });
+    expect(privacyProfile("DE").retentionDays.orders).toBe(8 * 365);
+    expect(privacyProfile(undefined)).toMatchObject({ law: "GDPR", jurisdiction: "eu" });
   });
 
   it("refuses a short admin password and never keeps it", () => {

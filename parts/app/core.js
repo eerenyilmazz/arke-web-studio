@@ -66,6 +66,14 @@ export function int(body, key, { min = 0, max = 2_000_000_000 } = {}) {
 export const nowIso = () => new Date().toISOString();
 export const clientIp = (request) => request.headers.get("CF-Connecting-IP") ?? "local";
 
+/**
+ * The visitor's address as rate limits store it: a keyed hash, never the address itself (personal data that only
+ * counting needs). The key is the site's session secret, so the hash means nothing outside this site.
+ */
+export async function clientKey(request, env) {
+  return (await hmac(env.SESSION_SECRET || "arke-rate", clientIp(request))).slice(0, 22);
+}
+
 // ---------------------------------------------------------------- rate limits (table rate_hits, migration 0001)
 
 export async function recentHits(db, bucket, windowSeconds) {
@@ -150,7 +158,7 @@ function sameOrigin(request) {
 
 async function login(request, env) {
   if (!env.ADMIN_PASSWORD_HASH || !env.SESSION_SECRET) throw new HttpError(503, "Yönetim ekranı henüz kurulmadı.");
-  const bucket = `login:${clientIp(request)}`;
+  const bucket = `login:${await clientKey(request, env)}`;
   if ((await recentHits(env.DB, bucket, LOGIN_WINDOW_SECONDS)) >= LOGIN_FAILS_ALLOWED)
     throw new HttpError(429, "Çok fazla hatalı deneme. 15 dakika sonra tekrar deneyin.");
   const body = await readJson(request);
@@ -178,15 +186,120 @@ function adminPage(html) {
   });
 }
 
+// ---------------------------------------------------------------- personal data (KVKK / GDPR)
+
+const DAY_MS = 86_400_000;
+const MIN_QUERY = 3;
+const MAX_ERASE = 500;
+const RATE_ROWS_DAYS = 1;
+
+/** Retention and the request deadline, from the settings the factory writes into the Worker (src/lib/privacy.ts). */
+export function privacySettings(env) {
+  const days = (name, fallback) => {
+    const n = Number(env[name]);
+    return Number.isInteger(n) && n > 0 ? n : fallback;
+  };
+  return {
+    law: typeof env.ARKE_PRIVACY_LAW === "string" ? env.ARKE_PRIVACY_LAW : "GDPR",
+    retentionDays: {
+      messages: days("ARKE_RETENTION_MESSAGES_DAYS", 365),
+      bookings: days("ARKE_RETENTION_BOOKINGS_DAYS", 365),
+      orders: days("ARKE_RETENTION_ORDERS_DAYS", 6 * 365),
+    },
+    requestDays: days("ARKE_REQUEST_DAYS", 30),
+  };
+}
+
+/** The ISO time before which a record of this kind is past its retention. */
+export const cutoffIso = (days, now = Date.now()) => new Date(now - days * DAY_MS).toISOString();
+
+async function logPrivacy(env, action, count) {
+  await env.DB.prepare("INSERT INTO privacy_log (action, count, at) VALUES (?, ?, ?)").bind(action, count, nowIso()).run();
+}
+
+/**
+ * The daily clean-up: every part deletes its records past their retention, rate-limit rows go after a day. Only the
+ * number of deleted records is logged, never who they were about.
+ */
+export async function purge(env, parts, now = Date.now()) {
+  if (!env.DB) return 0;
+  const settings = privacySettings(env);
+  let deleted = 0;
+  for (const part of parts) if (part.personal?.purge) deleted += await part.personal.purge(env, settings, now);
+  await env.DB.prepare("DELETE FROM rate_hits WHERE at < ?").bind(Math.floor(now / 1000) - RATE_ROWS_DAYS * 86_400).run();
+  await logPrivacy(env, "purge", deleted);
+  return deleted;
+}
+
+/** Admin: a person's records across the parts (find, download, delete), so a request is answered in minutes. */
+function privacyRoutes(parts) {
+  const holders = parts.filter((p) => p.personal);
+  const query = (request) => {
+    const q = (new URL(request.url).searchParams.get("q") ?? "").trim().toLowerCase();
+    if (q.length < MIN_QUERY) throw new HttpError(400, `En az ${MIN_QUERY} karakter yazın (e-posta, telefon ya da ad).`);
+    if (q.length > 160) throw new HttpError(400, "Arama çok uzun.");
+    return q;
+  };
+  const find = async (env, q) => (await Promise.all(holders.map(async (p) => (await p.personal.find(env, q)).map((r) => ({ part: p.id, ...r }))))).flat();
+  return [
+    {
+      method: "GET",
+      path: /^\/api\/admin\/privacy$/,
+      admin: true,
+      handle: async (_r, env) => {
+        const last = await env.DB.prepare("SELECT action, count, at FROM privacy_log ORDER BY id DESC LIMIT 10").all();
+        return json(200, { ...privacySettings(env), log: last.results });
+      },
+    },
+    {
+      method: "GET",
+      path: /^\/api\/admin\/privacy\/find$/,
+      admin: true,
+      handle: async (request, env) => {
+        const rows = await find(env, query(request));
+        return json(200, { results: rows.map(({ part, id, name, contact, summary, created_at }) => ({ part, id, name, contact, summary, created_at })) });
+      },
+    },
+    {
+      method: "GET",
+      path: /^\/api\/admin\/privacy\/export$/,
+      admin: true,
+      handle: async (request, env) => {
+        const q = query(request);
+        const rows = await find(env, q);
+        await logPrivacy(env, "export", rows.length);
+        return json(200, { exportedAt: nowIso(), query: q, records: rows }, { "Content-Disposition": `attachment; filename="kisisel-veri-${Date.now()}.json"` });
+      },
+    },
+    {
+      method: "POST",
+      path: /^\/api\/admin\/privacy\/erase$/,
+      admin: true,
+      handle: async (request, env) => {
+        const items = (await readJson(request)).items;
+        if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ERASE) throw new HttpError(400, "Silinecek kayıtları seçin.");
+        let erased = 0;
+        for (const p of holders) {
+          const ids = items.filter((i) => i?.part === p.id && Number.isInteger(i.id) && i.id > 0).map((i) => i.id);
+          if (ids.length) erased += await p.personal.erase(env, ids);
+        }
+        await logPrivacy(env, "erase", erased);
+        return json(200, { ok: true, erased });
+      },
+    },
+  ];
+}
+
 // ---------------------------------------------------------------- the app
 
 /**
- * Builds the Worker from the parts a site uses. A part is { id, routes: [{ method, path: RegExp, admin?, handle }] };
- * admin routes need the sign-in cookie, and their changes must come from this site. Everything that is not an
- * API route is the built site (ASSETS).
+ * Builds the Worker from the parts a site uses. A part is { id, routes: [{ method, path: RegExp, admin?, handle }],
+ * personal? }; admin routes need the sign-in cookie, and their changes must come from this site. A part that keeps
+ * personal data gives `personal: { find(env, q), erase(env, ids), purge(env, settings, now) }`, used by the admin's
+ * data-request tools and the daily clean-up. Everything that is not an API route is the built site (ASSETS).
  */
 export function createApp({ adminHtml, parts }) {
-  const routes = parts.flatMap((p) => p.routes);
+  const routes = [...parts.flatMap((p) => p.routes), ...privacyRoutes(parts)];
   const partIds = parts.map((p) => p.id);
   return {
     async fetch(request, env, ctx) {
@@ -202,7 +315,12 @@ export function createApp({ adminHtml, parts }) {
         if (p === "/api/admin/login" && request.method === "POST") return await login(request, env);
         if (p === "/api/admin/logout" && request.method === "POST") return json(200, { ok: true }, { "Set-Cookie": CLEAR_COOKIE });
         if (p === "/api/admin/session" && request.method === "GET")
-          return json(200, { signedIn: await sessionValid(request, env), parts: partIds, configured: Boolean(env.ADMIN_PASSWORD_HASH) });
+          return json(200, {
+            signedIn: await sessionValid(request, env),
+            parts: partIds,
+            personal: parts.some((x) => x.personal),
+            configured: Boolean(env.ADMIN_PASSWORD_HASH),
+          });
         for (const r of routes) {
           if (r.method !== request.method) continue;
           const m = r.path.exec(p);
@@ -219,6 +337,12 @@ export function createApp({ adminHtml, parts }) {
         console.error("app error", error?.message ?? error);
         return json(500, { error: "Beklenmeyen bir hata oluştu." });
       }
+    },
+    /** The daily trigger (wrangler triggers.crons): personal data past its retention is deleted. */
+    async scheduled(_event, env, ctx) {
+      const work = purge(env, parts).catch((e) => console.error("purge failed", e?.message ?? e));
+      if (ctx?.waitUntil) ctx.waitUntil(work);
+      else await work;
     },
   };
 }

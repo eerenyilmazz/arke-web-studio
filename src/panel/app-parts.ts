@@ -1,5 +1,7 @@
 import { readProductRecord } from "../deploy/app.js";
 import { clientSecretNames, saveClientSecret } from "../lib/accounts.js";
+import { readDraftConfig } from "../lib/client.js";
+import { privacyProfile } from "../lib/privacy.js";
 import type { ClientPaths } from "../lib/paths.js";
 import {
   ADMIN_PASSWORD_SECRET,
@@ -50,5 +52,6 @@ export function appPartsView(paths: ClientPaths, slug: string) {
     adminPassword: set.has(ADMIN_PASSWORD_SECRET),
     notifyWebhook: set.has(NOTIFY_WEBHOOK_SECRET),
     missingSecrets: missing,
+    privacy: privacyProfile((readDraftConfig(paths).business as { country?: string } | undefined)?.country),
   };
 }

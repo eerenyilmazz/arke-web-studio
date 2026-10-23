@@ -102,14 +102,37 @@ th{font-size:12px;color:var(--muted);font-weight:600}
         <div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Kimden</th><th>İleti</th><th>Durum</th><th></th></tr></thead><tbody id="inbox"></tbody></table></div>
       </div>
     </section>
+
+    <section id="view-privacy" hidden>
+      <div class="card stack">
+        <h2>Kişisel veri talepleri</h2>
+        <p id="privacy-info" class="muted"></p>
+        <form id="privacy-form" class="row">
+          <input id="privacy-q" class="narrow" placeholder="E-posta, telefon ya da ad" minlength="3" maxlength="160" required aria-label="Aranacak kişi">
+          <button type="submit">Bul</button>
+        </form>
+        <div class="table-wrap"><table><thead><tr><th><input type="checkbox" id="privacy-all" aria-label="Hepsini seç"></th><th>Tarih</th><th>Kimden</th><th>İçerik</th></tr></thead><tbody id="privacy-results"></tbody></table></div>
+        <div class="row">
+          <button id="privacy-export" type="button" disabled>Bulunanları indir (JSON)</button>
+          <button id="privacy-erase" type="button" class="danger" disabled>Seçilenleri sil</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Son işlemler</h2>
+        <p class="muted">Kimin verisi olduğu kaydedilmez; yalnızca işlem, tarih ve kayıt sayısı tutulur.</p>
+        <ul id="privacy-log"></ul>
+      </div>
+    </section>
   </main>
 </div>
 
 <script nonce="{{NONCE}}">
 (() => {
   const $ = (id) => document.getElementById(id);
-  const SECTIONS = { catalog: "Katalog", notifications: "Gelen kutusu" };
-  const VIEW = { catalog: "view-catalog", notifications: "view-inbox" };
+  const SECTIONS = { catalog: "Katalog", notifications: "Gelen kutusu", privacy: "Kişisel veri" };
+  const VIEW = { catalog: "view-catalog", notifications: "view-inbox", privacy: "view-privacy" };
+  const LAW = { KVKK: "KVKK", UK_GDPR: "UK GDPR", GDPR: "GDPR" };
+  const ACTION = { purge: "Otomatik silme", export: "Dışa aktarma", erase: "Talep üzerine silme" };
   const STATUS = { new: "Yeni", read: "Okundu", done: "Tamamlandı", archived: "Arşiv" };
   let state = { categories: [], items: [], editing: null, imageKey: null };
 
@@ -145,7 +168,7 @@ th{font-size:12px;color:var(--muted);font-weight:600}
     if (!s.configured) { $("login").hidden = false; $("login-form").hidden = true; $("login").append(el("p", { class: "muted", text: "Yönetim ekranı henüz kurulmadı. Site yöneticinizle görüşün." })); return; }
     if (!s.signedIn) return showLogin();
     $("login").hidden = true; $("app").hidden = false;
-    const parts = s.parts.filter((p) => SECTIONS[p]);
+    const parts = [...s.parts, ...(s.personal ? ["privacy"] : [])].filter((p) => SECTIONS[p]);
     $("tabs").replaceChildren(...parts.map((p) => el("button", { type: "button", "data-part": p, onclick: () => show(p), text: SECTIONS[p] })));
     if (parts.length) show(parts[0]);
   }
@@ -159,6 +182,7 @@ th{font-size:12px;color:var(--muted);font-weight:600}
     say("");
     if (part === "catalog") loadCatalog().catch((e) => say(e.message, true));
     if (part === "notifications") loadInbox().catch((e) => say(e.message, true));
+    if (part === "privacy") loadPrivacy().catch((e) => say(e.message, true));
   }
 
   // ------------------------------------------------ catalogue
@@ -252,10 +276,55 @@ th{font-size:12px;color:var(--muted);font-weight:600}
       el("td", {}, el("div", { class: "row" },
         m.status === "new" ? el("button", { type: "button", onclick: setStatus(m.id, "read"), text: "Okundu" }) : null,
         m.status !== "done" ? el("button", { type: "button", onclick: setStatus(m.id, "done"), text: "Tamamlandı" }) : null,
-        m.status !== "archived" ? el("button", { type: "button", onclick: setStatus(m.id, "archived"), text: "Arşivle" }) : null))))
+        m.status !== "archived" ? el("button", { type: "button", onclick: setStatus(m.id, "archived"), text: "Arşivle" }) : null,
+        el("button", { type: "button", class: "danger", onclick: guard(async () => { if (!confirmText(`${m.name} kişisinin bu mesajı kalıcı olarak silinsin mi?`)) return; await api("DELETE", `/api/admin/inbox/${m.id}`); await loadInbox(); say("Silindi."); }), text: "Sil" })))))
       : [el("tr", {}, el("td", { colspan: "5", class: "muted", text: "Kayıt yok." }))]));
   }
   $("inbox-filter").addEventListener("change", guard(loadInbox));
+
+  // ------------------------------------------------ personal data requests
+  let found = [];
+  async function loadPrivacy() {
+    const d = await api("GET", "/api/admin/privacy");
+    const days = d.retentionDays.messages;
+    const keep = days % 30 === 0 || days % 365 === 0 ? `${Math.round(days / 30.4)} ay` : `${days} gün`;
+    $("privacy-info").textContent = `${LAW[d.law] ? `${LAW[d.law]}: bir kişi verisini görmek, almak ya da sildirmek isterse en geç ${d.requestDays} gün içinde yanıtlamanız gerekir. ` : ""}Formdan gelen mesajlar ${keep} sonra otomatik silinir. Kişinin e-postasını, telefonunu ya da adını yazıp kayıtlarını bulun; isterse indirip gönderin, isterse silin.`;
+    const fmt = new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" });
+    $("privacy-log").replaceChildren(...(d.log.length ? d.log.map((l) => el("li", { text: `${fmt.format(new Date(l.at))}: ${ACTION[l.action] ?? l.action}, ${l.count} kayıt` })) : [el("li", { class: "muted", text: "Henüz işlem yok." })]));
+  }
+  const selected = () => [...$("privacy-results").querySelectorAll("input:checked")].map((b) => found[Number(b.value)]);
+  const syncButtons = () => { $("privacy-export").disabled = !found.length; $("privacy-erase").disabled = !selected().length; };
+  function drawFound() {
+    const fmt = new Intl.DateTimeFormat("tr-TR", { dateStyle: "short" });
+    $("privacy-all").checked = false;
+    $("privacy-results").replaceChildren(...(found.length ? found.map((r, i) => el("tr", {},
+      el("td", {}, el("input", { type: "checkbox", value: String(i), "aria-label": `${r.name} kaydını seç`, onchange: syncButtons })),
+      el("td", { text: fmt.format(new Date(r.created_at)) }),
+      el("td", {}, el("strong", { text: r.name }), el("div", { class: "muted", text: r.contact })),
+      el("td", { text: r.summary || "—" })))
+      : [el("tr", {}, el("td", { colspan: "4", class: "muted", text: "Bu kişiye ait kayıt bulunamadı." }))]));
+    syncButtons();
+  }
+  $("privacy-form").addEventListener("submit", guard(async (e) => {
+    e.preventDefault();
+    found = (await api("GET", `/api/admin/privacy/find?q=${encodeURIComponent($("privacy-q").value)}`)).results;
+    drawFound(); say(`${found.length} kayıt bulundu.`);
+  }));
+  $("privacy-all").addEventListener("change", () => { for (const b of $("privacy-results").querySelectorAll("input")) b.checked = $("privacy-all").checked; syncButtons(); });
+  $("privacy-export").addEventListener("click", guard(async () => {
+    const d = await api("GET", `/api/admin/privacy/export?q=${encodeURIComponent($("privacy-q").value)}`);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: "application/json" }));
+    const a = el("a", { href: url, download: `kisisel-veri-${new Date().toISOString().slice(0, 10)}.json` });
+    document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    say("Dosya indirildi. Kişiye güvenli bir yoldan gönderin."); await loadPrivacy();
+  }));
+  $("privacy-erase").addEventListener("click", guard(async () => {
+    const items = selected();
+    if (!confirmText(`${items.length} kayıt kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam edilsin mi?`)) return;
+    const r = await api("POST", "/api/admin/privacy/erase", { items: items.map((i) => ({ part: i.part, id: i.id })) });
+    found = found.filter((f) => !items.includes(f)); drawFound();
+    say(`${r.erased} kayıt silindi.`); await loadPrivacy();
+  }));
 
   // ------------------------------------------------ sign-in
   $("login-form").addEventListener("submit", async (e) => {

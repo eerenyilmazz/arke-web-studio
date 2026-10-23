@@ -53,6 +53,29 @@ function secretForm({ id, label, type, placeholder, hint, button, field, url, on
   );
 }
 
+const LAW_NAMES = { KVKK: "KVKK", UK_GDPR: "UK GDPR", GDPR: "GDPR", NONE: "Genel" };
+const months = (days) => `${Math.round(days / 30.4)} ay`;
+
+/** The client's personal-data profile (by market): what the site keeps, for how long, and where. */
+function privacyBox(p) {
+  const rows = [
+    ["Kural", LAW_NAMES[p.law] ?? p.law],
+    ["Form mesajları", `${months(p.retentionDays.messages)} sonra otomatik silinir`],
+    ["Kişinin talebi", `en geç ${p.requestDays} gün içinde yanıtlanır (yönetim ekranı → Kişisel veri)`],
+    ["Veri bölgesi", p.jurisdiction === "eu" ? "Avrupa Birliği" : "Cloudflare varsayılanı"],
+  ];
+  return h(
+    "div",
+    { class: "privacy-box" },
+    h("strong", { text: "Kişisel veri" }),
+    h("dl", { class: "privacy-list" }, ...rows.flatMap(([k, v]) => [h("dt", { text: k }), h("dd", { text: v })])),
+    h("p", {
+      class: "muted small",
+      text: "Pazara göre belirlenir. Veri bölgesi veritabanı ilk kurulurken seçilir, sonradan değiştirilemez. Gizlilik metni bu bilgilere göre yazılır; müşteri yayından önce okumalı.",
+    }),
+  );
+}
+
 /** The card, or null for static sites (tanıtım). */
 export async function appPartsCard(slug) {
   const v = await guarded(() => api("GET", `/api/clients/${slug}/app`));
@@ -101,6 +124,7 @@ export async function appPartsCard(slug) {
           draw(r);
         },
       }),
+      st.privacy ? privacyBox(st.privacy) : document.createDocumentFragment(),
       st.missingSecrets.length
         ? h("p", {
             class: "small err",

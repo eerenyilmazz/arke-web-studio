@@ -9,6 +9,7 @@ import type { BuildRecord } from "../src/lib/client.js";
 import { contentHash } from "../src/lib/files.js";
 import type { RunOptions } from "../src/lib/exec.js";
 import { clientPaths } from "../src/lib/paths.js";
+import { privacyProfile } from "../src/lib/privacy.js";
 import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } from "./helpers.js";
 
@@ -91,6 +92,19 @@ describe("publishing an app site", () => {
     expect(cfg).toContain('"migrations_dir": "app/migrations"');
     expect(cfg).toContain('"bucket_name": "arke-shop-co-preview-media"');
     expect(cfg).toContain('"main": "./app/worker.js"');
+    // A UK client: data in the EU region (set at creation, cannot change later), retention and the daily clean-up.
+    expect(w.calls.find((c) => c.args[1] === "create" && c.args[0] === "d1")!.args).toEqual([
+      "d1",
+      "create",
+      "arke-shop-co-preview-db",
+      "--jurisdiction",
+      "eu",
+    ]);
+    expect(w.calls.find((c) => c.args[0] === "r2" && c.args[2] === "create")!.args).toContain("--jurisdiction");
+    const parsed = JSON.parse(cfg.slice(cfg.indexOf("{")));
+    expect(parsed.r2_buckets[0].jurisdiction).toBe("eu");
+    expect(parsed.vars).toMatchObject({ ARKE_PRIVACY_LAW: "UK_GDPR", ARKE_RETENTION_MESSAGES_DAYS: "365", ARKE_REQUEST_DAYS: "30" });
+    expect(parsed.triggers.crons).toHaveLength(1);
 
     w.calls.length = 0;
     await tools.deploy(f, { slug: SLUG, target: "preview", runner: w.runner });
@@ -109,7 +123,7 @@ describe("publishing an app site", () => {
       paths,
       slug: SLUG,
       target: "production",
-      plan: { database: true, media: false, secrets: [], optionalSecrets: [] },
+      plan: { database: true, media: false, secrets: [], optionalSecrets: [], privacy: privacyProfile("GB") },
       run: w.runner,
       wranglerJs: "/w.js",
       env: {},

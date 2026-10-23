@@ -1,3 +1,4 @@
+import { type PrivacyLaw, privacyProfile } from "./privacy.js";
 import { type PlanState, planStatus } from "./design-plan.js";
 import path from "node:path";
 import { existsSync, readFileSync, statSync } from "node:fs";
@@ -58,6 +59,8 @@ export interface ClientStatus {
   readonly contactForm: { action: string; accessKey?: string } | null;
   /** New designs: the plan the operator approves before the site is built (rules/custom/plan.md). */
   readonly designPlan: { state: PlanState; next: string | null };
+  /** The personal-data facts the privacy notice states (by market, rules/privacy.md); never invent others. */
+  readonly privacy: { law: PrivacyLaw; notice: string; messagesKeptDays: number; requestDays: number; dataRegion: "EU" | "default" };
 }
 
 export const RESEARCH_FILE = "research.md";
@@ -182,6 +185,18 @@ export function clientStatus(factory: FactoryConfig, slug: string): ClientStatus
     researchNotes: readResearchNotes(paths.root),
     contactForm: readClientForm(paths.factoryDir) ?? (effectiveFormAction(paths.factoryDir) ? { action: effectiveFormAction(paths.factoryDir)! } : null),
     designPlan: planStatus(paths),
+    privacy: privacyFacts((draft.business as { country?: string } | undefined)?.country),
+  };
+}
+
+function privacyFacts(country: string | undefined): ClientStatus["privacy"] {
+  const p = privacyProfile(country);
+  return {
+    law: p.law,
+    notice: p.notice,
+    messagesKeptDays: p.retentionDays.messages,
+    requestDays: p.requestDays,
+    dataRegion: p.jurisdiction ? "EU" : "default",
   };
 }
 

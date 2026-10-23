@@ -2,7 +2,7 @@
 // (orders, bookings) add their own entries through addEntry(). Optionally each new entry is also sent to a
 // webhook the client chose (NOTIFY_WEBHOOK_URL secret: Slack, Discord, a Telegram relay…).
 // Factory-owned (app/parts/inbox.js); the agent never writes it. Table: migration 0003_inbox.sql.
-import { HttpError, clientIp, int, json, limit, nowIso, readJson, text } from "./core.js";
+import { HttpError, clientKey, cutoffIso, int, json, limit, nowIso, readJson, text } from "./core.js";
 
 const STATUSES = new Set(["new", "read", "done", "archived"]);
 const PUBLIC_LIMIT = 8;
@@ -33,7 +33,7 @@ async function submit(request, env, ctx) {
   const body = await readJson(request);
   // Honeypot: people never fill the hidden "website" field; bots get a quiet success.
   if (text(body, "website", { max: 200 })) return json(200, { ok: true });
-  await limit(env.DB, `inbox:${clientIp(request)}`, PUBLIC_LIMIT, PUBLIC_WINDOW_SECONDS);
+  await limit(env.DB, `inbox:${await clientKey(request, env)}`, PUBLIC_LIMIT, PUBLIC_WINDOW_SECONDS);
   const id = await addEntry(env, ctx, {
     kind: "message",
     name: text(body, "name", { max: 120, required: true }),
@@ -84,11 +84,54 @@ async function setStatus(request, env, _ctx, m) {
   return json(200, { ok: true });
 }
 
+async function remove(_request, env, _ctx, m) {
+  const r = await env.DB.prepare("DELETE FROM inbox WHERE id = ?").bind(Number(m[1])).run();
+  if (!r.meta?.changes) throw new HttpError(404, "Kayıt bulunamadı.");
+  return json(200, { ok: true });
+}
+
+// ---------------------------------------------------------------- personal data (core.js privacy routes, daily clean-up)
+
+/** Which retention applies to an entry kind; later parts add "booking" and "order" entries. */
+const RETENTION_OF = { message: "messages", booking: "bookings", order: "orders" };
+const DIGITS = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(contact, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '')";
+
+const personal = {
+  /** Entries whose contact, name or text holds the query; phone numbers match without spaces and signs. */
+  async find(env, q) {
+    const like = `%${q.replace(/[%_]/g, "")}%`;
+    const digits = q.replace(/\D/g, "");
+    const rows = await env.DB.prepare(
+      `SELECT * FROM inbox WHERE lower(contact) LIKE ? OR lower(name) LIKE ? OR lower(message) LIKE ?${digits.length >= 6 ? ` OR ${DIGITS} LIKE ?` : ""} ORDER BY id DESC LIMIT 200`,
+    )
+      .bind(like, like, like, ...(digits.length >= 6 ? [`%${digits}%`] : []))
+      .all();
+    return rows.results.map((r) => ({ ...r, data: safeParse(r.data), summary: (r.message || "").slice(0, 140) }));
+  },
+  async erase(env, ids) {
+    let n = 0;
+    for (const id of ids) n += Number((await env.DB.prepare("DELETE FROM inbox WHERE id = ?").bind(id).run()).meta?.changes ?? 0);
+    return n;
+  },
+  /** Deletes entries past their kind's retention (messages after a year unless the market says otherwise). */
+  async purge(env, settings, now) {
+    let n = 0;
+    const kinds = await env.DB.prepare("SELECT DISTINCT kind FROM inbox").all();
+    for (const { kind } of kinds.results) {
+      const days = settings.retentionDays[RETENTION_OF[kind] ?? "messages"];
+      n += Number((await env.DB.prepare("DELETE FROM inbox WHERE kind = ? AND created_at < ?").bind(kind, cutoffIso(days, now)).run()).meta?.changes ?? 0);
+    }
+    return n;
+  },
+};
+
 export default {
   id: "notifications",
+  personal,
   routes: [
     { method: "POST", path: /^\/api\/inbox$/, handle: submit },
     { method: "GET", path: /^\/api\/admin\/inbox$/, admin: true, handle: list },
     { method: "PUT", path: /^\/api\/admin\/inbox\/(\d{1,10})$/, admin: true, handle: setStatus },
+    { method: "DELETE", path: /^\/api\/admin\/inbox\/(\d{1,10})$/, admin: true, handle: remove },
   ],
 };
