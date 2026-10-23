@@ -3,6 +3,47 @@
 // where {} stands in the English. Missing entries simply stay Turkish. Generated once, then edited by hand.
 export const EN = {
   exact: {
+    Güncelleme: "Updates",
+    Ekip: "Team",
+    "Güncellemeleri Denetle": "Check for Updates",
+    "Güncelleme kurulum klasöründeki değişikliklerin üzerine yazmaz. Bitince paneli yeniden başlatmanız gerekir.":
+      "An update never overwrites changes in the install folder. Restart the panel when it finishes.",
+    "Zip ile kurulmuş. Yeni sürüm zip'ini indirip terminalde çalıştırın:": "Installed from a zip. Download the new release zip and run in a terminal:",
+    "Güncelleme bitti. Paneli yeniden başlatın.": "Update finished. Restart the panel.",
+    "Site Factory güncel.": "Site Factory is up to date.",
+    "Zip ile kurulmuş: yeni sürümü sf-update <zip> ile kurun.": "Installed from a zip: install the new release with sf-update <zip>.",
+    "Uzak depo bağlı değil (zip ile kurulmuş): yeni sürümü sf-update <zip> ile kurun.":
+      "No remote repository (installed from a zip): install the new release with sf-update <zip>.",
+    "Uzak depoya ulaşılamadı. İnternet bağlantısını ve git girişini kontrol edin.":
+      "Could not reach the repository. Check the internet connection and your git login.",
+    "Kurulum klasöründe kaydedilmemiş değişiklikler var; güncelleme bunların üzerine yazmaz. Önce onları kaydedin ya da geri alın.":
+      "The install folder has uncommitted changes; an update will not overwrite them. Commit or undo them first.",
+    "Ekip deposu (özel bir Git deposu)": "Team repository (a private Git repository)",
+    "Herkes aynı depoyu bağlar. Giriş bilgileri sizin git girişinizdir (ör. gh auth login); panel parola saklamaz. ArkeLab ekibinizin deposunu da kullanabilirsiniz.":
+      "Everyone connects the same repository. Access uses your own git login (e.g. gh auth login); the panel stores no password. Your ArkeLab team's repository works too.",
+    Bağla: "Connect",
+    "Aynı müşteriler üzerinde birkaç kişi çalışacaksa ekip deposunu bağlayın. Onaylar ve Cloudflare hesapları paylaşılmaz; herkes kendi panelinde onaylar ve kendi hesabıyla yayınlar.":
+      "If several people work on the same clients, connect the team repository. Approvals and Cloudflare accounts are not shared: everyone approves on their own panel and publishes with their own account.",
+    "Eşitleniyor…": "Syncing…",
+    "Şimdi Eşitle": "Sync Now",
+    "Bağlantıyı Kes": "Disconnect",
+    "Bu panel artık eşitlemiyor; müşteriler yerinde duruyor.": "This panel no longer syncs; the clients stay where they are.",
+    paylaşılıyor: "shared",
+    "henüz gönderilmedi": "not sent yet",
+    Bekleyen: "Pending",
+    "Son değiştiren": "Last changed by",
+    "Henüz müşteri yok. Eşitleyince ekibin müşterileri buraya gelir.": "No clients yet. Sync to bring in the team's clients.",
+    "Her şey güncel.": "Everything is up to date.",
+    "Önce profilde adınızı yazın: ekip değişiklikleri sizin adınızla kaydedilir.":
+      "First enter your name in the profile: team changes are recorded under your name.",
+    "Ekip deposu bağlı değil.": "No team repository connected.",
+    "Bir agent işi sürüyor; bittiğinde güncelleyin.": "An agent job is running; update when it finishes.",
+    "Bir güncelleme zaten sürüyor.": "An update is already running.",
+    "Site Factory zaten güncel.": "Site Factory is already up to date.",
+    "Ekip deposuna ulaşılamadı. Adresi ve git girişinizi (gh auth login) kontrol edin.":
+      "Could not reach the team repository. Check the address and your git login (gh auth login).",
+    "Ekip deposu adresi https://… ya da git@…:… biçiminde olmalı (ör. https://github.com/ekip/musteriler.git).":
+      "The team repository address must look like https://… or git@…:… (e.g. https://github.com/team/clients.git).",
     "Hoş geldiniz": "Welcome",
     Profil: "Profile",
     Başla: "Start",
@@ -1529,5 +1570,14 @@ export const EN = {
     ["{} gün", "{} days"],
     ["{} (yakında)", "{} (soon)"],
     ["Yayın için eksik: {}.", "Missing for publishing: {}."],
+    ["Sürüm {}", "Version {}"],
+    ["Güncelle ({} → {})", "Update ({} → {})"],
+    ["Yeni sürüm hazır: {} ({} değişiklik).", "New version ready: {} ({} changes)."],
+    ["Ekip deposu bağlandı ({} paylaşılan müşteri).", "Team repository connected ({} shared clients)."],
+    ["{} gönderilecek · {} alınacak", "{} to send · {} to take"],
+    [
+      'Değişiklikler "{}" adıyla kaydedilir. Paylaşılanlar: site bilgileri, metinler, görseller, site kodu, tasarım planı, araştırma notları, satış takibi.',
+      'Changes are recorded as "{}". Shared: site details, texts, images, site code, design plan, research notes, sales tracking.',
+    ],
   ],
 };

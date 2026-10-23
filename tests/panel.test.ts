@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { createServer, request } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -1113,6 +1114,33 @@ describe("the person's Cloudflare account in the panel", () => {
     } finally {
       process.env.SF_ACCOUNTS_DIR = dir;
     }
+  });
+
+  it("connects a team repository only with a profile name, syncs, and shows the update state", async () => {
+    const { base, auth } = await start();
+    const json = { ...auth, "Content-Type": "application/json" };
+    const bare = mkdtempSync(path.join(os.tmpdir(), "sf-team-panel-"));
+    execFileSync("git", ["init", "--quiet", "--bare", "-b", "main"], { cwd: bare });
+    const put = (remote: string) => fetch(`${base}/api/team`, { method: "PUT", headers: json, body: JSON.stringify({ remote }) });
+    expect((await put("--upload-pack=x")).status).toBe(400);
+    const noName = await put(`file://${bare}`);
+    expect(noName.status).toBe(400);
+    expect(((await noName.json()) as { error: string }).error).toMatch(/profilde adınızı/);
+    await fetch(`${base}/api/settings`, { method: "PUT", headers: json, body: JSON.stringify({ profile: { name: "Deniz", studio: "" } }) });
+    expect((await put(`file://${bare}`)).status).toBe(200);
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "team-co", businessName: "Team Co", industry: "cafe", hostingModel: "managed" }),
+    });
+    const sync = (await (await fetch(`${base}/api/team/sync`, { method: "POST", headers: auth })).json()) as { pushed: string[] };
+    expect(sync.pushed).toEqual(["team-co"]);
+    const team = (await (await fetch(`${base}/api/team`, { headers: auth })).json()) as { remote: string; clients: Array<{ slug: string; shared: boolean }> };
+    expect(team.clients).toEqual([expect.objectContaining({ slug: "team-co", shared: true })]);
+    expect((await fetch(`${base}/api/team`, { method: "DELETE", headers: auth })).status).toBe(200);
+    const upd = (await (await fetch(`${base}/api/update`, { headers: auth })).json()) as { status: { mode: string; current: string } };
+    expect(["git", "zip"]).toContain(upd.status.mode);
+    expect(upd.status.current).toMatch(/^\d+\.\d+\.\d+/);
   });
 
   it("lists the site types and refuses one that is not ready", async () => {

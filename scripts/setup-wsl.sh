@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Site Factory: one-time environment check and folder setup for WSL2 (Ubuntu).
+# Site Factory: one-time environment check and folder setup (WSL2 Ubuntu, Linux or macOS). Called by scripts/install.sh.
 #
 # Safe to run more than once. It never deletes or overwrites anything and never installs
 # system packages; it tells you the command to run instead.
@@ -53,16 +53,21 @@ fi
 has npm && pass "npm $(npm --version)" || bad "npm missing (comes with node)"
 has python3 && pass "python3 (optional, for UI UX Pro Max)" || note "python3 missing (only needed for UI UX Pro Max)"
 
-echo "== 3. Claude Code sandbox (Linux needs bubblewrap + socat)"
-has bwrap && pass "bubblewrap" || bad "bubblewrap missing: sudo apt install -y bubblewrap"
-has socat && pass "socat" || bad "socat missing: sudo apt install -y socat"
-if has claude; then
-  case "$(command -v claude)" in
-    /mnt/*) bad "claude comes from Windows. Install Claude Code inside WSL so the sandbox applies." ;;
-    *) pass "claude (Claude Code) found in WSL" ;;
-  esac
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  echo "== 3. Claude Code sandbox (macOS: built in)"
+  has claude && pass "claude (Claude Code) found" || note "Claude Code CLI not found. Install it and run it from the factory folder."
 else
-  note "Claude Code CLI not found in WSL. Install it inside WSL and run it from the factory folder."
+  echo "== 3. Claude Code sandbox (Linux needs bubblewrap + socat)"
+  has bwrap && pass "bubblewrap" || bad "bubblewrap missing: sudo apt install -y bubblewrap"
+  has socat && pass "socat" || bad "socat missing: sudo apt install -y socat"
+  if has claude; then
+    case "$(command -v claude)" in
+      /mnt/*) bad "claude comes from Windows. Install Claude Code inside WSL so the sandbox applies." ;;
+      *) pass "claude (Claude Code) found in WSL" ;;
+    esac
+  else
+    note "Claude Code CLI not found in WSL. Install it inside WSL and run it from the factory folder."
+  fi
 fi
 
 echo "== 4. Folders"

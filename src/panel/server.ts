@@ -35,6 +35,8 @@ export interface PanelOptions {
   readonly approvalCode?: string;
   /** Tests check Cloudflare accounts without the network. */
   readonly verifyCloudflare?: ApiDeps["verifyCloudflare"];
+  readonly factoryRoot?: string;
+  readonly gitRunner?: ApiDeps["gitRunner"];
 }
 
 export interface Panel {
@@ -87,7 +89,15 @@ export function createPanel(opts: PanelOptions): Panel {
   );
   const preview = new PreviewServer(opts.previewPort);
   const gate = new ApprovalGate(opts.approvalCode);
-  const deps: ApiDeps = { factory: opts.factory, jobs, preview, gate, ...(opts.verifyCloudflare ? { verifyCloudflare: opts.verifyCloudflare } : {}) };
+  const deps: ApiDeps = {
+    factory: opts.factory,
+    jobs,
+    preview,
+    gate,
+    ...(opts.verifyCloudflare ? { verifyCloudflare: opts.verifyCloudflare } : {}),
+    ...(opts.factoryRoot ? { factoryRoot: opts.factoryRoot } : {}),
+    ...(opts.gitRunner ? { gitRunner: opts.gitRunner } : {}),
+  };
 
   const server = createServer((req, res) => {
     void handleRequest(req, res).catch((error: unknown) => {

@@ -15,8 +15,12 @@ describe("global studio: no personal traces", () => {
     });
 
   it("never names one person in the code, rules, panel or portal", () => {
-    const files = ["src", "panel/js", "rules", "portal", "parts", "templates"].flatMap((d) => walk(path.join(ROOT, d))).concat(path.join(ROOT, "AGENTS.md"));
-    const hits = files.filter((f) => /\.(ts|js|md|html|json)$/.test(f) && /\bEren\b|\beeren\b/.test(readFileSync(f, "utf8")));
+    const files = ["src", "panel/js", "rules", "portal", "parts", "templates"]
+      .flatMap((d) => walk(path.join(ROOT, d)))
+      .concat(
+        ["AGENTS.md", "README.md", "CHANGELOG.md", "SPEC.md", "scripts/install.sh", "scripts/update.sh", "scripts/setup-wsl.sh"].map((f) => path.join(ROOT, f)),
+      );
+    const hits = files.filter((f) => /\.(ts|js|md|html|json|sh)$/.test(f) && /\bEren\b|\beeren\b/.test(readFileSync(f, "utf8")));
     expect(hits.map((f) => path.relative(ROOT, f))).toEqual([]);
   });
 

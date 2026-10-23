@@ -52,6 +52,8 @@ export const SettingsSchema = z.object({
         .transform((v) => v.replace(/[\u0000-\u001f"<>`]/g, "")),
     })
     .default({ name: "", studio: "" }),
+  /** Team sharing: the team's Git repository (https://… or git@…). Empty = this panel works alone. */
+  team: z.object({ remote: z.string().trim().max(300).default("") }).default({ remote: "" }),
   /** Who the proposal (Teklif) is from. */
   sender: z
     .object({

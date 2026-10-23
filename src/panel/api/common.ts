@@ -37,6 +37,9 @@ export interface ApiDeps {
   readonly gate: ApprovalGate;
   /** Checks a Cloudflare account with Cloudflare (wrangler whoami); tests pass their own. */
   readonly verifyCloudflare?: (account: { token: string; accountId: string }) => Promise<{ ok: boolean; message: string }>;
+  /** Tests: the folder treated as the factory install (updates), and a git/npm runner standing in for the real one. */
+  readonly factoryRoot?: string;
+  readonly gitRunner?: import("../updater.js").Runner;
 }
 
 export type Handler = (deps: ApiDeps, req: IncomingMessage, res: ServerResponse, params: string[]) => Promise<void> | void;

@@ -6,7 +6,7 @@
 > disagrees with them, they win. Agents do not need this file.
 
 What to build so that the flow in `AGENTS.md` works. Build in this order, run the tests after each step,
-and stop for Eren's review at the end of each step.
+and stop for the operator's review at the end of each step.
 
 1. Schema and questions
 2. MCP server and tools
@@ -111,7 +111,7 @@ Known errors return `isError` with a message and a hint; unexpected errors retur
 | `list_clients` | Client folders and their stage |
 | `create_client` | {slug, businessName, industry, hostingModel, extraLocale?, template?} → folder, draft config (English always included), `.gitignore`, `git init` (not fatal if git missing). Fails if folder exists |
 | `get_client_status` | Stage, `nextStep`, missing/invalid fields per config and per locale, open questions, valid approvals, last build/deploy, content hash |
-| `generate_questionnaire` | {slug, round 1/2, replyBy?} → writes `questionnaires/round-N.md` + `.txt`, returns plain text for Eren. Round 2 contains only open questions + sector extras + "later" checklist. Never includes internal questions |
+| `generate_questionnaire` | {slug, round 1/2, replyBy?} → writes `questionnaires/round-N.md` + `.txt`, returns plain text for the operator. Round 2 contains only open questions + sector extras + "later" checklist. Never includes internal questions |
 | `update_client_config` | {slug, patch, unmapped?, laterInterests?} → JSON-merge-patch (objects merge, arrays replace, null kept, `__proto__`/`constructor`/`prototype` rejected), validate, reject all if any invalid or if the patch has a key the schema does not define. `slug`, `schemaVersion`, `meta` are locked (meta only via `unmapped`/`laterInterests`). Returns stillMissing |
 | `save_content` | {slug, locale, content, replace?} → same rules (unknown keys rejected); locale must be in `i18n.locales` |
 | `save_asset` | {slug, inboxFile, kind logo/gallery/hero/team/og, name?} → source confined to inbox; regular file only (no symlink); size limit; type from magic bytes (PNG, JPG, WebP, AVIF, SVG); unsafe SVG rejected; saved as `assets/<kind>-<sanitised-name>.<real-ext>` |
@@ -195,11 +195,11 @@ maxLogoBytes 1 MB, maxImageBytes 5 MB, buildTimeoutMs 300000, deployTimeoutMs 30
 
 ## 5. Operator panel (`npm run panel`)
 
-Local web UI so Eren works without the terminal, except approvals.
+Local web UI so the operator works without the terminal, except approvals.
 
 - `src/panel/`: `server.ts` (node:http, no framework), `api.ts` (routes call `tools.ts`, never files directly), `jobs.ts`, `prompts.ts`, `preview.ts`, `static.ts`; UI in `panel/` (plain HTML/CSS/JS, all server text inserted with `textContent`).
 - Access: listens on 127.0.0.1 only; random session key printed once (`/login?key=`) → HttpOnly, SameSite=Strict cookie; Host must be the panel's own address; non-GET requests must carry the panel's Origin.
-- Agent jobs: `claude -p --output-format stream-json --strict-mcp-config --mcp-config .mcp.json`, prompt on stdin, `--allowedTools` = site-factory tools except `deploy`/`create_client` (+ Read/Grep/Glob), `--disallowedTools` Bash, Edit, Write, Web*, Task, deploy, create_client. `SF_CF_*` removed from its environment. Client answers fenced in `<client_data>` as data. Kinds: answers, design-content, fix-build, revise (Eren's own instruction).
+- Agent jobs: `claude -p --output-format stream-json --strict-mcp-config --mcp-config .mcp.json`, prompt on stdin, `--allowedTools` = site-factory tools except `deploy`/`create_client` (+ Read/Grep/Glob), `--disallowedTools` Bash, Edit, Write, Web*, Task, deploy, create_client. `SF_CF_*` removed from its environment. Client answers fenced in `<client_data>` as data. Kinds: answers, design-content, fix-build, revise (the operator's own instruction).
 - Tasks (no LLM): build, deploy (preview/production, dry run). One job at a time (409 otherwise); log polled by the UI.
 - Uploads go to `<inbox>/<slug>/` (sanitised name, 15 MB); `save_asset` still does the real checks.
 - Preview: second port (`PANEL_PORT + 1`) serving the chosen client's `dist/` at `/`, path-confined.

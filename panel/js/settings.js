@@ -5,6 +5,7 @@ import { askNotifyPermission, chime } from "./jobs.js";
 import { portalSettingsCard } from "./portal.js";
 import { accountCard } from "./account.js";
 import { profileCard } from "./profile.js";
+import { teamCard, updateCard } from "./team-update.js";
 
 // ---------------------------------------------------------------- settings: publishing setup
 
@@ -22,9 +23,11 @@ export async function renderSettings() {
     ...[
       ["hesap", "Hesabım"],
       ["genel", "Genel"],
+      ["ekip", "Ekip"],
       ["kullanim", "Kaynak Kullanımı"],
       ["yayin", "Yayın"],
       ["yedek", "Yedek"],
+      ["guncelleme", "Güncelleme"],
     ].map(([id, label]) =>
       h(
         "a",
@@ -105,9 +108,11 @@ export async function renderSettings() {
       { class: "settings stack" },
       group("hesap", "Hesabım", profileCard(), accountCard()),
       group("genel", "Genel", languageCard(), senderCard(), notifications, approvalCode),
+      group("ekip", "Ekip", teamCard()),
       group("kullanim", "Kaynak Kullanımı", budgetCard(), agentsCard(), profitSettingsCard(), webResearchCard()),
       group("yayin", "Yayın", cloudflare, portalSettingsCard()),
       group("yedek", "Yedek", backupCard()),
+      group("guncelleme", "Güncelleme", updateCard()),
     ),
   );
 }
