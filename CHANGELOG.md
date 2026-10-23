@@ -2,6 +2,10 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.2.2: Metin listesinde "!doctype html>" satırı
+
+- Hızlı Düzenleme → Metin listesinde sayfanın `<!doctype html>` satırı metin gibi görünüyordu. Artık doctype, XML bildirimi ve benzeri satırlar atlanıyor. Diğer metinlerin kimlikleri değişmedi.
+
 ## 2.2.1: Ayarlarda tek menü
 
 - Geniş ekranda Ayarlar bölümleri (Hesabım, Genel, Ekip…) artık sol ana menüde, "Ayarlar"ın altında açılıyor. Yan yana iki menü yok. Telefonda bölümler sayfanın üstünde kalıyor.

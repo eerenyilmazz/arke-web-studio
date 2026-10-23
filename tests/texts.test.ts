@@ -22,6 +22,9 @@ describe("texts of a page, by id", () => {
     expect(byId["button-1"]).toBe("Ara");
     // Scripts and SVG text are not page texts.
     expect(items.some((t) => t.text.includes("not a text") || t.text === "logo")).toBe(false);
+    // Neither is the doctype, nor an XML declaration or a CDATA block.
+    expect(items.some((t) => /doctype|xml|CDATA/i.test(t.text) || t.kind === "text")).toBe(false);
+    expect(htmlTexts('<?xml version="1.0"?><!DOCTYPE html><p>Merhaba</p>').map((t) => t.id)).toEqual(["p-1"]);
   });
 
   it("writes changes exactly where they were, escaped, and refuses stale ones", () => {

@@ -64,7 +64,8 @@ export function encodeText(s: string, attribute = false): string {
   return attribute ? t.replace(/"/g, "&quot;") : t;
 }
 
-const TOKEN = /<!--[\s\S]*?-->|<(script|style|noscript|template)\b[^>]*>[\s\S]*?<\/\1\s*>|<\/?[a-zA-Z][^>]*>|[^<]+|</g;
+// Comments, then declarations and processing instructions (<!doctype html>, <?xml …?>), which are never page text.
+const TOKEN = /<!--[\s\S]*?-->|<![^>]*>|<\?[^>]*>|<(script|style|noscript|template)\b[^>]*>[\s\S]*?<\/\1\s*>|<\/?[a-zA-Z][^>]*>|[^<]+|</g;
 
 /** Numbers texts per kind ("p-1", "p-2"…) in page order. */
 function counter(): (kind: string) => number {
@@ -113,7 +114,7 @@ function locate(html: string): Located[] {
   const stack: string[] = [];
   for (const m of html.matchAll(TOKEN)) {
     const tok = m[0];
-    if (tok.startsWith("<!--") || m[1]) continue; // comments, scripts and styles
+    if (tok.startsWith("<!") || tok.startsWith("<?") || m[1]) continue; // comments, doctype, scripts and styles
     if (tok.startsWith("</")) {
       const i = stack.lastIndexOf(
         tok
