@@ -1,101 +1,106 @@
 /*
- * Theme: "Grafit ve hardal" (graphite and mustard). Near black-and-white; mustard is the one colour, kept for the
- * thing to do now (primary buttons, the current tab, clients waiting for Eren). Other states are muted: violet
- * while the agent works, slate while waiting for the client, green when live, red for errors.
- * Contrast checked (AA): ink on ground, mustard text on ground, dark ink on mustard buttons, white on state pills.
+ * Theme: ArkeLab ("Katmandan yapıya"), so the panel sits inside ArkeLab as one product. Charcoal surfaces, light
+ * stone text, measured copper for brand, selection and focus; primary buttons are light stone with dark text.
+ * Dark is the default (ArkeLab's workbench); the light theme keeps the same roles for daylight use.
+ * States stay muted: lilac while the agent works, slate-blue while waiting for the client, sage when live, coral
+ * for errors (ArkeLab's status hues). Contrast checked (AA) by tests/ui-audit.test.ts in both themes.
  */
 :root, [data-theme="light"] {
-  --bg: #f5f5f3;
-  --surface: #ffffff;
-  --surface-2: #efefec;
-  --ink: #171716;
-  --ink-2: #454543;
-  --ink-3: #696966;
-  --line: #e4e4e0;
-  --line-strong: #cfcfca;
-  --accent: #d9a521;
-  --accent-ink: #1b1505;
-  --accent-soft: #f8eccb;
-  --accent-text: #7a5800;
-  --brass: #d9a521;
-  --brass-text: #7a5800;
-  --rail: #ffffff;
-  --rail-ink: #171716;
-  --rail-ink-2: #696966;
-  --rail-hover: #efefec;
-  --rail-on: #efefec;
-  --rail-on-ink: #171716;
-  --rail-line: #e4e4e0;
+  --bg: #f4f2ed;
+  --surface: #fbfaf7;
+  --surface-2: #ece9e2;
+  --ink: #1c1c1a;
+  --ink-2: #4a4a45;
+  --ink-3: #66665f;
+  --line: #e2ded5;
+  --line-strong: #cdc8bd;
+  --accent: #b5835f;
+  --accent-ink: #1c1c1a;
+  --accent-soft: #f1e4d9;
+  --accent-text: #7f5232;
+  --brass: #b5835f;
+  --brass-text: #7f5232;
+  --primary: #20201e;
+  --primary-ink: #f4f2ed;
+  --rail: #fbfaf7;
+  --rail-ink: #1c1c1a;
+  --rail-ink-2: #66665f;
+  --rail-hover: #ece9e2;
+  --rail-on: #ece9e2;
+  --rail-on-ink: #1c1c1a;
+  --rail-line: #e2ded5;
   --on-color: #ffffff;
   --solid-ink: #ffffff;
   --backdrop: rgb(10 10 10 / .45);
-  --meter-warn: #b07d0c;
+  --meter-warn: #9a6a2a;
   --bad-ink: #ffffff;
-  --live: #3f7a52;
-  --agent: #6a4fb3;
+  --live: #4a6a3f;
+  --agent: #6b5596;
   /* Logos and site previews always sit on white, whatever the theme, so they look as they will on the site. */
   --logo-paper: #ffffff;
-  --ok: #3f6b4f;
-  --ok-soft: #e7efe9;
-  --warn: #4f5b69;
-  --warn-soft: #eceff2;
-  --warn-line: #cfd5dc;
-  --bad: #a3261d;
-  --bad-soft: #fbe9e7;
-  --bubble: #efefec;
+  --ok: #46663c;
+  --ok-soft: #e6ece0;
+  --warn: #4d5e70;
+  --warn-soft: #e7ecf1;
+  --warn-line: #cbd4dd;
+  --bad: #a3392a;
+  --bad-soft: #f8e6e2;
+  --bubble: #ece9e2;
   --shadow: none;
   color-scheme: light;
 }
 [data-theme="dark"] {
-  --bg: #121211;
-  --surface: #1a1a19;
-  --surface-2: #232321;
-  --ink: #ededeb;
-  --ink-2: #bdbdb9;
-  --ink-3: #8f8f8a;
+  --bg: #191918;
+  --surface: #20201e;
+  --surface-2: #262624;
+  --ink: #e9e7e1;
+  --ink-2: #b9b8b0;
+  --ink-3: #a4a49b;
   --line: #2c2c2a;
-  --line-strong: #3b3b38;
-  --accent: #e3b23c;
-  --accent-ink: #1b1505;
-  --accent-soft: #3a2f12;
-  --accent-text: #efc965;
-  --brass: #e3b23c;
-  --brass-text: #efc965;
-  --rail: #161615;
-  --rail-ink: #ededeb;
-  --rail-ink-2: #a09f9a;
-  --rail-hover: #232321;
-  --rail-on: #2a2a27;
+  --line-strong: #343431;
+  --accent: #d6a584;
+  --accent-ink: #20201c;
+  --accent-soft: #3a2d24;
+  --accent-text: #e2bb9f;
+  --brass: #d6a584;
+  --brass-text: #e2bb9f;
+  --primary: #e4e1d7;
+  --primary-ink: #20201c;
+  --rail: #1c1c1b;
+  --rail-ink: #e9e7e1;
+  --rail-ink-2: #a4a49b;
+  --rail-hover: #262624;
+  --rail-on: #2b2b28;
   --rail-on-ink: #ffffff;
   --rail-line: #2c2c2a;
   --on-color: #ffffff;
-  --solid-ink: #121211;
+  --solid-ink: #191918;
   --backdrop: rgb(0 0 0 / .6);
-  --meter-warn: #e3b23c;
-  --bad-ink: #2a0d0b;
-  --live: #8fc4a1;
-  --agent: #b5a3ee;
+  --meter-warn: #d9b45e;
+  --bad-ink: #2a0f0b;
+  --live: #b6c7aa;
+  --agent: #b4a3d4;
   --logo-paper: #ffffff;
-  --ok: #8fc4a1;
-  --ok-soft: #1b2a21;
-  --warn: #aab6c3;
-  --warn-soft: #222831;
-  --warn-line: #3a4552;
-  --bad: #ff9f97;
-  --bad-soft: #3a1c1a;
-  --bubble: #232321;
+  --ok: #b6c7aa;
+  --ok-soft: #232a1f;
+  --warn: #9fb3c9;
+  --warn-soft: #1f252c;
+  --warn-line: #36414d;
+  --bad: #e08676;
+  --bad-soft: #36201b;
+  --bubble: #262624;
   --shadow: none;
   color-scheme: dark;
 }
-/* Type: Public Sans, served by the panel itself (panel/fonts, OFL), so the panel looks the same offline. One family
-   for headings, labels, data; numbers in tabular figures. Code in the system's monospace. */
-@font-face { font-family: "Public Sans"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("/fonts/public-sans-latin.woff2") format("woff2");
+/* Type: Manrope Variable, as in ArkeLab, served by the panel itself (panel/fonts, OFL; Latin Extended covers
+   Turkish), so it looks the same offline. Numbers in tabular figures; monospace only for code and paths. */
+@font-face { font-family: "Manrope Variable"; font-style: normal; font-weight: 200 800; font-display: swap; src: url("/fonts/manrope-latin.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
-@font-face { font-family: "Public Sans"; font-style: normal; font-weight: 100 900; font-display: swap; src: url("/fonts/public-sans-latin-ext.woff2") format("woff2");
+@font-face { font-family: "Manrope Variable"; font-style: normal; font-weight: 200 800; font-display: swap; src: url("/fonts/manrope-latin-ext.woff2") format("woff2");
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
 /* Motion: state changes only (colour fades, a dialog or toast appearing). No entrances, lifts, pulses or loops. */
 :root {
-  --font: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font: "Manrope Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
   --ease-out: ease-out;
   --t-hover: 120ms;
@@ -103,7 +108,7 @@
 }
 
 * { box-sizing: border-box; }
-html { font-family: var(--font); font-size: 14.5px; font-variant-numeric: tabular-nums; line-height: 1.55; color: var(--ink); background: var(--bg); }
+html { font-family: var(--font); font-size: 14px; font-variant-numeric: tabular-nums; line-height: 1.55; color: var(--ink); background: var(--bg); }
 body { margin: 0; min-height: 100vh; }
 h1, h2, h3 { margin: 0; line-height: 1.25; }
 h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; }
@@ -1163,3 +1168,16 @@ body[data-view="home"] #clients { display: none; }
 .account-dialog { max-width: min(36rem, 92vw); }
 #app-parts .chip { cursor: default; }
 #app-parts .chip:hover { color: var(--ink-2); background: var(--surface); }
+
+/* ---------- ArkeLab alignment (1.27.1): shapes, primary buttons, focus, title type ----------
+   Controls 6px, panels 9px; primary actions are light stone (dark: stone on charcoal, light: charcoal on stone);
+   copper is kept for brand, selection and focus. Kept as one block at the end so it is easy to review or revert. */
+h1 { font-size: 1.85rem; font-weight: 550; letter-spacing: -0.035em; }
+h2 { font-weight: 600; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; box-shadow: none; }
+.btn, .qchip, .icon-btn, .seg, .seg button, .search, input, select, textarea { border-radius: 6px; }
+.card, .info-section, dialog, .ask-dialog, .client-cards, .feed, .plan-card { border-radius: 9px; }
+.btn-primary, .sidebar .btn-primary, .btn-ok { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.btn-primary:hover, .sidebar .btn-primary:hover, .btn-ok:hover { background: color-mix(in srgb, var(--primary) 86%, var(--accent)); border-color: color-mix(in srgb, var(--primary) 86%, var(--accent)); }
+[data-theme="dark"] .btn-ok { color: var(--primary-ink); }
+.brand-mark, [data-theme="dark"] .brand-mark { background: var(--accent); color: var(--accent-ink); border-radius: 6px; }

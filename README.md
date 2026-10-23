@@ -17,6 +17,23 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Panel ArkeLab görünümünde (1.27.1)
+
+Panelin renk teması ve yazı tipi ArkeLab'ın tasarım sistemine (`DESIGN.md`) uyarlandı; panel ArkeLab'ın içinde aynı ürün gibi görünecek. Ekranların yapısı ve işleyişi değişmedi.
+- **Koyu tema varsayılan:** kömür zemin (`#191918`), açık taş yazılar. Daha önce bir tema seçtiyseniz o seçim korunur. Açık tema aynı renk rolleriyle duruyor.
+- **Vurgu rengi bakır** (`#d6a584`): marka, seçim ve odak için kullanılır. Hardal kaldırıldı.
+- **Birincil düğmeler açık taş zemin, koyu yazı;** koyu temada böyle, açık temada tersi.
+- **Yazı tipi Manrope Variable:** panelin kendi dosyasından yüklenir, OFL lisanslı, Türkçe karakterleri kapsar. Public Sans kaldırıldı.
+- **Köşeler:** kontrollerde 6px, panellerde 9px.
+- **Odak çizgisi:** 2px bakır.
+- **Durum renkleri ArkeLab tonlarında:**
+  - agent çalışırken lila
+  - müşteri beklenirken mavi-gri
+  - yayında adaçayı yeşili
+  - hata durumunda mercan
+- Kontrast her iki temada da otomatik ekran denetiminden geçti.
+- Müşteri sitelerinin yönetim ekranı (`/admin`) bu değişikliğin dışında; o ekranı müşteri kullanıyor.
+
 ## Ortak hazır parçalar: katalog, yönetim ekranı, bildirimler (1.27.0)
 
 Uygulama sitelerinin (E-ticaret, Randevu, Restoran-Kafe) ilk hazır parçaları geldi. Kodlar fabrikanın `parts/` klasöründe ve testli; agent bunları yazmaz, yalnızca sayfaya yerleştirip tasarlar (`rules/parts.md`). Tanıtım siteleri etkilenmez.

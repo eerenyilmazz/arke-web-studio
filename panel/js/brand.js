@@ -82,8 +82,8 @@ function brandView(b) {
     brand,
     palette,
     fonts,
-    heading: fontStack(fonts.heading, "Public Sans, sans-serif"),
-    bodyFont: fontStack(fonts.body, "Public Sans, sans-serif"),
+    heading: fontStack(fonts.heading, "Manrope Variable, sans-serif"),
+    bodyFont: fontStack(fonts.body, "Manrope Variable, sans-serif"),
     monoFont: fontStack(mono, "ui-monospace, monospace"),
     main: palette[0]?.hex || "#F58255",
     // The client's own logo wins over a drawn one; both are shown as images (nothing in them can run).
