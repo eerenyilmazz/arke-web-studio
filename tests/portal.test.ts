@@ -261,13 +261,13 @@ describe("portal endpoints of the panel", () => {
     }
   });
 
-  it("refuses setup without the Cloudflare token and account in the environment", async () => {
+  it("refuses setup without a Cloudflare account (panel or environment)", async () => {
     const saved = [process.env.SF_CF_MANAGED_API_TOKEN, process.env.SF_CF_MANAGED_ACCOUNT_ID];
     delete process.env.SF_CF_MANAGED_API_TOKEN;
     delete process.env.SF_CF_MANAGED_ACCOUNT_ID;
     try {
       const { setupPortal } = await import("../src/panel/portal.js");
-      await expect(setupPortal(factory, () => undefined)).rejects.toThrow(/SF_CF_MANAGED_API_TOKEN/);
+      await expect(setupPortal(factory, () => undefined)).rejects.toThrow(/Cloudflare hesabı eklenmemiş/);
     } finally {
       if (saved[0] !== undefined) process.env.SF_CF_MANAGED_API_TOKEN = saved[0];
       if (saved[1] !== undefined) process.env.SF_CF_MANAGED_ACCOUNT_ID = saved[1];

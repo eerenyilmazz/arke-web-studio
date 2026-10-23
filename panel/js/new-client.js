@@ -234,14 +234,55 @@ function pricingFields(country, lang, currency) {
   return { price, deadline, langRow, extrasBox, soldExtras, total, showLangRow };
 }
 
+/**
+ * The kind of site (Web Stüdyosu): Tanıtım today; E-ticaret, Randevu and Restoran-Kafe are listed as "Yakında"
+ * until their factory parts are ready. Read from the server, so a kind becomes selectable without a panel change.
+ */
+function productField() {
+  const group = h("div", { class: "kind-choice", role: "radiogroup", "aria-label": "Site türü" });
+  let chosen = "showcase";
+  const names = { showcase: "Tanıtım sitesi" };
+  const draw = (products) => {
+    group.replaceChildren(
+      ...products.map((p) => {
+        names[p.id] = p.name;
+        const soon = p.status !== "active";
+        const input = h("input", { type: "radio", name: "nc-kind", value: p.id, checked: p.id === chosen, disabled: soon, id: `nc-kind-${p.id}` });
+        input.addEventListener("change", () => {
+          chosen = p.id;
+        });
+        return h(
+          "label",
+          { class: `kind-card${soon ? " is-soon" : ""}`, for: input.id },
+          input,
+          h("span", { class: "kind-name" }, p.name, soon ? h("span", { class: "badge", text: "Yakında" }) : null),
+          h("span", { class: "kind-summary", text: p.summary }),
+        );
+      }),
+    );
+  };
+  draw([{ id: "showcase", name: "Tanıtım sitesi", summary: "", status: "active" }]);
+  api("GET", "/api/products")
+    .then((r) => draw(r.products))
+    .catch(() => {
+      /* the showcase choice stays; the others appear when the panel is up to date */
+    });
+  return {
+    el: h("div", { class: "nc-field" }, h("span", { class: "nc-label", text: "Site türü" }), group),
+    value: () => chosen,
+    label: () => names[chosen] || chosen,
+  };
+}
+
 /** The last step: everything chosen so far, what is missing and what each button does. */
 function reviewStep(box, f, submit) {
-  const { name, industry, country, lang, pkg, library, media, info, hosting, soldExtras, total, money, deadline } = f;
+  const { name, industry, country, lang, pkg, library, media, info, hosting, soldExtras, total, money, deadline, kind } = f;
   const logo = media.logo();
   const photos = media.photos();
   const text = info.value.trim();
   const sold = soldExtras();
   const rows = [
+    ["Site türü", kind.label()],
     ["İşletme", `${name.value.trim()} · ${industry.value.trim()}`],
     ["Ülke ve dil", `${country.selectedOptions[0]?.textContent} · ${lang.selectedOptions[0]?.textContent}`],
     ["Barındırma", LABEL_HOSTING[hosting()]],
@@ -316,6 +357,7 @@ export function renderNew() {
     ),
   );
   const hosting = () => hostingChoice.querySelector("input:checked")?.value || "managed";
+  const kind = productField();
   const currency = () => MARKET_CURRENCY[country.value] || "EUR";
   const pricing = pricingFields(country, lang, currency);
   const { price, deadline } = pricing;
@@ -331,6 +373,7 @@ export function renderNew() {
       el: h(
         "div",
         { class: "stack" },
+        kind.el,
         h(
           "div",
           { class: "two" },
@@ -393,7 +436,7 @@ export function renderNew() {
   ];
 
   const drawReview = () =>
-    reviewStep(steps[4].el, { name, industry, country, lang, pkg, library, media, info, hosting, soldExtras, total, money, deadline }, submit);
+    reviewStep(steps[4].el, { name, industry, country, lang, pkg, library, media, info, hosting, soldExtras, total, money, deadline, kind }, submit);
   let current = 0;
   const stepper = h("ol", { class: "nc-steps", "aria-label": "Adımlar" });
   const body = h("section", { class: "card stack nc-step" });
@@ -456,6 +499,7 @@ export function renderNew() {
         payment: price.value === "" ? "none" : "quoted",
         addons: soldExtras(),
         budgetMode: pkg.select.value,
+        product: kind.value(),
       }),
     );
     const mediaOk = await uploadMedia(res.slug, media.logo(), media.photos());

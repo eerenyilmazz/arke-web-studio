@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { PRODUCT_IDS } from "../products/registry.js";
 import type { FactoryConfig } from "../config.js";
 import { readJsonIfExists, writeJson } from "../lib/files.js";
 import { clientPaths } from "../lib/paths.js";
@@ -41,6 +42,8 @@ export const BusinessSchema = z.object({
   budgetMode: z.enum(["", "economy", "balanced", "premium"]).default(""),
   /** Extras sold on top of the base site; absent = a client from before extras existed (agent works as before). */
   addons: AddonsSchema.optional(),
+  /** The kind of site (src/products); absent = a showcase site (clients from before kinds existed). */
+  product: z.enum(PRODUCT_IDS).optional(),
 });
 export type Business = z.infer<typeof BusinessSchema> & { updatedAt?: string };
 

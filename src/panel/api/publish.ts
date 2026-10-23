@@ -3,12 +3,21 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import os from "node:os";
 import { addApproval, approvalPins, approvalTargets } from "../../lib/approvals.js";
-import { clientStatus } from "../../lib/client.js";
+import { clientStatus, readDraftConfig } from "../../lib/client.js";
+import { managedCloudflare } from "../../lib/accounts.js";
 import { assertSlug, clientPaths } from "../../lib/paths.js";
 import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
 import { serialiseJob } from "../jobs.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, runOrConflict } from "./common.js";
+
+/** A publish on the person's own account needs that account: refused before anything starts, with a code the panel uses to ask for it. */
+function needsAccount(deps: ApiDeps, slug: string, res: ServerResponse): boolean {
+  const model = (readDraftConfig(clientPaths(deps.factory.clientsRoot, slug)) as { hosting?: { model?: string } }).hosting?.model;
+  if (model === "client" || managedCloudflare()) return false;
+  sendJson(res, 409, { error: "Cloudflare hesabınız eklenmemiş. Yayın için hesabınızı ekleyiniz.", code: "no-cloudflare-account" });
+  return true;
+}
 
 /** Build, approvals from the panel, preview, deploy and unpublish for one client. */
 export const publishRoutes: Route[] = [
@@ -89,6 +98,7 @@ async function startDeploy(deps: ApiDeps, req: IncomingMessage, res: ServerRespo
   const target = body.target === "production" ? "production" : body.target === "preview" ? "preview" : null;
   if (!target) throw new HttpError(400, "Hedef preview ya da production olmalı.");
   const dryRun = body.dryRun === true;
+  if (!dryRun && needsAccount(deps, s, res)) return;
   const job = runOrConflict(() =>
     deps.jobs.startTask(
       s,
@@ -121,6 +131,7 @@ async function startUnpublish(deps: ApiDeps, req: IncomingMessage, res: ServerRe
   const target = body.target === "production" ? "production" : body.target === "preview" ? "preview" : null;
   if (!target) throw new HttpError(400, "Hedef preview ya da production olmalı.");
   if (target === "production" && body.confirm !== s) throw new HttpError(400, "Canlı siteyi kaldırmak için müşterinin kısa adını (slug) aynen yazın.");
+  if (needsAccount(deps, s, res)) return;
   const label = target === "production" ? "canlı site" : "önizleme";
   const job = runOrConflict(() =>
     deps.jobs.startTask(
@@ -154,6 +165,7 @@ async function startRollback(deps: ApiDeps, req: IncomingMessage, res: ServerRes
   const target = body.target === "production" ? "production" : body.target === "preview" ? "preview" : null;
   if (!target) throw new HttpError(400, "Hedef preview ya da production olmalı.");
   if (target === "production" && body.confirm !== s) throw new HttpError(400, "Canlı siteyi geri almak için müşterinin kısa adını (slug) aynen yazın.");
+  if (needsAccount(deps, s, res)) return;
   const label = target === "production" ? "canlı site" : "önizleme";
   const job = runOrConflict(() =>
     deps.jobs.startTask(

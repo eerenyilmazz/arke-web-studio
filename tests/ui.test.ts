@@ -279,6 +279,20 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     await page.close();
   });
 
+  ui()("asks for the person's own Cloudflare account and lists the site types", async (ctx) => {
+    needBrowser(ctx);
+    const { page, errors } = await open("#/ayarlar");
+    await expect.poll(() => page.locator("#account-cloudflare").textContent()).toContain("Henüz bir Cloudflare hesabı eklenmedi");
+    expect(await page.locator("#acc-token").getAttribute("type")).toBe("password");
+    await page.goto(`${base}/#/yeni`);
+    await page.waitForSelector(".kind-card");
+    await expect.poll(() => page.locator(".kind-card").count()).toBe(4);
+    expect(await page.locator("#nc-kind-showcase").isChecked()).toBe(true);
+    expect(await page.locator("#nc-kind-ecommerce").isDisabled()).toBe(true);
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
   ui()("analysis: one row per client, sorts by a column, filters and downloads a CSV", async (ctx) => {
     needBrowser(ctx);
     const { page, errors } = await open("#/analiz");

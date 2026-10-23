@@ -220,13 +220,18 @@ function serverEnvFrom(parent: NodeJS.ProcessEnv): Record<string, string> {
     const v = parent[k];
     if (v) out[k] = v;
   }
+  out.SF_NO_ACCOUNTS = "1"; // the MCP server Codex starts never reads the person's saved accounts
   return out;
 }
 
-/** The agent never needs Cloudflare credentials (it cannot deploy), so they are removed from its environment. */
+/**
+ * The agent never needs Cloudflare credentials (it cannot deploy): they are removed from its environment, and
+ * SF_NO_ACCOUNTS=1 keeps its processes (and the MCP server it starts) from reading the accounts saved in the panel.
+ */
 export function agentEnv(parent: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
-  for (const [k, v] of Object.entries(parent)) if (!k.startsWith("SF_CF_")) env[k] = v;
+  for (const [k, v] of Object.entries(parent)) if (!k.startsWith("SF_CF_") && k !== "SF_ACCOUNTS_DIR") env[k] = v;
+  env.SF_NO_ACCOUNTS = "1";
   return env;
 }
 

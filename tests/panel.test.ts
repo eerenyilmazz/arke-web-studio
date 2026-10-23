@@ -1,13 +1,14 @@
 import { EventEmitter } from "node:events";
 import { createServer, request } from "node:http";
 import type { AddressInfo } from "node:net";
-import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 import type { ChildProcess, SpawnOptions } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import { AGENT_DENIED_READS, AGENT_DENIED_TOOLS } from "../src/panel/jobs.js";
-import { createPanel, type Panel } from "../src/panel/server.js";
+import { createPanel, type Panel, type PanelOptions } from "../src/panel/server.js";
 import * as tools from "../src/tools.js";
 import { clientPaths } from "../src/lib/paths.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, PNG_1PX, SAMPLE_PLAN as PLAN, installStubTemplate, tempFactory } from "./helpers.js";
@@ -54,11 +55,19 @@ function fakeSpawn(calls: SpawnCall[], events: object[], exitCode = 0) {
   };
 }
 
-async function start(spawn?: ReturnType<typeof fakeSpawn>, approvalCode?: string) {
+async function start(spawn?: ReturnType<typeof fakeSpawn>, approvalCode?: string, verifyCloudflare?: PanelOptions["verifyCloudflare"]) {
   const factory = tempFactory();
   const port = await freePort();
   const previewPort = await freePort();
-  panel = createPanel({ factory, port, previewPort, sessionKey: KEY, ...(spawn ? { spawn } : {}), ...(approvalCode ? { approvalCode } : {}) });
+  panel = createPanel({
+    factory,
+    port,
+    previewPort,
+    sessionKey: KEY,
+    ...(spawn ? { spawn } : {}),
+    ...(approvalCode ? { approvalCode } : {}),
+    ...(verifyCloudflare ? { verifyCloudflare } : {}),
+  });
   await panel.listen();
   const base = `http://127.0.0.1:${port}`;
   const auth = { Cookie: `sf_panel=${KEY}`, Origin: base };
@@ -989,6 +998,74 @@ describe("design plan in the panel", () => {
   });
 });
 
+describe("the person's Cloudflare account in the panel", () => {
+  it("saves only what Cloudflare accepts, never sends the token back, and is asked for at publish time", async () => {
+    const dir = process.env.SF_ACCOUNTS_DIR;
+    process.env.SF_ACCOUNTS_DIR = mkdtempSync(path.join(os.tmpdir(), "sf-acc-panel-"));
+    const keepEnv = { t: process.env.SF_CF_MANAGED_API_TOKEN, a: process.env.SF_CF_MANAGED_ACCOUNT_ID };
+    delete process.env.SF_CF_MANAGED_API_TOKEN;
+    delete process.env.SF_CF_MANAGED_ACCOUNT_ID;
+    try {
+      const good = "GoodToken_abcdefghijklmnopqrstuvwxyz0123";
+      const { base, auth } = await start(undefined, undefined, async (a) =>
+        a.token === good ? { ok: true, message: "Bağlantı çalışıyor." } : { ok: false, message: "Token geçersiz ya da yetkisi eksik." },
+      );
+      const json = { ...auth, "Content-Type": "application/json" };
+      await fetch(`${base}/api/clients`, {
+        method: "POST",
+        headers: json,
+        body: JSON.stringify({ slug: "pub-co", businessName: "Pub Co", industry: "bakery", hostingModel: "managed" }),
+      });
+      // No account: a publish is refused before anything starts, with the code the panel uses to ask for it.
+      const refused = await fetch(`${base}/api/clients/pub-co/deploy`, { method: "POST", headers: json, body: JSON.stringify({ target: "preview" }) });
+      expect(refused.status).toBe(409);
+      expect(((await refused.json()) as { code: string }).code).toBe("no-cloudflare-account");
+
+      const put = (token: string, accountId = "0123456789abcdef0123456789abcdef") =>
+        fetch(`${base}/api/account/cloudflare`, { method: "PUT", headers: json, body: JSON.stringify({ accountId, token }) });
+      expect((await put(good, "nope")).status).toBe(400);
+      const bad = await put("BadToken_abcdefghijklmnopqrstuvwxyz01234");
+      expect(bad.status).toBe(400);
+      expect(((await bad.json()) as { error: string }).error).toMatch(/Kaydedilmedi/);
+      expect(((await (await fetch(`${base}/api/account`, { headers: auth })).json()) as { cloudflare: { configured: boolean } }).cloudflare.configured).toBe(
+        false,
+      );
+
+      const ok = await put(good);
+      const text = await ok.text();
+      expect(ok.status).toBe(200);
+      expect(text).not.toContain(good);
+      expect(JSON.parse(text).cloudflare).toMatchObject({ configured: true, source: "panel", tokenHint: "…0123" });
+      const status = await (await fetch(`${base}/api/cloudflare`, { headers: auth })).text();
+      expect(status).not.toContain(good);
+
+      const del = await fetch(`${base}/api/account/cloudflare`, { method: "DELETE", headers: auth });
+      expect(((await del.json()) as { cloudflare: { configured: boolean } }).cloudflare.configured).toBe(false);
+    } finally {
+      process.env.SF_ACCOUNTS_DIR = dir;
+      if (keepEnv.t !== undefined) process.env.SF_CF_MANAGED_API_TOKEN = keepEnv.t;
+      if (keepEnv.a !== undefined) process.env.SF_CF_MANAGED_ACCOUNT_ID = keepEnv.a;
+    }
+  });
+
+  it("lists the site types and refuses one that is not ready", async () => {
+    const { base, auth } = await start();
+    const json = { ...auth, "Content-Type": "application/json" };
+    const { products } = (await (await fetch(`${base}/api/products`, { headers: auth })).json()) as { products: Array<{ id: string; status: string }> };
+    expect(products.map((p) => `${p.id}:${p.status}`)).toEqual(["showcase:active", "ecommerce:soon", "booking:soon", "restaurant:soon"]);
+    await fetch(`${base}/api/clients`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ slug: "kind-co", businessName: "Kind Co", industry: "bakery", hostingModel: "managed" }),
+    });
+    expect((await fetch(`${base}/api/clients/kind-co/business`, { method: "PUT", headers: json, body: JSON.stringify({ product: "ecommerce" }) })).status).toBe(
+      400,
+    );
+    const saved = await fetch(`${base}/api/clients/kind-co/business`, { method: "PUT", headers: json, body: JSON.stringify({ product: "showcase" }) });
+    expect(((await saved.json()) as { product: string }).product).toBe("showcase");
+  });
+});
+
 describe("unpublish from the panel", () => {
   it("needs the short name typed again for the live site", async () => {
     const { base, auth } = await start();
@@ -1002,9 +1079,10 @@ describe("unpublish from the panel", () => {
     expect((await post({ target: "production" })).status).toBe(400);
     expect((await post({ target: "production", confirm: "other" })).status).toBe(400);
     expect((await post({ target: "nowhere" })).status).toBe(400);
-    const ok = await post({ target: "production", confirm: "live-co" });
-    expect(ok.status).toBe(202);
-    expect(((await ok.json()) as { kind: string }).kind).toBe("unpublish");
+    // The name typed correctly passes the check; without a Cloudflare account it then stops and asks for one.
+    const typed = await post({ target: "production", confirm: "live-co" });
+    expect(typed.status).toBe(409);
+    expect(((await typed.json()) as { code: string }).code).toBe("no-cloudflare-account");
   });
 });
 

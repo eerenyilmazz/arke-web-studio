@@ -1,3 +1,4 @@
+import { managedCloudflare } from "../lib/accounts.js";
 import { randomBytes } from "node:crypto";
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
@@ -71,10 +72,9 @@ export function portalStatus(): { configured: boolean; url: string | null; at: s
 
 // ---------------------------------------------------------------- setup (wrangler, Eren's managed account)
 
+/** The person's own account (Ayarlar → Hesabım), else the environment variables. */
 function managedCreds(): { token: string; accountId: string } | null {
-  const token = process.env.SF_CF_MANAGED_API_TOKEN;
-  const accountId = process.env.SF_CF_MANAGED_ACCOUNT_ID;
-  return token && accountId ? { token, accountId } : null;
+  return managedCloudflare();
 }
 
 /**
@@ -83,7 +83,7 @@ function managedCreds(): { token: string; accountId: string } | null {
  */
 export async function setupPortal(factory: FactoryConfig, log: (t: string) => void): Promise<string> {
   const creds = managedCreds();
-  if (!creds) throw new Error("Cloudflare token ve hesap kimliği tanımlı değil (SF_CF_MANAGED_API_TOKEN, SF_CF_MANAGED_ACCOUNT_ID).");
+  if (!creds) throw new Error("Cloudflare hesabı eklenmemiş. Ayarlar → Hesabım bölümünden ekleyiniz.");
   const wrangler = path.join(FACTORY_ROOT, "node_modules", "wrangler", "bin", "wrangler.js");
   if (!existsSync(wrangler)) throw new Error("wrangler kurulu değil (npm install).");
   const env = { CLOUDFLARE_API_TOKEN: creds.token, CLOUDFLARE_ACCOUNT_ID: creds.accountId, WRANGLER_SEND_METRICS: "false" };

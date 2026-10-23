@@ -1,3 +1,4 @@
+import { managedCloudflare } from "../lib/accounts.js";
 import path from "node:path";
 import { FactoryError } from "../lib/errors.js";
 import { effectiveFormAction } from "../lib/form.js";
@@ -19,8 +20,13 @@ export function clientEnvPrefix(slug: string): string {
   return `SF_CF_CLIENT_${slug.toUpperCase().replaceAll("-", "_")}_`;
 }
 
+/**
+ * Credentials for a deploy. "managed" = the person's own account: saved in the panel (Ayarlar → Hesabım), else the
+ * SF_CF_MANAGED_* environment variables. "client" = the client's own account from SF_CF_CLIENT_<SLUG>_*.
+ */
 export function cloudflareCredentials(model: "managed" | "client", slug: string): { token: string; accountId: string } | null {
-  const prefix = model === "managed" ? "SF_CF_MANAGED_" : clientEnvPrefix(slug);
+  if (model === "managed") return managedCloudflare();
+  const prefix = clientEnvPrefix(slug);
   const token = process.env[`${prefix}API_TOKEN`];
   const accountId = process.env[`${prefix}ACCOUNT_ID`];
   return token && accountId ? { token, accountId } : null;

@@ -17,6 +17,22 @@ bash scripts/update.sh /mnt/c/Users/<kullanıcı>/Downloads/site-factory-X.Y.Z.z
 
 Müşteriler, ayarlar ve araçlar korunur; önceki durum git'e kaydedilir (`git reset --hard HEAD~1` ile geri alınır).
 
+## Web Stüdyosu temeli ve bireysel hesaplar (1.25.0)
+
+**Bireysel Cloudflare hesabı:** Panel herkes tarafından kullanılabilsin diye yayın hesabı kişiye ait.
+- **Ayarlar → Hesabım → Cloudflare Hesabım:** Hesap kimliği (Account ID) ve API token girilir, **Kaydet ve Test Et**. Cloudflare kabul etmezse kaydedilmez. Ekranda yalnızca özet görünür (hesap `0123…cdef`, token `…x7Kq`, son test); token bir daha gösterilmez.
+- Hesap yokken **Önizleme Oluştur / Yayına Al / Yayından Kaldır / Geri Al** basılırsa aynı form bir pencerede açılır; kaydedilince işlem kaldığı yerden sürer.
+- Saklama: `~/.config/site-factory/accounts.json` (yalnız sizin okuyabildiğiniz dosya), token AES-256-GCM ile şifreli; anahtar yanındaki `accounts.key`. WSL'de işletim sistemi anahtar deposu olmadığından bu, dosyanın yanlışlıkla paylaşılmasına (yedek, rapor, ekran görüntüsü) karşı korur; aynı kullanıcıyla bilgisayara girmiş birine karşı korumaz. ArkeLab'a geçişte yerini ArkeLab'ın şifreli deposu alacak.
+- Agent'a hiçbir zaman gitmez: agent süreçleri ve başlattıkları MCP sunucusu hesap dosyasını okumaz (`SF_NO_ACCOUNTS=1`), agent `~/.config` okuyamaz. Yedeklere ve `sf-report` çıktısına girmez; raporda maskelenir. Müşteri portalı da bu hesabı kullanır.
+- Geriye uyum: `SF_CF_MANAGED_*` ortam değişkenleri çalışmaya devam eder; panelde kayıtlı hesap varsa önce o kullanılır.
+- Testler hiçbir zaman sizin kayıtlı hesabınızı görmez (ayrı geçici klasör kullanır).
+
+**Web Stüdyosu yapısı (site türleri):** Yeni Müşteri'nin ilk adımında **Site türü**: Tanıtım sitesi (aktif), E-ticaret, Randevu, Restoran ve kafe ("Yakında"). Analiz ekranında **Tür** sütunu ve filtresi var.
+- Ortak çekirdek: müşteri ve iş takibi, agent motoru, onaylar, sürümler, marka sistemi (tasarım planı, imza hareketi, hareket kiti), kontroller, yayın, hesaplar, portal, analiz.
+- Her tür yalnızca kendine ait olanı tanımlar (`src/products/registry.ts`): yayın tipi (statik / uygulama), ekstralar, kullandığı hazır fabrika parçaları (katalog, sepet, ödeme entegrasyonları, takvim, QR menü, yönetim ekranı, bildirimler, yasal sayfalar) ve kuralları.
+- İlke: işlevi fabrika yapar, agent tasarlar. Ödeme gibi parçalar hazır ve test edilmiş paketlerdir, panel scriptle kurar; agent yazmaz (az token, az hata). Ödeme sağlayıcısı ve içerik yönetimi (biz / müşteri) müşteriye sorulur.
+- Mevcut müşteriler tanıtım sitesi sayılır; davranışları değişmez.
+
 ## Tasarım planı onayı ve güçlü imza hareketleri (1.24.0)
 
 **Tasarım planı (yeni tasarımlar):** Agent siteyi kurmadan önce nasıl tasarlayacağını anlatır ve durur. Müşteri ekranında **Tasarım Planı** kartı çıkar:

@@ -3,32 +3,23 @@ import { getLang, LANGS, locale, setLang } from "./i18n.js";
 import { $, api, copyButton, fmtTokens, guarded, h, ignoreOptional, MODEL_TR, PACKAGE_NAMES, toast } from "./core.js";
 import { askNotifyPermission, chime } from "./jobs.js";
 import { portalSettingsCard } from "./portal.js";
+import { accountCard } from "./account.js";
 
 // ---------------------------------------------------------------- settings: publishing setup
 
-/** Step-by-step Cloudflare setup with live checks. Only whether a value is set is ever shown, never the value. */
+/** Settings: the person's own account first, then general, usage, publishing and backups. Secrets are never shown. */
 export async function renderSettings() {
   const st = await guarded(() => api("GET", "/api/cloudflare"));
   const ok = (b) => h("span", { class: `badge ${b ? "ok" : "warn"}`, text: b ? "tamam" : "eksik" });
-  const result = h("p", { class: "small", role: "status" });
-  const test = async (btn) => {
-    btn.disabled = true;
-    result.textContent = "Deneniyor…";
-    const r = await guarded(() => api("POST", "/api/cloudflare/test"));
-    btn.disabled = false;
-    if (r) {
-      result.textContent = r.message;
-      result.className = `small ${r.ok ? "ok-text" : "err"}`;
-    }
-  };
   const lines = 'export SF_CF_MANAGED_API_TOKEN="buraya-token"\nexport SF_CF_MANAGED_ACCOUNT_ID="buraya-hesap-kimligi"';
-  const ready = st && st.managed.token && st.managed.accountId;
+  const ready = st && st.managed.token && st.managed.accountId && st.wrangler;
   const group = (id, title, ...cards) =>
     h("section", { class: "settings-group", id: `ayar-${id}`, "data-enter": "1" }, h("h2", { class: "settings-title", text: title }), ...cards);
   const nav = h(
     "nav",
     { class: "settings-nav", "aria-label": "Ayar bölümleri" },
     ...[
+      ["hesap", "Hesabım"],
       ["genel", "Genel"],
       ["kullanim", "Kaynak Kullanımı"],
       ["yayin", "Yayın"],
@@ -47,73 +38,30 @@ export async function renderSettings() {
       ),
     ),
   );
+  const account = st?.account;
   const cloudflare = h(
     "section",
     { class: "card stack" },
     h(
       "div",
       { class: "row", style: "justify-content:space-between" },
-      h("h2", { text: "Cloudflare Bağlantısı" }),
+      h("h2", { text: "Yayın Hazırlığı" }),
       ready ? h("span", { class: "badge ok", text: "hazır" }) : h("span", { class: "badge warn", text: "kurulmadı" }),
     ),
-    h("p", {
-      class: "muted small",
-      text: "Önizleme linki ve canlı yayın için bir kez yapılır. Token panelde ya da dosyada saklanmaz; sadece terminal ortamında durur ve agent'a hiç verilmez.",
-    }),
     st &&
       h(
         "ul",
         { class: "checks" },
-        h("li", {}, ok(st.managed.token), " API token (SF_CF_MANAGED_API_TOKEN)"),
-        h("li", {}, ok(st.managed.accountId), " Hesap kimliği (SF_CF_MANAGED_ACCOUNT_ID)"),
+        h("li", {}, ok(Boolean(account?.configured)), " Cloudflare hesabı ", h("a", { href: "#ayar-hesap", text: "(Hesabım)" })),
         h("li", {}, ok(st.wrangler), " Yayın aracı (wrangler)"),
       ),
     h(
-      "ol",
-      { class: "setup-steps" },
-      h(
-        "li",
-        {},
-        h("strong", { text: "Cloudflare hesabı aç " }),
-        "(ücretsiz): ",
-        h("a", { href: "https://dash.cloudflare.com/sign-up", target: "_blank", rel: "noopener", text: "dash.cloudflare.com" }),
-      ),
-      h(
-        "li",
-        {},
-        h("strong", { text: "Token oluştur: " }),
-        "Profil → API Tokens → Create Token → ",
-        h("em", { text: "Edit Cloudflare Workers" }),
-        " şablonu → Continue → Create. Çıkan token'ı kopyala (bir kez gösterilir). ",
-        h("a", { href: "https://dash.cloudflare.com/profile/api-tokens", target: "_blank", rel: "noopener", text: "Token sayfası" }),
-      ),
-      h(
-        "li",
-        {},
-        h("strong", { text: "Hesap kimliğini al: " }),
-        "Cloudflare'de Workers & Pages sayfasının sağında ",
-        h("em", { text: "Account ID" }),
-        " yazar.",
-      ),
-      h(
-        "li",
-        {},
-        h("strong", { text: "WSL'de kaydet: " }),
-        h("code", { text: "nano ~/.bashrc" }),
-        " ile dosyanın en altına şu iki satırı ekle (tırnak içine kendi değerlerini yaz), kaydet:",
-        h("div", { class: "copybox" }, h("pre", { text: lines }), copyButton(lines)),
-      ),
-      h("li", {}, h("strong", { text: "Paneli yeniden başlat: " }), "terminalde Ctrl+C, sonra ", h("code", { text: "source ~/.bashrc && npm run panel" }), "."),
-      h(
-        "li",
-        {},
-        h("strong", { text: "Dene: " }),
-        h("button", { class: "btn btn-sm", type: "button", onclick: (e) => test(e.currentTarget) }, "Bağlantıyı test et"),
-        " ",
-        result,
-      ),
+      "details",
+      { class: "advanced" },
+      h("summary", { text: "Gelişmiş: hesabı terminal ortam değişkeniyle vermek" }),
+      h("p", { class: "muted small", text: "Eski kurulumlar için. Panelde kayıtlı bir hesap varsa o kullanılır." }),
+      h("div", { class: "copybox" }, h("pre", { text: lines }), copyButton(lines)),
     ),
-    h("p", { class: "muted small", text: "Token'ı kimseyle, bana da gönderme. Sızdığını düşünürsen Cloudflare'de silip yenisini oluştur." }),
   );
   const approvalCode = h(
     "section",
@@ -154,6 +102,7 @@ export async function renderSettings() {
     h(
       "div",
       { class: "settings stack" },
+      group("hesap", "Hesabım", accountCard()),
       group("genel", "Genel", languageCard(), senderCard(), notifications, approvalCode),
       group("kullanim", "Kaynak Kullanımı", budgetCard(), agentsCard(), profitSettingsCard(), webResearchCard()),
       group("yayin", "Yayın", cloudflare, portalSettingsCard()),

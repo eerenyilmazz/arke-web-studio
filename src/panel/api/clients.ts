@@ -24,6 +24,7 @@ import { serialiseJob } from "../jobs.js";
 import { inlineMotionKit, readBrandBoard, readBrandOptions, SIGNATURE_FILE } from "../../lib/custom-site.js";
 import { approvePlan, planState, previousPlans, readPlan } from "../../lib/design-plan.js";
 import os from "node:os";
+import { PRODUCT_IDS, PRODUCTS, type ProductId } from "../../products/registry.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, UPLOAD_LIMIT, safeFileName, BUSY, asHttp, IMAGE_TYPES, assetFiles, inboxFiles } from "./common.js";
 
 /** Clients: list, create, archive, detail, questionnaires, uploads, logo, business, versions. */
@@ -152,6 +153,9 @@ async function saveBusiness(deps: ApiDeps, req: IncomingMessage, res: ServerResp
   const s = assertSlug(slug!);
   tools.getClientStatus(deps.factory, { slug: s });
   const body = await readJsonBody(req, JSON_LIMIT);
+  // Only kinds that are ready can be chosen (the others are listed as "yakında").
+  if (typeof body.product === "string" && (PRODUCT_IDS as readonly string[]).includes(body.product) && PRODUCTS[body.product as ProductId].status !== "active")
+    throw new HttpError(400, "Bu site türü henüz hazır değil.");
   try {
     const saved = writeBusiness(deps.factory, s, body);
     addSoldLanguage(deps, s, saved.addons);

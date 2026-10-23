@@ -7,6 +7,7 @@ import { clearBrandStale } from "./logo-check.js";
 import path from "node:path";
 import { FACTORY_ROOT, loadFactoryConfig, type FactoryConfig } from "../config.js";
 import { handleApi, startTranslation } from "./api.js";
+import type { ApiDeps } from "./api/common.js";
 import { ApprovalGate } from "./approval-gate.js";
 import { allowedHost, allowedOrigin, cookieHeader, hasSession, newSessionKey, safeEqual } from "./auth.js";
 import { HttpError, sendError } from "./http.js";
@@ -32,6 +33,8 @@ export interface PanelOptions {
   readonly spawn?: SpawnFn;
   /** Tests pass a known code; normally a random one is made and printed in the terminal. */
   readonly approvalCode?: string;
+  /** Tests check Cloudflare accounts without the network. */
+  readonly verifyCloudflare?: ApiDeps["verifyCloudflare"];
 }
 
 export interface Panel {
@@ -84,7 +87,7 @@ export function createPanel(opts: PanelOptions): Panel {
   );
   const preview = new PreviewServer(opts.previewPort);
   const gate = new ApprovalGate(opts.approvalCode);
-  const deps = { factory: opts.factory, jobs, preview, gate };
+  const deps: ApiDeps = { factory: opts.factory, jobs, preview, gate, ...(opts.verifyCloudflare ? { verifyCloudflare: opts.verifyCloudflare } : {}) };
 
   const server = createServer((req, res) => {
     void handleRequest(req, res).catch((error: unknown) => {

@@ -1,3 +1,4 @@
+import { cloudflareAccountStatus } from "../lib/accounts.js";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -36,7 +37,7 @@ export async function deploy(factory: FactoryConfig, args: { slug: string; targe
     throw new FactoryError(
       `No Cloudflare credentials for hosting model "${config.hosting.model}".`,
       config.hosting.model === "managed"
-        ? "Set SF_CF_MANAGED_API_TOKEN and SF_CF_MANAGED_ACCOUNT_ID in the MCP server environment."
+        ? "Add your Cloudflare account in the panel (Ayarlar → Hesabım), or set SF_CF_MANAGED_API_TOKEN and SF_CF_MANAGED_ACCOUNT_ID."
         : `Set ${clientEnvPrefix(config.slug)}API_TOKEN and ${clientEnvPrefix(config.slug)}ACCOUNT_ID in the MCP server environment.`,
     );
   }
@@ -138,7 +139,7 @@ async function wranglerOnWorker(
     throw new FactoryError(
       `No Cloudflare credentials for hosting model "${config.hosting.model}".`,
       config.hosting.model === "managed"
-        ? "Set SF_CF_MANAGED_API_TOKEN and SF_CF_MANAGED_ACCOUNT_ID before starting the panel."
+        ? "Add your Cloudflare account in the panel (Ayarlar → Hesabım), or set SF_CF_MANAGED_API_TOKEN and SF_CF_MANAGED_ACCOUNT_ID."
         : `Set ${clientEnvPrefix(config.slug)}API_TOKEN and ${clientEnvPrefix(config.slug)}ACCOUNT_ID before starting the panel.`,
     );
   }
@@ -209,16 +210,18 @@ export async function rollback(factory: FactoryConfig, args: { slug: string; tar
 /** Which Cloudflare settings are present (never their values), for the panel's setup page. */
 export function cloudflareStatus() {
   const wranglerJs = path.join(FACTORY_ROOT, "node_modules", "wrangler", "bin", "wrangler.js");
+  const account = cloudflareAccountStatus();
   return {
-    managed: { token: Boolean(process.env.SF_CF_MANAGED_API_TOKEN), accountId: Boolean(process.env.SF_CF_MANAGED_ACCOUNT_ID) },
+    managed: { token: account.configured, accountId: account.configured },
+    account,
     wrangler: existsSync(wranglerJs),
     formAction: formActionUrl() !== null,
   };
 }
 
 /** Checks the managed token works (wrangler whoami). Returns only ok and a short, token-free message. */
-export async function cloudflareTest(factory: FactoryConfig) {
-  const creds = cloudflareCredentials("managed", "x");
+export async function cloudflareTest(factory: FactoryConfig, given: { token: string; accountId: string } | null = null) {
+  const creds = given ?? cloudflareCredentials("managed", "x");
   if (!creds) return { ok: false, message: "Token ya da hesap kimliği tanımlı değil." };
   const wranglerJs = path.join(FACTORY_ROOT, "node_modules", "wrangler", "bin", "wrangler.js");
   if (!existsSync(wranglerJs)) return { ok: false, message: "wrangler kurulu değil (npm install)." };

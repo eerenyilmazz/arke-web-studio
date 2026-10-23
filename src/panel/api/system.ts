@@ -1,5 +1,7 @@
 import { clientAnalytics } from "../analytics.js";
 import { profitSummary } from "../profit.js";
+import { productList } from "../../products/registry.js";
+import { cloudflareAccountStatus, markCloudflareVerified, removeCloudflare, saveCloudflare, validateCloudflare } from "../../lib/accounts.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readSettings, writeSettings } from "../settings.js";
 import { backupNow, checkBackupDir, listBackups, verifyBackup } from "../backup.js";
@@ -66,7 +68,27 @@ export const systemRoutes: Route[] = [
   { method: "GET", pattern: /^\/api\/settings$/, handler: (d, _r, res) => sendJson(res, 200, readSettings(d.factory)) },
   { method: "PUT", pattern: /^\/api\/settings$/, handler: putSettings },
   { method: "GET", pattern: /^\/api\/cloudflare$/, handler: (_d, _r, res) => sendJson(res, 200, tools.cloudflareStatus()) },
-  { method: "POST", pattern: /^\/api\/cloudflare\/test$/, handler: async (d, _r, res) => sendJson(res, 200, await tools.cloudflareTest(d.factory)) },
+  {
+    method: "POST",
+    pattern: /^\/api\/cloudflare\/test$/,
+    handler: async (d, _r, res) => {
+      const r = await checkCloudflare(d, null);
+      if (r.ok && cloudflareAccountStatus().source === "panel") markCloudflareVerified();
+      sendJson(res, 200, r);
+    },
+  },
+  { method: "GET", pattern: /^\/api\/products$/, handler: (_d, _r, res) => sendJson(res, 200, { products: productList() }) },
+  // The person's own Cloudflare account (Ayarlar → Hesabım): only a masked summary ever leaves this process.
+  { method: "GET", pattern: /^\/api\/account$/, handler: (_d, _r, res) => sendJson(res, 200, { cloudflare: cloudflareAccountStatus() }) },
+  { method: "PUT", pattern: /^\/api\/account\/cloudflare$/, handler: saveAccount },
+  {
+    method: "DELETE",
+    pattern: /^\/api\/account\/cloudflare$/,
+    handler: (_d, _r, res) => {
+      removeCloudflare();
+      sendJson(res, 200, { cloudflare: cloudflareAccountStatus() });
+    },
+  },
 ];
 
 async function putSettings(deps: ApiDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -137,4 +159,25 @@ function getJob(deps: ApiDeps, req: IncomingMessage, res: ServerResponse, [id]: 
 
 function cancelJob(deps: ApiDeps, _req: IncomingMessage, res: ServerResponse, [id]: string[]): void {
   sendJson(res, 200, { cancelled: deps.jobs.cancel(id!) });
+}
+
+/** Cloudflare's answer for an account (the given one, or the one in use). */
+function checkCloudflare(d: ApiDeps, account: { token: string; accountId: string } | null) {
+  if (account && d.verifyCloudflare) return d.verifyCloudflare(account);
+  return tools.cloudflareTest(d.factory, account);
+}
+
+/** Saves the person's Cloudflare account only after Cloudflare accepts it; the token is never sent back. */
+async function saveAccount(d: ApiDeps, req: IncomingMessage, res: ServerResponse): Promise<void> {
+  const body = await readJsonBody(req, JSON_LIMIT);
+  let account: { token: string; accountId: string };
+  try {
+    account = validateCloudflare(body);
+  } catch (error) {
+    throw new HttpError(400, (error as Error).message);
+  }
+  const check = await checkCloudflare(d, account);
+  if (!check.ok) throw new HttpError(400, `Kaydedilmedi: ${check.message}`);
+  saveCloudflare(account, new Date().toISOString());
+  sendJson(res, 200, { cloudflare: cloudflareAccountStatus(), message: check.message });
 }

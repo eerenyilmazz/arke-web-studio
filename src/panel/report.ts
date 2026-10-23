@@ -1,3 +1,4 @@
+import { readCloudflare } from "../lib/accounts.js";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import os from "node:os";
@@ -53,7 +54,8 @@ export function knownSecrets(env: NodeJS.ProcessEnv = process.env): string[] {
     .filter(([k, v]) => k.startsWith("SF_CF_") && k.endsWith("API_TOKEN") && typeof v === "string" && v.length >= 8)
     .map(([, v]) => v!);
   const portal = readPortal();
-  return [...fromEnv, ...(portal ? [portal.secret] : [])];
+  const saved = readCloudflare();
+  return [...fromEnv, ...(saved ? [saved.token] : []), ...(portal ? [portal.secret] : [])];
 }
 
 /** Hides the known secrets and anything that looks like a bearer token or an exported credential. */
@@ -312,7 +314,8 @@ export async function buildReport(factory: FactoryConfig, opts: ReportOptions): 
   const fetcher = opts.network ? (opts.fetcher ?? (fetch as unknown as Fetcher)) : null;
 
   // Set-up: only whether values are set, never the values.
-  const cf = { token: Boolean(env.SF_CF_MANAGED_API_TOKEN), account: Boolean(env.SF_CF_MANAGED_ACCOUNT_ID) };
+  const saved = readCloudflare();
+  const cf = { token: Boolean(saved ?? env.SF_CF_MANAGED_API_TOKEN), account: Boolean(saved ?? env.SF_CF_MANAGED_ACCOUNT_ID) };
   const portal = readPortal();
   const settings = readSettings(factory);
   const head = [

@@ -1140,3 +1140,24 @@ body[data-view="home"] #clients { display: none; }
 .plan-new label { font-weight: 600; font-size: .9rem; }
 .plan-new textarea { width: 100%; }
 @media (max-width: 640px) { .plan-palette li { grid-template-columns: 1.6rem 1fr; } .plan-palette li code, .plan-palette li .small { grid-column: 2; } .plan-beats { display: block; overflow-x: auto; } }
+
+/* Site type (Web Stüdyosu) in the new-client form. */
+.kind-choice { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: .5rem; }
+.kind-card { display: grid; gap: .25rem; padding: .7rem .8rem; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); cursor: pointer; }
+.kind-card input { position: absolute; opacity: 0; pointer-events: none; }
+.kind-card:has(input:checked) { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.kind-card:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+.kind-card.is-soon { cursor: not-allowed; background: var(--surface-2); color: var(--ink-3); }
+.kind-name { display: flex; align-items: center; gap: .4rem; font-weight: 650; }
+.kind-summary { font-size: .82rem; color: var(--ink-2); }
+.kind-card.is-soon .kind-summary { color: var(--ink-3); }
+.kind-card { position: relative; }
+
+/* The person's Cloudflare account (Ayarlar → Hesabım) and the publish-time dialog. */
+.account-form { display: grid; gap: .6rem; max-width: 32rem; }
+.account-form label { display: grid; gap: .3rem; font-size: .88rem; font-weight: 600; }
+.account-form input { width: 100%; font-family: var(--mono); }
+.account-status { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; }
+.account-replace > summary { cursor: pointer; font-weight: 600; }
+.account-replace[open] > summary { margin-bottom: .6rem; }
+.account-dialog { max-width: min(36rem, 92vw); }

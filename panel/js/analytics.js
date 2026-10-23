@@ -6,6 +6,7 @@ import { api, guarded, h, LANG_NAMES, PACKAGE_NAMES, plainOf } from "./core.js";
 import { locale } from "./i18n.js";
 
 const PREF_KEY = "sf-analiz";
+const PRODUCT_NAMES = { showcase: "Tanıtım", ecommerce: "E-ticaret", booking: "Randevu", restaurant: "Restoran-Kafe" };
 const COUNTRY_NAMES = { GB: "İngiltere", TR: "Türkiye", IE: "İrlanda", US: "ABD", DE: "Almanya", NL: "Hollanda" };
 /** Over this, a page (HTML + shared CSS/JS) or an image is marked heavy. */
 const HEAVY_PAGE_BYTES = 500_000;
@@ -33,6 +34,7 @@ const COLUMNS = [
     cell: (r) => h("span", { class: `pill tone-${plainOf(r.stage).tone}`, text: plainOf(r.stage).text }),
     csv: (r) => plainOf(r.stage).text,
   },
+  { id: "product", label: "Tür", sort: (r) => r.product, cell: (r) => PRODUCT_NAMES[r.product] || r.product },
   { id: "industry", label: "Sektör", sort: (r) => r.industry, cell: (r) => r.industry },
   { id: "country", label: "Ülke", sort: (r) => r.country || "", cell: (r) => COUNTRY_NAMES[r.country] || r.country || "" },
   { id: "locales", label: "Diller", sort: (r) => r.locales.length, cell: (r) => r.locales.map((l) => LANG_NAMES[l] || l).join(", ") },
@@ -169,6 +171,7 @@ function savePrefs(p) {
 
 const FILTERS = [
   { id: "stage", label: "Durum", of: (r) => r.stage, name: (v) => plainOf(v).text },
+  { id: "product", label: "Tür", of: (r) => r.product, name: (v) => PRODUCT_NAMES[v] || v },
   { id: "country", label: "Ülke", of: (r) => r.country || "", name: (v) => COUNTRY_NAMES[v] || v },
   { id: "package", label: "Paket", of: (r) => r.packageMode, name: (v) => PACKAGE_NAMES[v] || "Varsayılan" },
   { id: "payment", label: "Ödeme", of: (r) => r.payment, name: (v) => PAYMENT_LABELS[v] || v },

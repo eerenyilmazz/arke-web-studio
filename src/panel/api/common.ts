@@ -34,6 +34,8 @@ export interface ApiDeps {
   readonly jobs: JobRunner;
   readonly preview: PreviewServer;
   readonly gate: ApprovalGate;
+  /** Checks a Cloudflare account with Cloudflare (wrangler whoami); tests pass their own. */
+  readonly verifyCloudflare?: (account: { token: string; accountId: string }) => Promise<{ ok: boolean; message: string }>;
 }
 
 export type Handler = (deps: ApiDeps, req: IncomingMessage, res: ServerResponse, params: string[]) => Promise<void> | void;

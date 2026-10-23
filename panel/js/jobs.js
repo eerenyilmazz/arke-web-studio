@@ -1,4 +1,5 @@
 // Starting agent and factory jobs, their progress, polling and the finished-job notifications.
+import { askAccount } from "./account.js";
 import { $, api, ask, guarded, h, ignoreOptional, POLL_MS, state, toast } from "./core.js";
 import { appendLiveLines, STATUS_BADGE } from "./feed.js";
 import { render, route, setStatus } from "./router.js";
@@ -131,7 +132,18 @@ export async function runAgent(slug, kind, payload) {
 }
 
 export async function runTask(slug, kind, payload) {
-  const job = await guarded(() => api("POST", `/api/clients/${slug}/${kind}`, payload));
+  let job;
+  try {
+    job = await api("POST", `/api/clients/${slug}/${kind}`, payload);
+  } catch (e) {
+    // No Cloudflare account yet: ask for it right here, then carry on with the same publish.
+    if (e.data?.code === "no-cloudflare-account") {
+      if (await askAccount()) return runTask(slug, kind, payload);
+      return;
+    }
+    toast(e.message, true);
+    return;
+  }
   if (job) await jobStarted(job);
 }
 

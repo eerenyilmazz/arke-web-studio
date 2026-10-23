@@ -9,6 +9,7 @@ import { readLedger } from "./budget.js";
 import { readBusiness } from "./business.js";
 import { readHistory } from "./history.js";
 import { clientProfit } from "./profit.js";
+import { productOf } from "../products/registry.js";
 
 /**
  * One row per client for the panel's analysis table: business, money, work and the built site, read from files
@@ -34,6 +35,7 @@ export interface ClientAnalytics {
   readonly name: string;
   readonly industry: string;
   readonly stage: string;
+  readonly product: string;
   readonly country: string | null;
   readonly locales: string[];
   readonly hosting: string | null;
@@ -143,6 +145,7 @@ export function clientAnalytics(factory: FactoryConfig, now = new Date()): Clien
         name: c.name ?? c.slug,
         industry: c.industry ?? "",
         stage: c.stage,
+        product: productOf(b).id,
         country: draft.business?.country ?? null,
         locales: draftLocales(draft as Record<string, unknown>),
         hosting: draft.hosting?.model ?? null,
