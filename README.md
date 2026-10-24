@@ -421,6 +421,9 @@ npm run schema       # Zod → schema/*.schema.json
 - Arayüz metinleri Türkçe yazılır, İngilizceleri [`panel/js/i18n-en.js`](panel/js/i18n-en.js)'de tutulur; İngilizce panel testi her ekranı ve düzenleyiciyi denetler.
 - Ekran denetimi ([`tests/ui-audit.test.ts`](tests/ui-audit.test.ts)) her ekranı iki temada ve üç genişlikte kontrol eder: kontrast, taşma, animasyon, script hatası.
 - CI her gönderimde lint, tip kontrolü, derleme ve testleri çalıştırır ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+- **Dil kuralı:** kod, yorumlar, kurallar (`AGENTS.md`, `rules/`) ve **commit mesajları İngilizce**; arayüz metinleri,
+  README, `CHANGELOG.md` ve `ROADMAP.md` Türkçe. Commit mesajı sürümle başlar: `2.4.1: short summary in English`
+  (sürümsüz işler `docs:`, `test:` gibi bir önekle).
 
 **Sürüm çıkarmak:** `package.json` ve `package-lock.json`'da sürümü yükseltin, [`CHANGELOG.md`](CHANGELOG.md)'ye not
 ekleyin, biten adımı [`ROADMAP.md`](ROADMAP.md)'de işaretleyin, commit atıp gönderin. Git ile kuranlar panelden günceller.
