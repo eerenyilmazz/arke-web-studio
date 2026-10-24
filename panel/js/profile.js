@@ -24,7 +24,7 @@ export function profileCard({ welcome = false, onSaved } = {}) {
         e.preventDefault();
         save.disabled = true;
         const before = getLang();
-        const s = await guarded(() => api("PUT", "/api/settings", { profile: { name: name.value }, panelLanguage: lang.value }));
+        const s = await guarded(() => api("PUT", "/api/settings", { profile: { name: name.value }, ...(welcome ? { panelLanguage: lang.value } : {}) }));
         save.disabled = false;
         if (!s) return;
         toast("Profil kaydedildi.");
@@ -41,12 +41,13 @@ export function profileCard({ welcome = false, onSaved } = {}) {
       class: "muted small",
       text: welcome
         ? "Bu panel size özel: kendi müşterileriniz, kendi hesaplarınız. Agent size adınızla hitap eder; onaylar yalnızca sizdedir."
-        : "Agent size bu adla hitap eder.",
+        : "Agent size bu adla hitap eder. Panel dili Ayarlar → Genel'de.",
     }),
     h("label", { for: name.id }, "Adınız"),
     name,
-    h("label", { for: lang.id }, "Panel dili"),
-    lang,
+    // The language is asked on first start; later it is changed in Ayarlar → Genel, where it applies at once.
+    welcome ? h("label", { for: lang.id }, "Panel dili") : null,
+    welcome ? lang : null,
     h("div", {}, save),
   );
 }

@@ -330,3 +330,37 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     await page.close();
   });
 });
+
+describe("first start and the panel language (headless browser)", { timeout: 30_000 }, () => {
+  ui()("saves the name and language from the welcome card, the name again from Ayarlar, and keeps both", async (ctx) => {
+    needBrowser(ctx);
+    const { page, errors } = await open("#/");
+    const consoleErrors: string[] = [];
+    page.on("console", (m) => m.type() === "error" && consoleErrors.push(m.text()));
+    await page.fill("#prof-name", "Deniz");
+    await page.selectOption("#prof-lang", "en");
+    await Promise.all([page.waitForEvent("load"), page.click("#welcome-profile button[type=submit]")]);
+    await page.waitForSelector("#view h1");
+    expect(await page.evaluate(() => document.documentElement.lang)).toBe("en");
+    // Later the name changes in Ayarlar → Hesabım; the language stays (it is changed in Genel, at once).
+    await page.goto(`${base}/#/ayarlar`);
+    await page.click('.settings-nav a[data-tab="hesap"]');
+    await page.fill("#prof-name", "Deniz Kaya");
+    await page.click("#profile-card button[type=submit]");
+    await expect.poll(() => page.locator("#toast").textContent()).toContain("Profile saved");
+    const saved = (await (await page.request.get(`${base}/api/settings`)).json()) as { profile: { name: string }; panelLanguage: string };
+    expect(saved).toMatchObject({ profile: { name: "Deniz Kaya" }, panelLanguage: "en" });
+    await page.click('.settings-nav a[data-tab="genel"]');
+    await Promise.all([page.waitForEvent("load"), page.selectOption("#panel-lang", "tr")]);
+    await page.waitForSelector("#view h1");
+    expect(await page.evaluate(() => document.documentElement.lang)).toBe("tr");
+    // The new-client form's patterns compile (a broken one only shows up as a console error).
+    await page.goto(`${base}/#/yeni`);
+    await page.fill("#nc-name", "Test Co");
+    await page.fill("#nc-industry", "bakery");
+    await page.click("#nc-next");
+    expect(consoleErrors.filter((t) => /pattern/i.test(t))).toEqual([]);
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+});

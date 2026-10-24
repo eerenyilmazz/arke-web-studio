@@ -62,6 +62,9 @@ export function teamCard() {
     const input = h("input", {
       id: "team-remote",
       type: "text",
+      required: true,
+      pattern: "(https://|git@)\\S+",
+      title: "https://… ya da git@…:… biçiminde bir depo adresi",
       spellcheck: "false",
       autocomplete: "off",
       maxlength: 300,

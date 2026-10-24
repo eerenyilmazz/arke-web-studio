@@ -266,7 +266,7 @@ async function saveClient(f, start) {
  */
 export function renderNew() {
   const name = h("input", { type: "text", id: "nc-name", required: true, maxlength: 80, autocomplete: "off", placeholder: "ör. Mavi Kapı Fırın" });
-  const slug = h("input", { type: "text", id: "nc-slug", required: true, maxlength: 40, pattern: "[a-z0-9][a-z0-9-]{1,38}[a-z0-9]", spellcheck: "false" });
+  const slug = h("input", { type: "text", id: "nc-slug", required: true, maxlength: 40, pattern: "[a-z0-9][a-z0-9\\-]{1,38}[a-z0-9]", spellcheck: "false" });
   let slugTouched = false;
   name.addEventListener("input", () => {
     if (!slugTouched) slug.value = slugify(name.value);

@@ -2,6 +2,20 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.3.1: Tıklama testi ve bulduğu hatalar
+
+**Düzeltilen hatalar**
+- **Profil kaydedilmiyordu (dil değiştirme dahil):** 2.0.1'de "Stüdyo adı" alanı formdan kalkınca sunucu sadece adla gelen profili reddediyordu. Hoş geldiniz kartı ve Ayarlar → Hesabım → Profil hata veriyordu; bu kartlardan dil de değişmiyordu. Artık ad tek başına kaydediliyor.
+- **Ayarlar kısmi kaydediliyor:** bir gruptan tek alan gönderen form (ör. profil adı) grubun diğer alanlarını silmiyor.
+- **Dil tek yerde:** panel dili Ayarlar → Genel'de, seçince hemen uygulanıyor. Hesabım → Profil'de artık sadece ad var (ilk açılıştaki karşılama kartı dili yine soruyor).
+- **Kısa ad ve model alanlarının kontrolü çalışmıyordu:** tarayıcının yeni kuralıyla geçersiz sayılan iki desen düzeltildi.
+- **Ekip deposu:** boş adresle "Bağla" artık sunucuya gitmiyor; adres biçimi alanda kontrol ediliyor.
+- **Yedek:** klasör kaydedilmeden "Şimdi yedekle" kapalı ve nedenini söylüyor.
+
+**Test**
+- Yeni tıklama testi (`npm run test:click`): her ekrandaki her düğmeye, sekmeye, seçeneğe ve açılır menüye tek tek tıklıyor; script hatası, konsol hatası, başarısız istek, hata bildirimi ve hiçbir şey yapmayan düğmeleri raporluyor. Onay pencerelerini iki yönde de deniyor.
+- İlk açılış, dil değiştirme ve profil kaydı için tarayıcı testi.
+
 ## 2.3.0: Kişisel veri profili (KVKK / UK GDPR / GDPR)
 
 **Uygulama siteleri**

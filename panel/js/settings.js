@@ -396,6 +396,9 @@ export function backupCard() {
     api("GET", "/api/backups")
       .then((r) => {
         dir.value = r.dir || "";
+        // A backup needs a folder first; the button says why it waits.
+        now.disabled = !r.dir;
+        now.title = r.dir ? "" : "Önce bir yedek klasörü kaydedin.";
         list.replaceChildren(
           ...r.backups
             .slice(0, 5)
@@ -542,7 +545,7 @@ export function agentsCard() {
       maxlength: 60,
       placeholder: "boş = paket",
       "aria-label": `${label}: model`,
-      pattern: "[A-Za-z0-9._:-]*",
+      pattern: "[A-Za-z0-9._:\\-]*",
     });
     const turns = h("input", { type: "number", id: `ag-${id}-t`, min: 0, max: 500, step: 1, placeholder: "adım", "aria-label": `${label}: en fazla adım` });
     const cap = h("input", {

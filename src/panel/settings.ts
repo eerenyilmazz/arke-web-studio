@@ -44,12 +44,14 @@ export const SettingsSchema = z.object({
         .string()
         .trim()
         .max(60)
-        .transform((v) => v.replace(/[\u0000-\u001f"<>`]/g, "")),
+        .transform((v) => v.replace(/[\u0000-\u001f"<>`]/g, ""))
+        .default(""),
       studio: z
         .string()
         .trim()
         .max(80)
-        .transform((v) => v.replace(/[\u0000-\u001f"<>`]/g, "")),
+        .transform((v) => v.replace(/[\u0000-\u001f"<>`]/g, ""))
+        .default(""),
     })
     .default({ name: "", studio: "" }),
   /** Team sharing: the team's Git repository (https://… or git@…). Empty = this panel works alone. */
@@ -104,8 +106,18 @@ export function readSettings(factory: FactoryConfig): Settings {
   return parsed.success ? parsed.data : SettingsSchema.parse({});
 }
 
+const isPlain = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/**
+ * Saves a partial change. Groups (profile, sender, budget…) are merged one level deep, so a form that sends one field
+ * of a group (the profile's name) keeps the group's other fields instead of failing or wiping them.
+ */
 export function writeSettings(factory: FactoryConfig, input: unknown): Settings {
-  const data = SettingsSchema.parse({ ...readSettings(factory), ...(typeof input === "object" && input ? input : {}) });
+  const current = readSettings(factory) as Record<string, unknown>;
+  const patch = isPlain(input) ? input : {};
+  const merged: Record<string, unknown> = { ...current };
+  for (const [k, v] of Object.entries(patch)) merged[k] = isPlain(v) && isPlain(current[k]) ? { ...current[k], ...v } : v;
+  const data = SettingsSchema.parse(merged);
   writeJson(file(factory), data);
   return data;
 }

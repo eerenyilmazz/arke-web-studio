@@ -1,6 +1,6 @@
 {
   "name": "arke-web-studio",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "author": "Eren Yılmaz <eerenyilmazz1@gmail.com>",
@@ -19,6 +19,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:e2e": "vitest run tests/e2e.test.ts tests/e2e-portal.test.ts tests/e2e-i18n.test.ts",
+    "test:click": "ARKE_CLICK=1 vitest run tests/click-through.test.ts",
     "schema": "tsx src/cli/export-schema.ts",
     "approve": "tsx src/cli/approve.ts",
     "report": "tsx src/cli/report.ts",

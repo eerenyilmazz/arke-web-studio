@@ -6,7 +6,7 @@
 
 Araştırma → tasarım planı → insan onayı → Cloudflare'de yayın
 
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.3.0-d6a584)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.3.1-d6a584)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022.12-3c873a)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![Agent](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex-191918)
@@ -410,6 +410,7 @@ arke-web-studio/                 bu depo (fabrika)
 npm run build        # TypeScript → dist/
 npm test             # bütün testler (ARKE_E2E=off ile tarayıcısız, hızlı)
 npm run test:e2e     # tarayıcılı uçtan uca testler
+npm run test:click   # her ekrandaki her düğmeye tıklar, hataları raporlar (ARKE_CLICK_OUT=<klasör>)
 npm run lint         # Biome
 npm run typecheck
 npm run schema       # Zod → schema/*.schema.json

@@ -15,6 +15,7 @@ describe("global studio: no personal traces", () => {
   const ROOT = path.resolve(import.meta.dirname, "..");
   const walk = (dir: string): string[] =>
     readdirSync(dir).flatMap((n) => {
+      if (n === "node_modules" || n === "dist") return []; // installed and built files, not ours
       const p = path.join(dir, n);
       return statSync(p).isDirectory() ? walk(p) : [p];
     });
@@ -63,5 +64,15 @@ describe("global studio: no personal traces", () => {
     const prompt = finalPrompt("Do it.", { skills: "none", screenshots: true, operator: s.profile });
     expect(prompt).toContain("is Deniz Kaya of Atölye Web");
     expect(finalPrompt("Do it.", { skills: "none", screenshots: true, operator: { name: "", studio: "" } })).not.toContain("The operator (");
+  });
+
+  it("saves the profile form as the panel sends it (name only) and keeps the other fields of a group", () => {
+    // The panel's profile form sends only the name since the studio field left the form; that must save.
+    const f = tempFactory();
+    writeSettings(f, { sender: { name: "Atölye", email: "a@example.com", phone: "", web: "" }, panelLanguage: "en" });
+    const s = writeSettings(f, { profile: { name: "Deniz" } });
+    expect(s.profile).toEqual({ name: "Deniz", studio: "" });
+    expect(writeSettings(f, { sender: { phone: "+90 534 000 00 00" } }).sender).toMatchObject({ name: "Atölye", email: "a@example.com" });
+    expect(writeSettings(f, { panelLanguage: "tr" }).profile.name).toBe("Deniz");
   });
 });
