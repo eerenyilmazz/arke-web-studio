@@ -2,6 +2,12 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.4.1: Yönetim ekranı telefonda ve para birimi; README görselleri
+
+- **Yönetim ekranı telefonda:** üst çubuk dar ekranda iki satıra iniyor; dil düğmesi ve Çıkış artık ekranın dışına taşmıyor.
+- **Para birimi:** katalogda yeni kayıt müşterinin para birimiyle başlıyor (İngiltere'de GBP, Türkiye'de TRY); eskiden her zaman TRY geliyordu.
+- **README:** tema uyumlu (açık / koyu) giriş görseli, müşteri yolculuğu ve mimari çizimleri, hayali bir fırınla yeni ekran görüntüleri, kalite kontrolleri tablosu, agent'ın yapabildikleri ve yapamadıkları.
+
 ## 2.4.0: Müşterinin yönetim ekranı Türkçe ve İngilizce
 
 - **İki dil:** uygulama sitelerinde müşterinin yönetim ekranı (`/admin`) Türkiye'deki müşterilerde Türkçe, diğer ülkelerde İngilizce açılıyor. Sağ üstteki düğmeyle diğer dile geçiliyor; seçim o tarayıcıda hatırlanıyor. Giriş ekranında da düğme var.

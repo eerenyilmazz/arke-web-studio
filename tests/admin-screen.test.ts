@@ -115,6 +115,8 @@ describe("the client's admin screen in two languages", { timeout: 60_000 }, () =
     await page.fill("#password", PASSWORD);
     await page.click("#login-form button[type=submit]");
     await page.waitForSelector("#app:not([hidden])");
+    // A new catalogue record starts in the client's currency.
+    expect(await page.inputValue('#item-form select[name="currency"]')).toBe("GBP");
     await page.click('#tabs button[data-part="notifications"]');
     await page.waitForSelector("#inbox tr td");
     expect(await turkishLeft(page)).toEqual([]);
@@ -138,14 +140,24 @@ describe("the client's admin screen in two languages", { timeout: 60_000 }, () =
     server.close();
   });
 
-  ui()("starts in Turkish for a client in Türkiye", async (ctx) => {
+  ui()("starts in Turkish for a client in Türkiye, and fits a phone", async (ctx) => {
     if (!browser) return ctx.skip();
     const { base, server } = await serve({ ARKE_ADMIN_LANG: "tr", ARKE_LOCALE: "tr-TR", ARKE_PRIVACY_LAW: "KVKK" });
-    const page = await browser.newPage();
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     await page.goto(`${base}/admin`);
     await page.waitForSelector("#login:not([hidden])");
     expect(await page.textContent("#login h1")).toBe("Yönetim ekranı");
     expect(await page.textContent("#login [data-lang-switch]")).toBe("English");
+    await page.fill("#password", PASSWORD);
+    await page.click("#login-form button[type=submit]");
+    await page.waitForSelector("#app:not([hidden])");
+    expect(await page.inputValue('#item-form select[name="currency"]')).toBe("TRY");
+    // The header wraps on a phone: no sideways scroll, every header button fully inside the screen.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    const outside = await page.evaluate(
+      () => [...document.querySelectorAll("header .row button")].filter((b) => b.getBoundingClientRect().right > window.innerWidth).length,
+    );
+    expect(outside).toBe(0);
     await page.close();
     server.close();
   });

@@ -13,6 +13,8 @@
 header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
 header h1{font-size:16px;margin:0}main{max-width:1000px;margin:0 auto;padding:16px}
 nav{display:flex;gap:6px}nav button[aria-current="page"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button{white-space:nowrap}
+@media (max-width:640px){header{flex-wrap:wrap}header nav{order:3;width:100%;overflow-x:auto}}
 button,input,select,textarea{font:inherit;color:inherit}
 button{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:6px 12px;cursor:pointer}
 button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
@@ -271,6 +273,9 @@ th{font-size:12px;color:var(--muted);font-weight:600}
   }
 
   // ------------------------------------------------ catalogue
+  // A new record starts in the client's own currency, read from the screen's locale (en-GB → GBP).
+  const REGION_CURRENCY = { TR: "TRY", GB: "GBP", US: "USD", IE: "EUR", DE: "EUR", NL: "EUR" };
+  const defaultCurrency = () => REGION_CURRENCY[(locale.split("-")[1] || "").toUpperCase()] || "TRY";
   const money = (minor, cur) => minor == null ? "—" : new Intl.NumberFormat(locale, { style: "currency", currency: cur }).format(minor / 100);
   function toMinor(v) {
     const s = String(v || "").trim().replace(/\s/g, "");
@@ -311,6 +316,7 @@ th{font-size:12px;color:var(--muted);font-weight:600}
     state.editing = item ? item.id : null;
     state.imageKey = item ? item.imageKey : null;
     f.reset();
+    f.elements.currency.value = defaultCurrency();
     if (item) {
       f.elements.name.value = item.name; f.elements.description.value = item.description;
       f.elements.categoryId.value = item.categoryId ? String(item.categoryId) : "";

@@ -1,20 +1,21 @@
 <div align="center">
 
-# Arke Web Studio
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.png">
+  <img src="docs/images/hero-light.png" alt="Arke Web Studio: panel ve telefon görünümü">
+</picture>
 
-**Küçük işletmeler için yapay zekâ destekli web stüdyosu**
+<br>
 
-Araştırma → tasarım planı → insan onayı → Cloudflare'de yayın
-
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.4.0-d6a584)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.4.1-d6a584)
+![Testler](https://img.shields.io/badge/testler-vitest%20%2B%20Playwright-2f7a4f)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022.12-3c873a)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![Agent](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex-191918)
+![Yayın](https://img.shields.io/badge/yay%C4%B1n-Cloudflare%20Workers-f38020)
 ![Lisans](https://img.shields.io/badge/lisans-t%C3%BCm%20haklar%C4%B1%20sakl%C4%B1-555)
 
-[Hızlı başlangıç](#hızlı-başlangıç) · [Kullanım](#kullanım) · [Nasıl çalışır](#nasıl-çalışır) · [Güvenlik](#güvenlik-modeli) · [Sürüm notları](CHANGELOG.md) · [Yol haritası](ROADMAP.md)
-
-<img src="docs/images/quick-edit.png" alt="Müşteri sayfası: canlı önizleme ve Hızlı Düzenleme" width="860">
+**[Hızlı başlangıç](#hızlı-başlangıç)** · [Ekranlar](#ekran-görüntüleri) · [Nasıl çalışır](#nasıl-çalışır) · [Güvenlik](#güvenlik-modeli) · [Sürüm notları](CHANGELOG.md) · [Yol haritası](ROADMAP.md)
 
 </div>
 
@@ -27,11 +28,14 @@ Araştırma → tasarım planı → insan onayı → Cloudflare'de yayın
 
 ## İçindekiler
 
+- [Öne çıkanlar](#öne-çıkanlar)
+- [Bir müşterinin yolculuğu](#bir-müşterinin-yolculuğu)
 - [Neler yapar](#neler-yapar)
 - [Ekran görüntüleri](#ekran-görüntüleri)
 - [Hızlı başlangıç](#hızlı-başlangıç)
 - [Nasıl çalışır](#nasıl-çalışır)
 - [Kullanım](#kullanım)
+- [Kalite kontrolleri](#kalite-kontrolleri)
 - [Site türleri ve hazır parçalar](#site-türleri-ve-hazır-parçalar)
 - [Kişisel veri (KVKK / GDPR)](#kişisel-veri-kvkk--gdpr)
 - [Yayın ve Cloudflare](#yayın-ve-cloudflare)
@@ -42,6 +46,70 @@ Araştırma → tasarım planı → insan onayı → Cloudflare'de yayın
 - [Geliştirme](#geliştirme)
 - [Sorun giderme](#sorun-giderme)
 - [Lisans](#lisans)
+
+---
+
+## Öne çıkanlar
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 🧭 Önce plan, sonra site
+Agent işletmeyi araştırır, kaynaklarıyla getirir ve bir **tasarım planı** önerir: konsept, palet, yazı tipleri,
+sayfalar, imza hareketi. Operatör onaylamadan tek sayfa yazılmaz.
+
+</td>
+<td width="33%" valign="top">
+
+### 🔒 Onay ve yayın insanda
+Onaylar terminalde görünen **tek kullanımlık kodla** verilir ve içeriğin parmak izine bağlıdır. Agent onay veremez,
+yayın yapamaz, hesaplara erişemez.
+
+</td>
+<td width="33%" valign="top">
+
+### 🧪 Her derlemede 20+ kontrol
+Güvenlik, kontrast, SEO, dil, para birimi, yasal sayfalar, imza hareketi; telefon ve masaüstü ekran görüntüleri.
+Kalite raporu her sürümde.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### ✏️ Hızlı düzenleme
+Renk, sayfa, hizmet ve fiyat, metin, iletişim, form, görseller: basit değişiklikleri panel kendisi yazar, kaynak
+harcamaz. Her değişiklik sürümlenir, geri alınır.
+
+</td>
+<td valign="top">
+
+### 🌍 Pazara göre
+Türkiye, İngiltere, İrlanda, Almanya, Hollanda, ABD: dil, yazım, para, tarih biçimi, yasal sayfalar ve
+**KVKK / UK GDPR / GDPR** profili müşterinin ülkesinden gelir.
+
+</td>
+<td valign="top">
+
+### ☁️ Kendi Cloudflare hesabınız
+Önizleme ve canlı site ayrı Worker'larda; uygulama sitelerinde D1, R2 ve gizli anahtarlar. Ücretsiz plan yeterli,
+token şifreli saklanır.
+
+</td>
+</tr>
+</table>
+
+---
+
+## Bir müşterinin yolculuğu
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/flow-dark.png">
+  <img src="docs/images/flow-light.png" alt="Bilgiler, araştırma ve plan, plan onayı, marka ve sayfalar, kontroller, onay kodu, önizleme, yayın onayı, canlı">
+</picture>
+
+Kartlardaki etiketler adımı kimin yaptığını gösterir; turuncu kapılar insan onayıdır ve atlanamaz.
 
 ---
 
@@ -60,6 +128,7 @@ kontrol eder; operatör onayladıktan sonra site operatörün kendi Cloudflare h
 | **Onay** | Onaylar yalnızca insandan gelir: panel, sadece başlatıldığı terminalde görünen tek kullanımlık bir kod ister. Onay içeriğin parmak izine bağlıdır; içerik değişince düşer |
 | **Yayın** | Ayrı önizleme ve canlı Worker'lar, geri alma, yayından kaldırma. Uygulama sitelerinde veritabanı (D1), görsel deposu (R2), şema değişiklikleri ve gizli anahtarlar |
 | **Kişisel veri** | Pazara göre KVKK / UK GDPR / GDPR profili: otomatik silme, kişinin verisini bulma, indirme ve silme, AB veri bölgesi, gizlilik metni şablonları |
+| **Müşterinin ekranı** | Uygulama sitelerinde müşterinin kendi yönetim ekranı: katalog, gelen kutusu, kişisel veri talepleri; Türkçe ve İngilizce |
 | **İş takibi** | Teklif (yazdır / PDF), ödeme ve teslim takibi, kâr hesabı, Analiz ekranı (filtreler, CSV) |
 | **Kaynak yönetimi** | Paketlere göre model seçimi, iş başına ve aylık sınır, iş türüne göre Claude Code ya da Codex |
 | **Ekip ve bakım** | Ekip eşitleme (Git), panelden güncelleme, otomatik yedek, durum raporu |
@@ -72,11 +141,53 @@ metinleri ve okuduğu web sayfalarını talimat değil, veri olarak işler.
 
 ## Ekran görüntüleri
 
-| Yeni müşteri | Ayarlar |
-| --- | --- |
-| <img src="docs/images/new-client.png" alt="Yeni müşteri sihirbazı" width="420"> | <img src="docs/images/settings.png" alt="Ayarlar" width="420"> |
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/panel-client-dark.png">
+  <img src="docs/images/panel-client-light.png" alt="Müşteri sayfası: canlı önizleme, onay adımları ve Hızlı Düzenleme" width="100%">
+</picture>
+<br><sub><b>Müşteri sayfası.</b> Solda sitenin canlı önizlemesi ve sürüm geçmişi, sağda Hızlı Düzenleme; üstte işin hangi adımda olduğu ve sıradaki onay.</sub>
+</p>
 
-Görüntüler örnek (hayali) müşterilerle alınmıştır. Panel koyu ve açık temada, masaüstü ve telefonda çalışır.
+<table>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/panel-plan-dark.png" alt="Tasarım planı onayı" width="100%"><br><sub><b>Tasarım planı.</b> Konsept, palet, yazı tipleri, sayfalar ve imza hareketi; onaylanmadan site yazılmaz.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-colors-light.png" alt="Renk paleti düzenleyici" width="100%"><br><sub><b>Renk paleti.</b> Önizleme ve okunurluk oranı anında güncellenir; zor okunan çiftler işaretlenir.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/panel-services-dark.png" alt="Hizmetler ve fiyatlar" width="100%"><br><sub><b>Hizmetler ve fiyatlar.</b> Sürükleyerek sıralama ve alan kontrolleri; değişikliği panel yazar, agent çalışmaz.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-brand-light.png" alt="Marka kartı" width="100%"><br><sub><b>Marka kartı.</b> Logo, slogan, renkler, canlı imza hareketi ve tipografi; müşteriye PDF olarak gider.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/panel-new-light.png" alt="Yeni müşteri sihirbazı" width="100%"><br><sub><b>Yeni müşteri.</b> Beş adım; kaydetmek ücretsiz, kaynak yalnızca "siteyi yapmaya başla" ile harcanır.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-analysis-light.png" alt="Analiz ekranı" width="100%"><br><sub><b>Analiz.</b> Müşteri, ciro, gider ve agent maliyeti; para birimine göre toplamlar, CSV.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="docs/images/panel-quote-light.png" alt="Teklif" width="100%"><br><sub><b>Teklif.</b> Kapsam, marka ve fiyat tek sayfada; yazdır ya da PDF.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-settings-dark.png" alt="Ayarlar" width="100%"><br><sub><b>Ayarlar.</b> Hesap, ekip, kaynak kullanımı, yayın, yedek ve güncelleme.</sub></td>
+</tr>
+</table>
+
+<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/phones-dark.png">
+  <img src="docs/images/phones-light.png" alt="Telefonda panel, müşteri sayfası ve müşterinin yönetim ekranı">
+</picture>
+<br><sub><b>Telefonda.</b> Panel her ekranda telefona uyar; müşterinin yönetim ekranı pazara göre Türkçe ya da İngilizce açılır.</sub>
+</p>
+
+<details>
+<summary><b>İngilizce panel ve müşterinin İngilizce yönetim ekranı</b></summary>
+<br>
+
+| İngilizce panel | Yönetim ekranı (İngiltere'deki müşteri) |
+| --- | --- |
+| <img src="docs/images/panel-english-dark.png" alt="English panel" width="440"> | <img src="docs/images/admin-catalog-en.png" alt="Admin screen in English" width="440"> |
+
+</details>
+
+Görüntülerdeki işletmeler ve site hayalidir (Hollin & Rye Bakehouse). Panel koyu ve açık temada çalışır; bu sayfadaki
+görseller de GitHub temanıza göre değişir.
 
 ---
 
@@ -145,21 +256,19 @@ Elle kurulum: `npm ci && npm run build && npm test`, sonra `npm run panel`.
 
 ## Nasıl çalışır
 
-```mermaid
-flowchart LR
-  A[Yeni müşteri<br/>bilgiler, logo, fotoğraf] --> B[Agent araştırır<br/>en fazla 5 soru]
-  B --> C[Tasarım planı]
-  C -->|operatör onaylar| D[Marka ve site]
-  D --> E[Derleme ve kontroller]
-  E -->|onay kodu| F[Önizleme]
-  F -->|müşteri onayı + kod| G[Canlı yayın]
-  E -. değişiklik .-> D
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/architecture-dark.png">
+  <img src="docs/images/architecture-light.png" alt="Operatörün bilgisayarı, Cloudflare ve müşteri arasındaki parçalar">
+</picture>
 
-- Panel her işi başlatır; agent (`claude -p` ya da Codex) kısıtlı izinlerle ve yalnızca MCP araçlarıyla çalışır.
-- Panel her işten önce ve sonra müşterinin sürümünü kaydeder; her değişiklik geri alınabilir.
-- Kontroller ve onaylar fabrika kodundadır; agent bunları değiştiremez.
-- Kurallar tek yerdedir: [`AGENTS.md`](AGENTS.md) ve [`rules/`](rules/). Agent komutları kuralları tekrar etmez, yalnızca hangi dosyanın okunacağını söyler.
+- **Panel** her işi başlatır; agent (`claude -p` ya da Codex) Claude Code sandbox'ında, kısıtlı izinlerle ve yalnızca
+  `arke-web` MCP araçlarıyla çalışır.
+- **MCP sunucusu** her yazmayı doğrular (yol, şema, dosya türü) ve denetim kaydına yazar; derleme ve kontroller buradadır.
+- **Panel** her işten önce ve sonra müşterinin sürümünü kaydeder; her değişiklik geri alınabilir.
+- **Hesaplar** şifreli durur ve yalnızca yayın anında panel tarafından açılır; agent süreçleri bu dosyayı göremez.
+- **Portal** müşterinin formlarını, yorumlarını ve onayını toplar; panel bunları alınca portaldan siler.
+- Kurallar tek yerdedir: [`AGENTS.md`](AGENTS.md) ve [`rules/`](rules/). Agent komutları kuralları tekrar etmez,
+  yalnızca hangi dosyanın okunacağını söyler.
 
 ---
 
@@ -224,6 +333,25 @@ da panelden yapılır. Canlı sitede bu iki işlem müşterinin kısa adı yazı
 
 Agent doğrudan Claude Code'da da kullanılabilir: bu klasörde açıldığında `.mcp.json` ile `arke-web` araçlarını bulur ve
 [`AGENTS.md`](AGENTS.md)'deki akışı izler.
+
+---
+
+## Kalite kontrolleri
+
+`build_site` her derlemede aşağıdakileri çalıştırır ve sonucu müşterinin `quality-report.md` dosyasına yazar. Bir
+**hata** varsa site onaylanamaz; **uyarılar** raporda ve panelde görünür.
+
+| Grup | Kontroller |
+| --- | --- |
+| **Girdiler** | Ayar ve içerik şeması, dillerin içerikleri eşleşiyor mu, derleme sırasında girdiler değişmedi mi |
+| **Plan ve marka** | Tasarım planı operatör tarafından onaylı mı, marka kimliği önce tasarlanıp her yerde kullanılıyor mu, marka kartı (slogan, imza hareketi, tipografi), kütüphaneden gelen tasarımda eski müşterinin bilgisi kalmış mı |
+| **Güvenlik** | Dış script, yönlendirme, takip kodu ve gömülü içerik yok; linkler çalışıyor; formun alıcısı var |
+| **Erişilebilirlik** | Metin, düğme ve vurgu renklerinin kontrastı; `lang`, başlık, `alt` metni, yer tutucu kalmamış |
+| **Arama ve paylaşım** | Yapılandırılmış veri (`LocalBusiness`), site haritası, önizleme kartları, görsel boyutu ve ağırlığı |
+| **Pazar** | Fiyatlar müşterinin para biriminde, pazarın yasal sayfaları (KVKK Aydınlatma Metni, Impressum…), şirket bilgileri |
+| **Diller** | Her sayfa çevrilmiş, dil linkleri aynı sayfanın karşılığına gidiyor |
+| **Tasarım** | Impeccable tasarım denetimi, tema düğmesi ve telefon menüsü fabrika parçalarıyla, imza hareketi adım adım ve hareket azaltma ayarında da düzgün |
+| **Görsel kontrol** | Telefon ve masaüstü ekran görüntüleri, imza hareketinin kareleri: agent bunlara bakıp düzeltir |
 
 ---
 
@@ -340,6 +468,37 @@ Ayarlar → **Yedek** → *Şimdi yedekle* ile alınan dosya yenisinde `npm run 
 **Onaylar insandadır.** Agent `approvals.json`, `.factory/` ve `quality-report.md` dosyalarına yazamaz, panele
 erişemez. Panelde onay terminaldeki tek kullanımlık kodla verilir. Onaylar içeriğin ve derlenmiş çıktının parmak izine
 bağlıdır; onaylanandan farklı bir `dist/` yayınlanamaz.
+
+| Agent **yapabilir** | Agent **yapamaz** |
+| --- | --- |
+| Müşterinin bilgilerini, metinlerini ve görsellerini `arke-web` araçlarıyla kaydetmek | Kabuk komutu çalıştırmak, dosyaları doğrudan düzenlemek |
+| Web'de araştırma yapıp kaynaklarıyla not almak | Onay vermek, `approvals.json`, `.factory/`, `quality-report.md` dosyalarına yazmak |
+| Tasarım planını kaydetmek, plan onaylandıktan sonra siteyi yazmak | Plan onaylanmadan sayfa yazmak |
+| Siteyi derleyip kontrol raporunu ve ekran görüntülerini okumak | Yayın yapmak, müşteri oluşturmak |
+| Operatöre soru sormak, açık kalanları özette yazmak | Cloudflare hesabına, token'a ve gizli anahtarlara erişmek |
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor O as Operatör
+  participant P as Panel
+  participant A as Agent (sandbox)
+  participant F as Fabrika (MCP)
+  participant C as Cloudflare
+  O->>P: Siteyi hazırla
+  P->>A: İş (yalnızca arke-web araçları)
+  A->>F: Plan, marka, sayfalar
+  F-->>A: Derleme ve kontrol raporu
+  A-->>P: Özet ve açık sorular
+  Note over A,F: Agent onay veremez, yayın yapamaz,<br/>hesaplara erişemez
+  O->>P: Onayla + terminaldeki kod
+  P->>P: Onay içeriğin parmak izine bağlanır
+  O->>P: Önizlemeyi yayınla
+  P->>C: Önizleme Worker
+  O->>P: Müşteri onayından sonra canlı yayın + kod
+  P->>C: Canlı Worker
+  Note over P,C: İçerik değişirse onay düşer.<br/>Onaylanandan farklı dist/ yayınlanamaz
+```
 
 **Agent'ın kısıtları**
 
