@@ -13,6 +13,7 @@ dosyasında. Bir adım bittiğinde buradan "Tamamlananlar"a taşınır.
 | — | Globalleşme: profil, kişisel izlerin kaldırılması, kolay kurulum, panelden güncelleme, ekip eşitleme, ArkeLab görünümü | ✅ 1.27.1–1.29.0 |
 | — | Yeni ad: Arke Web Studio, teknik adlar dahil (temiz başlangıç) | ✅ 2.0.0 |
 | — | Yeni panel ekranları: Hızlı Düzenleme, Yeni Müşteri, Ayarlar | ✅ 2.2.0–2.2.2 |
+| — | Müşterinin yönetim ekranı Türkçe ve İngilizce | ✅ 2.4.0 |
 | 3b | Pazara göre kişisel veri profili (KVKK, GDPR): saklama süresi, otomatik silme, kişinin verisini bulma, dışa aktarma ve silme, AB veri bölgesi, bildirim metinleri | ✅ 2.3.0 |
 | 4 | **E-ticaret:** sepet, sipariş, ödeme paketleri, yasal sayfalar (mesafeli satış, iade, KVKK/GDPR), ödeme testi onayı, panelde müşteri anahtarları | sıradaki |
 | 5 | **Randevu:** hizmetler, personel, takvim, hatırlatma | planlandı |
@@ -26,7 +27,6 @@ dosyasında. Bir adım bittiğinde buradan "Tamamlananlar"a taşınır.
 - **Ödeme sağlayıcısı sırası:** ilk paket iyzico, PayTR ya da Stripe olacak; seçilmedi.
 - **Ekip eşitlemede müşteri seçimi:** şu an tüm yerel müşteriler gönderiliyor; müşteri bazında seçim gerekebilir.
 - **Kural metinlerinin hukuki kontrolü:** KVKK ve GDPR metin şablonları (`rules/privacy.md`) ve yurt dışı aktarım konusu satıştan önce bir avukata kontrol ettirilmeli (`docs/privacy.md`).
-- **İngilizce yönetim ekranı:** müşterinin yönetim ekranı şu an yalnızca Türkçe; İngiltere ve AB müşterileri için gerekli.
 
 ## Kararlar
 

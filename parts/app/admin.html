@@ -32,94 +32,100 @@ th{font-size:12px;color:var(--muted);font-weight:600}
 .login{max-width:360px;margin:12vh auto}
 .table-wrap{overflow-x:auto}.stack{display:grid;gap:12px}.narrow{max-width:280px}.gap-top{margin-top:12px}.between{justify-content:space-between}.check{display:flex;gap:6px;align-items:center;color:var(--ink)}.check input{width:auto}
 [hidden]{display:none!important}
+
+.lang-switch{font-size:13px;padding:4px 10px}.login-top{display:flex;justify-content:flex-end;margin-bottom:8px}
 </style>
 </head>
 <body>
 <section id="login" class="login card" hidden>
-  <h1>Yönetim ekranı</h1>
+  <div class="login-top"><button class="lang-switch" type="button" data-lang-switch></button></div>
+  <h1 data-t="adminTitle"></h1>
   <form id="login-form" class="stack">
-    <label>Parola<input id="password" type="password" autocomplete="current-password" required maxlength="200"></label>
-    <button class="primary" type="submit">Giriş yap</button>
+    <label><span data-t="password"></span><input id="password" type="password" autocomplete="current-password" required maxlength="200"></label>
+    <button class="primary" type="submit" data-t="signIn"></button>
     <p id="login-msg" class="err" role="status"></p>
   </form>
 </section>
 
 <div id="app" hidden>
   <header>
-    <h1>Yönetim</h1>
-    <nav id="tabs" aria-label="Bölümler"></nav>
-    <button id="logout" type="button">Çıkış</button>
+    <h1 data-t="admin"></h1>
+    <nav id="tabs" data-t-aria="sections"></nav>
+    <div class="row">
+      <button class="lang-switch" type="button" data-lang-switch></button>
+      <button id="logout" type="button" data-t="signOut"></button>
+    </div>
   </header>
   <main>
     <p id="msg" role="status"></p>
 
     <section id="view-catalog" hidden>
       <div class="card">
-        <h2>Kategoriler</h2>
+        <h2 data-t="categories"></h2>
         <form id="cat-form" class="row">
-          <input id="cat-name" placeholder="Yeni kategori adı" maxlength="80" required class="narrow">
-          <button type="submit">Ekle</button>
+          <input id="cat-name" data-t-placeholder="newCategory" maxlength="80" required class="narrow">
+          <button type="submit" data-t="add"></button>
         </form>
         <ul id="cat-list"></ul>
       </div>
       <div class="card">
-        <h2 id="item-title">Yeni kayıt</h2>
+        <h2 id="item-title"></h2>
         <form id="item-form">
           <div class="grid">
-            <label>Ad<input name="name" required maxlength="160"></label>
-            <label>Kategori<select name="categoryId"></select></label>
-            <label>Fiyat<input name="price" inputmode="decimal" placeholder="ör. 149,90"></label>
-            <label>Para birimi<select name="currency"><option>TRY</option><option>EUR</option><option>USD</option><option>GBP</option></select></label>
-            <label>Süre (dakika, hizmetler için)<input name="duration" inputmode="numeric"></label>
-            <label>Sıra<input name="position" inputmode="numeric" value="0"></label>
+            <label><span data-t="name"></span><input name="name" required maxlength="160"></label>
+            <label><span data-t="category"></span><select name="categoryId"></select></label>
+            <label><span data-t="price"></span><input name="price" inputmode="decimal" data-t-placeholder="pricePlaceholder"></label>
+            <label><span data-t="currency"></span><select name="currency"><option>TRY</option><option>GBP</option><option>EUR</option><option>USD</option></select></label>
+            <label><span data-t="duration"></span><input name="duration" inputmode="numeric"></label>
+            <label><span data-t="position"></span><input name="position" inputmode="numeric" value="0"></label>
           </div>
-          <label class="gap-top">Açıklama<textarea name="description" rows="3" maxlength="2000"></textarea></label>
+          <label class="gap-top"><span data-t="description"></span><textarea name="description" rows="3" maxlength="2000"></textarea></label>
           <div class="row gap-top">
-            <label class="check"><input type="checkbox" name="active" checked> Sitede göster</label>
-            <label class="narrow">Görsel (JPG, PNG, WebP; en fazla 5 MB)<input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif"></label>
+            <label class="check"><input type="checkbox" name="active" checked> <span data-t="showOnSite"></span></label>
+            <label class="narrow"><span data-t="imageHint"></span><input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif"></label>
             <img id="item-image" class="thumb" alt="" hidden>
           </div>
           <div class="row gap-top">
-            <button class="primary" type="submit">Kaydet</button>
-            <button id="item-cancel" type="button" hidden>Vazgeç</button>
+            <button class="primary" type="submit" data-t="save"></button>
+            <button id="item-cancel" type="button" hidden data-t="cancel"></button>
           </div>
         </form>
       </div>
       <div class="card table-wrap">
-        <h2>Kayıtlar</h2>
-        <table><thead><tr><th></th><th>Ad</th><th>Kategori</th><th>Fiyat</th><th>Durum</th><th></th></tr></thead><tbody id="items"></tbody></table>
+        <h2 data-t="records"></h2>
+        <table><thead><tr><th></th><th data-t="name"></th><th data-t="category"></th><th data-t="price"></th><th data-t="status"></th><th></th></tr></thead><tbody id="items"></tbody></table>
       </div>
     </section>
 
     <section id="view-inbox" hidden>
       <div class="card">
         <div class="row between">
-          <h2>Gelen kutusu</h2>
-          <select id="inbox-filter" class="narrow" aria-label="Durum">
-            <option value="">Arşiv dışındakiler</option><option value="new">Yeni</option><option value="read">Okundu</option><option value="done">Tamamlandı</option><option value="archived">Arşiv</option>
+          <h2 data-t="inbox"></h2>
+          <select id="inbox-filter" class="narrow" data-t-aria="status">
+            <option value="" data-t="notArchived"></option><option value="new" data-t="st_new"></option><option value="read" data-t="st_read"></option><option value="done" data-t="st_done"></option><option value="archived" data-t="st_archived"></option>
           </select>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Kimden</th><th>İleti</th><th>Durum</th><th></th></tr></thead><tbody id="inbox"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th data-t="date"></th><th data-t="from"></th><th data-t="message"></th><th data-t="status"></th><th></th></tr></thead><tbody id="inbox"></tbody></table></div>
       </div>
     </section>
 
     <section id="view-privacy" hidden>
       <div class="card stack">
-        <h2>Kişisel veri talepleri</h2>
+        <h2 data-t="privacyTitle"></h2>
         <p id="privacy-info" class="muted"></p>
         <form id="privacy-form" class="row">
-          <input id="privacy-q" class="narrow" placeholder="E-posta, telefon ya da ad" minlength="3" maxlength="160" required aria-label="Aranacak kişi">
-          <button type="submit">Bul</button>
+          <input id="privacy-q" class="narrow" data-t-placeholder="privacyPlaceholder" minlength="3" maxlength="160" required data-t-aria="privacySearch">
+          <button type="submit" data-t="find"></button>
         </form>
-        <div class="table-wrap"><table><thead><tr><th><input type="checkbox" id="privacy-all" aria-label="Hepsini seç"></th><th>Tarih</th><th>Kimden</th><th>İçerik</th></tr></thead><tbody id="privacy-results"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th><input type="checkbox" id="privacy-all" data-t-aria="selectAll"></th><th data-t="date"></th><th data-t="from"></th><th data-t="content"></th></tr></thead><tbody id="privacy-results"></tbody></table></div>
         <div class="row">
-          <button id="privacy-export" type="button" disabled>Bulunanları indir (JSON)</button>
-          <button id="privacy-erase" type="button" class="danger" disabled>Seçilenleri sil</button>
+          <button id="privacy-export" type="button" disabled data-t="exportFound"></button>
+          <button id="privacy-erase" type="button" class="danger" disabled data-t="eraseSelected"></button>
         </div>
       </div>
       <div class="card">
-        <h2>Son işlemler</h2>
-        <p class="muted">Kimin verisi olduğu kaydedilmez; yalnızca işlem, tarih ve kayıt sayısı tutulur.</p>
+        <h2 data-t="recentActions"></h2>
+        <p class="muted" data-t="logNote"></p>
         <ul id="privacy-log"></ul>
       </div>
     </section>
@@ -129,12 +135,85 @@ th{font-size:12px;color:var(--muted);font-weight:600}
 <script nonce="{{NONCE}}">
 (() => {
   const $ = (id) => document.getElementById(id);
-  const SECTIONS = { catalog: "Katalog", notifications: "Gelen kutusu", privacy: "Kişisel veri" };
+  // ------------------------------------------------ language: Turkish and English. The site's market decides where it
+  // starts (the session says); the switch in the header changes it and is remembered in this browser.
+  const DICT = {
+    tr: {
+      adminTitle: "Yönetim ekranı", admin: "Yönetim", password: "Parola", signIn: "Giriş yap", signOut: "Çıkış", sections: "Bölümler",
+      catalog: "Katalog", inbox: "Gelen kutusu", privacy: "Kişisel veri",
+      categories: "Kategoriler", newCategory: "Yeni kategori adı", add: "Ekle", newRecord: "Yeni kayıt", editRecord: "Kaydı düzenle",
+      name: "Ad", category: "Kategori", price: "Fiyat", pricePlaceholder: "ör. 149,90", currency: "Para birimi", duration: "Süre (dakika, hizmetler için)",
+      position: "Sıra", description: "Açıklama", showOnSite: "Sitede göster", imageHint: "Görsel (JPG, PNG, WebP; en fazla 5 MB)", save: "Kaydet",
+      cancel: "Vazgeç", records: "Kayıtlar", status: "Durum", edit: "Düzenle", del: "Sil", noCategory: "— Kategorisiz —", onSite: "Sitede", hidden: "Gizli",
+      notArchived: "Arşiv dışındakiler", st_new: "Yeni", st_read: "Okundu", st_done: "Tamamlandı", st_archived: "Arşiv",
+      markRead: "Okundu", markDone: "Tamamlandı", archive: "Arşivle", date: "Tarih", from: "Kimden", message: "İleti", content: "İçerik", noRecords: "Kayıt yok.",
+      privacyTitle: "Kişisel veri talepleri", privacyPlaceholder: "E-posta, telefon ya da ad", privacySearch: "Aranacak kişi", find: "Bul", selectAll: "Hepsini seç",
+      exportFound: "Bulunanları indir (JSON)", eraseSelected: "Seçilenleri sil", recentActions: "Son işlemler",
+      logNote: "Kimin verisi olduğu kaydedilmez; yalnızca işlem, tarih ve kayıt sayısı tutulur.", noActions: "Henüz işlem yok.",
+      act_purge: "Otomatik silme", act_export: "Dışa aktarma", act_erase: "Talep üzerine silme",
+      notSetUp: "Yönetim ekranı henüz kurulmadı. Site yöneticinizle görüşün.", sessionNeeded: "Oturum gerekli.", httpError: "Hata {status}",
+      badPrice: "Fiyat geçersiz.", saved: "Kaydedildi. Sitede bir dakika içinde görünür.", categoryAdded: "Kategori eklendi.", deleted: "Silindi.",
+      confirmCategory: '"{name}" kategorisi silinsin mi? Kayıtlar silinmez.', confirmItem: '"{name}" silinsin mi?',
+      confirmMessage: "{name} kişisinin bu mesajı kalıcı olarak silinsin mi?",
+      privacyDeadline: "{law}: bir kişi verisini görmek, almak ya da sildirmek isterse en geç {days} gün içinde yanıtlamanız gerekir. ",
+      privacyInfo: "Formdan gelen mesajlar {keep} sonra otomatik silinir. Kişinin e-postasını, telefonunu ya da adını yazıp kayıtlarını bulun; isterse indirip gönderin, isterse silin.",
+      months: "{n} ay", days: "{n} gün", logLine: "{at}: {action}, {count} kayıt", foundCount: "{n} kayıt bulundu.", noneFound: "Bu kişiye ait kayıt bulunamadı.",
+      selectRow: "{name} kaydını seç", exported: "Dosya indirildi. Kişiye güvenli bir yoldan gönderin.",
+      confirmErase: "{n} kayıt kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam edilsin mi?", erased: "{n} kayıt silindi.",
+      exportFile: "kisisel-veri", other: "English",
+    },
+    en: {
+      adminTitle: "Admin screen", admin: "Admin", password: "Password", signIn: "Sign in", signOut: "Sign out", sections: "Sections",
+      catalog: "Catalogue", inbox: "Inbox", privacy: "Personal data",
+      categories: "Categories", newCategory: "New category name", add: "Add", newRecord: "New item", editRecord: "Edit item",
+      name: "Name", category: "Category", price: "Price", pricePlaceholder: "e.g. 149.90", currency: "Currency", duration: "Duration (minutes, for services)",
+      position: "Order", description: "Description", showOnSite: "Show on the site", imageHint: "Image (JPG, PNG, WebP; up to 5 MB)", save: "Save",
+      cancel: "Cancel", records: "Items", status: "Status", edit: "Edit", del: "Delete", noCategory: "— No category —", onSite: "On the site", hidden: "Hidden",
+      notArchived: "All but archived", st_new: "New", st_read: "Read", st_done: "Done", st_archived: "Archived",
+      markRead: "Mark read", markDone: "Mark done", archive: "Archive", date: "Date", from: "From", message: "Message", content: "Content", noRecords: "Nothing here.",
+      privacyTitle: "Personal data requests", privacyPlaceholder: "Email, phone or name", privacySearch: "Person to find", find: "Find", selectAll: "Select all",
+      exportFound: "Download found records (JSON)", eraseSelected: "Delete selected", recentActions: "Recent actions",
+      logNote: "Whose data it was is never recorded; only the action, the date and how many records.", noActions: "No actions yet.",
+      act_purge: "Automatic deletion", act_export: "Export", act_erase: "Deletion on request",
+      notSetUp: "The admin screen is not set up yet. Please contact your site manager.", sessionNeeded: "Please sign in.", httpError: "Error {status}",
+      badPrice: "Invalid price.", saved: "Saved. It appears on the site within a minute.", categoryAdded: "Category added.", deleted: "Deleted.",
+      confirmCategory: 'Delete the category "{name}"? Its items are kept.', confirmItem: 'Delete "{name}"?',
+      confirmMessage: "Permanently delete this message from {name}?",
+      privacyDeadline: "{law}: when a person asks to see, receive or delete their data, you must answer within {days} days. ",
+      privacyInfo: "Form messages are deleted automatically after {keep}. Type the person's email, phone or name to find their records; download and send them, or delete them.",
+      months: "{n} months", days: "{n} days", logLine: "{at}: {action}, {count} records", foundCount: "{n} records found.", noneFound: "No records found for this person.",
+      selectRow: "Select the record of {name}", exported: "File downloaded. Send it to the person by a secure route.",
+      confirmErase: "{n} records will be deleted permanently. This cannot be undone. Continue?", erased: "{n} records deleted.",
+      exportFile: "personal-data", other: "Türkçe",
+    },
+  };
+  const LANG_KEY = "arke-admin-lang";
+  let lang = "tr";
+  let locale = "tr-TR";
+  const t = (key, vars = {}) => String(DICT[lang][key] ?? DICT.tr[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
+  function remembered() { try { return localStorage.getItem(LANG_KEY); } catch { return null; } }
+  function applyStatic() {
+    document.documentElement.lang = lang;
+    document.title = t("admin");
+    for (const n of document.querySelectorAll("[data-t]")) n.textContent = t(n.dataset.t);
+    for (const n of document.querySelectorAll("[data-t-placeholder]")) n.setAttribute("placeholder", t(n.dataset.tPlaceholder));
+    for (const n of document.querySelectorAll("[data-t-aria]")) n.setAttribute("aria-label", t(n.dataset.tAria));
+    for (const n of document.querySelectorAll("[data-lang-switch]")) { n.textContent = t("other"); n.setAttribute("lang", lang === "tr" ? "en" : "tr"); }
+  }
+  for (const n of document.querySelectorAll("[data-lang-switch]")) n.addEventListener("click", () => {
+    lang = lang === "tr" ? "en" : "tr";
+    try { localStorage.setItem(LANG_KEY, lang); } catch { /* private window */ }
+    applyStatic();
+    if (current) show(current);
+    $("item-title").textContent = t(state.editing ? "editRecord" : "newRecord");
+  });
+
+  const SECTIONS = ["catalog", "notifications", "privacy"];
+  const LABEL = { catalog: "catalog", notifications: "inbox", privacy: "privacy" };
   const VIEW = { catalog: "view-catalog", notifications: "view-inbox", privacy: "view-privacy" };
   const LAW = { KVKK: "KVKK", UK_GDPR: "UK GDPR", GDPR: "GDPR" };
-  const ACTION = { purge: "Otomatik silme", export: "Dışa aktarma", erase: "Talep üzerine silme" };
-  const STATUS = { new: "Yeni", read: "Okundu", done: "Tamamlandı", archived: "Arşiv" };
   let state = { categories: [], items: [], editing: null, imageKey: null };
+  let current = null;
 
   function el(tag, attrs = {}, ...kids) {
     const n = document.createElement(tag);
@@ -148,32 +227,38 @@ th{font-size:12px;color:var(--muted);font-weight:600}
   }
 
   async function api(method, url, body, raw) {
-    const opts = { method, headers: {}, credentials: "same-origin" };
+    const opts = { method, headers: { "X-Arke-Lang": lang }, credentials: "same-origin" };
     if (raw) { opts.body = raw; opts.headers["Content-Type"] = raw.type; }
     else if (body !== undefined) { opts.body = JSON.stringify(body); opts.headers["Content-Type"] = "application/json"; }
     const r = await fetch(url, opts);
     const data = await r.json().catch(() => ({}));
-    if (r.status === 401 && url !== "/api/admin/login") { showLogin(); throw new Error(data.error || "Oturum gerekli."); }
-    if (!r.ok) throw new Error(data.error || `Hata ${r.status}`);
+    if (r.status === 401 && url !== "/api/admin/login") { showLogin(); throw new Error(data.error || t("sessionNeeded")); }
+    if (!r.ok) throw new Error(data.error || t("httpError", { status: r.status }));
     return data;
   }
 
   function say(text, bad) { const m = $("msg"); m.textContent = text; m.className = bad ? "err" : "ok"; }
   const guard = (fn) => async (...a) => { try { await fn(...a); } catch (e) { say(e.message, true); } };
+  const fmtDate = (iso, opts = { dateStyle: "short", timeStyle: "short" }) => new Intl.DateTimeFormat(locale, opts).format(new Date(iso));
 
   function showLogin() { $("app").hidden = true; $("login").hidden = false; $("password").focus(); }
 
   async function start() {
     const s = await api("GET", "/api/admin/session");
-    if (!s.configured) { $("login").hidden = false; $("login-form").hidden = true; $("login").append(el("p", { class: "muted", text: "Yönetim ekranı henüz kurulmadı. Site yöneticinizle görüşün." })); return; }
+    locale = s.locale || locale;
+    lang = remembered() === "en" || remembered() === "tr" ? remembered() : s.lang === "en" ? "en" : "tr";
+    applyStatic();
+    edit(null);
+    if (!s.configured) { $("login").hidden = false; $("login-form").hidden = true; $("login").append(el("p", { class: "muted", "data-t": "notSetUp", text: t("notSetUp") })); return; }
     if (!s.signedIn) return showLogin();
     $("login").hidden = true; $("app").hidden = false;
-    const parts = [...s.parts, ...(s.personal ? ["privacy"] : [])].filter((p) => SECTIONS[p]);
-    $("tabs").replaceChildren(...parts.map((p) => el("button", { type: "button", "data-part": p, onclick: () => show(p), text: SECTIONS[p] })));
+    const parts = [...s.parts, ...(s.personal ? ["privacy"] : [])].filter((p) => SECTIONS.includes(p));
+    $("tabs").replaceChildren(...parts.map((p) => el("button", { type: "button", "data-part": p, "data-t": LABEL[p], onclick: () => show(p), text: t(LABEL[p]) })));
     if (parts.length) show(parts[0]);
   }
 
   function show(part) {
+    current = part;
     for (const b of $("tabs").children) {
       if (b.dataset.part === part) b.setAttribute("aria-current", "page");
       else b.removeAttribute("aria-current");
@@ -186,12 +271,14 @@ th{font-size:12px;color:var(--muted);font-weight:600}
   }
 
   // ------------------------------------------------ catalogue
-  const money = (minor, cur) => minor == null ? "—" : new Intl.NumberFormat("tr-TR", { style: "currency", currency: cur }).format(minor / 100);
+  const money = (minor, cur) => minor == null ? "—" : new Intl.NumberFormat(locale, { style: "currency", currency: cur }).format(minor / 100);
   function toMinor(v) {
-    const t = String(v || "").trim().replace(/\s/g, "");
-    if (!t) return null;
-    const n = Number(t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t);
-    if (!Number.isFinite(n) || n < 0) throw new Error("Fiyat geçersiz.");
+    const s = String(v || "").trim().replace(/\s/g, "");
+    if (!s) return null;
+    // "1.249,90" and "1,249.90" both work: the last separator is the decimal one.
+    const last = Math.max(s.lastIndexOf(","), s.lastIndexOf("."));
+    const n = Number(last < 0 ? s : `${s.slice(0, last).replace(/[.,]/g, "")}.${s.slice(last + 1)}`);
+    if (!Number.isFinite(n) || n < 0) throw new Error(t("badPrice"));
     return Math.round(n * 100);
   }
 
@@ -199,21 +286,21 @@ th{font-size:12px;color:var(--muted);font-weight:600}
     const d = await api("GET", "/api/admin/catalog");
     state.categories = d.categories; state.items = d.items;
     const sel = $("item-form").elements.categoryId;
-    const current = sel.value;
-    sel.replaceChildren(el("option", { value: "", text: "— Kategorisiz —" }), ...d.categories.map((c) => el("option", { value: String(c.id), text: c.name })));
-    sel.value = current;
+    const chosen = sel.value;
+    sel.replaceChildren(el("option", { value: "", text: t("noCategory") }), ...d.categories.map((c) => el("option", { value: String(c.id), text: c.name })));
+    sel.value = chosen;
     $("cat-list").replaceChildren(...d.categories.map((c) => el("li", {}, el("span", { text: `${c.name} ` }),
-      el("button", { type: "button", class: "danger", onclick: guard(async () => { if (!confirmText(`"${c.name}" kategorisi silinsin mi? Kayıtlar silinmez.`)) return; await api("DELETE", `/api/admin/catalog/categories/${c.id}`); await loadCatalog(); }) , text: "Sil" }))));
+      el("button", { type: "button", class: "danger", onclick: guard(async () => { if (!confirmText(t("confirmCategory", { name: c.name }))) return; await api("DELETE", `/api/admin/catalog/categories/${c.id}`); await loadCatalog(); }), text: t("del") }))));
     const catName = (id) => d.categories.find((c) => c.id === id)?.name ?? "—";
     $("items").replaceChildren(...d.items.map((i) => el("tr", {},
       el("td", {}, i.image ? el("img", { class: "thumb", src: i.image, alt: "" }) : null),
       el("td", {}, el("strong", { text: i.name }), el("div", { class: "muted", text: i.description.slice(0, 90) })),
       el("td", { text: catName(i.categoryId) }),
       el("td", { text: money(i.price, i.currency) }),
-      el("td", {}, el("span", { class: "badge", text: i.active ? "Sitede" : "Gizli" })),
+      el("td", {}, el("span", { class: "badge", text: i.active ? t("onSite") : t("hidden") })),
       el("td", {}, el("div", { class: "row" },
-        el("button", { type: "button", onclick: () => edit(i), text: "Düzenle" }),
-        el("button", { type: "button", class: "danger", onclick: guard(async () => { if (!confirmText(`"${i.name}" silinsin mi?`)) return; await api("DELETE", `/api/admin/catalog/items/${i.id}`); await loadCatalog(); say("Silindi."); }), text: "Sil" }))))));
+        el("button", { type: "button", onclick: () => edit(i), text: t("edit") }),
+        el("button", { type: "button", class: "danger", onclick: guard(async () => { if (!confirmText(t("confirmItem", { name: i.name }))) return; await api("DELETE", `/api/admin/catalog/items/${i.id}`); await loadCatalog(); say(t("deleted")); }), text: t("del") }))))));
   }
 
   // A plain confirm: the admin screen is the client's own tool and works without extra libraries.
@@ -227,12 +314,12 @@ th{font-size:12px;color:var(--muted);font-weight:600}
     if (item) {
       f.elements.name.value = item.name; f.elements.description.value = item.description;
       f.elements.categoryId.value = item.categoryId ? String(item.categoryId) : "";
-      f.elements.price.value = item.price == null ? "" : String(item.price / 100).replace(".", ",");
+      f.elements.price.value = item.price == null ? "" : new Intl.NumberFormat(locale, { minimumFractionDigits: 2, useGrouping: false }).format(item.price / 100);
       f.elements.currency.value = item.currency; f.elements.duration.value = item.duration ?? "";
       f.elements.position.value = item.position; f.elements.active.checked = item.active;
     }
     $("item-image").hidden = !item?.image; if (item?.image) $("item-image").src = item.image;
-    $("item-title").textContent = item ? "Kaydı düzenle" : "Yeni kayıt";
+    $("item-title").textContent = t(item ? "editRecord" : "newRecord");
     $("item-cancel").hidden = !item;
     if (item) f.elements.name.focus();
   }
@@ -252,33 +339,32 @@ th{font-size:12px;color:var(--muted);font-weight:600}
       };
       if (state.editing) await api("PUT", `/api/admin/catalog/items/${state.editing}`, body);
       else await api("POST", "/api/admin/catalog/items", body);
-      say("Kaydedildi. Sitede bir dakika içinde görünür.");
+      say(t("saved"));
       edit(null); await loadCatalog();
     } finally { btn.disabled = false; }
   }));
   $("cat-form").addEventListener("submit", guard(async (e) => {
     e.preventDefault();
     await api("POST", "/api/admin/catalog/categories", { name: $("cat-name").value });
-    $("cat-name").value = ""; await loadCatalog(); say("Kategori eklendi.");
+    $("cat-name").value = ""; await loadCatalog(); say(t("categoryAdded"));
   }));
 
   // ------------------------------------------------ inbox
   async function loadInbox() {
     const status = $("inbox-filter").value;
     const d = await api("GET", `/api/admin/inbox${status ? `?status=${status}` : ""}`);
-    const fmt = new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" });
     const setStatus = (id, s) => guard(async () => { await api("PUT", `/api/admin/inbox/${id}`, { status: s }); await loadInbox(); });
     $("inbox").replaceChildren(...(d.entries.length ? d.entries.map((m) => el("tr", {},
-      el("td", { text: fmt.format(new Date(m.created_at)) }),
+      el("td", { text: fmtDate(m.created_at) }),
       el("td", {}, el("strong", { text: m.name }), el("div", { class: "muted", text: m.contact })),
       el("td", {}, m.data?.subject ? el("div", { text: m.data.subject }) : null, el("div", { text: m.message })),
-      el("td", {}, el("span", { class: `badge ${m.status}`, text: STATUS[m.status] ?? m.status })),
+      el("td", {}, el("span", { class: `badge ${m.status}`, text: t(`st_${m.status}`) })),
       el("td", {}, el("div", { class: "row" },
-        m.status === "new" ? el("button", { type: "button", onclick: setStatus(m.id, "read"), text: "Okundu" }) : null,
-        m.status !== "done" ? el("button", { type: "button", onclick: setStatus(m.id, "done"), text: "Tamamlandı" }) : null,
-        m.status !== "archived" ? el("button", { type: "button", onclick: setStatus(m.id, "archived"), text: "Arşivle" }) : null,
-        el("button", { type: "button", class: "danger", onclick: guard(async () => { if (!confirmText(`${m.name} kişisinin bu mesajı kalıcı olarak silinsin mi?`)) return; await api("DELETE", `/api/admin/inbox/${m.id}`); await loadInbox(); say("Silindi."); }), text: "Sil" })))))
-      : [el("tr", {}, el("td", { colspan: "5", class: "muted", text: "Kayıt yok." }))]));
+        m.status === "new" ? el("button", { type: "button", onclick: setStatus(m.id, "read"), text: t("markRead") }) : null,
+        m.status !== "done" ? el("button", { type: "button", onclick: setStatus(m.id, "done"), text: t("markDone") }) : null,
+        m.status !== "archived" ? el("button", { type: "button", onclick: setStatus(m.id, "archived"), text: t("archive") }) : null,
+        el("button", { type: "button", class: "danger", onclick: guard(async () => { if (!confirmText(t("confirmMessage", { name: m.name }))) return; await api("DELETE", `/api/admin/inbox/${m.id}`); await loadInbox(); say(t("deleted")); }), text: t("del") })))))
+      : [el("tr", {}, el("td", { colspan: "5", class: "muted", text: t("noRecords") }))]));
   }
   $("inbox-filter").addEventListener("change", guard(loadInbox));
 
@@ -287,43 +373,42 @@ th{font-size:12px;color:var(--muted);font-weight:600}
   async function loadPrivacy() {
     const d = await api("GET", "/api/admin/privacy");
     const days = d.retentionDays.messages;
-    const keep = days % 30 === 0 || days % 365 === 0 ? `${Math.round(days / 30.4)} ay` : `${days} gün`;
-    $("privacy-info").textContent = `${LAW[d.law] ? `${LAW[d.law]}: bir kişi verisini görmek, almak ya da sildirmek isterse en geç ${d.requestDays} gün içinde yanıtlamanız gerekir. ` : ""}Formdan gelen mesajlar ${keep} sonra otomatik silinir. Kişinin e-postasını, telefonunu ya da adını yazıp kayıtlarını bulun; isterse indirip gönderin, isterse silin.`;
-    const fmt = new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", timeStyle: "short" });
-    $("privacy-log").replaceChildren(...(d.log.length ? d.log.map((l) => el("li", { text: `${fmt.format(new Date(l.at))}: ${ACTION[l.action] ?? l.action}, ${l.count} kayıt` })) : [el("li", { class: "muted", text: "Henüz işlem yok." })]));
+    const keep = days % 30 === 0 || days % 365 === 0 ? t("months", { n: Math.round(days / 30.4) }) : t("days", { n: days });
+    $("privacy-info").textContent = `${LAW[d.law] ? t("privacyDeadline", { law: LAW[d.law], days: d.requestDays }) : ""}${t("privacyInfo", { keep })}`;
+    $("privacy-log").replaceChildren(...(d.log.length ? d.log.map((l) => el("li", { text: t("logLine", { at: fmtDate(l.at), action: t(`act_${l.action}`), count: l.count }) })) : [el("li", { class: "muted", text: t("noActions") })]));
+    if (found.length) drawFound();
   }
   const selected = () => [...$("privacy-results").querySelectorAll("input:checked")].map((b) => found[Number(b.value)]);
   const syncButtons = () => { $("privacy-export").disabled = !found.length; $("privacy-erase").disabled = !selected().length; };
   function drawFound() {
-    const fmt = new Intl.DateTimeFormat("tr-TR", { dateStyle: "short" });
     $("privacy-all").checked = false;
     $("privacy-results").replaceChildren(...(found.length ? found.map((r, i) => el("tr", {},
-      el("td", {}, el("input", { type: "checkbox", value: String(i), "aria-label": `${r.name} kaydını seç`, onchange: syncButtons })),
-      el("td", { text: fmt.format(new Date(r.created_at)) }),
+      el("td", {}, el("input", { type: "checkbox", value: String(i), "aria-label": t("selectRow", { name: r.name }), onchange: syncButtons })),
+      el("td", { text: fmtDate(r.created_at, { dateStyle: "short" }) }),
       el("td", {}, el("strong", { text: r.name }), el("div", { class: "muted", text: r.contact })),
       el("td", { text: r.summary || "—" })))
-      : [el("tr", {}, el("td", { colspan: "4", class: "muted", text: "Bu kişiye ait kayıt bulunamadı." }))]));
+      : [el("tr", {}, el("td", { colspan: "4", class: "muted", text: t("noneFound") }))]));
     syncButtons();
   }
   $("privacy-form").addEventListener("submit", guard(async (e) => {
     e.preventDefault();
     found = (await api("GET", `/api/admin/privacy/find?q=${encodeURIComponent($("privacy-q").value)}`)).results;
-    drawFound(); say(`${found.length} kayıt bulundu.`);
+    drawFound(); say(t("foundCount", { n: found.length }));
   }));
   $("privacy-all").addEventListener("change", () => { for (const b of $("privacy-results").querySelectorAll("input")) b.checked = $("privacy-all").checked; syncButtons(); });
   $("privacy-export").addEventListener("click", guard(async () => {
     const d = await api("GET", `/api/admin/privacy/export?q=${encodeURIComponent($("privacy-q").value)}`);
     const url = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: "application/json" }));
-    const a = el("a", { href: url, download: `kisisel-veri-${new Date().toISOString().slice(0, 10)}.json` });
+    const a = el("a", { href: url, download: `${t("exportFile")}-${new Date().toISOString().slice(0, 10)}.json` });
     document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    say("Dosya indirildi. Kişiye güvenli bir yoldan gönderin."); await loadPrivacy();
+    say(t("exported")); await loadPrivacy();
   }));
   $("privacy-erase").addEventListener("click", guard(async () => {
     const items = selected();
-    if (!confirmText(`${items.length} kayıt kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam edilsin mi?`)) return;
+    if (!confirmText(t("confirmErase", { n: items.length }))) return;
     const r = await api("POST", "/api/admin/privacy/erase", { items: items.map((i) => ({ part: i.part, id: i.id })) });
     found = found.filter((f) => !items.includes(f)); drawFound();
-    say(`${r.erased} kayıt silindi.`); await loadPrivacy();
+    say(t("erased", { n: r.erased })); await loadPrivacy();
   }));
 
   // ------------------------------------------------ sign-in
@@ -338,6 +423,8 @@ th{font-size:12px;color:var(--muted);font-weight:600}
   });
   $("logout").addEventListener("click", guard(async () => { await api("POST", "/api/admin/logout"); showLogin(); }));
 
+  lang = remembered() === "en" ? "en" : "tr";
+  applyStatic();
   start().catch((e) => { $("login").hidden = false; $("login-msg").textContent = e.message; });
 })();
 </script>

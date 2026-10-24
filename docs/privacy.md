@@ -24,7 +24,6 @@
 - **KVKK yurt dışı aktarım (m.9):** Cloudflare ve form servisleri verileri Türkiye dışında saklar. Aydınlatma metni bunu
   söylüyor; aktarım için gereken güvence (standart sözleşme vb.) işletme ve barındırma sağlayıcısı arasındadır.
 - Şablon metinler (`rules/privacy.md`) satıştan önce bir kez kontrol edilmeli.
-- Yönetim ekranı şu an yalnızca Türkçe; İngiltere ve AB müşterileri için İngilizce yönetim ekranı gerekecek.
 
 ## Kaynaklar
 

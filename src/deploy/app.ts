@@ -5,6 +5,7 @@ import { FactoryError } from "../lib/errors.js";
 import type { RunOptions, RunResult } from "../lib/exec.js";
 import { readJsonIfExists, writeJson } from "../lib/files.js";
 import type { ClientPaths } from "../lib/paths.js";
+import { type AdminLang, adminLocale } from "../lib/admin-locale.js";
 import { type Jurisdiction, type PrivacyProfile, privacyProfile } from "../lib/privacy.js";
 import { PRODUCT_IDS, PRODUCTS, type ProductId, type ProductModule } from "../products/registry.js";
 
@@ -61,6 +62,8 @@ export interface AppPlan {
   readonly optionalSecrets: readonly string[];
   /** The client's personal-data profile (by market): data region and retention (src/lib/privacy.ts). */
   readonly privacy: PrivacyProfile;
+  /** Where the client's admin screen starts: its language and its date and money formats. */
+  readonly admin: { readonly lang: AdminLang; readonly locale: string };
 }
 
 /** What an app needs, from the parts its kind is built from, the secrets its parts asked for and the client's market. */
@@ -68,6 +71,7 @@ export function appPlanFor(module: ProductModule, record: ProductRecord, country
   const parts = new Set(module.parts);
   return {
     privacy: privacyProfile(country),
+    admin: adminLocale(country),
     database: ["catalog", "cart", "calendar", "admin"].some((p) => parts.has(p as never)),
     media: ["catalog", "menu-qr"].some((p) => parts.has(p as never)),
     secrets: [...new Set(record.secrets ?? [])].sort(),
@@ -134,6 +138,8 @@ export function appWranglerConfig(opts: {
       ? {
           vars: {
             ARKE_PRIVACY_LAW: opts.plan.privacy.law,
+            ARKE_ADMIN_LANG: (opts.plan.admin ?? adminLocale(undefined)).lang,
+            ARKE_LOCALE: (opts.plan.admin ?? adminLocale(undefined)).locale,
             ARKE_RETENTION_MESSAGES_DAYS: String(opts.plan.privacy.retentionDays.messages),
             ARKE_RETENTION_BOOKINGS_DAYS: String(opts.plan.privacy.retentionDays.bookings),
             ARKE_RETENTION_ORDERS_DAYS: String(opts.plan.privacy.retentionDays.orders),

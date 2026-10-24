@@ -2,6 +2,14 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.4.0: Müşterinin yönetim ekranı Türkçe ve İngilizce
+
+- **İki dil:** uygulama sitelerinde müşterinin yönetim ekranı (`/admin`) Türkiye'deki müşterilerde Türkçe, diğer ülkelerde İngilizce açılıyor. Sağ üstteki düğmeyle diğer dile geçiliyor; seçim o tarayıcıda hatırlanıyor. Giriş ekranında da düğme var.
+- **Sunucu mesajları da çevriliyor:** "Parola hatalı", "Oturum süresi doldu" gibi mesajlar ekranın diliyle geliyor.
+- **Tarih ve para biçimi müşterinin ülkesine göre:** İngiltere'de 24/10/2026 ve £1,249.90; Türkiye'de 24.10.2026 ve ₺1.249,90. Fiyat kutusu iki yazımı da kabul ediyor.
+- Panelde Yönetim Ekranı kartı ekranın hangi dilde açılacağını gösteriyor.
+- Tarayıcıda yönetim ekranı testi: iki dil, geçiş, hatırlama, sunucu mesajları, tarih biçimi.
+
 ## 2.3.1: Tıklama testi ve bulduğu hatalar
 
 **Düzeltilen hatalar**

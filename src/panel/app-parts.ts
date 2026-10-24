@@ -1,6 +1,7 @@
 import { readProductRecord } from "../deploy/app.js";
 import { clientSecretNames, saveClientSecret } from "../lib/accounts.js";
 import { readDraftConfig } from "../lib/client.js";
+import { adminLocale } from "../lib/admin-locale.js";
 import { privacyProfile } from "../lib/privacy.js";
 import type { ClientPaths } from "../lib/paths.js";
 import {
@@ -53,5 +54,6 @@ export function appPartsView(paths: ClientPaths, slug: string) {
     notifyWebhook: set.has(NOTIFY_WEBHOOK_SECRET),
     missingSecrets: missing,
     privacy: privacyProfile((readDraftConfig(paths).business as { country?: string } | undefined)?.country),
+    admin: adminLocale((readDraftConfig(paths).business as { country?: string } | undefined)?.country),
   };
 }

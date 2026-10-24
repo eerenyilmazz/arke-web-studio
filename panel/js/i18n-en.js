@@ -3,6 +3,10 @@
 // where {} stands in the English. Missing entries simply stay Turkish. Generated once, then edited by hand.
 export const EN = {
   exact: {
+    "Yönetim ekranı İngilizce açılır; müşteri ekrandaki düğmeyle Türkçe ve İngilizce arasında geçebilir.":
+      "The admin screen opens in English; the client can switch between Turkish and English with the button on the screen.",
+    "Yönetim ekranı Türkçe açılır; müşteri ekrandaki düğmeyle Türkçe ve İngilizce arasında geçebilir.":
+      "The admin screen opens in Turkish; the client can switch between Turkish and English with the button on the screen.",
     "Önce bir yedek klasörü kaydedin.": "Save a backup folder first.",
     "Agent size bu adla hitap eder. Panel dili Ayarlar → Genel'de.": "The agent addresses you by this name. The panel language is in Settings → General.",
     "https://… ya da git@…:… biçiminde bir depo adresi": "A repository address like https://… or git@…:…",

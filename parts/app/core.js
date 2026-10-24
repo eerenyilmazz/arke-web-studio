@@ -11,6 +11,57 @@ const JSON_LIMIT_BYTES = 64 * 1024;
 
 const encoder = new TextEncoder();
 
+// ---------------------------------------------------------------- messages (Turkish source, English for the admin screen)
+
+/**
+ * Error messages are written in Turkish; the admin screen asks for English with the X-Arke-Lang header (its own
+ * language switch), and gets this wording. Exact texts first, then texts with a variable part.
+ */
+const EN_EXACT = {
+  "Gönderilen veri çok büyük.": "The data sent is too large.",
+  "Geçersiz veri.": "Invalid data.",
+  "Çok fazla deneme. Lütfen biraz sonra tekrar deneyin.": "Too many attempts. Please try again in a moment.",
+  "Yönetim ekranı henüz kurulmadı.": "The admin screen is not set up yet.",
+  "Çok fazla hatalı deneme. 15 dakika sonra tekrar deneyin.": "Too many wrong attempts. Try again in 15 minutes.",
+  "Parola hatalı.": "Wrong password.",
+  "Arama çok uzun.": "The search is too long.",
+  "Silinecek kayıtları seçin.": "Choose the records to delete.",
+  "İzin verilmeyen istek.": "Request not allowed.",
+  "Veritabanı bağlı değil.": "The database is not connected.",
+  "Oturum süresi doldu. Lütfen yeniden giriş yapın.": "Your session has expired. Please sign in again.",
+  "İstek bu siteden gelmedi.": "The request did not come from this site.",
+  "Bulunamadı.": "Not found.",
+  "Beklenmeyen bir hata oluştu.": "An unexpected error occurred.",
+  "Para birimi desteklenmiyor.": "This currency is not supported.",
+  "Görsel geçersiz.": "Invalid image.",
+  "Kayıt bulunamadı.": "Record not found.",
+  "Kategori kısa adı geçersiz.": "Invalid category short name.",
+  "Bu kısa adla bir kategori zaten var.": "A category with this short name already exists.",
+  "Kategori bulunamadı.": "Category not found.",
+  "Görsel deposu bağlı değil.": "Image storage is not connected.",
+  "Yalnızca JPG, PNG, WebP veya AVIF yüklenebilir.": "Only JPG, PNG, WebP or AVIF can be uploaded.",
+  "Görsel en fazla 5 MB olabilir.": "An image can be at most 5 MB.",
+  "Görsel boş ya da 5 MB'tan büyük.": "The image is empty or larger than 5 MB.",
+  "Durum geçersiz.": "Invalid status.",
+};
+const EN_PATTERNS = [
+  [/^"(.+)" boş olamaz\.$/, (m) => `"${m[1]}" cannot be empty.`],
+  [/^"(.+)" en fazla (\d+) karakter olabilir\.$/, (m) => `"${m[1]}" can be at most ${m[2]} characters.`],
+  [/^"(.+)" geçerli bir sayı olmalı\.$/, (m) => `"${m[1]}" must be a valid number.`],
+  [/^En az (\d+) karakter yazın \(e-posta, telefon ya da ad\)\.$/, (m) => `Type at least ${m[1]} characters (email, phone or name).`],
+];
+
+/** The message in the language the admin screen asked for (Turkish unless it asked for English). */
+export function localize(request, message) {
+  if (request?.headers?.get("X-Arke-Lang") !== "en") return message;
+  if (EN_EXACT[message]) return EN_EXACT[message];
+  for (const [re, to] of EN_PATTERNS) {
+    const m = re.exec(message);
+    if (m) return to(m);
+  }
+  return message;
+}
+
 // ---------------------------------------------------------------- responses
 
 const SECURITY_HEADERS = {
@@ -320,6 +371,9 @@ export function createApp({ adminHtml, parts }) {
             parts: partIds,
             personal: parts.some((x) => x.personal),
             configured: Boolean(env.ADMIN_PASSWORD_HASH),
+            // Where the admin screen starts (the client's market); the screen's own switch can change the language.
+            lang: env.ARKE_ADMIN_LANG === "en" ? "en" : "tr",
+            locale: typeof env.ARKE_LOCALE === "string" ? env.ARKE_LOCALE : "tr-TR",
           });
         for (const r of routes) {
           if (r.method !== request.method) continue;
@@ -333,9 +387,9 @@ export function createApp({ adminHtml, parts }) {
         }
         throw new HttpError(404, "Bulunamadı.");
       } catch (error) {
-        if (error instanceof HttpError) return json(error.status, { error: error.message });
+        if (error instanceof HttpError) return json(error.status, { error: localize(request, error.message) });
         console.error("app error", error?.message ?? error);
-        return json(500, { error: "Beklenmeyen bir hata oluştu." });
+        return json(500, { error: localize(request, "Beklenmeyen bir hata oluştu.") });
       }
     },
     /** The daily trigger (wrangler triggers.crons): personal data past its retention is deleted. */

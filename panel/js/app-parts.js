@@ -124,6 +124,12 @@ export async function appPartsCard(slug) {
           draw(r);
         },
       }),
+      st.admin
+        ? h("p", {
+            class: "muted small",
+            text: `Yönetim ekranı ${st.admin.lang === "en" ? "İngilizce" : "Türkçe"} açılır; müşteri ekrandaki düğmeyle Türkçe ve İngilizce arasında geçebilir.`,
+          })
+        : document.createDocumentFragment(),
       st.privacy ? privacyBox(st.privacy) : document.createDocumentFragment(),
       st.missingSecrets.length
         ? h("p", {

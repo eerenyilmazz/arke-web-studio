@@ -6,7 +6,7 @@
 
 Araştırma → tasarım planı → insan onayı → Cloudflare'de yayın
 
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.3.1-d6a584)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.4.0-d6a584)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022.12-3c873a)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![Agent](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex-191918)
@@ -244,7 +244,7 @@ Agent tasarlar ve parçaları sayfaya yerleştirir; çalışan parçaların kodu
 | --- | --- |
 | **Katalog** | Ürün, hizmet ya da menü kalemleri: kategori, fiyat, süre, görsel. Sitede agent'ın tasarladığı şablonla gösterilir. |
 | **Gelen kutusu** | Site formlarından gelen mesajlar; isteğe bağlı webhook bildirimi, gizli tuzak alanı, saatlik sınır. |
-| **Yönetim ekranı** | Müşterinin kendi ekranı (`site-adresi/admin`): 12 saatlik oturum, 15 dakikada 5 hatalı denemede kilit, sıkı CSP, arama motorlarına kapalı. Parolayı operatör belirler; panelde yalnızca özeti tutulur. |
+| **Yönetim ekranı** | Müşterinin kendi ekranı (`site-adresi/admin`), Türkçe ve İngilizce: pazara göre açılır (Türkiye'de Türkçe, diğer ülkelerde İngilizce), müşteri ekrandaki düğmeyle değiştirir, seçim hatırlanır; tarih ve para müşterinin ülkesinin biçiminde. 12 saatlik oturum, 15 dakikada 5 hatalı denemede kilit, sıkı CSP, arama motorlarına kapalı. Parolayı operatör belirler; panelde yalnızca özeti tutulur. |
 
 Sırada sepet ve ödeme (iyzico, PayTR ya da Stripe), yasal sayfalar, randevu takvimi ve QR menü var
 ([yol haritası](ROADMAP.md)). Panel parçaları her uygulama sitesine kendisi kurar (`app/`, `site/js/arke-parts.js`);
