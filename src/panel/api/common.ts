@@ -4,7 +4,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import type { FactoryConfig } from "../../config.js";
 import type { ApprovalGate } from "../approval-gate.js";
-import { snapshot } from "../../lib/versions.js";
+import { snapshot, versionNotSaved } from "../../lib/versions.js";
 import { monthlyBlock, resolvePolicy } from "../budget.js";
 import { type BuildRecord, readDraftConfig } from "../../lib/client.js";
 import { readJsonIfExists } from "../../lib/files.js";
@@ -67,7 +67,7 @@ export function asHttp<T>(fn: () => T): T {
  * the state before; then `apply` writes, then the site is rebuilt.
  */
 export async function rebuildAfterDirectEdit(deps: ApiDeps, slug: string, title: string, summary: string, note: string, apply: () => void) {
-  await snapshot(clientPaths(deps.factory.clientsRoot, slug).root, `Önce: ${title}`).catch(() => null);
+  await snapshot(clientPaths(deps.factory.clientsRoot, slug).root, `Önce: ${title}`).catch(versionNotSaved);
   try {
     apply();
   } catch (error) {

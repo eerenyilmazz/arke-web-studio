@@ -2,6 +2,50 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.4.2: Gerçek ortam testinin bulguları
+
+Thrace IT ile yapılan gerçek ortam testinde (gerçek Cloudflare, gerçek agent) çıkan sorunlar.
+
+**Sürüm geçmişi (en önemlisi)**
+- **Kayıt artık sessizce kaybolmuyor:** sürüm kaydı git hatası verirse bir kez daha deneniyor; yine olmazsa terminale nedeniyle yazılıyor. Aynı anda biten iki iş sırayla kaydediliyor.
+- **Yarım kalan işler:** panel kapanırken (Ctrl+C, WSL yeniden başlaması) çalışan bir işin değişiklikleri, panel açılınca "Kaydedilmemiş değişiklikler" sürümü olarak kaydediliyor.
+- **Düzenle kartları:** form bir şey yazmadan önce "Önce: …" sürümü alınıyor (agent'sız düzenlemeler dahil).
+
+**Yayınlanan site**
+- **Önizleme arama motorlarına kapalı:** `X-Robots-Tag: noindex` ve her şeyi kapatan robots.txt.
+- **İç dosyalar yayına gitmiyor:** `brand/brand.json`, `brand/signature.html` ve tasarım önerileri Cloudflare'e yüklenmiyor; logo yüklenmeye devam ediyor. `dist/` onaylandığı gibi kalıyor, ayıklama yayın sırasında bir kopyada yapılıyor.
+- **Güvenlik başlıkları:** canlı sitede HSTS, nosniff, Referrer-Policy; vitrin sitelerinde sitenin kontrollerine uyan bir Content-Security-Policy.
+- **Fontlar siteden:** Google Fonts dosyaları derlemede indirilip siteye konuyor; ziyaretçinin tarayıcısı Google'a bağlanmıyor (UK GDPR, GDPR, KVKK). İndirme olmazsa link olduğu gibi kalıyor ve kontrol uyarı veriyor. Kapatmak için `ARKE_SELF_HOST_FONTS=off`.
+- **Yayın bir kez daha deneniyor:** Cloudflare'e yükleme ağ ya da sunucu hatasıyla kesilirse 5 saniye sonra bir kez daha deneniyor. Token hatası gibi kalıcı hatalarda denenmiyor.
+- SEO kontrolü `brand/` altındaki demo sayfasını artık sitenin sayfası saymıyor.
+
+**Müşteriye giden belgeler**
+- **Müşterinin dilinde:** teklif, iş raporu ve aylık rapor Türk müşteride Türkçe, diğerlerinde İngilizce açılıyor; üstteki düğmeyle değiştirilebiliyor. Tarihler de o dilde.
+- **Temiz özet:** raporda agent'ın özetinin yalnızca ilk paragrafı, `**` gibi işaretler olmadan çıkıyor.
+- **Satır dışarıda bırakma:** iş raporunda her satırın yanında "Rapora" kutusu var; işareti kaldırılan satır yazdırılan kopyaya girmiyor (ör. iç testler).
+- Renk adları İngilizce yazılmışsa Türkçe panelde de doğru büyük harfle çıkıyor (DRAWİNG yerine DRAWING).
+
+**Müşteri portalı** (Ayarlar → Yayın → "Portalı güncelle" ile yüklenir)
+- **Art arda yorum:** yorum gönderilince sayfa yeniden açılıyor, üstte "Yorumunuz iletildi" yazıyor, form ve seçilen sayfa hazır duruyor.
+- **Onaya kısa yol:** sayfanın üstünde "Her şey tamamsa onaya geçin" bağlantısı.
+- Kapanmış ya da bilinmeyen link mesajı İngilizce ve Türkçe birlikte.
+- Panelde yorumun sayfası "other" yerine "Genel" yazıyor.
+
+**Agent**
+- Önceki işlerde operatörün yazdığı değişiklik istekleri artık "müşteriden gelen bilgi" olarak verilmiyor; ayrı bir bölümde, "zaten yapıldı, tekrar yapma" notuyla gidiyor.
+- Özette yapılmayan her şeyi (plandaki form, gizlilik sayfası) nedeniyle yazması, var olmayan sayfayı "yaptım" dememesi isteniyor.
+- Engellenen bir işte izin ya da sandbox gevşetmeyi önermiyor; fabrikanın kodunu okumuyor.
+- Tasarım planının alan uzunlukları kurallarda yazıyor; plan açıklamaları panelin dilinde (adlar sitenin dilinde).
+- Harita / "Get directions" bağlantısı yalnızca harita adresi verilmişse ekleniyor; adresten uydurulmuyor.
+
+**Panel**
+- "Siteyi Oluştur" kartı, internet araştırması Ayarlar'da kapalıysa bunu söylüyor.
+- Durum etiketleri: "Bilgiler eksik", "İçerik onayı bekleniyor", "Görsel onay bekleniyor", "Yayın onayı bekleniyor" (eskiden hepsi "Onay bekleniyor" ya da yanlışlıkla "Müşteri onayı bekleniyor" idi).
+- Portal kurulduktan sonra "Token'a izin ekle" adımı gösterilmiyor.
+- Kâr hesabında kur girilmemişse Ayarlar'a giden bağlantı var.
+- Yedek dosyasının adı bilgisayarın saatiyle (UTC değil).
+- İngilizce panelde müşteri kartındaki "Ödendi · Teslim …" satırı çevriliyor.
+
 ## 2.4.1: Yönetim ekranı telefonda ve para birimi; README görselleri
 
 - **Yönetim ekranı telefonda:** üst çubuk dar ekranda iki satıra iniyor; dil düğmesi ve Çıkış artık ekranın dışına taşmıyor.

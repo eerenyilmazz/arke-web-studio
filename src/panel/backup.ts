@@ -46,18 +46,31 @@ export function listBackups(dir: string): BackupResult[] {
     .sort((a, b) => b.at.localeCompare(a.at));
 }
 
+/** yyyymmdd-hhmm in the machine's own time, so the file name matches the time the panel shows. */
+export function localStamp(d: Date): string {
+  const two = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}`;
+}
+
 export async function backupNow(factory: FactoryConfig): Promise<BackupResult> {
   if (running) return running;
   running = (async () => {
     const dir = checkBackupDir(readSettings(factory).backupDir, factory);
-    const stamp = new Date().toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 13);
+    const stamp = localStamp(new Date());
     const name = `${PREFIX}${stamp}.tar.gz`;
     const target = path.join(dir, name);
     const clients = path.resolve(factory.clientsRoot);
     const inbox = path.resolve(factory.inboxDir);
     const parts: Array<[string, string]> = [[path.dirname(clients), path.basename(clients)]];
     if (existsSync(inbox)) parts.push([path.dirname(inbox), path.basename(inbox)]);
-    const args = ["-czf", target, "--exclude=node_modules", "--exclude=dist", ...parts.flatMap(([cwd, base]) => ["-C", cwd, base])];
+    const args = [
+      "-czf",
+      target,
+      "--exclude=node_modules",
+      "--exclude=dist",
+      "--exclude=*/.factory/publish",
+      ...parts.flatMap(([cwd, base]) => ["-C", cwd, base]),
+    ];
     await run("tar", args, { timeout: 10 * 60 * 1000 });
     for (const old of listBackups(dir).slice(KEEP)) rmSync(path.join(dir, old.file), { force: true });
     lastAuto = Date.now();

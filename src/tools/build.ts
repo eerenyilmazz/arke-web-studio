@@ -16,13 +16,14 @@ import { planState, readPlan } from "../lib/design-plan.js";
 import { checkSignature } from "../lib/signature-check.js";
 import { checkCurrency } from "../lib/currency-check.js";
 import { effectiveFormAction } from "../lib/form.js";
+import { type Fetcher, selfHostFonts } from "../lib/self-host-fonts.js";
 import { buildEnv } from "./shared.js";
 
 /** The build tool: checks inputs, builds the site (template or custom), runs the quality checks. */
 
 // ---------------------------------------------------------------- build
 
-export async function buildSite(factory: FactoryConfig, args: { slug: string }) {
+export async function buildSite(factory: FactoryConfig, args: { slug: string; fontFetcher?: Fetcher }) {
   const { paths, config, content } = loadValidClient(factory, assertSlug(args.slug));
   const results: CheckResult[] = [{ name: "Config and content schema", status: "pass", detail: `locales: ${config.i18n.locales.join(", ")}` }];
   results.push(...checkInputs(paths.root, config, content));
@@ -52,6 +53,8 @@ export async function buildSite(factory: FactoryConfig, args: { slug: string }) 
       const built = buildCustomSite(paths);
       results.push(built);
       if (built.status === "pass") {
+        const fonts = await selfHostFonts(paths.distDir, paths.factoryDir, args.fontFetcher);
+        if (fonts) results.push(fonts);
         results.push(...checkOutput(paths.distDir, config));
         results.push(...checkCustomCode(paths.distDir, effectiveFormAction(paths.factoryDir), isAppSite(readProductRecord(paths))));
         results.push(...checkBrand(paths.distDir, config.brand.logo));

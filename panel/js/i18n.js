@@ -64,6 +64,15 @@ function part(text, depth) {
   return text;
 }
 
+/** The English of one Turkish text whatever the panel's language (client documents), or the text itself. */
+export function toEnglish(text) {
+  if (typeof text !== "string") return text;
+  const core = text.trim();
+  if (!core) return text;
+  const out = translateCore(core, 0);
+  return out === undefined ? text : text.replace(core, out);
+}
+
 /** The English of one Turkish text, or the text itself. */
 export function t(text) {
   if (lang === "tr" || typeof text !== "string") return text;
@@ -104,6 +113,38 @@ function translateNode(node) {
 }
 
 let observer = null;
+
+/** Locale for dates and numbers in a document for the client. */
+export function docLocale(docLang) {
+  return docLang === "en" ? "en-GB" : "tr-TR";
+}
+
+/**
+ * A document for the client (proposal, reports) in the client's language, whatever the panel's: translated once
+ * here, then marked so the panel's own language never touches it. Client data inside (names, the agent's words)
+ * is marked data-doc-data and stays as written. lang is set too, so CSS upper-casing follows the document's
+ * language (no Turkish dotted İ in an English document).
+ */
+export function translateDoc(el, docLang) {
+  el.setAttribute("data-no-i18n", "");
+  el.lang = docLang;
+  if (docLang !== "en") return el;
+  const walk = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const next = toEnglish(node.nodeValue);
+      if (next !== node.nodeValue) node.nodeValue = next;
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE || node.hasAttribute("data-doc-data") || SKIP_TAGS.has(node.tagName)) return;
+    for (const a of ATTRS) {
+      const v = node.getAttribute(a);
+      if (v) node.setAttribute(a, toEnglish(v));
+    }
+    for (const child of node.childNodes) walk(child);
+  };
+  walk(el);
+  return el;
+}
 
 /** Sets the language and, for English, translates the page now and everything added to it from then on. */
 export function setLang(next) {

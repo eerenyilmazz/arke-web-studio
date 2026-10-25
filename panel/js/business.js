@@ -1,5 +1,5 @@
 // Business tracking: price, payment, due date, costs and profit for one client.
-import { locale } from "./i18n.js";
+import { locale, t } from "./i18n.js";
 import { api, fmtTokens, guarded, h, PACKAGE_NAMES, toast } from "./core.js";
 import { addonsEditor } from "./addons.js";
 import { loadClients } from "./router.js";
@@ -24,7 +24,8 @@ export function businessLine(b) {
     late = due < new Date() && b.payment !== "paid";
     parts.push(`Teslim ${due.toLocaleDateString(locale(), { day: "numeric", month: "short" })}`);
   }
-  return h("span", { class: `biz ${late ? "late" : ""} pay-${b.payment}`, text: parts.join(" · ") });
+  // Each part is translated on its own: the joined line as a whole has no dictionary entry.
+  return h("span", { class: `biz ${late ? "late" : ""} pay-${b.payment}`, text: parts.map((p) => t(p)).join(" · ") });
 }
 
 /** Price − own costs − agent cost, with what is missing for the calculation. */
@@ -34,10 +35,13 @@ export function profitLine(p) {
   if (p.price === null)
     return h("p", { class: "profit muted small", text: `Agent maliyeti şimdiye kadar ${agent} (${p.jobs} işlem). Fiyat girilince kâr hesaplanır.` });
   if (p.agentCost === null)
-    return h("p", {
-      class: "profit muted small",
-      text: `Agent maliyeti $${p.agentUsd.toFixed(2)}. Kâr için Ayarlar → Kâr Hesabı'ndan 1 USD = ? ${p.currency} kurunu giriniz.`,
-    });
+    return h(
+      "p",
+      { class: "profit muted small" },
+      h("span", { text: `Agent maliyeti $${p.agentUsd.toFixed(2)}. Kâr için Ayarlar → Kâr Hesabı'ndan 1 USD = ? ${p.currency} kurunu giriniz.` }),
+      " ",
+      h("a", { href: "#/ayarlar" }, "Kuru gir"),
+    );
   return h(
     "p",
     { class: `profit ${p.profit < 0 ? "loss" : ""}` },

@@ -13,7 +13,7 @@ import { allowedHost, allowedOrigin, cookieHeader, hasSession, newSessionKey, sa
 import { HttpError, sendError } from "./http.js";
 import { appendHistory } from "./history.js";
 import { clientPaths } from "../lib/paths.js";
-import { snapshot } from "../lib/versions.js";
+import { saveUnsavedVersions, snapshot } from "../lib/versions.js";
 import { JobRunner, type SpawnFn } from "./jobs.js";
 import { PreviewServer } from "./preview.js";
 import { serveFile } from "./static.js";
@@ -153,6 +153,8 @@ async function main(): Promise<void> {
   const sessionKey = newSessionKey();
   const panel = createPanel({ factory: loadFactoryConfig(), port, previewPort: port + 1, sessionKey });
   await panel.listen();
+  const unsaved = await saveUnsavedVersions(loadFactoryConfig().clientsRoot);
+  if (unsaved.length) console.log(`Yarım kalan işlerin değişiklikleri sürüm olarak kaydedildi: ${unsaved.join(", ")}`);
   const stopPull = startAutoPull(loadFactoryConfig(), (m) => console.log(m));
   console.log("\nArke Web Studio paneli hazır. Bu bağlantıyı tarayıcıda açın (anahtar sadece bu oturum için geçerli):\n");
   console.log(`  http://${HOST}:${port}/login?key=${sessionKey}\n`);

@@ -7,7 +7,7 @@
 
 <br>
 
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.4.1-d6a584)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.4.2-d6a584)
 ![Testler](https://img.shields.io/badge/testler-vitest%20%2B%20Playwright-2f7a4f)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022.12-3c873a)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)

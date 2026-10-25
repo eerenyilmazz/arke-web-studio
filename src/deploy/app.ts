@@ -103,13 +103,15 @@ export function appWranglerConfig(opts: {
   routes?: Array<{ pattern: string; custom_domain: boolean }>;
   plan: AppPlan;
   resources: TargetResources;
+  /** What Cloudflare serves; dist/ unless the publish step prepared a copy. */
+  assetsDir?: string;
 }) {
   return {
     name: opts.workerName,
     main: `./${APP_ENTRY}`,
     compatibility_date: opts.compatibilityDate,
     // The Worker answers its own paths first, so no page file can ever shadow the API or the admin screen.
-    assets: { directory: "./dist", binding: "ASSETS", not_found_handling: "404-page", run_worker_first: [...WORKER_FIRST] },
+    assets: { directory: opts.assetsDir ?? "./dist", binding: "ASSETS", not_found_handling: "404-page", run_worker_first: [...WORKER_FIRST] },
     ...(opts.plan.database
       ? {
           d1_databases: [

@@ -16,10 +16,12 @@ export interface SeoFacts {
 const BUSINESS_TYPES =
   /"@type"\s*:\s*\[?\s*"(LocalBusiness|Organization|ProfessionalService|Store|Restaurant|HairSalon|BarberShop|BeautySalon|Dentist|LegalService|[A-Z][A-Za-z]+Business|[A-Z][A-Za-z]+Store)"/;
 
+/** The site's pages: not 404.html, and not brand/ (the motion demo and proposals are never published). */
 function htmlFiles(distDir: string): string[] {
   return readdirSync(distDir, { recursive: true, withFileTypes: true })
     .filter((e) => e.isFile() && e.name.endsWith(".html") && e.name !== "404.html")
-    .map((e) => path.join(e.parentPath, e.name));
+    .map((e) => path.join(e.parentPath, e.name))
+    .filter((abs) => !path.relative(distDir, abs).replaceAll("\\", "/").startsWith("brand/"));
 }
 
 export function checkSeo(distDir: string, facts: SeoFacts): CheckResult {

@@ -42,13 +42,15 @@ export const STEPS = [
 
 /** Plain status per stage for lists and cards. tone: who acts next (you / client / agent / done). */
 export const PLAIN = {
-  "collecting-answers": { text: "Bilgi bekleniyor", tone: "client" },
+  // Required facts are still missing from the config (the agent may already be planning or building meanwhile).
+  "collecting-answers": { text: "Bilgiler eksik", tone: "you" },
   design: { text: "Oluşturuluyor", tone: "you" },
   content: { text: "Oluşturuluyor", tone: "you" },
   build: { text: "Oluşturulmayı bekliyor", tone: "you" },
-  "awaiting-content-approval": { text: "Onay bekleniyor", tone: "you" },
-  "awaiting-visual-approval": { text: "Onay bekleniyor", tone: "you" },
-  "awaiting-production-approval": { text: "Müşteri onayı bekleniyor", tone: "you" },
+  // Each approval named: the texts come before the first build, so a bare "Onay bekleniyor" read as "site ready".
+  "awaiting-content-approval": { text: "İçerik onayı bekleniyor", tone: "you" },
+  "awaiting-visual-approval": { text: "Görsel onay bekleniyor", tone: "you" },
+  "awaiting-production-approval": { text: "Yayın onayı bekleniyor", tone: "you" },
   "ready-to-deploy": { text: "Yayına hazır", tone: "you" },
   live: { text: "Yayında", tone: "done" },
   unreadable: { text: "Dosya okunamadı", tone: "bad" },
@@ -340,3 +342,9 @@ export function printDoc(el, { landscape = false, title = "" } = {}) {
     ),
   ).then(() => window.print());
 }
+
+/**
+ * Colour names are upper-cased by CSS, which follows the page's language: in a Turkish panel "drawing-paper"
+ * would become "DRAWİNG-PAPER". A name without Turkish letters is marked English so it upper-cases as written.
+ */
+export const nameLang = (name) => (/[çğıöşüÇĞİÖŞÜ]/.test(String(name || "")) ? {} : { lang: "en" });

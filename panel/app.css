@@ -812,8 +812,11 @@ span.chip { cursor: default; }
 .report-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .report-table th { text-align: left; font-weight: 500; color: var(--p-mute); border-bottom: 2px solid var(--p-ink); padding: .4rem .5rem; }
 .report-table td { vertical-align: top; padding: .55rem .5rem; border-bottom: 1px solid var(--p-line); }
-.report-table td:first-child { white-space: nowrap; color: var(--p-mute); }
+.report-table td:nth-child(2) { white-space: nowrap; color: var(--p-mute); }
 .report.hide-cost .cost { display: none; }
+/* Rows the operator left out: faded on screen, gone from the printed copy, like the tick boxes themselves. */
+.report-table tr.excluded td:not(.no-print) { opacity: .35; text-decoration: line-through; }
+@media print { #print-root .no-print, #print-root tr.excluded { display: none; } }
 
 /* ---------- print: one document, alone, on A4 ---------- */
 .p-hint { margin: 0; font-size: .8rem; color: var(--p-mute); border-top: 1px dashed var(--p-line); padding-top: .6rem; }
@@ -1240,3 +1243,6 @@ h2 { font-weight: 600; }
 .info-tabs button[aria-selected="true"] { background: var(--primary); color: var(--primary-ink); }
 /* With tabs the section heading repeats the tab name. */
 .settings-group > .settings-title { display: none; }
+
+/* 2.4.2: a short warning line inside a card (e.g. web research is off). */
+.warn-text { margin: 0; color: var(--warn); background: var(--warn-soft); border: 1px solid var(--warn-line); border-radius: 8px; padding: .45rem .65rem; }

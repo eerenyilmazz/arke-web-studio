@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { planState, requirePlan, resetPlanApproval, waivePlan } from "../../lib/design-plan.js";
-import { snapshot } from "../../lib/versions.js";
+import { snapshot, versionNotSaved } from "../../lib/versions.js";
 import { DESIGN_KINDS, resolvePolicy } from "../budget.js";
 import { applyLibraryDesign, clearStartDesign } from "../library.js";
 import { readBrandStale, sharedLogo } from "../logo-check.js";
@@ -74,7 +74,7 @@ function isCustomClient(ctx: JobContext): boolean {
 /** Replaces site/ with a library design (a version of the current site is saved first). */
 async function applyFromLibrary(ctx: JobContext, id: string) {
   if (ctx.deps.jobs.running()) throw new HttpError(409, "Agent başka bir işte; bitince tekrar dene.");
-  await snapshot(clientPaths(ctx.deps.factory.clientsRoot, ctx.slug).root, "Önce: kütüphaneden tasarım").catch(() => null);
+  await snapshot(clientPaths(ctx.deps.factory.clientsRoot, ctx.slug).root, "Önce: kütüphaneden tasarım").catch(versionNotSaved);
   return asHttp(() => applyLibraryDesign(ctx.deps.factory, ctx.slug, id));
 }
 
@@ -333,7 +333,7 @@ async function startAgent(deps: ApiDeps, req: IncomingMessage, res: ServerRespon
   const earlier = readInputs(deps.factory, s);
   const spec = await build({ deps, slug: s, body });
   // A version before the agent touches anything, so its changes can always be undone.
-  if (!deps.jobs.running()) await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${spec.title}`).catch(() => null);
+  if (!deps.jobs.running()) await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${spec.title}`).catch(versionNotSaved);
   const history = DESIGN_KINDS.has(kind!) || kind === "answers" ? earlierInputsBlock(earlier) : earlierInputsBlock(earlier, SMALL_JOB_HISTORY);
   const stale = DESIGN_KINDS.has(kind!) ? readBrandStale(deps.factory, s) : null;
   const staleNote = stale

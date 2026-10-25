@@ -495,6 +495,19 @@ export function prepareCard(d) {
     disabled: working,
     onchange: (e) => (draft.askFirst = e.target.checked),
   });
+  // "Research first" only reaches the web when web research is on in Settings; say so instead of failing silently.
+  const researchOff = h("p", { class: "small warn-text", hidden: true });
+  if (!working)
+    api("GET", "/api/settings")
+      .then((st) => {
+        if (st.webResearch) return;
+        researchOff.replaceChildren(
+          "İnternet araştırması Ayarlar'da kapalı: agent internette arama yapmaz, yalnızca verdiğiniz bilgilerle çalışır ve eksikleri sorar. ",
+          h("a", { href: "#/ayarlar" }, "Ayarlar'da aç"),
+        );
+        researchOff.hidden = false;
+      })
+      .catch(ignoreOptional);
   // Optional starting point from the design library (custom sites); used once, on this run.
   const startFrom = h("select", { id: "prep-lib", disabled: working }, h("option", { value: "" }, "Başlangıç tasarımı: yeni tasarım"));
   if (d.template === "custom")
@@ -540,6 +553,7 @@ export function prepareCard(d) {
           askFirst,
           " Önce araştırma yapılsın ve sorular bana iletilsin (önerilir). Kapalıysa açık tasarım kararları otomatik verilir; bilgi yine uydurulmaz.",
         ),
+    working ? null : researchOff,
     working
       ? null
       : h(

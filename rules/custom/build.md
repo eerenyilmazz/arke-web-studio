@@ -31,7 +31,8 @@ Only the pages listed in `config.pages`. Every page:
   config. Every page has its own `<title>` (no two alike); `robots.txt` names the sitemap when there is one. The build
   warns about anything missing ("Search and AI visibility").
 - Contact: `tel:` and `mailto:` links, WhatsApp `https://wa.me/<number without +>` when there is a number, address with
-  a link to the map (`config.contact.mapsUrl`). **A `<form>` only when `get_client_status` shows `contactForm`**: then
+  a link to the map (`config.contact.mapsUrl`) only when it is set; never build a map or "Get directions" link
+  from the address yourself, and none at all when the client said they do not want one (remote-only businesses). **A `<form>` only when `get_client_status` shows `contactForm`**: then
   it posts to exactly that `action` (method POST, labelled fields, a hidden honeypot, Web3Forms' hidden `access_key`
   when given); any other form address fails the build. Without `contactForm`: no form. **No embedded maps or
   videos** (`<iframe>` sets cookies).

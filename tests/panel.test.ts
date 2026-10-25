@@ -379,7 +379,7 @@ describe("prepare site (create-site job)", () => {
     expect(again.status).toBe(202);
     // No new input: only the earlier paste comes back, marked as earlier information.
     expect(calls[1]!.stdin.match(/\n<client_data>\n/g)).toHaveLength(1);
-    expect(calls[1]!.stdin).toContain("Earlier information the operator gave about this client");
+    expect(calls[1]!.stdin).toContain("Earlier information about this client from previous jobs");
 
     const detail = (await (await fetch(`${base}/api/clients/reinware`, { headers: auth })).json()) as { siteApproveCommand: string };
     expect(detail.siteApproveCommand).toBe("npm run approve -- reinware site");
@@ -1291,7 +1291,7 @@ describe("earlier inputs are kept between agent jobs", () => {
     });
     expect(second.status).toBe(202);
     const prompt = calls[1]!.stdin;
-    expect(prompt).toContain("Earlier information the operator gave about this client");
+    expect(prompt).toContain("Earlier information about this client from previous jobs");
     expect(prompt).toContain("Saç kesimi 500 TL");
     expect(prompt.lastIndexOf("<client_data>")).toBeLessThan(prompt.lastIndexOf("Saç kesimi 500 TL"));
   });

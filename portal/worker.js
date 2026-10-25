@@ -26,6 +26,7 @@ const T = {
     open: "Önizlemeyi yeni sekmede aç", page: "Sayfa", comment: "Yorumunuz", sendComment: "Yorumu gönder",
     approveTitle: "Onay", yourName: "Adınız", approve: "Onaylıyorum", approveNote: "Onay, sitenin bu hâlinin yayına alınmasını kabul ettiğiniz anlamına gelir.",
     commentThanks: "Yorumunuz iletildi.", approveThanks: "Onayınız iletildi. Teşekkürler!", back: "Önizlemeye dön",
+    another: "Başka bir yorum varsa aşağıdan ekleyebilirsiniz.", toApprove: "Her şey tamamsa onaya geçin", error: "Bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
     gone: "Bu bağlantı geçersiz ya da süresi dolmuş.", full: "Bu bağlantıyla gönderim sınırına ulaşıldı.", bad: "Gönderim okunamadı.",
   },
   en: {
@@ -36,6 +37,7 @@ const T = {
     open: "Open the preview in a new tab", page: "Page", comment: "Your comment", sendComment: "Send comment",
     approveTitle: "Approval", yourName: "Your name", approve: "I approve", approveNote: "Approving means you accept this version of the site going live.",
     commentThanks: "Your comment has been sent.", approveThanks: "Your approval has been sent. Thank you!", back: "Back to the preview",
+    another: "If you have another comment, add it below.", toApprove: "If everything is right, go to the approval", error: "Something went wrong. Please try again later.",
     gone: "This link is not valid or has expired.", full: "This link has reached its limit.", bad: "The form could not be read.",
   },
 };
@@ -68,8 +70,14 @@ input,textarea,select{font:inherit;padding:.65rem .75rem;border:1px solid var(--
 textarea{min-height:5.5rem;resize:vertical}button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:.75rem 1.2rem;background:var(--accent);color:var(--accent-ink);cursor:pointer;justify-self:start}
 a{color:var(--accent)}.frame{width:100%;height:70vh;border:1px solid var(--line);border-radius:12px;background:#fff}
 .hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.ok{border-color:var(--accent)}
 </style></head><body><main${frameOrigin ? ' class="wide"' : ""}>${body}</main></body></html>`;
   return new Response(html, { status, headers: headers({ "Content-Type": "text/html; charset=utf-8" }, frameOrigin) });
+}
+
+/** A closed or unknown link says nothing about the client's language: the message is shown in English and Turkish. */
+function bothLanguages(key, status) {
+  return page("en", T.en[key], `<div class="card"><p>${esc(T.en[key])}</p><p lang="tr" class="mute">${esc(T.tr[key])}</p></div>`, null, status);
 }
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: headers({ "Content-Type": "application/json" }) });
@@ -118,17 +126,21 @@ ${qs}
 <button type="submit">${esc(t.send)}</button></form>`;
 }
 
-function reviewPage(link, t, token) {
-  const pages = (link.pages || []).map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("");
-  return `<div class="card"><div><h1>${esc(link.name)}</h1><p class="mute">${esc(t.reviewLead)}</p></div>
-<p><a href="${esc(link.previewUrl)}" target="_blank" rel="noopener noreferrer">${esc(t.open)}</a></p>
+/** The review page; after a comment it opens again with a note on top, so the next comment needs no extra clicks. */
+function reviewPage(link, t, token, notice = "", lastPage = "") {
+  const pages = (link.pages || [])
+    .map((p) => `<option value="${esc(p.id)}"${p.id === lastPage ? " selected" : ""}>${esc(p.label)}</option>`)
+    .join("");
+  const note = notice ? `<div class="card ok" role="status"><strong>${esc(notice)}</strong><p class="mute">${esc(t.another)}</p></div>` : "";
+  return `${note}<div class="card"><div><h1>${esc(link.name)}</h1><p class="mute">${esc(t.reviewLead)}</p></div>
+<p><a href="${esc(link.previewUrl)}" target="_blank" rel="noopener noreferrer">${esc(t.open)}</a> · <a href="#approve">${esc(t.toApprove)}</a></p>
 <iframe class="frame" src="${esc(link.previewUrl)}" title="${esc(t.reviewTitle)}" sandbox="allow-scripts allow-same-origin"></iframe></div>
-<form class="card" method="post" action="/r/${esc(token)}/comment"><h2>${esc(t.comment)}</h2>
+<form class="card" id="comment" method="post" action="/r/${esc(token)}/comment#comment"><h2>${esc(t.comment)}</h2>
 ${pages ? `<label>${esc(t.page)}<select name="page">${pages}</select></label>` : ""}
 <label class="sr">${esc(t.comment)}<textarea name="text" required maxlength="${MAX_TEXT}"></textarea></label>
 <div class="hp" aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
 <button type="submit">${esc(t.sendComment)}</button></form>
-<form class="card" method="post" action="/r/${esc(token)}/approve"><h2>${esc(t.approveTitle)}</h2>
+<form class="card" id="approve" method="post" action="/r/${esc(token)}/approve"><h2>${esc(t.approveTitle)}</h2>
 <label>${esc(t.yourName)}<input name="name" required maxlength="80"></label><p class="mute">${esc(t.approveNote)}</p>
 <div class="hp" aria-hidden="true"><input name="website" tabindex="-1" autocomplete="off"></div>
 <button type="submit">${esc(t.approve)}</button></form>`;
@@ -177,7 +189,7 @@ async function handleReview(request, env, token, action, link, t) {
     if (!text) return page(link.lang, t.bad, `<div class="card"><p>${esc(t.bad)}</p>${back}</div>`, null, 400);
     const pageId = clip(form.get("page"), 60);
     await env.ARKE_PORTAL.put(itemKey(link.slug), JSON.stringify({ type: "comment", token, at, page: pageId, text }));
-    return page(link.lang, t.commentThanks, `<div class="card"><h1>${esc(t.commentThanks)}</h1>${back}</div>`);
+    return page(link.lang, `${t.reviewTitle} · ${link.name}`, reviewPage(link, t, token, t.commentThanks, pageId), origin);
   }
   const name = clip(form.get("name"), 80).trim();
   if (!name) return page(link.lang, t.bad, `<div class="card"><p>${esc(t.bad)}</p>${back}</div>`, null, 400);
@@ -262,12 +274,12 @@ export default {
         const link = await getLink(env, parts[1]);
         const lang = link?.lang === "en" ? "en" : "tr";
         const t = T[lang];
-        if (!link || link.kind !== (parts[0] === "f" ? "intake" : "review")) return page(lang, t.gone, `<div class="card"><p>${esc(t.gone)}</p></div>`, null, 404);
+        if (!link || link.kind !== (parts[0] === "f" ? "intake" : "review")) return bothLanguages("gone", 404);
         return parts[0] === "f" ? await handleIntake(request, env, parts[1], link, t) : await handleReview(request, env, parts[1], parts[2], link, t);
       }
-      return page("tr", T.tr.gone, `<div class="card"><p>${esc(T.tr.gone)}</p></div>`, null, 404);
+      return bothLanguages("gone", 404);
     } catch {
-      return page("tr", "Hata", `<div class="card"><p>Bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p></div>`, null, 500);
+      return bothLanguages("error", 500);
     }
   },
 };

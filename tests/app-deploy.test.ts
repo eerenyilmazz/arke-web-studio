@@ -92,6 +92,7 @@ describe("publishing an app site", () => {
     expect(cfg).toContain('"migrations_dir": "app/migrations"');
     expect(cfg).toContain('"bucket_name": "arke-shop-co-preview-media"');
     expect(cfg).toContain('"main": "./app/worker.js"');
+    expect(cfg).toContain('"directory": "./.factory/publish"');
     // A UK client: data in the EU region (set at creation, cannot change later), retention and the daily clean-up.
     expect(w.calls.find((c) => c.args[1] === "create" && c.args[0] === "d1")!.args).toEqual([
       "d1",

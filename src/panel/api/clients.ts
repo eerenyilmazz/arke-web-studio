@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { approvalState, APPROVAL_KINDS } from "../../lib/approvals.js";
-import { listVersions, restoreVersion, snapshot } from "../../lib/versions.js";
+import { listVersions, restoreVersion, snapshot, versionNotSaved } from "../../lib/versions.js";
 import { type Business, readBusiness, writeBusiness } from "../business.js";
 import { modeFor, summarise } from "../budget.js";
 import { readStartDesign, setStartDesign } from "../library.js";
@@ -460,7 +460,7 @@ async function removeLogo(deps: ApiDeps, _req: IncomingMessage, res: ServerRespo
     sendJson(res, 200, { logo: null });
     return;
   }
-  await snapshot(clientPaths(deps.factory.clientsRoot, s).root, "Önce: logo kaldırıldı").catch(() => null);
+  await snapshot(clientPaths(deps.factory.clientsRoot, s).root, "Önce: logo kaldırıldı").catch(versionNotSaved);
   tools.updateClientConfig(deps.factory, { slug: s, patch: { brand: { logo: null } } });
   markBrandStale(deps.factory, s, "");
   appendInput(
@@ -504,7 +504,7 @@ async function deleteClientImage(deps: ApiDeps, _req: IncomingMessage, res: Serv
   const used = imageInUse(deps, s, where!, name);
   if (used) throw new HttpError(409, used);
   // A saved image can be brought back from Versions (inbox uploads are not versioned: they are not the site yet).
-  if (where === "assets") await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${name} silindi`).catch(() => null);
+  if (where === "assets") await snapshot(clientPaths(deps.factory.clientsRoot, s).root, `Önce: ${name} silindi`).catch(versionNotSaved);
   rmSync(file);
   sendJson(res, 200, { inbox: inboxFiles(deps.factory, s), assets: assetFiles(clientPaths(deps.factory.clientsRoot, s).assetsDir) });
 }

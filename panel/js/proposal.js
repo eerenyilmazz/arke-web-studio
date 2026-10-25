@@ -1,8 +1,8 @@
 // Documents for the client: design concepts, the proposal, the work report and the monthly report.
-import { locale } from "./i18n.js";
+import { docLocale, locale, translateDoc } from "./i18n.js";
 import { addonLabel } from "./addons.js";
 import { CURRENCY_SIGNS } from "./business.js";
-import { api, ask, fmtTokens, guarded, h, isBusy, LANG_NAMES, printDoc, state } from "./core.js";
+import { api, ask, fmtTokens, guarded, h, isBusy, LANG_NAMES, nameLang, printDoc, state } from "./core.js";
 import { PAGE_TR } from "./edit.js";
 import { runAgent } from "./jobs.js";
 
@@ -138,15 +138,76 @@ export async function tabProposal(body, d) {
       ),
     ),
   );
+  const docLang = docLangOf(d);
+  const langSwitch = h(
+    "div",
+    { class: "seg doc-switch", role: "group", "aria-label": "Belgenin dili" },
+    ...[
+      ["tr", "Türkçe"],
+      ["en", "English"],
+    ].map(([k, l]) =>
+      h(
+        "button",
+        {
+          type: "button",
+          "aria-pressed": String(docLang === k),
+          onclick: () => {
+            state.docLang = { ...(state.docLang || {}), [d.status.slug]: k };
+            tabProposal(body, d);
+          },
+        },
+        l,
+      ),
+    ),
+  );
+  const top = h("div", { class: "row", style: "justify-content:space-between;align-items:center;flex-wrap:wrap" }, switcher, langSwitch);
   if (which === "rapor") {
-    body.replaceChildren(h("div", { class: "stack" }, switcher, workReport(d)));
+    body.replaceChildren(h("div", { class: "stack" }, top, workReport(d, docLang)));
     return;
   }
   if (which === "aylik") {
-    body.replaceChildren(h("div", { class: "stack" }, switcher, await monthlyReport(d)));
+    body.replaceChildren(h("div", { class: "stack" }, top, await monthlyReport(d, docLang)));
     return;
   }
-  await proposalSheet(body, d, switcher);
+  await proposalSheet(body, d, top, docLang);
+}
+
+/** Documents go out in the client's language: Turkish for a Turkish site, English otherwise (the operator can switch). */
+export function docLangOf(d) {
+  const chosen = state.docLang?.[d.status.slug];
+  if (chosen) return chosen;
+  const main = d.defaultLocale || (d.country === "TR" ? "tr" : "en");
+  return String(main).startsWith("tr") ? "tr" : "en";
+}
+
+/** Jobs a client report never lists: builds (each change already rebuilds) and jobs that did not finish. */
+const NOT_FOR_CLIENT = new Set(["build"]);
+
+export function reportable(records) {
+  return records.filter((r) => r.status === "succeeded" && !NOT_FOR_CLIENT.has(r.kind));
+}
+
+/**
+ * The agent's summary is written for the operator: markdown, sometimes long. The client's copy gets its first
+ * paragraph as plain text (the operator can still edit it before printing).
+ */
+export function clientText(text, max = 300) {
+  const first =
+    String(text || "")
+      .replace(/\r/g, "")
+      .split(/\n\s*\n/)
+      .map((p) => p.trim())
+      .find(Boolean) || "";
+  const plain = first
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]*)`/g, "$1")
+    .replace(/\*\*([^*]+)\*\*|__([^_]+)__/g, "$1$2")
+    .replace(/(^|\s)[*_]([^*_\n]+)[*_](?=\s|[.,;:!?]|$)/g, "$1$2")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}(?:#{1,6}\s+|[-*+]\s+|\d+[.)]\s+|>\s?)/gm, "")
+    .replace(/\s*\n\s*/g, " ")
+    .trim();
+  return plain.length > max ? `${plain.slice(0, max - 1).trimEnd()}…` : plain;
 }
 
 const KIND_LABEL = {
@@ -175,9 +236,10 @@ const KIND_LABEL = {
  * What the client asked for and what was done, from the job history: date, request, result, and for the operator the
  * resources used. Editable before printing; "Kaynak" columns can be hidden for the client's copy.
  */
-export function workReport(d) {
+export function workReport(d, docLang = docLangOf(d)) {
   const slug = d.status.slug;
-  const records = [...(d.history || [])].filter((r) => r.status === "succeeded" && r.kind !== "build").sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+  const dl = docLocale(docLang);
+  const records = reportable([...(d.history || [])]).sort((a, b) => a.startedAt.localeCompare(b.startedAt));
   const showCost = h("input", { type: "checkbox", id: "wr-cost" });
   const totalTokens = records.reduce((n, r) => n + (r.tokens || 0), 0);
   const label = (r) => (r.kind.startsWith("edit-") ? "Düzenleme" : KIND_LABEL[r.kind] || r.title);
@@ -195,7 +257,7 @@ export function workReport(d) {
         h("p", {
           class: "p-meta",
           text: records.length
-            ? `${new Date(records[0].startedAt).toLocaleDateString(locale())} – ${new Date(records[records.length - 1].endedAt).toLocaleDateString(locale())} · ${records.length} iş`
+            ? `${new Date(records[0].startedAt).toLocaleDateString(dl)} – ${new Date(records[records.length - 1].endedAt).toLocaleDateString(dl)} · ${records.length} iş`
             : "Henüz tamamlanmış iş yok.",
         }),
       ),
@@ -207,31 +269,42 @@ export function workReport(d) {
           h(
             "thead",
             {},
-            h("tr", {}, h("th", { text: "Tarih" }), h("th", { text: "İstenen" }), h("th", { text: "Yapılan" }), h("th", { class: "cost", text: "Kaynak" })),
+            h(
+              "tr",
+              {},
+              h("th", { class: "no-print", text: "Rapora" }),
+              h("th", { text: "Tarih" }),
+              h("th", { text: "İstenen" }),
+              h("th", { text: "Yapılan" }),
+              h("th", { class: "cost", text: "Kaynak" }),
+            ),
           ),
           h(
             "tbody",
             {},
-            ...records.map((r) =>
-              h(
+            ...records.map((r) => {
+              // Unticked rows (an internal test, a job the client did not ask for) stay out of the printed copy.
+              const keep = h("input", { type: "checkbox", checked: true, "aria-label": "Rapora dahil" });
+              const row = h(
                 "tr",
                 {},
-                h("td", { text: new Date(r.endedAt).toLocaleDateString(locale(), { day: "numeric", month: "short" }) }),
+                h("td", { class: "no-print" }, keep),
+                h("td", { text: new Date(r.endedAt).toLocaleDateString(dl, { day: "numeric", month: "short" }) }),
                 h(
                   "td",
                   {},
                   h("strong", { text: label(r) }),
-                  r.request
-                    ? h("div", { class: "small", contenteditable: "true", text: r.request.length > 240 ? `${r.request.slice(0, 240)}…` : r.request })
-                    : null,
+                  r.request ? h("div", { class: "small", contenteditable: "true", "data-doc-data": "", text: clientText(r.request, 240) }) : null,
                 ),
-                h("td", { contenteditable: "true", text: (r.summary || r.title || "").slice(0, 600) }),
+                h("td", { contenteditable: "true", "data-doc-data": "", text: clientText(r.summary || r.title || "", 600) }),
                 h("td", {
                   class: "cost small",
                   text: r.tokens ? `${fmtTokens(r.tokens)}${r.provider === "codex" ? " · Codex" : ""}${r.model ? ` · ${r.model}` : ""}` : "—",
                 }),
-              ),
-            ),
+              );
+              keep.addEventListener("change", () => row.classList.toggle("excluded", !keep.checked));
+              return row;
+            }),
           ),
         )
       : null,
@@ -243,6 +316,7 @@ export function workReport(d) {
     ),
     h("p", { class: "p-hint", text: "Metinlere tıklayıp düzeltebilirsiniz (kaydedilmez), sonra PDF olarak kaydedin." }),
   );
+  translateDoc(sheet, docLang);
   showCost.addEventListener("change", () => sheet.classList.toggle("hide-cost", !showCost.checked));
   return h(
     "div",
@@ -261,7 +335,8 @@ export function workReport(d) {
  * Monthly maintenance report for the client: the site is up (checked now), how fast it answered, what was done
  * this month, and the health of the last build. Printable; visitor numbers are not included (no analytics read).
  */
-async function monthlyReport(d) {
+async function monthlyReport(d, docLang = docLangOf(d)) {
+  const dl = docLocale(docLang);
   const slug = d.status.slug;
   const now = new Date();
   const monthSel = h(
@@ -280,8 +355,8 @@ async function monthlyReport(d) {
   const health = await guarded(() => api("GET", `/api/clients/${slug}/health`));
   const draw = () => {
     const month = monthSel.value;
-    const monthName = monthSel.selectedOptions[0].textContent;
-    const done = (d.history || []).filter((r) => r.status === "succeeded" && r.kind !== "build" && r.endedAt.slice(0, 7) === month);
+    const monthName = new Date(`${month}-15T12:00:00`).toLocaleDateString(dl, { month: "long", year: "numeric" });
+    const done = reportable(d.history || []).filter((r) => r.endedAt.slice(0, 7) === month);
     const live = health?.live || [];
     const prod = live.find((l) => l.target === "production");
     const label = (r) => (r.kind.startsWith("edit-") ? "Düzenleme" : KIND_LABEL[r.kind] || r.title);
@@ -298,7 +373,7 @@ async function monthlyReport(d) {
           h("h1", { text: d.business.name || slug }),
           h("p", {
             class: "p-meta",
-            text: `${monthName} · hazırlanma ${now.toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" })}`,
+            text: `${monthName} · hazırlanma ${now.toLocaleDateString(dl, { day: "numeric", month: "long", year: "numeric" })}`,
           }),
         ),
       ),
@@ -340,8 +415,8 @@ async function monthlyReport(d) {
                 h(
                   "li",
                   {},
-                  h("strong", { text: `${new Date(r.endedAt).toLocaleDateString(locale(), { day: "numeric", month: "short" })} · ${label(r)}: ` }),
-                  (r.summary || r.request || r.title || "").slice(0, 260),
+                  h("strong", { text: `${new Date(r.endedAt).toLocaleDateString(dl, { day: "numeric", month: "short" })} · ${label(r)}: ` }),
+                  h("span", { contenteditable: "true", "data-doc-data": "", text: clientText(r.summary || r.request || r.title || "", 260) }),
                 ),
               ),
             )
@@ -368,7 +443,7 @@ async function monthlyReport(d) {
                 h("th", { text: "Son kontrol" }),
                 h("td", {
                   text: health.checks.at
-                    ? `${new Date(health.checks.at).toLocaleDateString(locale())} · ${health.checks.pass} geçti, ${health.checks.warn} uyarı, ${health.checks.fail} hata`
+                    ? `${new Date(health.checks.at).toLocaleDateString(dl)} · ${health.checks.pass} geçti, ${health.checks.warn} uyarı, ${health.checks.fail} hata`
                     : "Henüz kontrol yok",
                 }),
               ),
@@ -394,6 +469,7 @@ async function monthlyReport(d) {
       ),
       h("p", { class: "p-hint", text: "Ziyaretçi sayıları bu raporda yok (Cloudflare analitiği okunmuyor). Notlara tıklayıp düzeltebilirsiniz." }),
     );
+    translateDoc(sheet, docLang);
     holder.replaceChildren(
       h(
         "div",
@@ -409,8 +485,9 @@ async function monthlyReport(d) {
   return holder;
 }
 
-async function proposalSheet(body, d, switcher) {
+async function proposalSheet(body, d, switcher, docLang = docLangOf(d)) {
   const slug = d.status.slug;
+  const dl = docLocale(docLang);
   const [settings, brand] = await Promise.all([
     api("GET", "/api/settings").catch(() => ({ sender: {} })),
     api("GET", `/api/clients/${slug}/brand`).catch(() => null),
@@ -421,7 +498,7 @@ async function proposalSheet(body, d, switcher) {
   const b = d.businessTracking || {};
   const today = new Date();
   const no = `T-${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}-${slug.slice(0, 6).toUpperCase()}`;
-  const fmt = (n) => `${CURRENCY_SIGNS[b.currency] || ""}${Number(n).toLocaleString(locale())}`;
+  const fmt = (n) => `${CURRENCY_SIGNS[b.currency] || ""}${Number(n).toLocaleString(dl)}`;
   const extras = b.addons || [];
   const extrasSum = extras.reduce((t, a) => t + (a.price || 0), 0);
   const price = b.price != null ? fmt(b.price + extrasSum) : "Belirtilecek";
@@ -441,7 +518,7 @@ async function proposalSheet(body, d, switcher) {
         {},
         h("span", { class: "p-kicker", text: "Web sitesi teklifi" }),
         h("h1", { text: d.business.name || slug }),
-        h("p", { class: "p-meta", text: `${no} · ${today.toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" })}` }),
+        h("p", { class: "p-meta", text: `${no} · ${today.toLocaleDateString(dl, { day: "numeric", month: "long", year: "numeric" })}` }),
       ),
       logo && h("img", { class: "p-logo", src: logo, alt: "" }),
     ),
@@ -465,7 +542,9 @@ async function proposalSheet(body, d, switcher) {
           h(
             "div",
             { class: "p-swatches" },
-            ...palette.slice(0, 6).map(([n, v]) => h("span", {}, h("i", { style: `background:${v}` }), `${n} ${v.toUpperCase()}`)),
+            ...palette
+              .slice(0, 6)
+              .map(([n, v]) => h("span", { ...nameLang(n), "data-doc-data": "" }, h("i", { style: `background:${v}` }), `${n} ${v.toUpperCase()}`)),
           ),
         )
       : null,
@@ -490,7 +569,7 @@ async function proposalSheet(body, d, switcher) {
           h("th", { text: "Teslim" }),
           h("td", {
             text: b.deadline
-              ? new Date(`${b.deadline}T12:00:00`).toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" })
+              ? new Date(`${b.deadline}T12:00:00`).toLocaleDateString(dl, { day: "numeric", month: "long", year: "numeric" })
               : "Onaydan sonra belirlenir",
           }),
         ),
@@ -516,6 +595,7 @@ async function proposalSheet(body, d, switcher) {
       ? h("footer", { class: "p-foot" }, [s.name, s.email, s.phone, s.web].filter(Boolean).join(" · "))
       : h("p", { class: "p-hint", text: "Gönderen bilgilerini Ayarlar → Teklif bölümünden ekleyiniz; PDF'in altında görünür." }),
   );
+  translateDoc(sheet, docLang);
   body.replaceChildren(
     h(
       "div",

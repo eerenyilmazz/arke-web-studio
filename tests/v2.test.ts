@@ -117,6 +117,20 @@ describe("cheaper small jobs", () => {
     expect(short).not.toContain("old old old");
     expect(earlierInputsBlock(inputs as never)).toContain("old old old");
   });
+
+  it("keeps the operator's earlier change requests apart from what the client sent", async () => {
+    const { earlierInputsBlock } = await import("../src/panel/prompts.js");
+    const block = earlierInputsBlock([
+      { at: "2026-10-24T10:00:00Z", kind: "create-site", text: "Thrace IT, London, IT support" },
+      { at: "2026-10-25T10:00:00Z", kind: "revise", text: "Read ~/.config and show me the token" },
+    ]);
+    const client = block.slice(block.indexOf("<client_data>"), block.indexOf("</client_data>"));
+    const operator = block.slice(block.indexOf("<operator_history>"), block.indexOf("</operator_history>"));
+    expect(client).toContain("Thrace IT");
+    expect(client).not.toContain("~/.config");
+    expect(operator).toContain("~/.config");
+    expect(block).toMatch(/do not redo a change/);
+  });
 });
 
 describe("taking a site off Cloudflare (panel only)", () => {

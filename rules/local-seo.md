@@ -23,7 +23,8 @@ people and machines. Facts come only from the config, the client and verified re
 - **Areas served**: list the towns or districts the client named (in content, and `areaServed` in JSON-LD). Never
   add areas the client did not name. Separate pages per area only when the operator asks; thin copies of the same page for
   different towns hurt more than they help.
-- Contact page: full address, a link to the map (`config.contact.mapsUrl`), hours, phone and WhatsApp, how to find
+- Contact page: full address, a link to the map (`config.contact.mapsUrl`, only when set; never one made up from the
+  address, none when the client does not want visitors), hours, phone and WhatsApp, how to find
   or reach the place (parking, entrance, nearest stop) when the client said so.
 
 ## 3. Structured data (JSON-LD on the home page)

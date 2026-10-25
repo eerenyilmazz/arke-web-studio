@@ -1,5 +1,5 @@
 // Brand board (Marka Kimliği).
-import { api, ask, guarded, h, isBusy, printDoc, toast } from "./core.js";
+import { api, ask, guarded, h, isBusy, nameLang, printDoc, toast } from "./core.js";
 import { runAgent } from "./jobs.js";
 import { libraryControls } from "./library.js";
 import { conceptsCard } from "./proposal.js";
@@ -125,7 +125,7 @@ function conceptCard(v) {
           "li",
           {},
           h("span", { class: "chip", style: `background:${p.hex}` }),
-          h("span", { class: "sw-name", text: p.name }),
+          h("span", { class: "sw-name", ...nameLang(p.name), text: p.name }),
           h(
             "button",
             {

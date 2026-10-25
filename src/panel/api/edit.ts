@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
-import { snapshot } from "../../lib/versions.js";
+import { snapshot, versionNotSaved } from "../../lib/versions.js";
 import { FORM_ACTION, FORM_FILE, WEB3FORMS_KEY, readClientForm } from "../../lib/form.js";
 import { findInSite, replaceInSite } from "../../lib/site-replace.js";
 import { applyHtmlChanges, contentTexts, htmlTexts, setContentText, type TextChange } from "../../lib/site-texts.js";
@@ -485,15 +485,16 @@ async function structuredEdit(deps: ApiDeps, req: IncomingMessage, res: ServerRe
   const paths = clientPaths(deps.factory.clientsRoot, s);
   const draft = readDraftConfig(paths) as Draft;
   const body = await readJsonBody(req, JSON_LIMIT);
+  const title = EDIT_TITLES[type as EditType];
+  // The version before the edit is recorded before the form writes anything, whether or not the agent runs.
+  await snapshot(paths.root, `Önce: ${title}`).catch(versionNotSaved);
   const result = await edit({ deps, slug: s, paths, draft, custom: draft.template === "custom", body });
   if (result.kind === "direct") {
     sendJson(res, 202, serialiseJob(result.job));
     return;
   }
-  const title = EDIT_TITLES[type as EditType];
   let job;
   if (result.needsAgent) {
-    await snapshot(paths.root, `Önce: ${title}`).catch(() => null);
     job = launchAgent(
       deps,
       s,

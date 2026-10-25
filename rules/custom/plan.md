@@ -11,7 +11,9 @@ a new idea with notes. Until they approve, the write tools refuse every site fil
 (the motion's live demo shown in the plan card). After approval, build exactly to the plan; any departure goes
 in the summary with its reason. The build fails without an approved plan, or when the plan changed after approval.
 
-The plan (all names formal and in the site's main language; no jokes, puns or cute phrasing):
+The plan (all names formal and in the site's main language; no jokes, puns or cute phrasing; the descriptions
+(concept, source, hero, purposes, idea, beats, reducedMotion) in the operator's language, Turkish unless the panel is in
+English, because the operator reads and approves them):
 
 - `concept`: the one idea the design grows from; `source`: where it comes from (the logo's shapes, the craft's
   material, the place), never "modern and clean".
@@ -26,7 +28,13 @@ The plan (all names formal and in the site's main language; no jokes, puns or cu
 - `animations`: 0–4 supporting animations with formal names, trigger and what moves.
 - `differs` (only after a new-idea request): how this plan differs from the earlier ones.
 
-In the summary, write the plan out for the operator in formal Turkish: concept and source, palette, fonts, hero, pages, the
+Lengths `save_design_plan` checks (a longer field is refused; shorten it rather than retrying as it is): concept 600
+characters, source 300, hero 700, each tone word 40, palette name 30 and role 60, font names 60, page names 40 (at most
+8 pages), section name 60 and purpose 240 (1–10 per page), signature name 40, idea 300, each beat's `what` 200 and
+`easing` 60 (a beat starts at most at 6000 ms and lasts 80–4000 ms), `reducedMotion` 200, animation names 40 and `what`
+200, `differs` 400. No other fields are accepted.
+
+In the summary, write the plan out for the operator (in the panel's language; formal Turkish unless told otherwise): concept and source, palette, fonts, hero, pages, the
 signature's name and its beats in order with timings. On a new-idea request, read the earlier plans
 (`design-plans/`): the new one has a different concept or source, hero composition and signature motion (not a
 variation), unless the operator's notes keep a part.

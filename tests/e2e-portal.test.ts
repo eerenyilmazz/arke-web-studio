@@ -144,9 +144,11 @@ describe("end to end: the client portal in Cloudflare's runtime", { timeout: 300
       await client.selectOption('select[name="page"]', pageId!);
       await client.fill('textarea[name="text"]', text!);
       await client.getByRole("button", { name: "Send comment" }).click();
-      await expect.poll(() => client.locator("h1").textContent()).toMatch(/comment has been sent/);
-      await client.getByRole("link", { name: "Back to the preview" }).click();
+      // The page opens again with a note on top, the form ready for the next comment and the same page chosen.
+      await expect.poll(() => client.locator('[role="status"]').textContent()).toMatch(/comment has been sent/);
+      expect(await client.locator('select[name="page"]').inputValue()).toBe(pageId);
     }
+    await client.getByRole("link", { name: "If everything is right, go to the approval" }).click();
     await client.fill('input[name="name"]', "Rose Hill");
     await client.getByRole("button", { name: "I approve" }).click();
     await expect.poll(() => client.locator("h1").textContent()).toMatch(/approval has been sent/);
@@ -174,6 +176,10 @@ describe("end to end: the client portal in Cloudflare's runtime", { timeout: 300
     await expect.poll(async () => (await page.locator(".portal-card .portal-url").allInnerTexts()).some((u) => u.includes("/f/"))).toBe(false);
     const gone = await fetch(formUrl);
     expect(gone.status).toBe(404);
+    // A closed link no longer says which language the client reads: the message is in both.
+    const goneText = await gone.text();
+    expect(goneText).toContain("not valid or has expired");
+    expect(goneText).toContain("süresi dolmuş");
     const left = (await (await fetch(`${portalUrl}/api/items`, { headers: secretHeaders })).json()) as { items: unknown[] };
     expect(left.items).toEqual([]);
     expect((await fetch(`${portalUrl}/api/items`)).status).toBe(401);

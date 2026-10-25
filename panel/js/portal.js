@@ -1,9 +1,12 @@
 // Client portal: setup card (Settings → Yayın) and the per-client links card (Müşteri Bilgileri).
 import { api, ask, copyButton, guarded, h, isBusy, time, toast } from "./core.js";
+import { PAGE_TR } from "./edit-core.js";
 import { runAgent } from "./jobs.js";
 import { render } from "./router.js";
 
 const LINK_KIND_TR = { intake: "Bilgi formu", review: "Yorum ve onay" };
+/** The page a comment is about, by name: "other" (the portal's "General" choice) or none is "Genel". */
+const commentPage = (id) => (!id || id === "other" ? "Genel" : PAGE_TR[id] || id);
 
 /** Settings card: one-time setup on the operator's Cloudflare account. The secret is never shown. */
 export function portalSettingsCard() {
@@ -45,16 +48,19 @@ export function portalSettingsCard() {
       h(
         "ol",
         { class: "setup-steps" },
-        h(
-          "li",
-          {},
-          h("strong", { text: "Token'a izin ekle: " }),
-          "Cloudflare → Profil → API Tokens → mevcut token'da ",
-          h("em", { text: "Edit" }),
-          " → Permissions'a ",
-          h("em", { text: "Account · Workers KV Storage · Edit" }),
-          " ekle → Continue → Update. Token değişmez, yeniden kaydetmen gerekmez.",
-        ),
+        // Only before the first install: once the portal works, the token already has the permission.
+        st.configured
+          ? null
+          : h(
+              "li",
+              {},
+              h("strong", { text: "Token'a izin ekle: " }),
+              "Cloudflare → Profil → API Tokens → mevcut token'da ",
+              h("em", { text: "Edit" }),
+              " → Permissions'a ",
+              h("em", { text: "Account · Workers KV Storage · Edit" }),
+              " ekle → Continue → Update. Token değişmez, yeniden kaydetmen gerekmez.",
+            ),
         h(
           "li",
           {},
@@ -210,7 +216,7 @@ export function portalCard(d) {
                   h(
                     "div",
                     { class: "row" },
-                    h("strong", { text: f.page || "genel" }),
+                    h("strong", { text: commentPage(f.page) }),
                     h("span", { class: "muted small", text: time(f.at) }),
                     h("span", {
                       class: `badge ${f.status === "open" ? "warn" : "ok"}`,

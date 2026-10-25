@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { contentHash } from "../src/lib/files.js";
 import { clientPaths } from "../src/lib/paths.js";
@@ -71,6 +73,42 @@ describe("custom sites: the agent writes the site, the factory checks it", () =>
     expect(result.passed).toBe(true);
     expect(result.checks.find((c) => c.name.startsWith("Brand identity"))?.detail).toMatch(/jar-fill, brine-bubbles/);
     expect(contentHash(paths.root)).toBeTruthy();
+  });
+
+  it("serves Google Fonts from the site itself, and keeps the link with a warning when the download fails", async () => {
+    const { f, paths } = await customClient();
+    writeGoodSite(f);
+    tools.writeSiteFileTool(f, { slug: SLUG, path: "css/fonts.css", content: '@import url("https://fonts.googleapis.com/css2?family=Fraunces");' });
+    const asked: string[] = [];
+    const fake = async (url: string, binary: boolean) => {
+      asked.push(url);
+      return binary ? Buffer.from("wOF2") : "@font-face{font-family:Fraunces;src:url(https://fonts.gstatic.com/s/fraunces/v1/a.woff2) format('woff2')}";
+    };
+    const ok = await tools.buildSite(f, { slug: SLUG, fontFetcher: fake });
+    expect(ok.checks.find((c) => c.name.startsWith("Fonts served"))?.status).toBe("pass");
+    const html = readFileSync(path.join(paths.distDir, "index.html"), "utf8");
+    expect(html).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
+    expect(readFileSync(path.join(paths.distDir, "css", "fonts.css"), "utf8")).toMatch(/\/fonts\/google\/[0-9a-f]{12}\.css/);
+    const css = readdirSync(path.join(paths.distDir, "fonts", "google")).find((n) => n.endsWith(".css"))!;
+    expect(readFileSync(path.join(paths.distDir, "fonts", "google", css), "utf8")).toMatch(/url\(\/fonts\/google\/[0-9a-f]{12}\.woff2\)/);
+    // The site's own files keep the Google link; only the published copy changes.
+    expect(readFileSync(path.join(paths.root, "site", "index.html"), "utf8")).toMatch(/fonts\.googleapis\.com/);
+    // Rebuilding uses the cache: nothing is downloaded again.
+    const before = asked.length;
+    await tools.buildSite(f, { slug: SLUG, fontFetcher: fake });
+    expect(asked.length).toBe(before);
+
+    const { f: f2, paths: p2 } = await customClient();
+    writeGoodSite(f2);
+    const offline = await tools.buildSite(f2, {
+      slug: SLUG,
+      fontFetcher: async () => {
+        throw new Error("offline");
+      },
+    });
+    expect(offline.checks.find((c) => c.name.startsWith("Fonts served"))?.status).toBe("warn");
+    expect(offline.passed).toBe(true);
+    expect(readFileSync(path.join(p2.distDir, "index.html"), "utf8")).toMatch(/fonts\.googleapis\.com/);
   });
 
   it("fails without a brand, with unused signature animations, or with unsafe code", async () => {

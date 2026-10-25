@@ -295,6 +295,38 @@ describe("panel UI smoke (headless browser)", { timeout: 30_000 }, () => {
     await page.close();
   });
 
+  ui()("writes client documents in the client's language, with clean summaries and rows left out on request", async (ctx) => {
+    needBrowser(ctx);
+    const { appendHistory } = await import("../src/panel/history.js");
+    const at = (m: number) => new Date(Date.UTC(2026, 9, 20, 9, m)).toISOString();
+    appendHistory(factory, "ui-bakery", {
+      tools: [],
+      title: "Değişiklik isteği",
+      kind: "revise",
+      id: "doc-1",
+      startedAt: at(0),
+      endedAt: at(1),
+      status: "succeeded",
+      summary: "**Yaptıklarım:** başlığı kısalttım.\n\n**Önerilerim:** iç not, müşteriye gitmez.",
+      request: "Başlığı kısalt.",
+    });
+    const { page, errors } = await open("#/musteri/ui-bakery/teklif");
+    // An English site: the proposal opens in English, dates and all.
+    await page.waitForSelector(".proposal");
+    expect(await page.locator(".proposal").first().getAttribute("lang")).toBe("en");
+    expect(await page.locator(".proposal .p-kicker").textContent()).toBe("Website proposal");
+    await page.getByRole("button", { name: "İş Raporu" }).click();
+    await page.waitForSelector(".report-table");
+    const row = page.locator(".report-table tbody tr", { hasText: "başlığı kısalttım" });
+    expect(await row.locator("td").nth(3).textContent()).toBe("Yaptıklarım: başlığı kısalttım.");
+    await row.locator('input[type="checkbox"]').uncheck();
+    expect(await row.getAttribute("class")).toContain("excluded");
+    await page.getByRole("button", { name: "Türkçe" }).click();
+    await expect.poll(() => page.locator(".report .p-kicker").textContent()).toBe("İş raporu");
+    expect(errors).toEqual([]);
+    await page.close();
+  });
+
   ui()("asks for the person's own Cloudflare account and lists the site types", async (ctx) => {
     needBrowser(ctx);
     const { page, errors } = await open("#/ayarlar");

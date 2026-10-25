@@ -26,6 +26,8 @@ import { FactoryError } from "../lib/errors.js";
 import { run } from "../lib/exec.js";
 import { dirHash, readJsonIfExists, writeJson, writeText } from "../lib/files.js";
 import { assertSlug } from "../lib/paths.js";
+import { effectiveFormAction } from "../lib/form.js";
+import { preparePublishDir } from "../deploy/publish-dir.js";
 import { WRANGLER_COMPAT_DATE, PREVIEW_SUFFIX, DEPLOYS_FILE, clientEnvPrefix, cloudflareCredentials, formActionUrl } from "./shared.js";
 
 /** Deploy and unpublish on Cloudflare, and the Cloudflare status shown in the panel. */
@@ -44,6 +46,8 @@ export async function deploy(
     log?: (line: string) => void;
     /** Tests replace the command runner. */
     runner?: Runner;
+    /** Tests shorten the wait before the one retry. */
+    retryDelayMs?: number;
   },
 ) {
   const { paths, config } = loadValidClient(factory, assertSlug(args.slug));
@@ -70,7 +74,8 @@ export async function deploy(
       `${APP_ENTRY} is missing: this ${PRODUCTS[product.product].name} site has no app code yet.`,
       "The factory installs its parts first (panel).",
     );
-  if (!app) writeWranglerConfig(paths.wranglerConfig, workerName, routes);
+  const assetsDir = preparePublishDir(paths.root, paths.distDir, { target: args.target, app, formAction: effectiveFormAction(paths.factoryDir) });
+  if (!app) writeWranglerConfig(paths.wranglerConfig, workerName, routes, assetsDir);
 
   const creds = cloudflareCredentials(config.hosting.model, config.slug);
   if (!args.dryRun && !creds) {
@@ -108,21 +113,16 @@ export async function deploy(
       resources = await ensureResources(ctx);
       await migrate(ctx, resources, args.allowDestructive === true);
       // Written before the secrets: wrangler needs the Worker's config, and a first deploy creates the Worker.
-      writeAppWranglerConfig(paths.wranglerConfig, workerName, routes, plan, resources);
+      writeAppWranglerConfig(paths.wranglerConfig, workerName, routes, plan, resources, assetsDir);
       await pushSecrets(ctx, workerName, secrets);
     } else {
-      writeAppWranglerConfig(paths.wranglerConfig, workerName, routes, plan, resources);
+      writeAppWranglerConfig(paths.wranglerConfig, workerName, routes, plan, resources, assetsDir);
     }
   }
   const wranglerArgs = [wranglerJs, "deploy", ...(args.dryRun ? ["--dry-run"] : [])];
-  const res = await runner(process.execPath, wranglerArgs, {
-    cwd: paths.root,
-    timeoutMs: factory.limits.deployTimeoutMs,
-    env: creds
-      ? { CLOUDFLARE_API_TOKEN: creds.token, CLOUDFLARE_ACCOUNT_ID: creds.accountId, WRANGLER_SEND_METRICS: "false" }
-      : { WRANGLER_SEND_METRICS: "false" },
-    secrets: creds ? [creds.token] : [],
-  });
+  const opts = { cwd: paths.root, timeoutMs: factory.limits.deployTimeoutMs, env: wranglerEnv(creds), secrets: creds ? [creds.token] : [] };
+  const publish = () => runner(process.execPath, wranglerArgs, opts);
+  const res = await withOneRetry(publish, args.log, args.retryDelayMs ?? DEPLOY_RETRY_DELAY_MS);
   const output = `${res.stdout}\n${res.stderr}`;
   if (res.code !== 0) throw new FactoryError(`wrangler exited with ${res.code}:\n${output.slice(-1500)}`, "See docs/runbook in README: deploy failed.");
 
@@ -144,6 +144,36 @@ export async function deploy(
           ? "Check the custom domain loads over HTTPS. DNS for the domain must be on Cloudflare."
           : "Live on workers.dev. Connect the domain once DNS is on Cloudflare (set site.domain, rebuild, deploy).",
   };
+}
+
+/** Variables for wrangler: the account's credentials when there are any, never metrics. */
+function wranglerEnv(creds: { token: string; accountId: string } | null): Record<string, string> {
+  return creds
+    ? { CLOUDFLARE_API_TOKEN: creds.token, CLOUDFLARE_ACCOUNT_ID: creds.accountId, WRANGLER_SEND_METRICS: "false" }
+    : { WRANGLER_SEND_METRICS: "false" };
+}
+
+const DEPLOY_RETRY_DELAY_MS = 5_000;
+/** Network and Cloudflare-side failures worth one more try; a wrong token or config is not (it would fail again). */
+const TRANSIENT_DEPLOY =
+  /asset upload|upload(?:ing)? (?:failed|error)|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|fetch failed|timed? ?out|\b(?:500|502|503|504)\b|Internal Server Error|Service Unavailable/i;
+const PERMANENT_DEPLOY = /Authentication|10000|\b(?:401|403)\b|Invalid (?:token|config)/i;
+
+export function isTransientDeployError(output: string): boolean {
+  return TRANSIENT_DEPLOY.test(output) && !PERMANENT_DEPLOY.test(output);
+}
+
+/** Uploading the same files again is safe; a passing network or Cloudflare error usually goes away on a second try. */
+async function withOneRetry<R extends { code: number | null; stdout: string; stderr: string }>(
+  publish: () => Promise<R>,
+  log: ((line: string) => void) | undefined,
+  delayMs: number,
+): Promise<R> {
+  const first = await publish();
+  if (first.code === 0 || !isTransientDeployError(`${first.stdout}\n${first.stderr}`)) return first;
+  log?.("Cloudflare'e yükleme geçici bir hatayla kesildi; bir kez daha deneniyor.");
+  await new Promise((r) => setTimeout(r, delayMs));
+  return publish();
 }
 
 /**
@@ -169,11 +199,16 @@ export function deployBlockers(
   return blockers;
 }
 
-function writeWranglerConfig(file: string, workerName: string, routes: Array<{ pattern: string; custom_domain: boolean }> | undefined): void {
+function writeWranglerConfig(
+  file: string,
+  workerName: string,
+  routes: Array<{ pattern: string; custom_domain: boolean }> | undefined,
+  assetsDir: string,
+): void {
   const config = {
     name: workerName,
     compatibility_date: WRANGLER_COMPAT_DATE,
-    assets: { directory: "./dist", not_found_handling: "404-page" },
+    assets: { directory: assetsDir, not_found_handling: "404-page" },
     ...(routes ? { routes } : {}),
   };
   writeText(file, `// Generated by Arke Web Studio from site.config.json. Do not edit.\n${JSON.stringify(config, null, 2)}\n`);
@@ -185,8 +220,16 @@ function writeAppWranglerConfig(
   routes: Array<{ pattern: string; custom_domain: boolean }> | undefined,
   plan: AppPlan,
   resources: ReturnType<typeof readResources>[Target],
+  assetsDir: string,
 ): void {
-  const config = appWranglerConfig({ workerName, compatibilityDate: WRANGLER_COMPAT_DATE, ...(routes ? { routes } : {}), plan, resources: resources ?? {} });
+  const config = appWranglerConfig({
+    workerName,
+    compatibilityDate: WRANGLER_COMPAT_DATE,
+    ...(routes ? { routes } : {}),
+    plan,
+    resources: resources ?? {},
+    assetsDir,
+  });
   writeText(file, `// Generated by Arke Web Studio (app site). Do not edit.\n${JSON.stringify(config, null, 2)}\n`);
 }
 
