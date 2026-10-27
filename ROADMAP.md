@@ -38,6 +38,10 @@ geri alma, kaldırma, yedek ve geri yükleme. Bulunan hatalar 2.4.2'de düzeltil
 | 1.6 | Ekip eşitlemesinde müşteri bazında seçim | çekirdek | açık |
 | 1.7 | Alan adı olmayan sitede sitemap: yayın adresi belli olunca üret ya da bilerek atla | çekirdek | açık |
 | 1.8 | Kullanılan panel ile geliştirme kopyasını ayır (aşağıda "Geliştirme düzeni") | — | açık |
+| 1.9 | Kod düzeni: `src/lib/` dört alana (`core`, `client`, `site`, `checks`), büyük panel ekranları ve panel testleri konularına göre | çekirdek | ✅ 2.4.4 |
+| 1.10 | Kalan büyük panel dosyalarını ekran başına böl: `info.js` (Müşteri Bilgileri), `edit.js` (Düzenle kartları); o ekranda çalışırken | çekirdek | açık |
+| 1.11 | `src/panel/jobs.ts`'i böl: işi çalıştırma, agent izinleri, ilerleme olayları ayrı dosyalara | çekirdek | açık |
+| 1.12 | `src/panel/prompts.ts`'teki kalan kural metinlerini md'ye taşı; komutlarda sadece hangi dosyanın okunacağı kalsın | çekirdek | açık |
 
 ### Plan 2 · E-ticaret
 
@@ -47,6 +51,7 @@ parçalarını yerleştirir ve tasarlar. Tür, plan bitene kadar panelde kapalı
 | # | Görev | Yer |
 | --- | --- | --- |
 | 2.1 | Ödeme sağlayıcısı kararı ve sırası: iyzico, PayTR, Stripe (pazara göre: Türkiye, Birleşik Krallık) | — |
+| 2.0 | `parts/` klasörünü böl: ortak parçalar `parts/shared/`, e-ticarete özel olanlar `parts/ecommerce/`; yayınlanmış sitelerdeki dosya yolları değişmeden (testle) | çekirdek |
 | 2.2 | E-ticaret tasarım kuralları: ürün listesi, ürün sayfası, sepet, ödeme ekranı, sipariş sonucu (`rules/products/ecommerce.md`) | tür |
 | 2.3 | Katalog genişletme: varyant (beden, renk), stok, ürün görselleri; D1 migration | tür (katalog ortak: çekirdek) |
 | 2.4 | Sepet parçası: tarayıcıda tutulur, fiyat ve stok sunucuda yeniden hesaplanır | tür |
