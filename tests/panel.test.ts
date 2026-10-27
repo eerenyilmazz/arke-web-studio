@@ -374,6 +374,8 @@ describe("prepare site (create-site job)", () => {
     expect(call.stdin).toContain("eerenyilmazz1@gmail.com");
     expect(call.stdin).toMatch(/Never deploy and never touch approvals/);
     expect(call.stdin).toMatch(/Eksikler:/);
+    // Template sites have no kind page rules (only custom sites do; see tests/products/showcase.test.ts).
+    expect(call.stdin).not.toContain("rules/products/showcase.md");
 
     const again = await fetch(`${base}/api/clients/reinware/agent/create-site`, { method: "POST", headers: json, body: "{}" });
     expect(again.status).toBe(202);
@@ -440,6 +442,8 @@ describe("brand board", () => {
     expect(args).toMatch(/--disallowedTools Bash/);
     expect(calls[0]!.stdin).toMatch(/signature\.html/);
     expect(calls[0]!.stdin).toMatch(/mcp__arke-web__get_client_status/);
+    // A custom showcase site: the prompt names the kind's own page rules.
+    expect(calls[0]!.stdin).toContain("rules/products/showcase.md");
     // Balanced mode searches the design knowledge instead of loading whole skills.
     expect(calls[0]!.stdin).toMatch(/search_design_knowledge/);
     expect(calls[0]!.stdin).not.toMatch(/\[\[DESIGN_SKILLS\]\]/);

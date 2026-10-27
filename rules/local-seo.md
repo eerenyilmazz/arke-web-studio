@@ -18,14 +18,11 @@ people and machines. Facts come only from the config, the client and verified re
   Ankara", "Family solicitors in Bristol". Not a slogan alone.
 - The `<title>` follows `Service in Area | Business name` (≤ 60 characters); the meta description names the main
   service, the area and one reason to choose them (≤ 160).
-- Services page: one section per main service with its own heading, a plain description, price or "from" price
-  when the client gave one, and the area served.
+- Services and contact pages: what each holds is in the kind's file (`rules/products/showcase.md`).
 - **Areas served**: list the towns or districts the client named (in content, and `areaServed` in JSON-LD). Never
   add areas the client did not name. Separate pages per area only when the operator asks; thin copies of the same page for
   different towns hurt more than they help.
-- Contact page: full address, a link to the map (`config.contact.mapsUrl`, only when set; never one made up from the
-  address, none when the client does not want visitors), hours, phone and WhatsApp, how to find
-  or reach the place (parking, entrance, nearest stop) when the client said so.
+- Contact page: address, hours, phone and the map link exactly as the kind's file says; the same facts as in JSON-LD.
 
 ## 3. Structured data (JSON-LD on the home page)
 

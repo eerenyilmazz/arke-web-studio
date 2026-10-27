@@ -13,9 +13,9 @@ css/base.css       provided by the factory: reset, .wrap/.section/.grid/.stack/.
 css/site.css       the brand layer only: set --c-bg --c-surface --c-ink --c-muted --c-line --c-accent
                    --c-accent-ink --font-heading --font-body (and --wrap), then the design itself
 js/site.js         (shared by all pages; small, no frameworks)
-index.html         about/index.html    services/index.html   gallery/index.html   contact/index.html
 404.html           robots.txt          sitemap.xml (only when site.domain is set)
-privacy/index.html (gizlilik/ on Turkish-only sites) when there is a form; impressum/index.html in Germany
+the pages          their paths and what each holds are in the kind's file: rules/products/<kind>.md
+                   (showcase sites: rules/products/showcase.md)
 <locale>/…         the same pages for each extra locale (default locale at the root)
 ```
 
@@ -30,12 +30,9 @@ Only the pages listed in `config.pages`. Every page:
   Use the most specific type that fits (`BarberShop`, `Dentist`…), with the exact business name and telephone from the
   config. Every page has its own `<title>` (no two alike); `robots.txt` names the sitemap when there is one. The build
   warns about anything missing ("Search and AI visibility").
-- Contact: `tel:` and `mailto:` links, WhatsApp `https://wa.me/<number without +>` when there is a number, address with
-  a link to the map (`config.contact.mapsUrl`) only when it is set; never build a map or "Get directions" link
-  from the address yourself, and none at all when the client said they do not want one (remote-only businesses). **A `<form>` only when `get_client_status` shows `contactForm`**: then
-  it posts to exactly that `action` (method POST, labelled fields, a hidden honeypot, Web3Forms' hidden `access_key`
-  when given); any other form address fails the build. Without `contactForm`: no form. **No embedded maps or
-  videos** (`<iframe>` sets cookies).
+- Contact details, the map link and the form: see the kind's file (`rules/products/showcase.md`, "Contact"). In short:
+  **a `<form>` only when `get_client_status` shows `contactForm`**, posting to exactly that `action`; **no embedded
+  maps or videos** (`<iframe>` sets cookies).
 - Semantic HTML (`header`, `nav`, `main`, `section`, `footer`), one `h1` per page, a skip link, visible keyboard focus,
   AA contrast (4.5:1 text, 3:1 large text and UI), alt text that describes each image, tap targets ≥ 44 px.
 - Responsive from 360 px to 1600 px; check the layout in your head at 375, 768 and 1440.

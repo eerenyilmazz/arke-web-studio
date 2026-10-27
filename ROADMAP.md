@@ -31,7 +31,7 @@ geri alma, kaldırma, yedek ve geri yükleme. Bulunan hatalar 2.4.2'de düzeltil
 | # | Görev | Yer | Durum |
 | --- | --- | --- | --- |
 | 1.1 | 2.4.2'yi gerçek bir işle doğrula: Özel Talep, önizleme, `/brand/` dosyalarının yayında olmaması, fontların siteden gelmesi, agent özetinin dürüstlüğü | — | açık |
-| 1.2 | Tanıtıma özel tasarım kurallarını ortak dosyalardan `rules/products/showcase.md`'ye ayır (içerik aynı kalır, sadece yer değişir) | tür | açık |
+| 1.2 | Tanıtıma özel tasarım kurallarını ortak dosyalardan `rules/products/showcase.md`'ye ayır (içerik aynı kalır, sadece yer değişir) | tür | ✅ 2.4.3 |
 | 1.3 | `npm audit` uyarılarını sınıfla (5 uyarı); güvenli olanları güncelle, `--force` kullanma | çekirdek | açık |
 | 1.4 | Gizlilik metin şablonlarının (`rules/privacy.md`) ve yurt dışı aktarımın avukat kontrolü | — | satıştan önce |
 | 1.5 | Panele uzaktan erişim kararı (öneri: Tailscale ile parolalı giriş) | çekirdek | karar bekliyor |

@@ -20,6 +20,7 @@ These files are the single source of the rules. A job's prompt names the files t
 | `rules/custom/brand.md` | Brand identity and brand board, signature motion, design direction, signature design |
 | `rules/custom/build.md` | Writing the site, factory parts, languages, layout hygiene, build and fix |
 | `rules/custom/changes.md` | Design proposals and later changes |
+| `rules/products/<kind>.md` | Per kind of site: its pages and what each holds (`showcase.md` today) |
 | `rules/parts.md` | App sites (e-commerce, booking, restaurant): placing the factory's ready-made parts |
 | `rules/markets.md` | Per market: language, spelling, currency, formats, legal pages and privacy law |
 | `rules/privacy.md` | Privacy notices (KVKK, UK GDPR, GDPR): the facts to state and the templates |

@@ -75,6 +75,10 @@ least 3), or has no reduced-motion state.
 
 The build warns until the board is complete; the pages themselves still build.
 
+A logo the client sent arrives in the inbox (a file named or looking like a logo; Read shows images): save it with
+`save_asset` kind `logo` and set `brand.logo` before designing. If saving fails, stop and ask the operator; never draw a
+replacement.
+
 **When the client has a logo** (`brand.logo` in the config, saved with `save_asset`): the brand is built **from it**,
 never replaced. Look at the file with Read (it shows you the image), then:
 

@@ -37,7 +37,7 @@ export const PRODUCTS: Readonly<Record<ProductId, ProductModule>> = {
     deploy: "static",
     addons: ["language", "theme", "blog", "whatsapp", "booking"],
     parts: ["site-kit", "motion"],
-    rules: ["rules/custom-site.md"],
+    rules: ["rules/custom-site.md", "rules/products/showcase.md"],
   },
   ecommerce: {
     id: "ecommerce",

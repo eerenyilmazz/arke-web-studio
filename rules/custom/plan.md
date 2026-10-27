@@ -11,6 +11,15 @@ a new idea with notes. Until they approve, the write tools refuse every site fil
 (the motion's live demo shown in the plan card). After approval, build exactly to the plan; any departure goes
 in the summary with its reason. The build fails without an approved plan, or when the plan changed after approval.
 
+### Plan states (`designPlan.state` in `get_client_status`)
+
+- `not-required`: an older site without a plan; carry on as the job says.
+- `missing`: after the research and recording the facts (and only when nothing essential is still open), read this
+  file and "Signature motion" in `rules/custom/brand.md`; write `site/brand/signature.html` first, then the plan with
+  `save_design_plan`; then **stop**: no `brand.json`, no pages, no build. Summarise the plan (below).
+- `awaiting` or `changed`: write nothing; say the plan waits for the operator's approval.
+- `approved`: read `design-plan.json` and build exactly to it; any departure goes in the summary with its reason.
+
 The plan (all names formal and in the site's main language; no jokes, puns or cute phrasing; the descriptions
 (concept, source, hero, purposes, idea, beats, reducedMotion) in the operator's language, Turkish unless the panel is in
 English, because the operator reads and approves them):

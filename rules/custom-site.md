@@ -53,5 +53,6 @@ The custom-site rules are split so each job reads only what it needs. The job's 
 | `rules/custom/brand.md` | Step 1 brand identity and the brand board, **Signature motion**, Step 2 design direction, **Signature design** | designing or changing a brand, a plan's signature |
 | `rules/custom/build.md` | Step 3 writing the site (**Factory parts**, languages, layout hygiene), Step 4 build, read, fix | writing or changing pages |
 | `rules/custom/changes.md` | Design proposals, changing a custom site later | proposals and edits after launch |
+| `rules/products/<kind>.md` | The kind's pages and what each holds (showcase: `rules/products/showcase.md`) | writing or changing pages |
 
 App sites (e-commerce, booking, restaurant) also follow `rules/parts.md`.

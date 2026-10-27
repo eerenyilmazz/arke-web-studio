@@ -19,6 +19,8 @@ import { readBusiness } from "../business.js";
 import { ensureBaseKit } from "../../lib/custom-site.js";
 import { FACTORY_ROOT } from "../../config.js";
 import type { PreviewServer } from "../preview.js";
+import { readProductRecord } from "../../deploy/app.js";
+import { PRODUCTS } from "../../products/registry.js";
 
 /** Shared pieces of the panel API: dependencies, route type, limits, and how jobs are started. */
 export const JSON_LIMIT = 256 * 1024;
@@ -109,19 +111,35 @@ export function pageFiles(page: string): (rel: string) => boolean {
 const PARTS_NOTE =
   "This is an app site with the factory's ready-made parts (catalogue, enquiry inbox, admin screen): before placing a catalogue or a form, read rules/parts.md; never write app/ or js/arke-parts.js.";
 
+const isCustomDraft = (deps: ApiDeps, slug: string) =>
+  (readDraftConfig(clientPaths(deps.factory.clientsRoot, slug)) as { template?: string }).template === "custom";
+
+/**
+ * Custom sites: one line naming the kind's own rule file (rules/products/<kind>.md: its pages and what each holds), so
+ * the agent reads only its kind's page rules. Nothing for kinds without such a file yet.
+ */
+export function kindNote(factoryDir: string): string | null {
+  const product = PRODUCTS[readProductRecord({ factoryDir }).product];
+  const file = product?.rules.find((r) => r.startsWith("rules/products/"));
+  if (!product || !file || !existsSync(path.join(FACTORY_ROOT, file))) return null;
+  return `This is a ${product.name} (${product.id}) site: its pages and what each holds are in ${file}; read it before writing or changing pages.`;
+}
+
 export function launchAgent(deps: ApiDeps, slug: string, kind: string, title: string, prompt: string, request: string) {
   const blocked = monthlyBlock(deps.factory);
   if (blocked) throw new HttpError(409, blocked);
   const policy = resolvePolicy(deps.factory, slug, kind);
   // Custom sites get the factory's base stylesheet once, so no job pays for writing resets and layout helpers.
-  if ((readDraftConfig(clientPaths(deps.factory.clientsRoot, slug)) as { template?: string }).template === "custom") {
+  if (isCustomDraft(deps, slug)) {
     ensureBaseKit(clientPaths(deps.factory.clientsRoot, slug), path.join(FACTORY_ROOT, "rules", "site-kit", "base.css"));
   }
   // App sites get the factory's ready-made parts (catalogue, admin screen, inbox) before the agent places them.
   const parts = prepareAppParts(clientPaths(deps.factory.clientsRoot, slug), slug);
   // Every tool call names the client; saying it once here avoids calls without a slug.
   const withSlug = `${prompt}\nThis job is about client slug "${slug}": pass slug "${slug}" to every tool call that takes one.`;
-  const withParts = parts.installed ? `${withSlug}\n${PARTS_NOTE}` : withSlug;
+  const kindLine = isCustomDraft(deps, slug) ? kindNote(clientPaths(deps.factory.clientsRoot, slug).factoryDir) : null;
+  const withKind = kindLine ? `${withSlug}\n${kindLine}` : withSlug;
+  const withParts = parts.installed ? `${withKind}\n${PARTS_NOTE}` : withKind;
   const text = finalPrompt(withParts.startsWith(TOOLS_NOTE) ? withParts : `${TOOLS_NOTE}\n${withParts}`, {
     ...policy,
     panelLanguage: readSettings(deps.factory).panelLanguage,

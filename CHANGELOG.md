@@ -2,6 +2,18 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.4.3: Tanıtım sitesi kuralları kendi dosyasında
+
+Daha kolay yönetim için kuralların yeri düzenlendi; agent'ın yaptığı iş aynı.
+
+- **`rules/products/showcase.md`:** tanıtım sitesinin sayfaları ve her sayfada ne olacağı (ana sayfa, hakkımızda,
+  hizmetler, galeri, iletişim, gizlilik, 404) tek dosyada. Eskiden `build.md` ve `local-seo.md` içine dağılmıştı.
+  E-ticaret, randevu ve restoran da ileride kendi dosyalarını alacak (`rules/products/<tür>.md`).
+- Serbest tasarımlı sitelerde agent'a hangi türün kural dosyasını okuyacağı söyleniyor.
+- **Tek kaynak:** tasarım planı adımları (`Plan states`) ve müşterinin logosunu kaydetme kuralı agent komutlarından
+  kural dosyalarına taşındı; komutlar artık sadece hangi dosyanın okunacağını söylüyor.
+- Türlere özel testler için `tests/products/` klasörü.
+
 ## 2.4.2: Gerçek ortam testinin bulguları
 
 Thrace IT ile yapılan gerçek ortam testinde (gerçek Cloudflare, gerçek agent) çıkan sorunlar.
