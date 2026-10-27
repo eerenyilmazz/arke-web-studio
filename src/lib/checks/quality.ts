@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import type { Content } from "../schema/content.js";
-import type { SiteConfig } from "../schema/site-config.js";
+import type { Content } from "../../schema/content.js";
+import type { SiteConfig } from "../../schema/site-config.js";
 import { AA_LARGE_TEXT, AA_NORMAL_TEXT, contrastRatio } from "./contrast.js";
 
 export type CheckStatus = "pass" | "fail" | "warn" | "skip";

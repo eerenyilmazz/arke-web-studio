@@ -2,6 +2,21 @@
 
 En yeni sürüm üstte. Kurulum ve kullanım için `README.md`.
 
+## 2.4.4: Kod düzeni (davranış aynı)
+
+Daha kolay yönetim için dosyalar yerleştirildi; panelin ve agent'ın yaptığı iş değişmedi.
+
+- **`src/lib/` dört alana bölündü:** `core/` (yollar, dosyalar, komutlar, hatalar, hesaplar), `client/` (müşteri durumu,
+  onaylar, sürümler, tasarım planı, gizlilik profili), `site/` (site dosyaları, metinler, görseller, fontlar, form),
+  `checks/` (SEO, kontrast, diller, para birimi, imza, ekran görüntüsü). Dosyalar `git mv` ile taşındı, geçmişleri duruyor.
+- **Panel ekranları ayrı dosyalarda:** `proposal.js` → teklif, `reports.js` (iş ve aylık rapor), `concepts.js`
+  (tasarım önerileri); `settings.js` → sayfa düzeni, `settings-usage.js` (paket, agent, kâr, araştırma),
+  `settings-general.js` (teklif bilgileri, dil, yedek); `client.js` → müşteri sayfası, `client-work.js`
+  (Düzenleme sekmesi), `approval.js` (onay penceresi).
+- **Panel testleri konularına göre:** 1.437 satırlık `tests/panel.test.ts` yerine `tests/panel/` altında beş dosya ve
+  ortak `harness.ts`; 40 testin hepsi aynen duruyor.
+- README'deki mimari şeması yeni düzene göre güncellendi.
+
 ## 2.4.3: Tanıtım sitesi kuralları kendi dosyasında
 
 Daha kolay yönetim için kuralların yeri düzenlendi; agent'ın yaptığı iş aynı.

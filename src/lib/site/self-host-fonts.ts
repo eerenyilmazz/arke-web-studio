@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import type { CheckResult } from "./quality.js";
+import type { CheckResult } from "../checks/quality.js";
 
 /**
  * Google Fonts served from the site itself. A visitor's browser then never contacts Google, so the site sets no

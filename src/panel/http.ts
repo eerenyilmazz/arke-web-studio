@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { FactoryError } from "../lib/errors.js";
+import { FactoryError } from "../lib/core/errors.js";
 
 export class HttpError extends Error {
   constructor(

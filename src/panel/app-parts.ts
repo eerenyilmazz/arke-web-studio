@@ -1,9 +1,9 @@
 import { readProductRecord } from "../deploy/app.js";
-import { clientSecretNames, saveClientSecret } from "../lib/accounts.js";
-import { readDraftConfig } from "../lib/client.js";
-import { adminLocale } from "../lib/admin-locale.js";
-import { privacyProfile } from "../lib/privacy.js";
-import type { ClientPaths } from "../lib/paths.js";
+import { clientSecretNames, saveClientSecret } from "../lib/core/accounts.js";
+import { readDraftConfig } from "../lib/client/client.js";
+import { adminLocale } from "../lib/client/admin-locale.js";
+import { privacyProfile } from "../lib/client/privacy.js";
+import type { ClientPaths } from "../lib/core/paths.js";
 import {
   ADMIN_PASSWORD_SECRET,
   hashAdminPassword,

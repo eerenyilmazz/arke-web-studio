@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { clientPaths } from "../src/lib/paths.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } from "./helpers.js";
 
@@ -47,7 +47,7 @@ describe("corporate-v2 fields", () => {
   it("accepts the food motifs and warns about all-caps fonts without failing the build", async () => {
     const { f } = await readyClient();
     tools.updateClientConfig(f, { slug: SLUG, patch: { design: { motif: "grill", fonts: { heading: "Cinzel", body: "Inter" } } } });
-    const { checkInputs } = await import("../src/lib/quality.js");
+    const { checkInputs } = await import("../src/lib/checks/quality.js");
     const { SiteConfigSchema } = await import("../src/schema/site-config.js");
     const config = SiteConfigSchema.parse(JSON.parse(readFileSync(clientPaths(f.clientsRoot, SLUG).config, "utf8")));
     const checks = checkInputs(clientPaths(f.clientsRoot, SLUG).root, config, { en: { gallery: [], testimonials: [], faq: [], ...COMPLETE_CONTENT } as never });

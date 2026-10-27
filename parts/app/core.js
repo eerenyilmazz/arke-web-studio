@@ -244,7 +244,7 @@ const MIN_QUERY = 3;
 const MAX_ERASE = 500;
 const RATE_ROWS_DAYS = 1;
 
-/** Retention and the request deadline, from the settings the factory writes into the Worker (src/lib/privacy.ts). */
+/** Retention and the request deadline, from the settings the factory writes into the Worker (src/lib/client/privacy.ts). */
 export function privacySettings(env) {
   const days = (name, fallback) => {
     const n = Number(env[name]);

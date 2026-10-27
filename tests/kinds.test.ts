@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { clientPaths } from "../src/lib/paths.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import { readHistory, readInputs } from "../src/panel/history.js";
 import { currentKind } from "../src/panel/kinds.js";
 import * as tools from "../src/tools.js";

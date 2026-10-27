@@ -2,7 +2,7 @@
 import { api, ask, guarded, h, isBusy, nameLang, printDoc, toast } from "./core.js";
 import { runAgent } from "./jobs.js";
 import { libraryControls } from "./library.js";
-import { conceptsCard } from "./proposal.js";
+import { conceptsCard } from "./concepts.js";
 
 // ---------------------------------------------------------------- brand board (Marka Atölyesi)
 

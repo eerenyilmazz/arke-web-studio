@@ -1,10 +1,10 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { addApproval, approvalPins } from "../src/lib/approvals.js";
-import type { BuildRecord } from "../src/lib/client.js";
-import { contentHash } from "../src/lib/files.js";
-import { clientPaths } from "../src/lib/paths.js";
+import { addApproval, approvalPins } from "../src/lib/client/approvals.js";
+import type { BuildRecord } from "../src/lib/client/client.js";
+import { contentHash } from "../src/lib/core/files.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } from "./helpers.js";
 
@@ -78,7 +78,7 @@ describe("visual/production approvals are pinned to the built output", () => {
 
 describe("site approval alias", () => {
   it("'site' means content + visual; production stays separate", async () => {
-    const { approvalTargets } = await import("../src/lib/approvals.js");
+    const { approvalTargets } = await import("../src/lib/client/approvals.js");
     expect(approvalTargets("site")).toEqual(["content", "visual"]);
     expect(approvalTargets("production")).toEqual(["production"]);
     expect(approvalTargets("everything")).toBeNull();

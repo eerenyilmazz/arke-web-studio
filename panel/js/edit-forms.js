@@ -282,7 +282,7 @@ export function contactEditor(d, back) {
 
 // ---------------------------------------------------------------- contact form
 
-/** Form services the factory accepts (src/lib/form.ts FORM_ACTION), with where to get the address. */
+/** Form services the factory accepts (src/lib/site/form.ts FORM_ACTION), with where to get the address. */
 export const PROVIDERS = [
   { name: "Formspree", test: /^https:\/\/formspree\.io\/f\/[A-Za-z0-9]{4,20}$/, url: "https://formspree.io", example: "https://formspree.io/f/abcd1234" },
   { name: "Getform", test: /^https:\/\/getform\.io\/f\/[A-Za-z0-9-]{4,40}$/, url: "https://getform.io", example: "https://getform.io/f/abcd-1234" },

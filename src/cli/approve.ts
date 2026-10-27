@@ -9,9 +9,9 @@ import { existsSync, readFileSync } from "node:fs";
 import os from "node:os";
 import { createInterface } from "node:readline/promises";
 import { loadFactoryConfig } from "../config.js";
-import { APPROVAL_KINDS, SITE_APPROVAL, addApproval, approvalPins, approvalTargets, type ApprovalPins } from "../lib/approvals.js";
-import { clientStatus } from "../lib/client.js";
-import { assertSlug, clientPaths } from "../lib/paths.js";
+import { APPROVAL_KINDS, SITE_APPROVAL, addApproval, approvalPins, approvalTargets, type ApprovalPins } from "../lib/client/approvals.js";
+import { clientStatus } from "../lib/client/client.js";
+import { assertSlug, clientPaths } from "../lib/core/paths.js";
 
 async function main(): Promise<void> {
   const [slugArg, kindArg, ...noteParts] = process.argv.slice(2);

@@ -1,10 +1,10 @@
 import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkSvg, saveAsset, sniffImageType } from "../src/lib/assets.js";
-import { redact, run } from "../src/lib/exec.js";
-import { deepMerge } from "../src/lib/merge.js";
-import { assertSlug, clientPaths, safeJoin } from "../src/lib/paths.js";
+import { checkSvg, saveAsset, sniffImageType } from "../src/lib/site/assets.js";
+import { redact, run } from "../src/lib/core/exec.js";
+import { deepMerge } from "../src/lib/core/merge.js";
+import { assertSlug, clientPaths, safeJoin } from "../src/lib/core/paths.js";
 import { PNG_1PX, tempFactory } from "./helpers.js";
 
 describe("slug and paths", () => {

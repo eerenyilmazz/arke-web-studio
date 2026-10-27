@@ -1,11 +1,11 @@
-import { isFactorySiteScript } from "../parts/install.js";
+import { isFactorySiteScript } from "../../parts/install.js";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { FACTORY_ROOT } from "../config.js";
-import { FactoryError } from "./errors.js";
-import type { ClientPaths } from "./paths.js";
-import { safeJoin } from "./paths.js";
-import type { CheckResult } from "./quality.js";
+import { FACTORY_ROOT } from "../../config.js";
+import { FactoryError } from "../core/errors.js";
+import type { ClientPaths } from "../core/paths.js";
+import { safeJoin } from "../core/paths.js";
+import type { CheckResult } from "../checks/quality.js";
 
 /**
  * "custom" sites: the agent designs and writes the whole site (HTML, CSS, JS) for one client into <client>/site/.

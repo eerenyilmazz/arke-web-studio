@@ -1,4 +1,4 @@
-import { cloudflareAccountStatus, readClientSecrets } from "../lib/accounts.js";
+import { cloudflareAccountStatus, readClientSecrets } from "../lib/core/accounts.js";
 import {
   APP_ENTRY,
   type AppDeployContext,
@@ -20,13 +20,13 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { FACTORY_ROOT, type FactoryConfig } from "../config.js";
-import { approvalState, type ApprovalKind } from "../lib/approvals.js";
-import { loadValidClient, type BuildRecord, type DeployRecord } from "../lib/client.js";
-import { FactoryError } from "../lib/errors.js";
-import { run } from "../lib/exec.js";
-import { dirHash, readJsonIfExists, writeJson, writeText } from "../lib/files.js";
-import { assertSlug } from "../lib/paths.js";
-import { effectiveFormAction } from "../lib/form.js";
+import { approvalState, type ApprovalKind } from "../lib/client/approvals.js";
+import { loadValidClient, type BuildRecord, type DeployRecord } from "../lib/client/client.js";
+import { FactoryError } from "../lib/core/errors.js";
+import { run } from "../lib/core/exec.js";
+import { dirHash, readJsonIfExists, writeJson, writeText } from "../lib/core/files.js";
+import { assertSlug } from "../lib/core/paths.js";
+import { effectiveFormAction } from "../lib/site/form.js";
 import { preparePublishDir } from "../deploy/publish-dir.js";
 import { WRANGLER_COMPAT_DATE, PREVIEW_SUFFIX, DEPLOYS_FILE, clientEnvPrefix, cloudflareCredentials, formActionUrl } from "./shared.js";
 

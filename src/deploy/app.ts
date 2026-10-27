@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { FactoryError } from "../lib/errors.js";
-import type { RunOptions, RunResult } from "../lib/exec.js";
-import { readJsonIfExists, writeJson } from "../lib/files.js";
-import type { ClientPaths } from "../lib/paths.js";
-import { type AdminLang, adminLocale } from "../lib/admin-locale.js";
-import { type Jurisdiction, type PrivacyProfile, privacyProfile } from "../lib/privacy.js";
+import { FactoryError } from "../lib/core/errors.js";
+import type { RunOptions, RunResult } from "../lib/core/exec.js";
+import { readJsonIfExists, writeJson } from "../lib/core/files.js";
+import type { ClientPaths } from "../lib/core/paths.js";
+import { type AdminLang, adminLocale } from "../lib/client/admin-locale.js";
+import { type Jurisdiction, type PrivacyProfile, privacyProfile } from "../lib/client/privacy.js";
 import { PRODUCT_IDS, PRODUCTS, type ProductId, type ProductModule } from "../products/registry.js";
 
 /**
@@ -60,7 +60,7 @@ export interface AppPlan {
   readonly media: boolean;
   readonly secrets: readonly string[];
   readonly optionalSecrets: readonly string[];
-  /** The client's personal-data profile (by market): data region and retention (src/lib/privacy.ts). */
+  /** The client's personal-data profile (by market): data region and retention (src/lib/client/privacy.ts). */
   readonly privacy: PrivacyProfile;
   /** Where the client's admin screen starts: its language and its date and money formats. */
   readonly admin: { readonly lang: AdminLang; readonly locale: string };

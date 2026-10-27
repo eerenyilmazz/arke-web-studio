@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import type { ClientPaths } from "./paths.js";
+import type { ClientPaths } from "../core/paths.js";
 import { listSiteFiles, siteDir, writeSiteFile } from "./custom-site.js";
 
 /**

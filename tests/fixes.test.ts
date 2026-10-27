@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { contentHash } from "../src/lib/files.js";
-import { clientPaths } from "../src/lib/paths.js";
+import { contentHash } from "../src/lib/core/files.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } from "./helpers.js";
 

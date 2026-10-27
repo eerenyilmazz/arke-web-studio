@@ -1,12 +1,12 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import { RESEARCH_FILE } from "../lib/client.js";
-import { run as realRun } from "../lib/exec.js";
+import { RESEARCH_FILE } from "../lib/client/client.js";
+import { run as realRun } from "../lib/core/exec.js";
 import type { Runner } from "./updater.js";
 
 /**
  * Team sharing: several people work on the same clients through one private Git repository (the same kind of
- * repository an ArkeLab team uses). Every client already has its own git history (lib/versions.ts); sharing
+ * repository an ArkeLab team uses). Every client already has its own git history (lib/client/versions.ts); sharing
  * pushes that history to the team repository as the branch `clients/<slug>` and pulls teammates' work back.
  *
  * Shared: the site's inputs (config, texts, images, site code), the design plan, research notes, the client's kind

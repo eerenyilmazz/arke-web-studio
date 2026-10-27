@@ -1,7 +1,7 @@
 import path from "node:path";
 import { z } from "zod";
 import type { FactoryConfig } from "../config.js";
-import { readJsonIfExists, writeJson } from "../lib/files.js";
+import { readJsonIfExists, writeJson } from "../lib/core/files.js";
 
 /**
  * Panel-wide settings the operator changes on the settings page. Stored next to the client folders (not in the factory

@@ -1,7 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { FactoryConfig } from "../config.js";
-import { clientPaths } from "../lib/paths.js";
+import { clientPaths } from "../lib/core/paths.js";
 import type { JobRecord } from "./jobs.js";
 import { withCurrentKind } from "./kinds.js";
 

@@ -122,7 +122,7 @@ describe("updating Arke Web Studio from the panel", () => {
     git(install, "checkout", "--", "package.json");
     const calls: string[] = [];
     // git runs for real; npm is stood in for (no packages to install in a test).
-    const { run } = await import("../src/lib/exec.js");
+    const { run } = await import("../src/lib/core/exec.js");
     const runner = async (cmd: string, args: readonly string[], o: Parameters<typeof run>[2]) => {
       calls.push(`${cmd} ${args.join(" ")}`);
       return cmd === "npm" ? { code: 0, stdout: "", stderr: "" } : run(cmd, args, o);

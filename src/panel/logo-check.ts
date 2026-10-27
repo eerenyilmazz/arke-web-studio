@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import type { FactoryConfig } from "../config.js";
-import { readDraftConfig } from "../lib/client.js";
-import { readJsonIfExists, writeJson } from "../lib/files.js";
-import { clientPaths, safeJoin } from "../lib/paths.js";
+import { readDraftConfig } from "../lib/client/client.js";
+import { readJsonIfExists, writeJson } from "../lib/core/files.js";
+import { clientPaths, safeJoin } from "../lib/core/paths.js";
 import * as tools from "../tools.js";
 
 /**

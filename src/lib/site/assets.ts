@@ -1,6 +1,6 @@
 import { copyFileSync, lstatSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { FactoryError } from "./errors.js";
+import { FactoryError } from "../core/errors.js";
 
 export const ASSET_KINDS = ["logo", "gallery", "hero", "team", "og"] as const;
 export type AssetKind = (typeof ASSET_KINDS)[number];

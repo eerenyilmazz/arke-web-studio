@@ -7,7 +7,7 @@
 
 <br>
 
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.4.3-d6a584)
+![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.4.4-d6a584)
 ![Testler](https://img.shields.io/badge/testler-vitest%20%2B%20Playwright-2f7a4f)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022.12-3c873a)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
@@ -382,7 +382,7 @@ yeni bir sürüm parça kodunu yeniler, uygulanmış şema değişikliklerine do
 
 ## Kişisel veri (KVKK / GDPR)
 
-Kurallar sayfanın diline göre değil, müşterinin **pazarına** göre seçilir ([`src/lib/privacy.ts`](src/lib/privacy.ts);
+Kurallar sayfanın diline göre değil, müşterinin **pazarına** göre seçilir ([`src/lib/client/privacy.ts`](src/lib/client/privacy.ts);
 kaynaklar ve kararlar [`docs/privacy.md`](docs/privacy.md)).
 
 | Pazar | Kural | Veri bölgesi | Talebe yanıt |
@@ -534,21 +534,25 @@ hayali firmalarla yapılır.
 arke-web-studio/                 bu depo (fabrika)
 ├── AGENTS.md  CLAUDE.md         agent'ın akışı ve kuralları
 ├── rules/                       kuralların tek kaynağı: araştırma, tasarım, pazar, gizlilik, SEO, hazır parçalar
+│   └── products/                site türüne özel sayfa kuralları (showcase.md; ileride ecommerce, booking, restaurant)
 ├── docs/                        privacy.md (kaynaklar), images/, history/
 ├── src/
 │   ├── server.ts  tools/        MCP sunucusu ve araçları
-│   ├── lib/                     yollar, onaylar, kontroller, hesaplar (şifreli), gizlilik profili, sürümler
+│   ├── lib/core/                altyapı: yollar, dosyalar, komut çalıştırma, hatalar, hesaplar (şifreli)
+│   ├── lib/client/              müşteri: durum, onaylar, sürümler, tasarım planı, soru formu, gizlilik profili
+│   ├── lib/site/                site: dosya yazma ve derleme, metinler, görseller, fontlar, form, tasarım bilgisi
+│   ├── lib/checks/              kalite kontrolleri: SEO, kontrast, diller, para birimi, imza, ekran görüntüsü
 │   ├── deploy/app.ts            uygulama siteleri için yayın hattı (D1, R2, şema, gizli anahtarlar)
 │   ├── parts/install.ts         hazır parçaların kurulumu
 │   ├── products/registry.ts     site türleri
 │   └── panel/                   panel sunucusu, API, işler, bütçe, ekip, güncelleme
-├── panel/                       panel arayüzü (çerçevesiz ES modülleri, i18n, yerel yazı tipleri)
+├── panel/                       panel arayüzü (çerçevesiz ES modülleri, i18n, yerel yazı tipleri; ekran başına dosya)
 ├── parts/                       hazır parçalar: app/ (Worker), migrations/, site/
 ├── portal/                      müşteri portalı (Cloudflare Worker)
 ├── templates/                   eski şablon siteleri
 ├── scripts/                     install.sh, setup-wsl.sh, update.sh
 ├── schema/                      Zod'dan üretilen JSON şemaları
-└── tests/                       vitest: birim, güvenlik, panel, uçtan uca, ekran denetimi
+└── tests/                       vitest: birim, güvenlik, uçtan uca, ekran denetimi; panel/ (API), products/ (türler)
 
 ../arke-clients/<kısa-ad>/       her müşteri ayrı klasör ve ayrı git geçmişi
 ├── site.config.json  content/  assets/  site/     sitenin girdileri

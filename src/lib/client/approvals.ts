@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { FactoryError } from "./errors.js";
-import { contentHash, dirHash, readJsonIfExists, writeJson } from "./files.js";
+import { FactoryError } from "../core/errors.js";
+import { contentHash, dirHash, readJsonIfExists, writeJson } from "../core/files.js";
 
 /**
  * Human sign-offs. Only the approve CLI (run by a person in a terminal) writes this file;

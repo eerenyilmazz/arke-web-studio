@@ -1,8 +1,8 @@
-import { managedCloudflare } from "../lib/accounts.js";
+import { managedCloudflare } from "../lib/core/accounts.js";
 import path from "node:path";
-import { FactoryError } from "../lib/errors.js";
-import { effectiveFormAction } from "../lib/form.js";
-import { type FieldIssue } from "../lib/validation.js";
+import { FactoryError } from "../lib/core/errors.js";
+import { effectiveFormAction } from "../lib/site/form.js";
+import { type FieldIssue } from "../lib/core/validation.js";
 
 /** Constants and small helpers shared by the tool modules (not tools themselves). */
 

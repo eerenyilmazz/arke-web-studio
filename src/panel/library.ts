@@ -1,13 +1,13 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
-import type { ClientPaths } from "../lib/paths.js";
-import { findInSite, replaceInSite } from "../lib/site-replace.js";
+import type { ClientPaths } from "../lib/core/paths.js";
+import { findInSite, replaceInSite } from "../lib/site/site-replace.js";
 import path from "node:path";
 import { z } from "zod";
 import type { FactoryConfig } from "../config.js";
-import { readDraftConfig } from "../lib/client.js";
-import { BRAND_FILE, LIBRARY_SOURCE_FILE, OPTIONS_DIR, isCustom, siteDir } from "../lib/custom-site.js";
-import { readJsonIfExists, writeJson } from "../lib/files.js";
-import { clientPaths, safeJoin } from "../lib/paths.js";
+import { readDraftConfig } from "../lib/client/client.js";
+import { BRAND_FILE, LIBRARY_SOURCE_FILE, OPTIONS_DIR, isCustom, siteDir } from "../lib/site/custom-site.js";
+import { readJsonIfExists, writeJson } from "../lib/core/files.js";
+import { clientPaths, safeJoin } from "../lib/core/paths.js";
 
 /**
  * Design library: a good custom site saved as a starting point for other clients.

@@ -3,9 +3,9 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FACTORY_ROOT } from "../src/config.js";
-import { isExcluded, searchKnowledge } from "../src/lib/knowledge.js";
-import { clientPaths } from "../src/lib/paths.js";
-import { checkImages, checkLegal } from "../src/lib/seo.js";
+import { isExcluded, searchKnowledge } from "../src/lib/site/knowledge.js";
+import { clientPaths } from "../src/lib/core/paths.js";
+import { checkImages, checkLegal } from "../src/lib/checks/seo.js";
 import * as tools from "../src/tools.js";
 import { tempFactory } from "./helpers.js";
 
@@ -65,10 +65,10 @@ describe("market-specific quality notes", () => {
     const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
     const os = await import("node:os");
     const pathMod = await import("node:path");
-    const { checkInputs, checkOutput } = await import("../src/lib/quality.js");
+    const { checkInputs, checkOutput } = await import("../src/lib/checks/quality.js");
     const tools = await import("../src/tools.js");
-    const { clientPaths } = await import("../src/lib/paths.js");
-    const { readDraftConfig } = await import("../src/lib/client.js");
+    const { clientPaths } = await import("../src/lib/core/paths.js");
+    const { readDraftConfig } = await import("../src/lib/client/client.js");
     const { COMPLETE_CONTENT, COMPLETE_PATCH, tempFactory } = await import("./helpers.js");
     const f = tempFactory();
     const configFor = async (country: "TR" | "GB" | "IE" | "US") => {
@@ -111,8 +111,8 @@ describe("design and language rules (1.21.0)", () => {
     const os = await import("node:os");
     const pathMod = await import("node:path");
     const { FACTORY_ROOT } = await import("../src/config.js");
-    const { designDepth } = await import("../src/lib/custom-site.js");
-    const { isExcluded, searchKnowledge } = await import("../src/lib/knowledge.js");
+    const { designDepth } = await import("../src/lib/site/custom-site.js");
+    const { isExcluded, searchKnowledge } = await import("../src/lib/site/knowledge.js");
     const rules = ["custom-site.md", "custom/brand.md", "custom/build.md"].map((f) => readFileSync(pathMod.join(FACTORY_ROOT, "rules", f), "utf8")).join("\n");
     expect(rules).toMatch(/Never a label above every heading/);
     expect(rules).toMatch(/No minimum number of sections/);

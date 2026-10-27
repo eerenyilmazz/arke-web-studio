@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
-import { FactoryError } from "./errors.js";
-import { run } from "./exec.js";
+import { FactoryError } from "../core/errors.js";
+import { run } from "../core/exec.js";
 
 /**
  * Version history of a client's site, kept in the client's own git repository.

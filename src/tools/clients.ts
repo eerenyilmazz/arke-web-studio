@@ -3,17 +3,17 @@ import path from "node:path";
 import { type FactoryConfig } from "../config.js";
 import { ContentSchema } from "../schema/content.js";
 import { SCHEMA_VERSION, SiteConfigSchema, type Locale } from "../schema/site-config.js";
-import { saveAsset, type AssetKind } from "../lib/assets.js";
-import { clientStatus, openClient, readDraftConfig } from "../lib/client.js";
-import { FactoryError } from "../lib/errors.js";
-import { run } from "../lib/exec.js";
-import { readJsonIfExists, writeJson, writeText } from "../lib/files.js";
-import { deepMerge } from "../lib/merge.js";
-import { assertSlug, clientPaths, safeJoin } from "../lib/paths.js";
-import { isCustom } from "../lib/custom-site.js";
-import { buildQuestionnaire } from "../lib/questionnaire.js";
-import { findUnknownKeys } from "../lib/unknown-keys.js";
-import { validateDraft } from "../lib/validation.js";
+import { saveAsset, type AssetKind } from "../lib/site/assets.js";
+import { clientStatus, openClient, readDraftConfig } from "../lib/client/client.js";
+import { FactoryError } from "../lib/core/errors.js";
+import { run } from "../lib/core/exec.js";
+import { readJsonIfExists, writeJson, writeText } from "../lib/core/files.js";
+import { deepMerge } from "../lib/core/merge.js";
+import { assertSlug, clientPaths, safeJoin } from "../lib/core/paths.js";
+import { isCustom } from "../lib/site/custom-site.js";
+import { buildQuestionnaire } from "../lib/client/questionnaire.js";
+import { findUnknownKeys } from "../lib/core/unknown-keys.js";
+import { validateDraft } from "../lib/core/validation.js";
 import { CLIENT_GITIGNORE, LOCKED_CONFIG_KEYS, assertNoUnknownKeys, formatIssues } from "./shared.js";
 
 /** Tools for clients: create, status, questionnaire, config, content, assets and the design system. */

@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { userConfigDir } from "../config.js";
+import { userConfigDir } from "../../config.js";
 import { writeJson } from "./files.js";
 
 /**

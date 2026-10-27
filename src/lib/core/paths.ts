@@ -1,6 +1,6 @@
 import { existsSync, realpathSync } from "node:fs";
 import path from "node:path";
-import { SLUG_PATTERN } from "../schema/site-config.js";
+import { SLUG_PATTERN } from "../../schema/site-config.js";
 import { FactoryError } from "./errors.js";
 
 /** Validates a client slug. Every path and Cloudflare Worker name is derived from it. */

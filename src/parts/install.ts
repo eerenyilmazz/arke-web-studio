@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { FACTORY_ROOT } from "../config.js";
 import { APP_ENTRY, MIGRATIONS_DIR, readProductRecord, writeProductRecord } from "../deploy/app.js";
-import type { ClientPaths } from "../lib/paths.js";
+import type { ClientPaths } from "../lib/core/paths.js";
 import type { FactoryPart, ProductModule } from "../products/registry.js";
 
 /**

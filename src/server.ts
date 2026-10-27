@@ -5,10 +5,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { FACTORY_ROOT, loadFactoryConfig, type FactoryConfig } from "./config.js";
-import { ASSET_KINDS } from "./lib/assets.js";
-import { audit, summariseArgs } from "./lib/audit.js";
-import { FactoryError } from "./lib/errors.js";
-import { clientPaths } from "./lib/paths.js";
+import { ASSET_KINDS } from "./lib/site/assets.js";
+import { audit, summariseArgs } from "./lib/core/audit.js";
+import { FactoryError } from "./lib/core/errors.js";
+import { clientPaths } from "./lib/core/paths.js";
 import { LOCALES, SLUG_PATTERN } from "./schema/site-config.js";
 import * as tools from "./tools.js";
 

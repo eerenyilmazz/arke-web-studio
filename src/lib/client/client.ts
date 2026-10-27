@@ -2,16 +2,16 @@ import { type PrivacyLaw, privacyProfile } from "./privacy.js";
 import { type PlanState, planStatus } from "./design-plan.js";
 import path from "node:path";
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { effectiveFormAction, readClientForm } from "./form.js";
-import type { FactoryConfig } from "../config.js";
-import { ContentSchema, type Content } from "../schema/content.js";
-import { QUESTIONS, type Question } from "../schema/questions.js";
-import { SiteConfigSchema, type SiteConfig } from "../schema/site-config.js";
+import { effectiveFormAction, readClientForm } from "../site/form.js";
+import type { FactoryConfig } from "../../config.js";
+import { ContentSchema, type Content } from "../../schema/content.js";
+import { QUESTIONS, type Question } from "../../schema/questions.js";
+import { SiteConfigSchema, type SiteConfig } from "../../schema/site-config.js";
 import { approvalState, type ApprovalKind } from "./approvals.js";
-import { FactoryError } from "./errors.js";
-import { readJson, readJsonIfExists } from "./files.js";
-import { clientPaths, type ClientPaths } from "./paths.js";
-import { validateDraft, type FieldIssue } from "./validation.js";
+import { FactoryError } from "../core/errors.js";
+import { readJson, readJsonIfExists } from "../core/files.js";
+import { clientPaths, type ClientPaths } from "../core/paths.js";
+import { validateDraft, type FieldIssue } from "../core/validation.js";
 
 export interface BuildRecord {
   readonly hash: string;

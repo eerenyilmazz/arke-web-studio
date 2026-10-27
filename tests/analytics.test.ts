@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { clientPaths } from "../src/lib/paths.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import { checkCounts, clientAnalytics, siteFacts } from "../src/panel/analytics.js";
 import { writeBusiness } from "../src/panel/business.js";
 import { appendHistory } from "../src/panel/history.js";

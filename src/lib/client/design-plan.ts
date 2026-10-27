@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { readJsonIfExists, writeJson } from "./files.js";
-import type { ClientPaths } from "./paths.js";
+import { readJsonIfExists, writeJson } from "../core/files.js";
+import type { ClientPaths } from "../core/paths.js";
 
 /**
  * Design plan: before a new design is built, the agent describes how it will design the site (concept, palette,

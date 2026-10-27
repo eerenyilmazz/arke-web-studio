@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { writeBusiness } from "../src/panel/business.js";
 import { siteHealth } from "../src/panel/health.js";
 import { portalMessages, closeLink, createLink, intakeText, listLinks, portalStatus, pullPortal } from "../src/panel/portal.js";
-import { clientPaths } from "../src/lib/paths.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import { portalCommentsPrompt } from "../src/panel/prompts.js";
 import * as tools from "../src/tools.js";
 import { PNG_1PX, tempFactory } from "./helpers.js";

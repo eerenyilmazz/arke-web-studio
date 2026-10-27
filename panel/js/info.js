@@ -2,7 +2,7 @@
 import { appPartsCard } from "./app-parts.js";
 import { businessForm } from "./business.js";
 import { deployProduction, rollbackSite, unpublish } from "./client-actions.js";
-import { approveDialog } from "./client.js";
+import { approveDialog } from "./approval.js";
 import { api, APPROVAL_NAMES, ask, copyButton, guarded, h, isBusy, LANG_NAMES, state, time, toast } from "./core.js";
 import { runAgent, runTask } from "./jobs.js";
 import { uploadCard } from "./media.js";

@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { contentHash } from "../src/lib/files.js";
-import { clientPaths } from "../src/lib/paths.js";
+import { contentHash } from "../src/lib/core/files.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } from "./helpers.js";
 
@@ -189,7 +189,7 @@ describe("design proposals", () => {
   it("reads three options, checks them like brand.json, and keeps them out of the published site", async () => {
     const { f, paths } = await customClient();
     writeGoodSite(f);
-    const { readBrandOptions } = await import("../src/lib/custom-site.js");
+    const { readBrandOptions } = await import("../src/lib/site/custom-site.js");
     tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/options/a.json", content: JSON.stringify({ ...BRAND, name: "Kitchen window" }) });
     tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/options/a-logo.svg", content: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>' });
     tools.writeSiteFileTool(f, { slug: SLUG, path: "brand/options/b.json", content: JSON.stringify({ name: "Thin" }) });
@@ -210,7 +210,7 @@ describe("design proposals", () => {
 describe("fixes from real jobs", () => {
   it("removes a page together with its section settings, and accepts sections.<page>: null", async () => {
     const { f } = await customClient();
-    const { readDraftConfig } = await import("../src/lib/client.js");
+    const { readDraftConfig } = await import("../src/lib/client/client.js");
     const read = () => readDraftConfig(clientPaths(f.clientsRoot, SLUG)) as { pages: string[]; sections: Record<string, unknown> };
     const pages = read().pages;
     tools.updateClientConfig(f, { slug: SLUG, patch: { pages: pages.filter((p) => p !== "contact") } });
@@ -222,7 +222,7 @@ describe("fixes from real jobs", () => {
   });
 
   it("finds a meta description with apostrophes and any attribute order", async () => {
-    const { hasMetaDescription } = await import("../src/lib/quality.js");
+    const { hasMetaDescription } = await import("../src/lib/checks/quality.js");
     expect(hasMetaDescription(`<meta name="description" content="Ankara'nın erkek kuaförü">`)).toBe(true);
     expect(hasMetaDescription(`<meta content="Eryaman'da saç ve sakal" name="description">`)).toBe(true);
     expect(hasMetaDescription(`<meta name="description" content="kısa">`)).toBe(false);
@@ -231,7 +231,7 @@ describe("fixes from real jobs", () => {
 
 describe("design depth", () => {
   it("warns on a plain home page and passes a composed one with the signature in the hero", async () => {
-    const { designDepth } = await import("../src/lib/custom-site.js");
+    const { designDepth } = await import("../src/lib/site/custom-site.js");
     const { mkdtempSync, writeFileSync } = await import("node:fs");
     const os = await import("node:os");
     const path = await import("node:path");
@@ -254,7 +254,7 @@ describe("design depth", () => {
 
 describe("client's own logo", () => {
   it("builds the brand from an uploaded logo: no drawn logo needed, the file must be used on the pages", async () => {
-    const { checkBrand } = await import("../src/lib/custom-site.js");
+    const { checkBrand } = await import("../src/lib/site/custom-site.js");
     const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
     const os = await import("node:os");
     const path = await import("node:path");
@@ -424,7 +424,7 @@ describe("token savers in the factory", () => {
   it("replaces exact text and colours across the site, escaping for HTML", async () => {
     const { f, paths } = await customClient();
     writeGoodSite(f);
-    const { findInSite, replaceInSite } = await import("../src/lib/site-replace.js");
+    const { findInSite, replaceInSite } = await import("../src/lib/site/site-replace.js");
     expect(findInSite(paths, "Willow & Thread", { html: true })).toBeGreaterThan(0);
     replaceInSite(paths, [["Willow & Thread", "Oak & Co"]], { html: true });
     expect(tools.readSiteFileTool(f, { slug: SLUG, path: "index.html" }).content).toContain("Oak &amp; Co");
@@ -437,7 +437,7 @@ describe("token savers in the factory", () => {
     const { f, paths } = await customClient();
     tools.saveResearchNotes(f, { slug: SLUG, notes: "Verified: open since 1998 (source: https://example.org)." });
     expect(tools.getClientStatus(f, { slug: SLUG }).researchNotes?.text).toMatch(/1998/);
-    const { ensureBaseKit } = await import("../src/lib/custom-site.js");
+    const { ensureBaseKit } = await import("../src/lib/site/custom-site.js");
     const { FACTORY_ROOT } = await import("../src/config.js");
     const path = await import("node:path");
     expect(ensureBaseKit(paths, path.join(FACTORY_ROOT, "rules", "site-kit", "base.css"))).toBe(true);

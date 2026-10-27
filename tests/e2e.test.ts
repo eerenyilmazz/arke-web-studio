@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { FACTORY_ROOT } from "../src/config.js";
-import { clientPaths } from "../src/lib/paths.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import { CODE, apiGet, type Browser, type FakePanel, findBrowser, idle, jobDone, launchBrowser, openPanel, startPanel } from "./e2e/harness.js";
 import { PNG_1PX, tempFactory } from "./helpers.js";
 

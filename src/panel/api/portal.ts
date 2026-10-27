@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { assertSlug } from "../../lib/paths.js";
+import { assertSlug } from "../../lib/core/paths.js";
 import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
 import { portalMessages, closeLink, createLink, listLinks, portalStatus, pullOnce, setupPortal, updateEntry } from "../portal.js";

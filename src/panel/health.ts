@@ -1,9 +1,9 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import type { FactoryConfig } from "../config.js";
-import { clientStatus, readDraftConfig } from "../lib/client.js";
-import { readJsonIfExists } from "../lib/files.js";
-import { clientPaths } from "../lib/paths.js";
+import { clientStatus, readDraftConfig } from "../lib/client/client.js";
+import { readJsonIfExists } from "../lib/core/files.js";
+import { clientPaths } from "../lib/core/paths.js";
 import { DEPLOYS_FILE } from "../tools.js";
 
 /**

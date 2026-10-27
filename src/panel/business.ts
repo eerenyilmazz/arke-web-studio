@@ -3,8 +3,8 @@ import path from "node:path";
 import { z } from "zod";
 import { PRODUCT_IDS } from "../products/registry.js";
 import type { FactoryConfig } from "../config.js";
-import { readJsonIfExists, writeJson } from "../lib/files.js";
-import { clientPaths } from "../lib/paths.js";
+import { readJsonIfExists, writeJson } from "../lib/core/files.js";
+import { clientPaths } from "../lib/core/paths.js";
 import { AddonsSchema } from "./addons.js";
 
 /**

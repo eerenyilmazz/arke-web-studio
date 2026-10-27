@@ -2,9 +2,9 @@ import { isAppSite, readProductRecord } from "../deploy/app.js";
 import { existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { FACTORY_ROOT, type FactoryConfig } from "../config.js";
-import { RESEARCH_FILE, openClient, readDraftConfig } from "../lib/client.js";
-import { FactoryError } from "../lib/errors.js";
-import { assertSlug } from "../lib/paths.js";
+import { RESEARCH_FILE, openClient, readDraftConfig } from "../lib/client/client.js";
+import { FactoryError } from "../lib/core/errors.js";
+import { assertSlug } from "../lib/core/paths.js";
 import {
   editSiteFile,
   fileProblems,
@@ -16,11 +16,11 @@ import {
   listSiteFiles,
   readSiteFile,
   writeSiteFile,
-} from "../lib/custom-site.js";
-import { searchKnowledge } from "../lib/knowledge.js";
-import { effectiveFormAction } from "../lib/form.js";
-import { allowedBeforeApproval, DesignPlanSchema, planState, previousPlans, savePlan } from "../lib/design-plan.js";
-import type { ClientPaths } from "../lib/paths.js";
+} from "../lib/site/custom-site.js";
+import { searchKnowledge } from "../lib/site/knowledge.js";
+import { effectiveFormAction } from "../lib/site/form.js";
+import { allowedBeforeApproval, DesignPlanSchema, planState, previousPlans, savePlan } from "../lib/client/design-plan.js";
+import type { ClientPaths } from "../lib/core/paths.js";
 
 /** Tools for custom sites: reading and writing site files, the site map, design knowledge, research notes. */
 
@@ -123,7 +123,7 @@ export function editSiteFileTool(factory: FactoryConfig, args: { slug: string; p
   return withProblems(r, args.path, readSiteFile(paths, args.path).content, paths.factoryDir);
 }
 
-/** A few passages of design knowledge (rules and skills) for one question; see lib/knowledge.ts. */
+/** A few passages of design knowledge (rules and skills) for one question; see lib/site/knowledge.ts. */
 export function searchDesignKnowledge(args: { query: string; k?: number }) {
   const hits = searchKnowledge(FACTORY_ROOT, args.query, args.k ?? 4);
   return {

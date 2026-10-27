@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { contentSecurityPolicy, PUBLISH_DIR, preparePublishDir } from "../src/deploy/publish-dir.js";
-import { dirHash } from "../src/lib/files.js";
+import { dirHash } from "../src/lib/core/files.js";
 import { isTransientDeployError } from "../src/tools/deploy.js";
 
 function dist() {

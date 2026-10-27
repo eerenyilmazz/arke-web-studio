@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { SLOT_FIELDS, deleteFromLibrary, libraryPreview, listLibrary, saveToLibrary, slotCounts, updateLibraryEntry, type ApplyResult } from "../library.js";
-import { assertSlug } from "../../lib/paths.js";
+import { assertSlug } from "../../lib/core/paths.js";
 import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, asHttp } from "./common.js";

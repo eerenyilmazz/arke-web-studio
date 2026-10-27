@@ -1,7 +1,7 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import type { ServerResponse } from "node:http";
 import path from "node:path";
-import { safeJoin } from "../lib/paths.js";
+import { safeJoin } from "../lib/core/paths.js";
 
 const TYPES: Readonly<Record<string, string>> = {
   ".html": "text/html; charset=utf-8",

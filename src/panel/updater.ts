@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { run as realRun, type RunOptions, type RunResult } from "../lib/exec.js";
+import { run as realRun, type RunOptions, type RunResult } from "../lib/core/exec.js";
 
 /**
  * Updating Arke Web Studio from the panel. Two kinds of install:

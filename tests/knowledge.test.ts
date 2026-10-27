@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { FACTORY_ROOT } from "../src/config.js";
-import { chunkMarkdown, searchKnowledge, tokenize } from "../src/lib/knowledge.js";
+import { chunkMarkdown, searchKnowledge, tokenize } from "../src/lib/site/knowledge.js";
 import { finalPrompt } from "../src/panel/prompts.js";
 
 describe("design knowledge search", () => {

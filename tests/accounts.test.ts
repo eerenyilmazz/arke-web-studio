@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { cloudflareAccountStatus, managedCloudflare, readCloudflare, removeCloudflare, saveCloudflare, validateCloudflare } from "../src/lib/accounts.js";
+import { cloudflareAccountStatus, managedCloudflare, readCloudflare, removeCloudflare, saveCloudflare, validateCloudflare } from "../src/lib/core/accounts.js";
 import { agentEnv } from "../src/panel/jobs.js";
 import { cloudflareCredentials } from "../src/tools/shared.js";
 

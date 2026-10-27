@@ -5,10 +5,10 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FACTORY_ROOT } from "../src/config.js";
-import { ensureBaseKit } from "../src/lib/custom-site.js";
-import { checkLanguages } from "../src/lib/i18n-check.js";
-import { checkKitParts } from "../src/lib/kit-check.js";
-import { clientPaths } from "../src/lib/paths.js";
+import { ensureBaseKit } from "../src/lib/site/custom-site.js";
+import { checkLanguages } from "../src/lib/checks/i18n-check.js";
+import { checkKitParts } from "../src/lib/checks/kit-check.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import { findBrowser, launchBrowser } from "./e2e/harness.js";
 
 const KIT = path.join(FACTORY_ROOT, "rules", "site-kit");
@@ -158,7 +158,7 @@ describe("kit.js in a real browser", () => {
 
 describe("prices in the client's currency", () => {
   it("fails a page that shows another currency's sign before or after an amount", async () => {
-    const { checkCurrency } = await import("../src/lib/currency-check.js");
+    const { checkCurrency } = await import("../src/lib/checks/currency-check.js");
     expect(checkCurrency(dist({ "index.html": page("<p>From ₺100.000</p><p>25.000 TL</p>") }), "TRY").status).toBe("pass");
     const wrong = checkCurrency(dist({ "en/index.html": page("<p class=big>£100,000</p><p>From ₺100,000</p>") }), "TRY");
     expect(wrong.status).toBe("fail");

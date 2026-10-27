@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { takeScreenshots, takeSignatureFrames } from "../src/lib/screenshots.js";
+import { takeScreenshots, takeSignatureFrames } from "../src/lib/checks/screenshots.js";
 
 const BROWSER = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
@@ -69,7 +69,7 @@ describe("screenshot server stays inside dist/", () => {
     const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
     const os = await import("node:os");
     const path = await import("node:path");
-    const { serveDistForTest } = await import("../src/lib/screenshots.js");
+    const { serveDistForTest } = await import("../src/lib/checks/screenshots.js");
     const base = mkdtempSync(path.join(os.tmpdir(), "arke-shot-"));
     mkdirSync(path.join(base, "dist"));
     mkdirSync(path.join(base, "dist2"));

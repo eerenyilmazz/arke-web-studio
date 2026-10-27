@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { clientPaths } from "../src/lib/paths.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import { addonsNote, addonsTotal } from "../src/panel/addons.js";
 import { readBusiness, writeBusiness } from "../src/panel/business.js";
 import { clientProfit } from "../src/panel/profit.js";

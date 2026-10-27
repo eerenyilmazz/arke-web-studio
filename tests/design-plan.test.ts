@@ -3,10 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FACTORY_ROOT } from "../src/config.js";
-import { inlineMotionKit } from "../src/lib/custom-site.js";
-import { approvePlan, planState, previousPlans, requirePlan, resetPlanApproval, waivePlan } from "../src/lib/design-plan.js";
-import { clientPaths } from "../src/lib/paths.js";
-import { checkSignature, countMotionSteps } from "../src/lib/signature-check.js";
+import { inlineMotionKit } from "../src/lib/site/custom-site.js";
+import { approvePlan, planState, previousPlans, requirePlan, resetPlanApproval, waivePlan } from "../src/lib/client/design-plan.js";
+import { clientPaths } from "../src/lib/core/paths.js";
+import { checkSignature, countMotionSteps } from "../src/lib/checks/signature-check.js";
 import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, SAMPLE_PLAN as PLAN, tempFactory } from "./helpers.js";
 

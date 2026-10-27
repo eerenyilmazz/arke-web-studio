@@ -1,8 +1,8 @@
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { clientPaths } from "../src/lib/paths.js";
-import { listVersions, restoreVersion, saveUnsavedVersions, snapshot, UNSAVED_MESSAGE } from "../src/lib/versions.js";
+import { clientPaths } from "../src/lib/core/paths.js";
+import { listVersions, restoreVersion, saveUnsavedVersions, snapshot, UNSAVED_MESSAGE } from "../src/lib/client/versions.js";
 import * as tools from "../src/tools.js";
 import { COMPLETE_CONTENT, COMPLETE_PATCH, installStubTemplate, tempFactory } from "./helpers.js";
 

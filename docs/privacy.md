@@ -1,6 +1,6 @@
 # Kişisel veri profili: kaynaklar ve kararlar
 
-`src/lib/privacy.ts` her müşterinin pazarına göre bir profil seçer. Bu dosya o değerlerin nereden geldiğini ve neden
+`src/lib/client/privacy.ts` her müşterinin pazarına göre bir profil seçer. Bu dosya o değerlerin nereden geldiğini ve neden
 öyle seçildiğini yazar. Bir değer değişirse önce burası, sonra kod ve testler güncellenir.
 
 | Veri | Süre | Dayanak |

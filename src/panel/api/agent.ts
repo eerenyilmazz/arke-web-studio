@@ -2,13 +2,13 @@ import { portalMessages, updateEntry } from "../portal.js";
 import { existsSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
-import { planState, requirePlan, resetPlanApproval, waivePlan } from "../../lib/design-plan.js";
-import { snapshot, versionNotSaved } from "../../lib/versions.js";
+import { planState, requirePlan, resetPlanApproval, waivePlan } from "../../lib/client/design-plan.js";
+import { snapshot, versionNotSaved } from "../../lib/client/versions.js";
 import { DESIGN_KINDS, resolvePolicy } from "../budget.js";
 import { applyLibraryDesign, clearStartDesign } from "../library.js";
 import { readBrandStale, sharedLogo } from "../logo-check.js";
-import { readDraftConfig } from "../../lib/client.js";
-import { assertSlug, clientPaths } from "../../lib/paths.js";
+import { readDraftConfig } from "../../lib/client/client.js";
+import { assertSlug, clientPaths } from "../../lib/core/paths.js";
 import * as tools from "../../tools.js";
 import { HttpError, readJsonBody, sendJson, str } from "../http.js";
 import { appendInput, readInputs } from "../history.js";
@@ -33,7 +33,7 @@ import {
   newPlanPrompt,
   type AnswersInput,
 } from "../prompts.js";
-import { OPTION_IDS } from "../../lib/custom-site.js";
+import { OPTION_IDS } from "../../lib/site/custom-site.js";
 import { type ApiDeps, type Route, SLUG, JSON_LIMIT, MAX_TEXT, asHttp, launchAgent, inboxFiles, stringRecord, isQa, lastBuildOf } from "./common.js";
 import { filledNote } from "./library.js";
 

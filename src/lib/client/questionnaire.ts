@@ -1,5 +1,5 @@
-import { INDUSTRY_EXTRAS, QUESTIONS, type Question } from "../schema/questions.js";
-import { localizedQuestion } from "../schema/questions-tr.js";
+import { INDUSTRY_EXTRAS, QUESTIONS, type Question } from "../../schema/questions.js";
+import { localizedQuestion } from "../../schema/questions-tr.js";
 
 export interface QuestionnaireInput {
   readonly businessName: string;

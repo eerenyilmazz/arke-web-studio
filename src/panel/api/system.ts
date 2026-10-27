@@ -1,7 +1,7 @@
 import { clientAnalytics } from "../analytics.js";
 import { profitSummary } from "../profit.js";
 import { productList } from "../../products/registry.js";
-import { cloudflareAccountStatus, markCloudflareVerified, removeCloudflare, saveCloudflare, validateCloudflare } from "../../lib/accounts.js";
+import { cloudflareAccountStatus, markCloudflareVerified, removeCloudflare, saveCloudflare, validateCloudflare } from "../../lib/core/accounts.js";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { readSettings, writeSettings } from "../settings.js";
 import { backupNow, checkBackupDir, listBackups, verifyBackup } from "../backup.js";

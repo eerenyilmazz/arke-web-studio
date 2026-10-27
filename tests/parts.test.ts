@@ -11,8 +11,8 @@ import { createApp, purge, verifyPassword } from "../parts/app/core.js";
 // @ts-expect-error plain JS module without types
 import inbox from "../parts/app/inbox.js";
 import { readProductRecord, writeProductRecord, WORKER_FIRST, appWranglerConfig } from "../src/deploy/app.js";
-import { privacyProfile } from "../src/lib/privacy.js";
-import { fileProblems } from "../src/lib/custom-site.js";
+import { privacyProfile } from "../src/lib/client/privacy.js";
+import { fileProblems } from "../src/lib/site/custom-site.js";
 import { hashAdminPassword, installParts, isFactorySiteScript, PARTS_DIR, SITE_PARTS_JS, workerSource } from "../src/parts/install.js";
 import { PRODUCTS } from "../src/products/registry.js";
 

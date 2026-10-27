@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from "node:fs";
 import path from "node:path";
-import { readJsonIfExists } from "./files.js";
-import type { FactoryConfig } from "../config.js";
-import { FactoryError } from "./errors.js";
-import { assertSlug, clientPaths, safeJoin } from "./paths.js";
+import { readJsonIfExists } from "../core/files.js";
+import type { FactoryConfig } from "../../config.js";
+import { FactoryError } from "../core/errors.js";
+import { assertSlug, clientPaths, safeJoin } from "../core/paths.js";
 
 /** Archived clients live here; list_clients ignores it because it has no site.config.json. */
 export const ARCHIVE_DIR = "_archive";

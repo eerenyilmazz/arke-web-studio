@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FACTORY_ROOT } from "../src/config.js";
-import { clientPaths } from "../src/lib/paths.js";
+import { clientPaths } from "../src/lib/core/paths.js";
 import * as tools from "../src/tools.js";
 import { tempFactory } from "./helpers.js";
 

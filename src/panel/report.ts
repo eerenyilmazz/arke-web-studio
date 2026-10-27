@@ -1,4 +1,4 @@
-import { readCloudflare } from "../lib/accounts.js";
+import { readCloudflare } from "../lib/core/accounts.js";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import os from "node:os";
@@ -11,10 +11,10 @@ import { portalMessages, listLinks, readPortal, portalPaths } from "./portal.js"
 import { readSettings } from "./settings.js";
 import { siteHealth, type Fetcher } from "./health.js";
 import * as tools from "../tools.js";
-import { type Approval, approvalState, readApprovals } from "../lib/approvals.js";
-import { readDraftConfig } from "../lib/client.js";
-import { dirHash, readJsonIfExists } from "../lib/files.js";
-import { clientPaths } from "../lib/paths.js";
+import { type Approval, approvalState, readApprovals } from "../lib/client/approvals.js";
+import { readDraftConfig } from "../lib/client/client.js";
+import { dirHash, readJsonIfExists } from "../lib/core/files.js";
+import { clientPaths } from "../lib/core/paths.js";
 
 /**
  * A read-only health report of the whole factory, for the operator to send after a test run: versions and set-up, every

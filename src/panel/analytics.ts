@@ -1,9 +1,9 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { FactoryConfig } from "../config.js";
-import type { BuildRecord, DeployRecord } from "../lib/client.js";
-import { draftLocales, readDraftConfig } from "../lib/client.js";
-import { clientPaths } from "../lib/paths.js";
+import type { BuildRecord, DeployRecord } from "../lib/client/client.js";
+import { draftLocales, readDraftConfig } from "../lib/client/client.js";
+import { clientPaths } from "../lib/core/paths.js";
 import * as tools from "../tools.js";
 import { readLedger } from "./budget.js";
 import { readBusiness } from "./business.js";

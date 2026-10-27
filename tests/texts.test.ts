@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyHtmlChanges, contentTexts, decodeEntities, htmlTexts, setContentText } from "../src/lib/site-texts.js";
+import { applyHtmlChanges, contentTexts, decodeEntities, htmlTexts, setContentText } from "../src/lib/site/site-texts.js";
 
 const PAGE = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Mono &amp; Co | Ana sayfa</title>
 <meta name="description" content="Ankara&#39;da erkek kuaförü"></head>
@@ -66,7 +66,7 @@ describe("search and AI visibility check", () => {
     const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
     const os = await import("node:os");
     const path = await import("node:path");
-    const { checkSeo } = await import("../src/lib/seo.js");
+    const { checkSeo } = await import("../src/lib/checks/seo.js");
     const dir = mkdtempSync(path.join(os.tmpdir(), "arke-seo-"));
     const page = (title: string, extra = "") =>
       `<!doctype html><html lang="tr"><head><title>${title}</title><meta property="og:title" content="x"><meta property="og:description" content="y">${extra}</head><body></body></html>`;
