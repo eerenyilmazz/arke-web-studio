@@ -126,12 +126,12 @@ kontrol eder; operatör onayladıktan sonra site operatörün kendi Cloudflare h
 | **Düzenleme** | Hızlı Düzenleme: renk (okunurluk ölçümüyle), sayfalar, hizmet ve fiyatlar, metinler, iletişim, form, logo ve görseller; serbest talepler için Özel Talep |
 | **Kalite** | Her derlemede güvenlik, erişilebilirlik ve kontrast, SEO, link, dil tutarlılığı kontrolleri; telefon ve masaüstü ekran görüntüleri |
 | **Onay** | Onaylar yalnızca insandan gelir: panel, sadece başlatıldığı terminalde görünen tek kullanımlık bir kod ister. Onay içeriğin parmak izine bağlıdır; içerik değişince düşer |
-| **Yayın** | Ayrı önizleme ve canlı Worker'lar, geri alma, yayından kaldırma. Uygulama sitelerinde veritabanı (D1), görsel deposu (R2), şema değişiklikleri ve gizli anahtarlar |
+| **Yayın** | Ayrı önizleme ve canlı Worker'lar (önizleme arama motorlarına kapalı), güvenlik başlıkları, geçici hatada otomatik tekrar, geri alma, yayından kaldırma. Uygulama sitelerinde veritabanı (D1), görsel deposu (R2), şema değişiklikleri ve gizli anahtarlar |
 | **Kişisel veri** | Pazara göre KVKK / UK GDPR / GDPR profili: otomatik silme, kişinin verisini bulma, indirme ve silme, AB veri bölgesi, gizlilik metni şablonları |
 | **Müşterinin ekranı** | Uygulama sitelerinde müşterinin kendi yönetim ekranı: katalog, gelen kutusu, kişisel veri talepleri; Türkçe ve İngilizce |
-| **İş takibi** | Teklif (yazdır / PDF), ödeme ve teslim takibi, kâr hesabı, Analiz ekranı (filtreler, CSV) |
+| **İş takibi** | Teklif, iş raporu ve aylık rapor (müşterinin dilinde, yazdır / PDF), ödeme ve teslim takibi, kâr hesabı, Analiz ekranı (filtreler, CSV) |
 | **Kaynak yönetimi** | Paketlere göre model seçimi, iş başına ve aylık sınır, iş türüne göre Claude Code ya da Codex |
-| **Ekip ve bakım** | Ekip eşitleme (Git), panelden güncelleme, otomatik yedek, durum raporu |
+| **Ekip ve bakım** | Ekip eşitleme (Git), panelden güncelleme, otomatik yedek, her işten önce ve sonra sürüm kaydı, durum raporu |
 
 **Agent'ın sınırları:** agent yalnızca fabrikanın MCP araçlarıyla çalışır. Kabuk komutu çalıştıramaz, dosyaları
 doğrudan düzenleyemez, yayın yapamaz, onay veremez, Cloudflare hesabına ve gizli anahtarlara erişemez. Müşteriden gelen
@@ -302,7 +302,7 @@ Müşteri sayfasında solda canlı önizleme (telefon / masaüstü) ve sürüm g
 | --- | --- |
 | **Düzenleme** | **Hızlı Düzenleme** listesi sitenin bugünkü hâlini gösterir. Bir satıra tıklayınca düzenleyici açılır; alttaki çubuk kaç değişiklik olduğunu gösterir, "Vazgeç" geri alır, değişiklik yoksa ya da bir hata varsa uygula kapalıdır. Altında serbest talepler için **Özel Talep**. Basit değişiklikleri panel kendisi yazar, gerisi agent'a kısa bir iş olarak gider. |
 | **Marka Kimliği** | Marka kartı (logo, slogan, renkler, canlı imza hareketi, tipografi), kütüphaneye kaydetme, markayla yeniden tasarlama |
-| **Teklif** | Yazdırılabilir teklif ve iş raporu |
+| **Teklif** | Yazdırılabilir teklif, iş raporu ve aylık rapor; müşterinin dilinde açılır (Türkçe / İngilizce), iç satırlar rapordan çıkarılabilir |
 | **Müşteri Bilgileri** | İş takibi, müşteri linkleri, eksikler, metinler, görseller, onay ve yayın, soru formu; uygulama sitelerinde müşterinin yönetim ekranı |
 
 ### Onay ve yayın
@@ -311,7 +311,8 @@ Müşteri sayfasında solda canlı önizleme (telefon / masaüstü) ve sürüm g
 2. **Önizleme** yayınlanır (`arke-<kısa-ad>-preview.<alt-alan>.workers.dev`); link portal üzerinden müşteriye gönderilebilir.
 3. Müşteri onaylayınca **canlı yayın** onayı verilir ve site yayına girer (varsa alan adıyla).
 
-Her değişiklik onayları sıfırlar. Canlı site **Önceki sürüme dön** ile saniyeler içinde geri alınır; yayından kaldırma
+Her değişiklik onayları sıfırlar. Her işten önce ve sonra bir sürüm kaydedilir; panel bir iş sürerken kapanırsa, o işin
+değişiklikleri panel açılırken "Kaydedilmemiş değişiklikler" sürümü olarak kaydedilir. Canlı site **Önceki sürüme dön** ile saniyeler içinde geri alınır; yayından kaldırma
 da panelden yapılır. Canlı sitede bu iki işlem müşterinin kısa adı yazılarak onaylanır.
 
 ### Diğer ekranlar
@@ -350,6 +351,7 @@ Agent doğrudan Claude Code'da da kullanılabilir: bu klasörde açıldığında
 | **Arama ve paylaşım** | Yapılandırılmış veri (`LocalBusiness`), site haritası, önizleme kartları, görsel boyutu ve ağırlığı |
 | **Pazar** | Fiyatlar müşterinin para biriminde, pazarın yasal sayfaları (KVKK Aydınlatma Metni, Impressum…), şirket bilgileri |
 | **Diller** | Her sayfa çevrilmiş, dil linkleri aynı sayfanın karşılığına gidiyor |
+| **Yazı tipleri** | Google Fonts derlemede indirilip siteye konur; ziyaretçinin tarayıcısı Google'a bağlanmaz (indirilemezse uyarı) |
 | **Tasarım** | Impeccable tasarım denetimi, tema düğmesi ve telefon menüsü fabrika parçalarıyla, imza hareketi adım adım ve hareket azaltma ayarında da düzgün |
 | **Görsel kontrol** | Telefon ve masaüstü ekran görüntüleri, imza hareketinin kareleri: agent bunlara bakıp düzeltir |
 
@@ -395,6 +397,7 @@ kaynaklar ve kararlar [`docs/privacy.md`](docs/privacy.md)).
 - **Otomatik silme:** form mesajları 12 ay sonra her gece silinir; sipariş kayıtları pazarın yasal süresi kadar tutulur.
 - **Kişinin talebi:** yönetim ekranının **Kişisel veri** bölümünde kişi e-posta, telefon ya da adla bulunur; kayıtları indirilir (JSON) ya da silinir.
 - **Kayıt:** silme ve dışa aktarma işlemleri kişinin kimliği olmadan kaydedilir (işlem, tarih, sayı).
+- **Üçüncü taraf isteği yok:** yazı tipleri sitenin kendisinden sunulur; sitede takip kodu, gömülü harita ya da video yok.
 - **IP adresi tutulmaz:** hız sınırları IP'nin siteye özel anahtarlı özetini kullanır ve bir günde siler.
 - **AB bölgesi:** veritabanı ve görsel deposu ilk kurulurken bölgeye konur; bölge sonradan değiştirilemez.
 - **Gizlilik metni:** agent [`rules/privacy.md`](rules/privacy.md)'deki şablonları müşterinin bilgileriyle doldurur. Şablonlar satıştan önce bir kez hukuken kontrol edilmelidir.
@@ -413,6 +416,14 @@ Token Cloudflare ile denenir ve `~/.config/arke-web-studio/accounts.json` dosyas
 saklanır. Bir daha gösterilmez, yedeklere ve raporlara girmez; agent süreçleri bu dosyayı hiç okumaz
 (`ARKE_NO_ACCOUNTS=1`). Ortam değişkeniyle verilen hesap (`ARKE_CF_MANAGED_API_TOKEN`, `ARKE_CF_MANAGED_ACCOUNT_ID`)
 da çalışır; panelde kayıtlı hesap varsa öncelik onundur.
+
+Cloudflare'e `dist/`'in bir kopyası gider; `dist/` onaylandığı gibi kalır. Kopyada:
+
+- Marka dosyaları (`brand/brand.json`, imza hareketi demosu, tasarım önerileri) yoktur; logo vardır.
+- Önizleme arama motorlarına kapalıdır (`X-Robots-Tag: noindex`, her şeyi kapatan `robots.txt`).
+- Güvenlik başlıkları eklenir: canlı sitede HSTS, her yerde `nosniff` ve `Referrer-Policy`; vitrin sitelerinde
+  derleme kontrolleriyle uyumlu bir Content-Security-Policy.
+- Yükleme geçici bir ağ ya da Cloudflare hatasıyla kesilirse bir kez daha denenir.
 
 Uygulama sitelerinde yayın sırası:
 
@@ -585,8 +596,11 @@ npm run schema       # Zod → schema/*.schema.json
 - Ekran denetimi ([`tests/ui-audit.test.ts`](tests/ui-audit.test.ts)) her ekranı iki temada ve üç genişlikte kontrol eder: kontrast, taşma, animasyon, script hatası.
 - CI her gönderimde lint, tip kontrolü, derleme ve testleri çalıştırır ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 - **Dil kuralı:** kod, yorumlar, kurallar (`AGENTS.md`, `rules/`) ve **commit mesajları İngilizce**; arayüz metinleri,
-  README, `CHANGELOG.md` ve `ROADMAP.md` Türkçe. Commit mesajı sürümle başlar: `2.4.1: short summary in English`
-  (sürümsüz işler `docs:`, `test:` gibi bir önekle).
+  README, `CHANGELOG.md`, `ROADMAP.md` ve `docs/` Türkçe. Sürüm commit'i `2.5.0: short summary in English`; ara işler
+  `feat(<görev>): …`, `fix: …`, `docs: …`, `test: …`.
+- **Dallar ve planlar:** iş ArkeLab'de beş çalışma planına bölünür; her görev kısa ömürlü bir dalda yapılır ve PR ile
+  `main`'e alınır (`ROADMAP.md` → "Çalışma kuralları"). Türe özel kod ve kurallar kendi klasöründe durur
+  (`rules/products/`, `src/products/`, `tests/products/`).
 
 **Sürüm çıkarmak:** `package.json` ve `package-lock.json`'da sürümü yükseltin, [`CHANGELOG.md`](CHANGELOG.md)'ye not
 ekleyin, biten adımı [`ROADMAP.md`](ROADMAP.md)'de işaretleyin, commit atıp gönderin. Git ile kuranlar panelden günceller.
@@ -601,7 +615,8 @@ ekleyin, biten adımı [`ROADMAP.md`](ROADMAP.md)'de işaretleyin, commit atıp 
 | `node: command not found` | WSL içinde Node kurun: nvm, sonra `nvm install 22` |
 | Agent başlamıyor, sandbox hatası | `sudo apt install -y bubblewrap socat`; Claude Code'un WSL içine kurulu olduğundan emin olun |
 | Yayında "Cloudflare hesabı yok" | Ayarlar → Hesabım → Kaydet ve Test Et |
-| Güncelleme "kaydedilmemiş değişiklikler" diyor | Kurulum klasöründe `git status`; değişiklikleri kaydedin ya da geri alın |
+| Güncelleme "kaydedilmemiş değişiklikler" diyor | Kurulum klasöründe `git status`; değişiklikleri kaydedin ya da geri alın. ArkeLab'e bağlı bir klasörse ArkeLab'in eklediği dosyalar da buna yol açar: geliştirme için ayrı bir kopya kullanın (`ROADMAP.md` → "Geliştirme düzeni") |
+| "Fonts served from the site" uyarısı | Derleme sırasında Google'a ulaşılamadı; site yazı tiplerini yine Google'dan yükler. İnternet varken yeniden derleyin |
 | Ekip eşitlemede çakışma | O müşteride iki kişi değişiklik yaptı: biriniz önce alsın, sonra tekrar eşitleyin |
 | Ekip deposuna ulaşılamıyor | `gh auth login`, sonra `git ls-remote <adres>` |
 | Ekran görüntüsü alınmıyor | Chrome / Chromium yolunu verin: `export ARKE_BROWSER=/yol/chrome` |
