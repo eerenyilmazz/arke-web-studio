@@ -7,6 +7,7 @@
 
 <br>
 
+[![CI](https://github.com/eerenyilmazz/arke-web-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/eerenyilmazz/arke-web-studio/actions/workflows/ci.yml)
 ![Version](https://img.shields.io/badge/version-2.4.4-d6a584)
 ![Tests](https://img.shields.io/badge/tests-vitest%20%2B%20Playwright-2f7a4f)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022.12-3c873a)
