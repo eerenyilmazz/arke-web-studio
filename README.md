@@ -26,6 +26,8 @@ Cloudflare account.
 
 > Proprietary software — see [License](#license). The changelog, roadmap and `docs/` are written in English.
 
+> **About ArkeLab.** ArkeLab is the author's own application for running AI-agent teams on software projects; it is in development and not publicly available. Arke Web Studio is built to plug into it later, but it runs on its own and needs nothing from ArkeLab. Mentions of ArkeLab in the roadmap and changelog describe that planned integration.
+
 ---
 
 ## Contents
