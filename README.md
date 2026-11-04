@@ -24,7 +24,7 @@ for small businesses. An AI agent researches the business and proposes a design 
 operator approves it, and nothing is published without a human approval code. Sites run on the operator's own
 Cloudflare account.
 
-> Proprietary software — see [License](#license). The changelog, roadmap and `docs/` are written in Turkish.
+> Proprietary software — see [License](#license). The changelog, roadmap and `docs/` are written in English.
 
 ---
 
@@ -603,10 +603,10 @@ npm run schema       # Zod → schema/*.schema.json
 - The UI audit ([`tests/ui-audit.test.ts`](tests/ui-audit.test.ts)) checks every screen in both themes at three widths: contrast, overflow, animation, script errors.
 - CI runs lint, type checking, the build and the tests on every push ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 - **Language rule:** code, comments, rules (`AGENTS.md`, `rules/`), this README and **commit messages are in English**;
-  UI strings, `CHANGELOG.md`, `ROADMAP.md` and `docs/` are in Turkish. Release commits look like
+  `CHANGELOG.md`, `ROADMAP.md` and `docs/` are in English too; UI strings are Turkish with English translations. Release commits look like
   `2.5.0: short summary in English`; other work uses `feat(<task>): …`, `fix: …`, `docs: …`, `test: …`.
 - **Branches and plans:** work is split into five work plans in ArkeLab; each task is done on a short-lived branch and
-  merged into `main` through a PR (`ROADMAP.md` → "Çalışma kuralları"). Kind-specific code and rules live in their own
+  merged into `main` through a PR (`ROADMAP.md` → "Working rules"). Kind-specific code and rules live in their own
   folders (`rules/products/`, `src/products/`, `tests/products/`).
 
 **Cutting a release:** bump the version in `package.json` and `package-lock.json`, add a note to
@@ -623,7 +623,7 @@ installs update from the panel.
 | `node: command not found` | Install Node inside WSL: nvm, then `nvm install 22` |
 | The agent does not start, sandbox error | `sudo apt install -y bubblewrap socat`; make sure Claude Code is installed inside WSL |
 | "No Cloudflare account" on publish | Settings → My Account → Save and Test |
-| The update reports "uncommitted changes" | Run `git status` in the install folder and commit or discard the changes. In a folder connected to ArkeLab, files ArkeLab adds also cause this: use a separate copy for development (`ROADMAP.md` → "Geliştirme düzeni") |
+| The update reports "uncommitted changes" | Run `git status` in the install folder and commit or discard the changes. In a folder connected to ArkeLab, files ArkeLab adds also cause this: use a separate copy for development (`ROADMAP.md` → "Development layout") |
 | "Fonts served from the site" warning | Google could not be reached during the build, so the site still loads its fonts from Google. Rebuild while online |
 | Conflict during team sync | Two people changed that client: one of you pulls first, then sync again |
 | The team repository is unreachable | `gh auth login`, then `git ls-remote <url>` |

@@ -1,197 +1,200 @@
-# Yol haritası
+# Roadmap
 
-Arke Web Studio'nun planı, açık konuları ve alınmış kararlar. Yapılanlar sürüm sürüm [`CHANGELOG.md`](CHANGELOG.md)
-dosyasında. Bir görev bittiğinde burada işaretlenir; bir plan bittiğinde "Tamamlananlar"a taşınır.
+Arke Web Studio's plan, open questions and decisions taken. What has been done is listed release by release in
+[`CHANGELOG.md`](CHANGELOG.md). When a task is finished it is ticked off here; when a plan is finished it moves to
+"Completed".
 
-İş, ArkeLab'de bu projenin altında **beş çalışma planına** bölünür. Kod tek depoda kalır: hepsi aynı çekirdeği (müşteri,
-tasarım agent'ı, onaylar, sürümler, yayın, yedek) kullanır; her plan büyük ölçüde kendi klasöründe çalışır
-(bkz. [Klasör düzeni](#klasör-düzeni)).
+The work is split into **five work plans** under this project in ArkeLab. The code stays in a single repository: all
+plans use the same core (clients, design agent, approvals, releases, publishing, backup), and each plan works mostly in
+its own folders (see [Folder layout](#folder-layout)).
 
-## Şimdi
+## Now
 
-| Plan | Amaç | Durum |
+| Plan | Goal | Status |
 | --- | --- | --- |
-| 1 · Tanıtım ve temel | Tanıtım siteleri ve ortak çekirdek; gerçek ortamda kullanılabilir | ✅ 2.4.2, kalan küçük işler |
-| 2 · E-ticaret | Ürün, sepet, sipariş, ödeme, yasal sayfalar | **sıradaki** |
-| 3 · Randevu | Hizmet, personel, takvim, hatırlatma | planlandı |
-| 4 · Restoran ve kafe | Menü, masada QR, masa siparişi, rezervasyon | planlandı (3 karar bekliyor) |
-| 5 · ArkeLab entegrasyonu | MCP'nin ArkeLab terminallerinde çalışması, ortak hesap deposu | planlandı |
+| 1 · Showcase and foundation | Showcase sites and the shared core; usable in a real environment | ✅ 2.4.2, small items remaining |
+| 2 · E-commerce | Products, cart, orders, payment, legal pages | **next** |
+| 3 · Booking | Services, staff, calendar, reminders | planned |
+| 4 · Restaurant and café | Menu, QR at the table, table orders, reservations | planned (3 decisions pending) |
+| 5 · ArkeLab integration | Running the MCP in ArkeLab terminals, shared account store | planned |
 
-Planlar sırayla yürür: biri bitmeden diğerine başlanmaz (tek kişide paralel plan, yarım kalmış iki iş demektir).
-Plan 5'in ilk görevi (kuralların netleşmesi) beklemeden yapılabilir; diğer işlerin nasıl gönderileceğini belirler.
+Plans run in sequence: the next one is not started before the current one is finished (parallel plans with one person
+mean two half-finished jobs). The first task of Plan 5 (settling the rules) can be done without waiting; it determines
+how the other work is delivered.
 
-Her görevin yanında dokunduğu yer yazar: **çekirdek** (bütün türleri etkiler, daha dikkatli incelenir) ya da **tür**
-(sadece o türün klasörleri).
+Each task states what it touches: **core** (affects every kind of site and gets a more careful review) or **kind**
+(only that kind's folders).
 
-### Plan 1 · Tanıtım ve temel
+### Plan 1 · Showcase and foundation
 
-Tanıtım siteleri gerçek bir müşteriyle (Thrace IT) baştan sona denendi: plan, tasarım, önizleme, müşteri yorumu, yayın,
-geri alma, kaldırma, yedek ve geri yükleme. Bulunan hatalar 2.4.2'de düzeltildi.
+Showcase sites were tried end to end with a real client (Thrace IT): plan, design, preview, client feedback, publishing,
+rollback, removal, backup and restore. The bugs found were fixed in 2.4.2.
 
-| # | Görev | Yer | Durum |
+| # | Task | Area | Status |
 | --- | --- | --- | --- |
-| 1.1 | 2.4.2'yi gerçek bir işle doğrula: Özel Talep, önizleme, `/brand/` dosyalarının yayında olmaması, fontların siteden gelmesi, agent özetinin dürüstlüğü | — | açık |
-| 1.2 | Tanıtıma özel tasarım kurallarını ortak dosyalardan `rules/products/showcase.md`'ye ayır (içerik aynı kalır, sadece yer değişir) | tür | ✅ 2.4.3 |
-| 1.3 | `npm audit` uyarılarını sınıfla (5 uyarı); güvenli olanları güncelle, `--force` kullanma | çekirdek | açık |
-| 1.4 | Gizlilik metin şablonlarının (`rules/privacy.md`) ve yurt dışı aktarımın avukat kontrolü | — | satıştan önce |
-| 1.5 | Panele uzaktan erişim kararı (öneri: Tailscale ile parolalı giriş) | çekirdek | karar bekliyor |
-| 1.6 | Ekip eşitlemesinde müşteri bazında seçim | çekirdek | açık |
-| 1.7 | Alan adı olmayan sitede sitemap: yayın adresi belli olunca üret ya da bilerek atla | çekirdek | açık |
-| 1.8 | Kullanılan panel ile geliştirme kopyasını ayır (aşağıda "Geliştirme düzeni") | — | açık |
-| 1.9 | Kod düzeni: `src/lib/` dört alana (`core`, `client`, `site`, `checks`), büyük panel ekranları ve panel testleri konularına göre | çekirdek | ✅ 2.4.4 |
-| 1.10 | Kalan büyük panel dosyalarını ekran başına böl: `info.js` (Müşteri Bilgileri), `edit.js` (Düzenle kartları); o ekranda çalışırken | çekirdek | açık |
-| 1.11 | `src/panel/jobs.ts`'i böl: işi çalıştırma, agent izinleri, ilerleme olayları ayrı dosyalara | çekirdek | açık |
-| 1.12 | `src/panel/prompts.ts`'teki kalan kural metinlerini md'ye taşı; komutlarda sadece hangi dosyanın okunacağı kalsın | çekirdek | açık |
+| 1.1 | Verify 2.4.2 with a real job: Custom Request, preview, `/brand/` files not being published, fonts served from the site itself, honesty of the agent summary | — | open |
+| 1.2 | Move the showcase-specific design rules out of the shared files into `rules/products/showcase.md` (content unchanged, only its location) | kind | ✅ 2.4.3 |
+| 1.3 | Triage the `npm audit` warnings (5 of them); update the safe ones, do not use `--force` | core | open |
+| 1.4 | Lawyer review of the privacy text templates (`rules/privacy.md`) and of cross-border transfer | — | before sale |
+| 1.5 | Decision on remote access to the panel (suggestion: Tailscale with password sign-in) | core | decision pending |
+| 1.6 | Per-client selection in team sync | core | open |
+| 1.7 | Sitemap for a site without a domain: generate it once the publishing address is known, or skip it deliberately | core | open |
+| 1.8 | Separate the panel in use from the development copy (see "Development layout" below) | — | open |
+| 1.9 | Code layout: `src/lib/` into four areas (`core`, `client`, `site`, `checks`), large panel screens and panel tests split by topic | core | ✅ 2.4.4 |
+| 1.10 | Split the remaining large panel files per screen: `info.js` (Client Details), `edit.js` (Edit cards); while working on that screen | core | open |
+| 1.11 | Split `src/panel/jobs.ts`: running the job, agent permissions and progress events into separate files | core | open |
+| 1.12 | Move the remaining rule text in `src/panel/prompts.ts` into md files; the prompts should only say which file to read | core | open |
 
-### Plan 2 · E-ticaret
+### Plan 2 · E-commerce
 
-Ürünler, sepet ve müşterinin kendi ödeme hesabıyla online satış. Agent ödeme kodunu yazmaz; fabrikanın testli hazır
-parçalarını yerleştirir ve tasarlar. Tür, plan bitene kadar panelde kapalı kalır ("yakında").
+Online selling with products, a cart and the client's own payment account. The agent does not write payment code; it
+places and styles the factory's tested ready-made parts. The kind stays closed in the panel ("coming soon") until the
+plan is finished.
 
-| # | Görev | Yer |
+| # | Task | Area |
 | --- | --- | --- |
-| 2.1 | Ödeme sağlayıcısı kararı ve sırası: iyzico, PayTR, Stripe (pazara göre: Türkiye, Birleşik Krallık) | — |
-| 2.0 | `parts/` klasörünü böl: ortak parçalar `parts/shared/`, e-ticarete özel olanlar `parts/ecommerce/`; yayınlanmış sitelerdeki dosya yolları değişmeden (testle) | çekirdek |
-| 2.2 | E-ticaret tasarım kuralları: ürün listesi, ürün sayfası, sepet, ödeme ekranı, sipariş sonucu (`rules/products/ecommerce.md`) | tür |
-| 2.3 | Katalog genişletme: varyant (beden, renk), stok, ürün görselleri; D1 migration | tür (katalog ortak: çekirdek) |
-| 2.4 | Sepet parçası: tarayıcıda tutulur, fiyat ve stok sunucuda yeniden hesaplanır | tür |
-| 2.5 | Sipariş modeli ve durumları (alındı, ödendi, kargoda, teslim, iade); yönetim ekranında siparişler | tür |
-| 2.6 | Ödeme paketi: ödeme oturumu, webhook imza doğrulaması, aynı bildirimin iki kez işlenmemesi, iade | tür |
-| 2.7 | Sipariş bildirimleri: alıcıya e-posta, işletmeye bildirim | tür |
-| 2.8 | Yasal sayfalar: TR'de mesafeli satış sözleşmesi, ön bilgilendirme formu, cayma ve iade; UK'de Consumer Contracts; KVKK ve GDPR metinleri sipariş verisine göre | tür + `rules/privacy.md` |
-| 2.9 | Ödeme testi onayı: canlıya almadan önce test modunda bir ödeme yapılır ve insan onaylar | çekirdek (onaylar) |
-| 2.10 | Panelde müşterinin ödeme anahtarları: şifreli saklanır, agent göremez, yayında Worker'a gizli değer olarak gider | çekirdek |
-| 2.11 | Türü aç; uçtan uca testler (sepet → ödeme → sipariş → yönetim ekranı), CHANGELOG ve README | tür |
+| 2.1 | Payment provider decision and order: iyzico, PayTR, Stripe (by market: Türkiye, United Kingdom) | — |
+| 2.0 | Split the `parts/` folder: shared parts in `parts/shared/`, e-commerce-specific ones in `parts/ecommerce/`; file paths on published sites unchanged (covered by a test) | core |
+| 2.2 | E-commerce design rules: product list, product page, cart, checkout screen, order result (`rules/products/ecommerce.md`) | kind |
+| 2.3 | Catalogue extension: variants (size, colour), stock, product images; D1 migration | kind (catalogue is shared: core) |
+| 2.4 | Cart part: kept in the browser; price and stock are recalculated on the server | kind |
+| 2.5 | Order model and statuses (received, paid, shipped, delivered, refunded); orders in the admin screen | kind |
+| 2.6 | Payment package: payment session, webhook signature verification, never processing the same notification twice, refunds | kind |
+| 2.7 | Order notifications: email to the buyer, notification to the business | kind |
+| 2.8 | Legal pages: distance sales contract, pre-information form, withdrawal and returns in TR; Consumer Contracts in the UK; KVKK and GDPR texts according to order data | kind + `rules/privacy.md` |
+| 2.9 | Payment test approval: before going live, a test-mode payment is made and a human approves | core (approvals) |
+| 2.10 | The client's payment keys in the panel: stored encrypted, invisible to the agent, sent to the Worker as a secret on publishing | core |
+| 2.11 | Open the kind; end-to-end tests (cart → payment → order → admin screen), CHANGELOG and README | kind |
 
-### Plan 3 · Randevu
+### Plan 3 · Booking
 
-Kuaför, klinik, salon gibi işletmeler için hizmet, personel ve takvimle online randevu.
+Online booking with services, staff and a calendar, for hairdressers, clinics, salons and similar businesses.
 
-| # | Görev | Yer |
+| # | Task | Area |
 | --- | --- | --- |
-| 3.1 | Randevu tasarım kuralları: hizmet seçimi, personel, uygun saatler, onay ekranı (`rules/products/booking.md`) | tür |
-| 3.2 | Hizmetler ve süreleri (katalog parçasını kullanarak) | tür |
-| 3.3 | Personel ve çalışma saatleri, izin günleri | tür |
-| 3.4 | Uygunluk hesabı; aynı saate iki randevu verilmemesi | tür |
-| 3.5 | Randevu formu, onay e-postası, iptal ve değiştirme bağlantısı | tür |
-| 3.6 | Hatırlatma; kanal kararı (e-posta ya da SMS) | tür |
-| 3.7 | Yönetim ekranında takvim görünümü | tür |
-| 3.8 | Kişisel veri: saklama süresi ve otomatik silme (2.3.0'daki pazar profiline göre) | çekirdek |
-| 3.9 | Türü aç; testler, CHANGELOG ve README | tür |
+| 3.1 | Booking design rules: service selection, staff, available times, confirmation screen (`rules/products/booking.md`) | kind |
+| 3.2 | Services and their durations (using the catalogue part) | kind |
+| 3.3 | Staff and working hours, days off | kind |
+| 3.4 | Availability calculation; never giving two appointments for the same time | kind |
+| 3.5 | Booking form, confirmation email, cancel and change link | kind |
+| 3.6 | Reminders; channel decision (email or SMS) | kind |
+| 3.7 | Calendar view in the admin screen | kind |
+| 3.8 | Personal data: retention period and automatic deletion (according to the market profile from 2.3.0) | core |
+| 3.9 | Open the kind; tests, CHANGELOG and README | kind |
 
-### Plan 4 · Restoran ve kafe
+### Plan 4 · Restaurant and café
 
-Menü, masada QR ile menü ve sipariş; ödeme online değil, işletmede alınır.
+Menu, plus a menu and ordering by QR code at the table; payment is taken at the venue, not online.
 
-Başlamadan önce verilecek kararlar:
-- Paket servis ya da gel-al olacak mı?
-- Masadan gelen sipariş garson onaylayınca mı mutfağa düşsün?
-- Yeni sipariş bildirimi nasıl gelsin: ekranda ses mi, telefona mı?
+Decisions needed before starting:
+- Will there be delivery or collection?
+- Should an order from a table reach the kitchen only after a waiter approves it?
+- How should a new order notification arrive: a sound on the screen, or on the phone?
 
-| # | Görev | Yer |
+| # | Task | Area |
 | --- | --- | --- |
-| 4.1 | Restoran tasarım kuralları: menü sayfası, QR sayfası, masa siparişi (`rules/products/restaurant.md`) | tür |
-| 4.2 | Menü parçası: kategoriler, fiyat, alerjenler (UK'de 14 alerjen bilgisi), tükendi işareti | tür |
-| 4.3 | Masaya göre QR kodları; yazdırılabilir masa kartları | tür |
-| 4.4 | Masadan sipariş (online ödeme yok) | tür |
-| 4.5 | Garson onayı akışı (karara göre) | tür |
-| 4.6 | Yeni sipariş bildirimi (karara göre) | tür |
-| 4.7 | Rezervasyon (Plan 3'ün takvim parçasıyla) | tür |
-| 4.8 | İsteğe bağlı paket sipariş (karara göre) | tür |
-| 4.9 | Türü aç; testler, CHANGELOG ve README | tür |
+| 4.1 | Restaurant design rules: menu page, QR page, table order (`rules/products/restaurant.md`) | kind |
+| 4.2 | Menu part: categories, price, allergens (14-allergen information in the UK), sold-out marker | kind |
+| 4.3 | Per-table QR codes; printable table cards | kind |
+| 4.4 | Ordering from the table (no online payment) | kind |
+| 4.5 | Waiter approval flow (depending on the decision) | kind |
+| 4.6 | New order notification (depending on the decision) | kind |
+| 4.7 | Reservations (with Plan 3's calendar part) | kind |
+| 4.8 | Optional takeaway orders (depending on the decision) | kind |
+| 4.9 | Open the kind; tests, CHANGELOG and README | kind |
 
-### Plan 5 · ArkeLab entegrasyonu
+### Plan 5 · ArkeLab integration
 
-| # | Görev | Yer |
+| # | Task | Area |
 | --- | --- | --- |
-| 5.1 | ArkeLab kurallarını bu depo için netleştir: main'e kim alır, ArkeLab hangi dala yayınlar, görev kaynağı (Jira projesi ve anahtar öneki) | — |
-| 5.2 | ArkeLab'in projeye eklediği dosyalar (`.mcp.json`, `AGENTS.md`/`CLAUDE.md` eklemeleri, `.codex/`, `.gemini/`): depoya mı girecek, yerel mi kalacak (`.gitignore`) | — |
-| 5.3 | Panel güncelleyicisi (`git pull --ff-only`) bu dosyalara takılmasın | çekirdek |
-| 5.4 | Arke Web Studio MCP'nin ArkeLab proje terminallerinde çalışması; gizli bilgi içermeyen örnek `.mcp.json` | çekirdek |
-| 5.5 | Cloudflare hesabını ArkeLab'in şifreli deposundan okuma (panelin kendi şifreli hesabı yedek olarak kalır) | çekirdek |
-| 5.6 | Web Stüdyosu paketi ve agent kılavuzu | — |
+| 5.1 | Settle the ArkeLab rules for this repository: who merges into main, which branch ArkeLab publishes to, the task source (Jira project and key prefix) | — |
+| 5.2 | Files ArkeLab adds to the project (`.mcp.json`, `AGENTS.md`/`CLAUDE.md` additions, `.codex/`, `.gemini/`): committed to the repository or kept local (`.gitignore`) | — |
+| 5.3 | Make sure the panel updater (`git pull --ff-only`) does not trip over these files | core |
+| 5.4 | Run the Arke Web Studio MCP in ArkeLab project terminals; an example `.mcp.json` with no secrets | core |
+| 5.5 | Read the Cloudflare account from ArkeLab's encrypted store (the panel's own encrypted account remains as a fallback) | core |
+| 5.6 | Web Studio package and agent guide | — |
 
-## Klasör düzeni
+## Folder layout
 
-Ortak olan tek yerde; her türün kendine ait dosyaları kendi klasöründe. Agent her işte ortak kuralları ve sadece o
-müşterinin türünün kural dosyasını okur (`src/products/registry.ts` içindeki `rules`).
+Shared things live in one place; each kind's own files live in its own folder. On every job the agent reads the shared
+rules and only the rule file of that client's kind (`rules` in `src/products/registry.ts`).
 
 ```
-src/, panel/                 ortak çekirdek: müşteri, onay, sürüm, yayın, yedek, agent işleri
-src/products/registry.ts     hangi tür hangi parçaları ve kuralları kullanır
-src/products/<tür>/          türe özel panel işleri ve kontroller
-rules/                       ortak kurallar: marka, tasarım planı, pazar, gizlilik, SEO
-rules/products/<tür>.md      türe özel sayfa düzeni ve iş kuralları
-parts/app/, parts/site/      bugünkü ortak hazır parçalar (katalog, gelen kutusu, yönetim ekranı)
-parts/<tür>/                 türe özel hazır parçalar ve migration'ları
-tests/products/<tür>/        türe özel testler
+src/, panel/                 shared core: clients, approvals, releases, publishing, backup, agent jobs
+src/products/registry.ts     which kind uses which parts and rules
+src/products/<kind>/         kind-specific panel jobs and checks
+rules/                       shared rules: brand, design plan, market, privacy, SEO
+rules/products/<kind>.md     kind-specific page layout and business rules
+parts/app/, parts/site/      today's shared ready-made parts (catalogue, inbox, admin screen)
+parts/<kind>/                kind-specific ready-made parts and their migrations
+tests/products/<kind>/       kind-specific tests
 ```
 
-- Mevcut dosyalar şimdilik yerinde kalır; taşımak yayınlanmış sitelerdeki yolları bozabilir. Gerekirse testle ve tek
-  tek taşınır.
-- Yeni türlerin dosyaları baştan kendi klasörlerine yazılır.
-- Ortak tasarım sistemi (marka, renk, font, imza animasyonu, tasarım planı ve onayı) her türde aynıdır; türler sadece
-  sayfa düzenini kendi kurallarında tanımlar. Mevcut sitelerin tasarımı bu düzenden etkilenmez.
+- Existing files stay where they are for now; moving them could break paths on published sites. If needed, they are
+  moved one at a time, with a test.
+- Files for new kinds are written in their own folders from the start.
+- The shared design system (brand, colour, font, signature animation, design plan and its approval) is the same for every
+  kind; kinds define only the page layout in their own rules. The design of existing sites is not affected by this layout.
 
-## Çalışma kuralları
+## Working rules
 
-**Dallar:** uzun ömürlü plan dalı yok. Her görev kısa ömürlü bir dalda yapılır ve PR ile `main`'e alınır:
-`feat/<görev-anahtarı>-<kısa-ad>`, `fix/…`, `docs/…` (ör. `feat/WEB-12-sepet`). Bitmemiş tür main'e girer ama panelde
-kapalı kalır. ArkeLab kişisel bir dala yayınlıyorsa o dal PR ile main'e alınır ve her birleştirmeden sonra main'e eşitlenir.
-`main` her zaman yayınlanabilir olmalı: panel güncellemesi oradan gelir.
+**Branches:** there are no long-lived plan branches. Each task is done on a short-lived branch and merged into `main`
+through a PR: `feat/<task-key>-<short-name>`, `fix/…`, `docs/…` (e.g. `feat/WEB-12-cart`). An unfinished kind is merged
+into main but stays closed in the panel. If ArkeLab publishes to a personal branch, that branch is merged into main
+through a PR and synced with main after every merge. `main` must always be releasable: the panel update comes from it.
 
-**Commit ve sürüm:** commit mesajları İngilizce (`feat(WEB-12): cart totals`, `fix: …`, `docs: …`); sürüm commit'i
-`2.5.0: short summary`. Sürüm etiketi `vX.Y.Z`, main'e alındıktan sonra atılır. Bir planın büyük adımı minor
-(2.5.0, 2.6.0…), düzeltmeler patch sürümdür. Kod, yorumlar, `AGENTS.md`, `rules/` ve README İngilizce; arayüz,
-CHANGELOG, ROADMAP ve `docs/` Türkçe.
+**Commits and versions:** commit messages are in English (`feat(WEB-12): cart totals`, `fix: …`, `docs: …`); a release
+commit looks like `2.5.0: short summary`. The version tag is `vX.Y.Z`, created after the merge into main. A big step of a
+plan is a minor version (2.5.0, 2.6.0…); fixes are patch versions. Code, comments, `AGENTS.md`, `rules/`, the README,
+CHANGELOG, ROADMAP and `docs/` are in English; UI strings are Turkish with English translations.
 
-**main için önerilen koruma (GitHub ayarı):** PR zorunlu, CI'daki `test` işi geçmeli, dal güncel olmalı, doğrusal geçmiş,
-force push ve silme kapalı, `v*` etiketleri korumalı.
+**Recommended protection for main (GitHub setting):** PR required, the `test` job in CI must pass, the branch must be up
+to date, linear history, force push and deletion disabled, `v*` tags protected.
 
-**Geliştirme düzeni:** kullanılan panel (`~/projects/arke-web-studio`, sadece `main`) ile ArkeLab'e bağlanan geliştirme
-kopyası (ör. `~/projects/arke-web-studio-dev`) ayrı klasörlerde durur. Böylece geliştirmede dal değiştirmek çalışan
-paneli ve müşteri işlerini etkilemez.
+**Development layout:** the panel in use (`~/projects/arke-web-studio`, `main` only) and the development copy connected
+to ArkeLab (e.g. `~/projects/arke-web-studio-dev`) live in separate folders. That way switching branches during
+development does not affect the running panel or client jobs.
 
-## Açık konular
+## Open questions
 
-- **Ödeme sağlayıcısı sırası:** iyzico, PayTR ya da Stripe; seçilmedi (Plan 2.1).
-- **Restoran kararları:** paket servis, garson onayı, bildirim kanalı (Plan 4).
-- **ArkeLab kuralları:** main'e alma yetkisi, yayın dalı, görev kaynağı (Plan 5.1).
-- **Panele uzaktan erişim:** önerilen yol Tailscale ile parolalı giriş; karar verilmedi (Plan 1.5).
-- **Ekip eşitlemede müşteri seçimi:** şu an tüm yerel müşteriler gönderiliyor (Plan 1.6).
-- **Kural metinlerinin hukuki kontrolü:** KVKK ve GDPR şablonları (`rules/privacy.md`) ve yurt dışı aktarım satıştan önce
-  bir avukata kontrol ettirilmeli (`docs/privacy.md`).
+- **Payment provider order:** iyzico, PayTR or Stripe; not chosen (Plan 2.1).
+- **Restaurant decisions:** delivery, waiter approval, notification channel (Plan 4).
+- **ArkeLab rules:** authority to merge into main, publishing branch, task source (Plan 5.1).
+- **Remote access to the panel:** the suggested route is Tailscale with password sign-in; not decided (Plan 1.5).
+- **Client selection in team sync:** currently all local clients are sent (Plan 1.6).
+- **Legal review of the rule texts:** the KVKK and GDPR templates (`rules/privacy.md`) and cross-border transfer should
+  be checked by a lawyer before sale (`docs/privacy.md`).
 
-## Kararlar
+## Decisions
 
-| Karar | Neden |
+| Decision | Why |
 | --- | --- |
-| Tek ürün, tek depo; iş ArkeLab'de beş çalışma planına bölünür | Ortak çekirdek tek yerde; düzeltme bir kere yapılır |
-| Ortak çekirdek + türe özel klasörler (`rules/products/`, `parts/<tür>/`, `src/products/<tür>/`) | Planlar birbirine dokunmadan ilerler; agent sadece ilgili kuralları okur |
-| Plan dalı yok; kısa ömürlü görev dalları ve PR ile main | main hep yayınlanabilir; büyük birleştirme çakışması olmaz |
-| Bitmemiş tür panelde kapalı kalır | Yarım iş müşteriye görünmez |
-| Agent çalışan parçaların kodunu yazmaz; fabrikanın testli hazır parçalarını yerleştirir (ödeme dahil) | Kısa ve ucuz işler, güvenilir parçalar, ödeme güvenliği |
-| Onaylar sadece insanda; panelde tek kullanımlık terminal koduyla | Agent ya da bir web sayfası onay veremez |
-| Herkes kendi panelini ve kendi Cloudflare hesabını kullanır | Bireysel sorumluluk, paylaşılan gizli bilgi yok |
-| Ekip eşitleme Git ile, müşteri başına bir dal; çakışmada durur | Tahmini birleştirme yok, ArkeLab'ın Git modeliyle uyumlu |
-| Kişisel veri kuralları sayfanın diline göre değil, müşterinin pazarına göre | KVKK ve GDPR pazara bağlı |
-| Panel görünümü ArkeLab tasarım sistemine uyar | Tek ürün hissi; renkler tek dosyada |
-| Kurallar md dosyalarında tek kaynaktır; agent komutları sadece hangi dosyanın okunacağını söyler | Çelişki olmasın, token tasarrufu |
-| Değişiklikler küçük, geri alınabilir ve testli; mevcut API ve veriler korunur | Canlı sistem güvenliği |
-| Ad her yerde Arke Web Studio; eski adlara uyumluluk tutulmadı | Henüz canlı müşteri yok; temiz başlangıç |
+| One product, one repository; the work is split into five work plans in ArkeLab | The shared core is in one place; a fix is made once |
+| Shared core + kind-specific folders (`rules/products/`, `parts/<kind>/`, `src/products/<kind>/`) | Plans proceed without touching each other; the agent reads only the relevant rules |
+| No plan branches; short-lived task branches and PRs into main | main is always releasable; no large merge conflicts |
+| An unfinished kind stays closed in the panel | Half-done work is invisible to clients |
+| The agent does not write the code of working parts; it places the factory's tested ready-made parts (payment included) | Short and cheap jobs, reliable parts, payment security |
+| Approvals belong to humans only; in the panel, with a single-use terminal code | An agent or a web page cannot approve |
+| Everyone uses their own panel and their own Cloudflare account | Individual responsibility, no shared secrets |
+| Team sync through Git, one branch per client; it stops on a conflict | No guessed merges; fits ArkeLab's Git model |
+| Personal-data rules follow the client's market, not the page language | KVKK and GDPR depend on the market |
+| The panel look follows the ArkeLab design system | One-product feel; colours in a single file |
+| Rules are single-sourced in md files; agent prompts only say which file to read | No contradictions, saves tokens |
+| Changes are small, reversible and tested; existing APIs and data are preserved | Live-system safety |
+| The name is Arke Web Studio everywhere; no compatibility with old names | No live clients yet; clean start |
 
-## Tamamlananlar
+## Completed
 
-| Adım | Sürüm |
+| Step | Version |
 | --- | --- |
-| Çekirdek ve bireysel hesaplar (Cloudflare panelden, şifreli) | 1.25.0 |
-| Uygulama siteleri için yayın modülü (Worker, D1, R2, migrations, secrets) | 1.26.0 |
-| Ortak hazır parçalar: katalog, gelen kutusu, müşterinin yönetim ekranı | 1.27.0 |
-| Globalleşme: profil, kişisel izlerin kaldırılması, kolay kurulum, panelden güncelleme, ekip eşitleme, ArkeLab görünümü | 1.27.1–1.29.0 |
-| Yeni ad: Arke Web Studio, teknik adlar dahil (temiz başlangıç) | 2.0.0 |
-| Yeni panel ekranları: Hızlı Düzenleme, Yeni Müşteri, Ayarlar | 2.2.0–2.2.2 |
-| Pazara göre kişisel veri profili (KVKK, GDPR): saklama süresi, otomatik silme, kişinin verisini bulma, dışa aktarma ve silme, AB veri bölgesi, bildirim metinleri | 2.3.0 |
-| Müşterinin yönetim ekranı Türkçe ve İngilizce | 2.4.0 |
-| Gerçek ortam testi (gerçek agent, gerçek Cloudflare) ve bulguların düzeltilmesi | 2.4.1–2.4.2 |
+| Core and individual accounts (Cloudflare from the panel, encrypted) | 1.25.0 |
+| Publishing module for app sites (Worker, D1, R2, migrations, secrets) | 1.26.0 |
+| Shared ready-made parts: catalogue, inbox, the client's admin screen | 1.27.0 |
+| Going global: profile, removal of personal traces, easy setup, update from the panel, team sync, ArkeLab look | 1.27.1–1.29.0 |
+| New name: Arke Web Studio, including technical names (clean start) | 2.0.0 |
+| New panel screens: Quick Edit, New Client, Settings | 2.2.0–2.2.2 |
+| Market-based personal-data profile (KVKK, GDPR): retention period, automatic deletion, finding, exporting and deleting a person's data, EU data region, notice texts | 2.3.0 |
+| The client's admin screen in Turkish and English | 2.4.0 |
+| Real-environment test (real agent, real Cloudflare) and fixing the findings | 2.4.1–2.4.2 |
 
-Ayrıntılar için [`CHANGELOG.md`](CHANGELOG.md).
+See [`CHANGELOG.md`](CHANGELOG.md) for details.
