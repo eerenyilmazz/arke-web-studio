@@ -207,7 +207,7 @@ themes, and the images on this page follow your GitHub theme.
 
 ### Installation
 
-The repository is private, so sign in to GitHub first, then run the install script:
+The source is visible for reference only; running it requires the owner's written permission (see [License](#license)). With permission, sign in to GitHub first, then run the install script:
 
 ```bash
 gh auth login

@@ -1,41 +1,20 @@
 Arke Web Studio
-Copyright (c) 2026 Eren Yılmaz. Tüm hakları saklıdır. / All rights reserved.
+Copyright (c) 2026 Eren Yılmaz. All rights reserved.
 
-TÜRKÇE
-
-Bu yazılım (kaynak kodu, kurallar, istemler/prompt'lar, şablonlar, hazır parçalar, panel tasarımı ve belgeler
-dahil) Eren Yılmaz'ın mülkiyetindedir ve 5846 sayılı Fikir ve Sanat Eserleri Kanunu ile uluslararası telif
-hukuku kapsamında korunur.
-
-Depoya erişim izni verilmiş olması, yazılım üzerinde herhangi bir hak devri ya da lisans anlamına gelmez.
-Sahibinin önceden verilmiş yazılı izni olmadan aşağıdakilerin hiçbiri yapılamaz:
-  - yazılımı ya da herhangi bir bölümünü kullanmak, çalıştırmak, kopyalamak veya çoğaltmak;
-  - değiştirmek, uyarlamak veya ondan türev çalışma üretmek;
-  - yayımlamak, dağıtmak, alt lisanslamak, satmak, kiralamak veya üçüncü kişilere vermek;
-  - ticari amaçla ya da müşterilere hizmet vermek için kullanmak;
-  - adını, logosunu veya marka unsurlarını kullanmak.
-
-Yazılı izinle kullanım, yalnızca o izinde yazan kişiler, amaçlar ve süre için geçerlidir. İzin sahibi bu dosyayı
-ve telif bildirimlerini kaldıramaz.
-
-Yazılım "olduğu gibi" sağlanır; sahibi, kullanımından doğan hiçbir zarardan sorumlu değildir.
-
-İzin ve iletişim: eerenyilmazz1@gmail.com
-
-ENGLISH
-
-This software (including source code, rules, prompts, templates, ready-made parts, panel design and documentation)
-is the property of Eren Yılmaz and is protected by copyright law.
+This software, including its source code, rules, prompts, templates, ready-made parts, panel design and
+documentation, is the property of Eren Yılmaz and is protected by copyright law.
 
 Being given access to this repository grants no licence and transfers no rights. Without the owner's prior written
 permission you may not use, run, copy, reproduce, modify, adapt, create derivative works of, publish, distribute,
 sublicense, sell, rent or otherwise make available the software or any part of it, use it commercially or to serve
 clients, or use its name, logo or brand elements.
 
-Use under written permission is limited to the people, purposes and period stated in that permission. This file
-and the copyright notices must not be removed.
+Use under written permission is limited to the people, purposes and period stated in that permission. This file and
+the copyright notices must not be removed.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. IN NO EVENT SHALL THE OWNER BE LIABLE FOR ANY CLAIM,
 DAMAGES OR OTHER LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.
 
 Third-party components keep their own licences; see THIRD_PARTY.md.
+
+Permission and contact: eerenyilmazz1@gmail.com
