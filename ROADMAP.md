@@ -142,7 +142,7 @@ kapalı kalır. ArkeLab kişisel bir dala yayınlıyorsa o dal PR ile main'e al�
 
 **Commit ve sürüm:** commit mesajları İngilizce (`feat(WEB-12): cart totals`, `fix: …`, `docs: …`); sürüm commit'i
 `2.5.0: short summary`. Sürüm etiketi `vX.Y.Z`, main'e alındıktan sonra atılır. Bir planın büyük adımı minor
-(2.5.0, 2.6.0…), düzeltmeler patch sürümdür. Kod, yorumlar, `AGENTS.md` ve `rules/` İngilizce; arayüz, README,
+(2.5.0, 2.6.0…), düzeltmeler patch sürümdür. Kod, yorumlar, `AGENTS.md`, `rules/` ve README İngilizce; arayüz,
 CHANGELOG, ROADMAP ve `docs/` Türkçe.
 
 **main için önerilen koruma (GitHub ayarı):** PR zorunlu, CI'daki `test` işi geçmeli, dal güncel olmalı, doğrusal geçmiş,
