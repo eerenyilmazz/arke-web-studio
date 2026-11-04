@@ -2,99 +2,101 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.png">
-  <img src="docs/images/hero-light.png" alt="Arke Web Studio: panel ve telefon görünümü">
+  <img src="docs/images/hero-light.png" alt="Arke Web Studio: the panel and phone views">
 </picture>
 
 <br>
 
-![Sürüm](https://img.shields.io/badge/s%C3%BCr%C3%BCm-2.4.4-d6a584)
-![Testler](https://img.shields.io/badge/testler-vitest%20%2B%20Playwright-2f7a4f)
+![Version](https://img.shields.io/badge/version-2.4.4-d6a584)
+![Tests](https://img.shields.io/badge/tests-vitest%20%2B%20Playwright-2f7a4f)
 ![Node](https://img.shields.io/badge/node-%E2%89%A5%2022.12-3c873a)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
 ![Agent](https://img.shields.io/badge/agent-Claude%20Code%20%7C%20Codex-191918)
-![Yayın](https://img.shields.io/badge/yay%C4%B1n-Cloudflare%20Workers-f38020)
-![Lisans](https://img.shields.io/badge/lisans-t%C3%BCm%20haklar%C4%B1%20sakl%C4%B1-555)
+![Hosting](https://img.shields.io/badge/hosting-Cloudflare%20Workers-f38020)
+![License](https://img.shields.io/badge/license-all%20rights%20reserved-555)
 
-**[Hızlı başlangıç](#hızlı-başlangıç)** · [Ekranlar](#ekran-görüntüleri) · [Nasıl çalışır](#nasıl-çalışır) · [Güvenlik](#güvenlik-modeli) · [Sürüm notları](CHANGELOG.md) · [Yol haritası](ROADMAP.md)
+**[Quick start](#quick-start)** · [Screenshots](#screenshots) · [How it works](#how-it-works) · [Security](#security-model) · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)
 
 </div>
 
-> **English:** Arke Web Studio is a local control panel plus an MCP server that lets one operator produce, check and
-> publish websites for small businesses. An AI agent researches the business and proposes a design plan; nothing is
-> built before the operator approves it, nothing is published without a human approval code. Sites run on the
-> operator's own Cloudflare account. Proprietary software; see [License](#lisans).
+Arke Web Studio is a local control panel plus an MCP server that lets one operator produce, check and publish websites
+for small businesses. An AI agent researches the business and proposes a design plan; nothing is built before the
+operator approves it, and nothing is published without a human approval code. Sites run on the operator's own
+Cloudflare account.
+
+> Proprietary software — see [License](#license). The changelog, roadmap and `docs/` are written in Turkish.
 
 ---
 
-## İçindekiler
+## Contents
 
-- [Öne çıkanlar](#öne-çıkanlar)
-- [Bir müşterinin yolculuğu](#bir-müşterinin-yolculuğu)
-- [Neler yapar](#neler-yapar)
-- [Ekran görüntüleri](#ekran-görüntüleri)
-- [Hızlı başlangıç](#hızlı-başlangıç)
-- [Nasıl çalışır](#nasıl-çalışır)
-- [Kullanım](#kullanım)
-- [Kalite kontrolleri](#kalite-kontrolleri)
-- [Site türleri ve hazır parçalar](#site-türleri-ve-hazır-parçalar)
-- [Kişisel veri (KVKK / GDPR)](#kişisel-veri-kvkk--gdpr)
-- [Yayın ve Cloudflare](#yayın-ve-cloudflare)
-- [Ekip çalışması](#ekip-çalışması)
-- [Güncelleme ve taşıma](#güncelleme-ve-taşıma)
-- [Güvenlik modeli](#güvenlik-modeli)
-- [Mimari](#mimari)
-- [Geliştirme](#geliştirme)
-- [Sorun giderme](#sorun-giderme)
-- [Lisans](#lisans)
+- [Highlights](#highlights)
+- [A client's journey](#a-clients-journey)
+- [What it does](#what-it-does)
+- [Screenshots](#screenshots)
+- [Quick start](#quick-start)
+- [How it works](#how-it-works)
+- [Usage](#usage)
+- [Quality checks](#quality-checks)
+- [Site kinds and ready-made parts](#site-kinds-and-ready-made-parts)
+- [Personal data (KVKK / GDPR)](#personal-data-kvkk--gdpr)
+- [Publishing and Cloudflare](#publishing-and-cloudflare)
+- [Working as a team](#working-as-a-team)
+- [Updating and moving](#updating-and-moving)
+- [Security model](#security-model)
+- [Architecture](#architecture)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
 ---
 
-## Öne çıkanlar
+## Highlights
 
 <table>
 <tr>
 <td width="33%" valign="top">
 
-### 🧭 Önce plan, sonra site
-Agent işletmeyi araştırır, kaynaklarıyla getirir ve bir **tasarım planı** önerir: konsept, palet, yazı tipleri,
-sayfalar, imza hareketi. Operatör onaylamadan tek sayfa yazılmaz.
+### 🧭 Plan first, then the site
+The agent researches the business, brings back its findings with sources and proposes a **design plan**: concept,
+palette, typefaces, pages and a signature motion. Not a single page is written until the operator approves it.
 
 </td>
 <td width="33%" valign="top">
 
-### 🔒 Onay ve yayın insanda
-Onaylar terminalde görünen **tek kullanımlık kodla** verilir ve içeriğin parmak izine bağlıdır. Agent onay veremez,
-yayın yapamaz, hesaplara erişemez.
+### 🔒 Humans approve and publish
+Approvals need a **one-time code** shown only in the terminal and are bound to a fingerprint of the content. The agent
+cannot approve, publish or touch any account.
 
 </td>
 <td width="33%" valign="top">
 
-### 🧪 Her derlemede 20+ kontrol
-Güvenlik, kontrast, SEO, dil, para birimi, yasal sayfalar, imza hareketi; telefon ve masaüstü ekran görüntüleri.
-Kalite raporu her sürümde.
+### 🧪 20+ checks on every build
+Security, contrast, SEO, language, currency, legal pages and signature motion, plus phone and desktop screenshots. A
+quality report ships with every version.
 
 </td>
 </tr>
 <tr>
 <td valign="top">
 
-### ✏️ Hızlı düzenleme
-Renk, sayfa, hizmet ve fiyat, metin, iletişim, form, görseller: basit değişiklikleri panel kendisi yazar, kaynak
-harcamaz. Her değişiklik sürümlenir, geri alınır.
+### ✏️ Quick Edit
+Colours, pages, services and prices, copy, contact details, forms and images: the panel writes simple changes itself
+without spending agent credits. Every change is versioned and can be rolled back.
 
 </td>
 <td valign="top">
 
-### 🌍 Pazara göre
-Türkiye, İngiltere, İrlanda, Almanya, Hollanda, ABD: dil, yazım, para, tarih biçimi, yasal sayfalar ve
-**KVKK / UK GDPR / GDPR** profili müşterinin ülkesinden gelir.
+### 🌍 Built for the market
+Türkiye, the UK, Ireland, Germany, the Netherlands and the US: language, spelling, currency, date format, legal pages
+and the **KVKK / UK GDPR / GDPR** profile all follow the client's country.
 
 </td>
 <td valign="top">
 
-### ☁️ Kendi Cloudflare hesabınız
-Önizleme ve canlı site ayrı Worker'larda; uygulama sitelerinde D1, R2 ve gizli anahtarlar. Ücretsiz plan yeterli,
-token şifreli saklanır.
+### ☁️ Your own Cloudflare account
+Preview and live sites run on separate Workers; app sites get D1, R2 and secrets. The free plan is enough, and the
+token is stored encrypted.
 
 </td>
 </tr>
@@ -102,109 +104,110 @@ token şifreli saklanır.
 
 ---
 
-## Bir müşterinin yolculuğu
+## A client's journey
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/flow-dark.png">
-  <img src="docs/images/flow-light.png" alt="Bilgiler, araştırma ve plan, plan onayı, marka ve sayfalar, kontroller, onay kodu, önizleme, yayın onayı, canlı">
+  <img src="docs/images/flow-light.png" alt="Client details, research and plan, plan approval, brand and pages, checks, approval code, preview, production approval, live">
 </picture>
 
-Kartlardaki etiketler adımı kimin yaptığını gösterir; turuncu kapılar insan onayıdır ve atlanamaz.
+The labels on each card show who performs the step; the orange gates are human approvals and cannot be skipped.
 
 ---
 
-## Neler yapar
+## What it does
 
-Panelin kullanıcısı (kurallarda **operatör**) müşteriyi ekler. Agent (Claude Code ya da Codex) işletmeyi araştırır ve
-bir tasarım planı önerir. Operatör planı onaylayınca agent markayı ve siteyi hazırlar. Fabrika her derlemede siteyi
-kontrol eder; operatör onayladıktan sonra site operatörün kendi Cloudflare hesabında yayına alınır.
+The person using the panel (the **operator** in the rules) adds a client. The agent (Claude Code or Codex) researches
+the business and proposes a design plan. Once the operator approves the plan, the agent creates the brand and the site.
+The factory checks the site on every build, and after the operator's approval the site is published to the operator's
+own Cloudflare account.
 
-| Alan | Ne sunar |
+| Area | What you get |
 | --- | --- |
-| **Müşteri akışı** | Beş adımlı yeni müşteri sihirbazı, soru formları, müşteri portalı (form ve önizleme linki), araştırma notları |
-| **Tasarım** | Her müşteriye özel marka kimliği (logo, renk, yazı tipi, imza hareketi), tasarım planı onayı, 3 tasarım önerisi, tasarım kütüphanesi |
-| **Düzenleme** | Hızlı Düzenleme: renk (okunurluk ölçümüyle), sayfalar, hizmet ve fiyatlar, metinler, iletişim, form, logo ve görseller; serbest talepler için Özel Talep |
-| **Kalite** | Her derlemede güvenlik, erişilebilirlik ve kontrast, SEO, link, dil tutarlılığı kontrolleri; telefon ve masaüstü ekran görüntüleri |
-| **Onay** | Onaylar yalnızca insandan gelir: panel, sadece başlatıldığı terminalde görünen tek kullanımlık bir kod ister. Onay içeriğin parmak izine bağlıdır; içerik değişince düşer |
-| **Yayın** | Ayrı önizleme ve canlı Worker'lar (önizleme arama motorlarına kapalı), güvenlik başlıkları, geçici hatada otomatik tekrar, geri alma, yayından kaldırma. Uygulama sitelerinde veritabanı (D1), görsel deposu (R2), şema değişiklikleri ve gizli anahtarlar |
-| **Kişisel veri** | Pazara göre KVKK / UK GDPR / GDPR profili: otomatik silme, kişinin verisini bulma, indirme ve silme, AB veri bölgesi, gizlilik metni şablonları |
-| **Müşterinin ekranı** | Uygulama sitelerinde müşterinin kendi yönetim ekranı: katalog, gelen kutusu, kişisel veri talepleri; Türkçe ve İngilizce |
-| **İş takibi** | Teklif, iş raporu ve aylık rapor (müşterinin dilinde, yazdır / PDF), ödeme ve teslim takibi, kâr hesabı, Analiz ekranı (filtreler, CSV) |
-| **Kaynak yönetimi** | Paketlere göre model seçimi, iş başına ve aylık sınır, iş türüne göre Claude Code ya da Codex |
-| **Ekip ve bakım** | Ekip eşitleme (Git), panelden güncelleme, otomatik yedek, her işten önce ve sonra sürüm kaydı, durum raporu |
+| **Client intake** | Five-step new-client wizard, questionnaires, client portal (forms and preview link), research notes |
+| **Design** | A bespoke brand identity per client (logo, colours, typefaces, signature motion), design-plan approval, three design proposals, a design library |
+| **Editing** | Quick Edit for colours (with live contrast measurement), pages, services and prices, copy, contact details, forms, logo and images; **Custom Request** for anything else |
+| **Quality** | Security, accessibility and contrast, SEO, link and language-consistency checks on every build; phone and desktop screenshots |
+| **Approval** | Approvals come only from a human: the panel asks for a one-time code shown only in the terminal it was started from. Approvals are bound to the content's fingerprint and lapse when it changes |
+| **Publishing** | Separate preview and live Workers (preview hidden from search engines), security headers, automatic retry on transient errors, rollback and unpublishing. App sites also get a database (D1), image storage (R2), schema migrations and secrets |
+| **Personal data** | A KVKK / UK GDPR / GDPR profile per market: automatic deletion, finding, exporting and deleting a person's data, EU data location, privacy-notice templates |
+| **The client's own screen** | On app sites, the client's admin screen: catalogue, inbox and personal-data requests, in Turkish and English |
+| **Business tracking** | Quotes, job reports and monthly reports in the client's language (print / PDF), payment and delivery tracking, profit calculation, an Analysis screen (filters, CSV) |
+| **Agent budget** | Model choice per package, per-job and monthly limits, Claude Code or Codex per job type |
+| **Team and upkeep** | Team sync (Git), in-panel updates, automatic backups, a version snapshot before and after every job, status report |
 
-**Agent'ın sınırları:** agent yalnızca fabrikanın MCP araçlarıyla çalışır. Kabuk komutu çalıştıramaz, dosyaları
-doğrudan düzenleyemez, yayın yapamaz, onay veremez, Cloudflare hesabına ve gizli anahtarlara erişemez. Müşteriden gelen
-metinleri ve okuduğu web sayfalarını talimat değil, veri olarak işler.
+**The agent's limits:** the agent works only through the factory's MCP tools. It cannot run shell commands, edit files
+directly, publish, approve, or reach the Cloudflare account and secrets. It treats text from clients and the web pages it
+reads as data, never as instructions.
 
 ---
 
-## Ekran görüntüleri
+## Screenshots
 
 <p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/panel-client-dark.png">
-  <img src="docs/images/panel-client-light.png" alt="Müşteri sayfası: canlı önizleme, onay adımları ve Hızlı Düzenleme" width="100%">
+  <img src="docs/images/panel-client-light.png" alt="Client page: live preview, approval steps and Quick Edit" width="100%">
 </picture>
-<br><sub><b>Müşteri sayfası.</b> Solda sitenin canlı önizlemesi ve sürüm geçmişi, sağda Hızlı Düzenleme; üstte işin hangi adımda olduğu ve sıradaki onay.</sub>
+<br><sub><b>Client page.</b> Live preview and version history on the left, Quick Edit on the right; the current step and the next approval at the top.</sub>
 </p>
 
 <table>
 <tr>
-<td width="50%" valign="top"><img src="docs/images/panel-plan-dark.png" alt="Tasarım planı onayı" width="100%"><br><sub><b>Tasarım planı.</b> Konsept, palet, yazı tipleri, sayfalar ve imza hareketi; onaylanmadan site yazılmaz.</sub></td>
-<td width="50%" valign="top"><img src="docs/images/panel-colors-light.png" alt="Renk paleti düzenleyici" width="100%"><br><sub><b>Renk paleti.</b> Önizleme ve okunurluk oranı anında güncellenir; zor okunan çiftler işaretlenir.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-plan-dark.png" alt="Design plan approval" width="100%"><br><sub><b>Design plan.</b> Concept, palette, typefaces, pages and signature motion; no site is written before it is approved.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-colors-light.png" alt="Colour palette editor" width="100%"><br><sub><b>Colour palette.</b> Preview and contrast ratios update instantly; hard-to-read pairs are flagged.</sub></td>
 </tr>
 <tr>
-<td width="50%" valign="top"><img src="docs/images/panel-services-dark.png" alt="Hizmetler ve fiyatlar" width="100%"><br><sub><b>Hizmetler ve fiyatlar.</b> Sürükleyerek sıralama ve alan kontrolleri; değişikliği panel yazar, agent çalışmaz.</sub></td>
-<td width="50%" valign="top"><img src="docs/images/panel-brand-light.png" alt="Marka kartı" width="100%"><br><sub><b>Marka kartı.</b> Logo, slogan, renkler, canlı imza hareketi ve tipografi; müşteriye PDF olarak gider.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-services-dark.png" alt="Services and prices" width="100%"><br><sub><b>Services and prices.</b> Drag to reorder, with field validation; the panel writes the change, no agent run needed.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-brand-light.png" alt="Brand board" width="100%"><br><sub><b>Brand board.</b> Logo, tagline, colours, live signature motion and typography; sent to the client as a PDF.</sub></td>
 </tr>
 <tr>
-<td width="50%" valign="top"><img src="docs/images/panel-new-light.png" alt="Yeni müşteri sihirbazı" width="100%"><br><sub><b>Yeni müşteri.</b> Beş adım; kaydetmek ücretsiz, kaynak yalnızca "siteyi yapmaya başla" ile harcanır.</sub></td>
-<td width="50%" valign="top"><img src="docs/images/panel-analysis-light.png" alt="Analiz ekranı" width="100%"><br><sub><b>Analiz.</b> Müşteri, ciro, gider ve agent maliyeti; para birimine göre toplamlar, CSV.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-new-light.png" alt="New-client wizard" width="100%"><br><sub><b>New client.</b> Five steps; saving is free, credits are spent only on "start building the site".</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-analysis-light.png" alt="Analysis screen" width="100%"><br><sub><b>Analysis.</b> Clients, revenue, costs and agent spend; totals per currency, CSV export.</sub></td>
 </tr>
 <tr>
-<td width="50%" valign="top"><img src="docs/images/panel-quote-light.png" alt="Teklif" width="100%"><br><sub><b>Teklif.</b> Kapsam, marka ve fiyat tek sayfada; yazdır ya da PDF.</sub></td>
-<td width="50%" valign="top"><img src="docs/images/panel-settings-dark.png" alt="Ayarlar" width="100%"><br><sub><b>Ayarlar.</b> Hesap, ekip, kaynak kullanımı, yayın, yedek ve güncelleme.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-quote-light.png" alt="Quote" width="100%"><br><sub><b>Quote.</b> Scope, brand and price on one page; print or save as PDF.</sub></td>
+<td width="50%" valign="top"><img src="docs/images/panel-settings-dark.png" alt="Settings" width="100%"><br><sub><b>Settings.</b> Account, team, agent usage, publishing, backups and updates.</sub></td>
 </tr>
 </table>
 
 <p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/phones-dark.png">
-  <img src="docs/images/phones-light.png" alt="Telefonda panel, müşteri sayfası ve müşterinin yönetim ekranı">
+  <img src="docs/images/phones-light.png" alt="The panel, a client page and the client's admin screen on a phone">
 </picture>
-<br><sub><b>Telefonda.</b> Panel her ekranda telefona uyar; müşterinin yönetim ekranı pazara göre Türkçe ya da İngilizce açılır.</sub>
+<br><sub><b>On the phone.</b> Every panel screen adapts to mobile; the client's admin screen opens in Turkish or English depending on the market.</sub>
 </p>
 
 <details>
-<summary><b>İngilizce panel ve müşterinin İngilizce yönetim ekranı</b></summary>
+<summary><b>The panel and the client's admin screen in English</b></summary>
 <br>
 
-| İngilizce panel | Yönetim ekranı (İngiltere'deki müşteri) |
+| English panel | Admin screen (a UK client) |
 | --- | --- |
 | <img src="docs/images/panel-english-dark.png" alt="English panel" width="440"> | <img src="docs/images/admin-catalog-en.png" alt="Admin screen in English" width="440"> |
 
 </details>
 
-Görüntülerdeki işletmeler ve site hayalidir (Hollin & Rye Bakehouse). Panel koyu ve açık temada çalışır; bu sayfadaki
-görseller de GitHub temanıza göre değişir.
+The business and site in the screenshots are fictional (Hollin & Rye Bakehouse). The panel supports dark and light
+themes, and the images on this page follow your GitHub theme.
 
 ---
 
-## Hızlı başlangıç
+## Quick start
 
-### Gerekenler
+### Requirements
 
 | | |
 | --- | --- |
-| İşletim sistemi | Linux, macOS ya da Windows'ta **WSL2 (Ubuntu)** |
-| Araçlar | `git`, **Node.js ≥ 22.12** |
-| Agent | [Claude Code](https://docs.claude.com/en/docs/claude-code) (önerilen) ya da Codex CLI, **WSL'in içine** kurulu ve giriş yapılmış |
-| Yayın | Ücretsiz bir Cloudflare hesabı (ilk yayında istenir) |
+| Operating system | Linux, macOS, or **WSL2 (Ubuntu)** on Windows |
+| Tools | `git`, **Node.js ≥ 22.12** |
+| Agent | [Claude Code](https://docs.claude.com/en/docs/claude-code) (recommended) or the Codex CLI, installed **inside WSL** and signed in |
+| Hosting | A free Cloudflare account (asked for on first publish) |
 
-### Kurulum
+### Installation
 
-Depo özel olduğu için önce GitHub'a giriş yapın, sonra kurulum betiğini çalıştırın:
+The repository is private, so sign in to GitHub first, then run the install script:
 
 ```bash
 gh auth login
@@ -212,424 +215,429 @@ gh repo clone eerenyilmazz/arke-web-studio ~/projects/arke-web-studio
 bash ~/projects/arke-web-studio/scripts/install.sh
 ```
 
-Yeni bir terminal açıp paneli başlatın:
+Open a new terminal and start the panel:
 
 ```bash
 arke-panel
 ```
 
-Terminal panel adresini yazar (`http://127.0.0.1:4777/login?key=…`). Adresi tarayıcıda açın; ilk açılışta adınız ve
-panel dili sorulur.
+The terminal prints the panel address (`http://127.0.0.1:4777/login?key=…`). Open it in your browser; on first launch
+you are asked for your name and the panel language.
 
 <details>
-<summary><b>Kurulum betiği ne yapar?</b></summary>
+<summary><b>What does the install script do?</b></summary>
 
-`scripts/install.sh` tekrar çalıştırılabilir; hiçbir şeyi silmez, sistem paketi kurmaz, eksik olanın kurulum komutunu
-yazar.
+`scripts/install.sh` is safe to run again: it deletes nothing, installs no system packages, and prints the install
+command for anything missing.
 
-1. `git` ve Node sürümünü kontrol eder.
-2. Depo içinden çalıştırıldıysa o kopyayı kullanır; değilse `~/projects/arke-web-studio` klasörüne indirir (`ARKE_HOME` ile değiştirilebilir).
-3. `scripts/setup-wsl.sh` çalışır: `../arke-clients` ve `../arke-inbox` klasörleri, agent'ın müşteri klasörlerine doğrudan yazmasını engelleyen `.claude/settings.local.json`, `npm ci`, derleme, testler ve tasarım skill'leri.
-4. Kabuğa iki komut ekler (`~/.bashrc`, varsa `~/.zshrc`): **`arke-panel`** paneli başlatır, **`arke-update`** günceller.
+1. Checks `git` and the Node version.
+2. Uses the current copy when run from inside the repository; otherwise clones into `~/projects/arke-web-studio` (override with `ARKE_HOME`).
+3. Runs `scripts/setup-wsl.sh`: creates the `../arke-clients` and `../arke-inbox` folders, a `.claude/settings.local.json` that stops the agent from writing to client folders directly, then `npm ci`, the build, the tests and the design skills.
+4. Adds two commands to your shell (`~/.bashrc`, and `~/.zshrc` if present): **`arke-panel`** starts the panel, **`arke-update`** updates it.
 
-Elle kurulum: `npm ci && npm run build && npm test`, sonra `npm run panel`.
+Manual install: `npm ci && npm run build && npm test`, then `npm run panel`.
 
 </details>
 
 <details>
-<summary><b>Windows notları</b></summary>
+<summary><b>Windows notes</b></summary>
 
-- Her şeyi WSL'in kendi diskine kurun (`~/projects/…`), `/mnt/c/…` altına değil. Windows diski yavaştır ve OneDrive eşitlemesi dosyaları bozabilir.
-- Claude Code'u da WSL'in içine kurun; sandbox yalnızca böyle devreye girer.
-- WSL klasörlerine Windows'tan `\\wsl$\Ubuntu\home\<kullanıcı>\projects` adresiyle erişebilirsiniz.
-- Tarayıcıdan indirilen dosyalar Windows'un İndirilenler klasörüne düşer: WSL'den `/mnt/c/Users/<kullanıcı>/Downloads/`.
+- Install everything on WSL's own disk (`~/projects/…`), not under `/mnt/c/…`. The Windows disk is slow and OneDrive sync can corrupt files.
+- Install Claude Code inside WSL as well; the sandbox only works that way.
+- From Windows, WSL folders are reachable at `\\wsl$\Ubuntu\home\<user>\projects`.
+- Files downloaded in the browser land in the Windows Downloads folder: from WSL, `/mnt/c/Users/<user>/Downloads/`.
 
 </details>
 
-### İlk açılış
+### First launch
 
-1. **Profil:** ana ekrandaki karta adınızı ve panel dilini (Türkçe / English) yazın. Agent size bu adla hitap eder. Sonradan Ayarlar → Hesabım'dan değiştirilir.
-2. **Cloudflare hesabı:** ilk yayında istenir; önceden Ayarlar → Hesabım'dan da eklenebilir ([Yayın ve Cloudflare](#yayın-ve-cloudflare)).
-3. **Onay kodu:** paneli başlattığınız terminal 6 haneli bir kod yazar. Onay verirken bu kod istenir; tarayıcıya ve agent'a gitmez, her başlatmada değişir, 5 hatalı denemede kilitlenir.
+1. **Profile:** enter your name and the panel language (Türkçe / English) on the home-screen card. The agent addresses you by this name. Change it later under Settings → My Account.
+2. **Cloudflare account:** requested on first publish; you can also add it beforehand under Settings → My Account ([Publishing and Cloudflare](#publishing-and-cloudflare)).
+3. **Approval code:** the terminal you started the panel from prints a 6-digit code. It is required for every approval; it never reaches the browser or the agent, changes on every start, and locks after 5 wrong attempts.
 
 ---
 
-## Nasıl çalışır
+## How it works
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/architecture-dark.png">
-  <img src="docs/images/architecture-light.png" alt="Operatörün bilgisayarı, Cloudflare ve müşteri arasındaki parçalar">
+  <img src="docs/images/architecture-light.png" alt="The components on the operator's computer, Cloudflare and the client side">
 </picture>
 
-- **Panel** her işi başlatır; agent (`claude -p` ya da Codex) Claude Code sandbox'ında, kısıtlı izinlerle ve yalnızca
-  `arke-web` MCP araçlarıyla çalışır.
-- **MCP sunucusu** her yazmayı doğrular (yol, şema, dosya türü) ve denetim kaydına yazar; derleme ve kontroller buradadır.
-- **Panel** her işten önce ve sonra müşterinin sürümünü kaydeder; her değişiklik geri alınabilir.
-- **Hesaplar** şifreli durur ve yalnızca yayın anında panel tarafından açılır; agent süreçleri bu dosyayı göremez.
-- **Portal** müşterinin formlarını, yorumlarını ve onayını toplar; panel bunları alınca portaldan siler.
-- Kurallar tek yerdedir: [`AGENTS.md`](AGENTS.md) ve [`rules/`](rules/). Agent komutları kuralları tekrar etmez,
-  yalnızca hangi dosyanın okunacağını söyler.
+- The **panel** starts every job; the agent (`claude -p` or Codex) runs in the Claude Code sandbox with restricted
+  permissions and only the `arke-web` MCP tools.
+- The **MCP server** validates every write (path, schema, file type) and records it in the audit log; builds and checks
+  run here.
+- The **panel** snapshots the client before and after every job, so any change can be undone.
+- **Accounts** are stored encrypted and decrypted by the panel only at publish time; agent processes cannot see the file.
+- The **portal** collects the client's forms, comments and approval; the panel deletes them from the portal once received.
+- The rules live in one place: [`AGENTS.md`](AGENTS.md) and [`rules/`](rules/). Agent prompts do not repeat the rules;
+  they only say which file to read.
 
 ---
 
-## Kullanım
+## Usage
 
-### Yeni müşteri
+### New client
 
-Sihirbaz beş adımdır. Solda adımlar ve her adımda girilenlerin özeti, altında siteyi başlatmak için eksikler durur.
+The wizard has five steps. The steps and a summary of what has been entered sit on the left, with anything still
+missing for the build underneath.
 
-1. **İşletme:** site türü, ad, sektör, ülke ve dil, barındırma.
-2. **Paket ve fiyat:** kaynak paketi, fiyat, teslim tarihi, ek seçenekler ve teklif toplamı.
-3. **Logo ve fotoğraflar:** sürükle-bırak; yoksa agent yazı logosu çizer, fotoğraf uydurmaz.
-4. **Bilgiler:** müşteriden gelen serbest metin; metinde telefon, e-posta, adres, saat, fiyat ve hizmet olup olmadığı gösterilir.
-5. **Özet ve başlat:** kaydetmek ücretsizdir; kaynak yalnızca "siteyi yapmaya başla" ile harcanır.
+1. **Business:** site kind, name, sector, country and language, hosting.
+2. **Package and price:** agent package, price, delivery date, extras and the quote total.
+3. **Logo and photos:** drag and drop; without a logo the agent draws a wordmark, and it never invents photos.
+4. **Details:** free text from the client; the wizard shows whether it contains a phone number, email, address, opening hours, prices and services.
+5. **Summary and start:** saving is free; credits are spent only on "start building the site".
 
-Ülke; dili, yazım kurallarını, para birimini ve yasal gereklilikleri belirler ([`rules/markets.md`](rules/markets.md)).
-Site varsayılan olarak İngilizcedir, Türkiye'de Türkçedir; ikinci dil ek olarak satılır.
+The country sets the language, spelling, currency and legal requirements ([`rules/markets.md`](rules/markets.md)).
+Sites default to English, or Turkish in Türkiye; a second language is sold as an extra.
 
-### Araştırma ve tasarım planı
+### Research and design plan
 
-Agent önce işletmeyi ve sektördeki iyi örnekleri araştırır, bulduklarını kaynaklarıyla getirir ve en fazla 5 soru
-sorar. Emin olmadığı bilgiyi uydurmaz. Sayfa yazmadan önce bir **tasarım planı** kaydeder: konsept, renk paleti, yazı
-tipleri, sayfalar ve bölümler, imza hareketi (adı, zamanlaması, hareket azaltma hâli) ve canlı önizlemesi. Plan
-onaylanmadan sayfa yazılamaz, derleme de geçmez.
+The agent first researches the business and strong examples from its sector, brings back what it found with sources,
+and asks at most 5 questions. It never invents facts it is unsure of. Before writing any page it saves a **design
+plan**: concept, colour palette, typefaces, pages and sections, signature motion (name, timing and reduced-motion
+behaviour) with a live preview. Until the plan is approved, no page can be written and the build does not pass.
 
-### Düzenleme
+### Editing
 
-Müşteri sayfasında solda canlı önizleme (telefon / masaüstü) ve sürüm geçmişi, sağda dört sekme bulunur:
+The client page shows a live preview (phone / desktop) and the version history on the left, and four tabs on the right:
 
-| Sekme | İçerik |
+| Tab | Contents |
 | --- | --- |
-| **Düzenleme** | **Hızlı Düzenleme** listesi sitenin bugünkü hâlini gösterir. Bir satıra tıklayınca düzenleyici açılır; alttaki çubuk kaç değişiklik olduğunu gösterir, "Vazgeç" geri alır, değişiklik yoksa ya da bir hata varsa uygula kapalıdır. Altında serbest talepler için **Özel Talep**. Basit değişiklikleri panel kendisi yazar, gerisi agent'a kısa bir iş olarak gider. |
-| **Marka Kimliği** | Marka kartı (logo, slogan, renkler, canlı imza hareketi, tipografi), kütüphaneye kaydetme, markayla yeniden tasarlama |
-| **Teklif** | Yazdırılabilir teklif, iş raporu ve aylık rapor; müşterinin dilinde açılır (Türkçe / İngilizce), iç satırlar rapordan çıkarılabilir |
-| **Müşteri Bilgileri** | İş takibi, müşteri linkleri, eksikler, metinler, görseller, onay ve yayın, soru formu; uygulama sitelerinde müşterinin yönetim ekranı |
+| **Editing** | The **Quick Edit** list shows the site as it is today. Clicking a row opens its editor; the bar at the bottom counts pending changes, "Discard" reverts them, and Apply stays disabled when there is nothing to apply or something is invalid. Below it, **Custom Request** handles free-form requests. The panel writes simple changes itself; the rest goes to the agent as a short job. |
+| **Brand Identity** | Brand board (logo, tagline, colours, live signature motion, typography), save to library, redesign with the brand |
+| **Quote** | Printable quote, job report and monthly report in the client's language (Turkish / English); internal lines can be left out |
+| **Client Details** | Job tracking, client links, missing items, copy, images, approval and publishing, questionnaire; on app sites, the client's admin screen |
 
-### Onay ve yayın
+### Approval and publishing
 
-1. Site hazır olunca inceleyip **Onayla** (terminaldeki kodla). Bu onay hem metni hem görünümü kapsar.
-2. **Önizleme** yayınlanır (`arke-<kısa-ad>-preview.<alt-alan>.workers.dev`); link portal üzerinden müşteriye gönderilebilir.
-3. Müşteri onaylayınca **canlı yayın** onayı verilir ve site yayına girer (varsa alan adıyla).
+1. When the site is ready, review it and **Approve** (with the terminal code). This approval covers both copy and appearance.
+2. The **preview** is published (`arke-<slug>-preview.<subdomain>.workers.dev`); the link can be sent to the client through the portal.
+3. Once the client agrees, give the **production** approval and the site goes live (on its own domain, if there is one).
 
-Her değişiklik onayları sıfırlar. Her işten önce ve sonra bir sürüm kaydedilir; panel bir iş sürerken kapanırsa, o işin
-değişiklikleri panel açılırken "Kaydedilmemiş değişiklikler" sürümü olarak kaydedilir. Canlı site **Önceki sürüme dön** ile saniyeler içinde geri alınır; yayından kaldırma
-da panelden yapılır. Canlı sitede bu iki işlem müşterinin kısa adı yazılarak onaylanır.
+Any change resets the approvals. A version is saved before and after every job; if the panel closes mid-job, that job's
+changes are saved as an "Unsaved changes" version the next time the panel starts. The live site can be rolled back in
+seconds with **Revert to previous version**, and it can be unpublished from the panel. On the live site, both actions
+are confirmed by typing the client's slug.
 
-### Diğer ekranlar
+### Other screens
 
-- **Analiz:** müşteri, iş, maliyet ve site verileri; filtreler, para birimine göre toplamlar, CSV.
-- **Tasarım Kütüphanesi:** beğenilen tasarımlar yeni müşteride başlangıç olarak kullanılır.
-- **Arşiv:** müşteri silinmez, `_archive/` altına taşınır.
-- **Ayarlar:** geniş ekranda ana menüde "Ayarlar"ın altında açılır. Hesabım, Genel, Ekip, Kaynak Kullanımı, Yayın, Yedek, Güncelleme.
+- **Analysis:** client, job, cost and site data; filters, totals per currency, CSV.
+- **Design Library:** saved designs you liked, reusable as a starting point for new clients.
+- **Archive:** clients are never deleted, only moved to `_archive/`.
+- **Settings:** on wide screens, opens under "Settings" in the main menu. My Account, General, Team, Agent Usage, Publishing, Backup, Update.
 
-### Komut satırı
+### Command line
 
-| Komut | Ne yapar |
+| Command | What it does |
 | --- | --- |
-| `arke-panel` | Paneli başlatır |
-| `arke-update [zip]` | Arke Web Studio'yu günceller |
-| `npm run approve -- <kısa-ad> <site\|content\|visual\|production>` | Onayı terminalden verir (`site` = içerik + görünüm) |
-| `npm run report -- <klasör>` | Durum raporu yazar; gizli bilgi içermez |
-| `npm run restore-backup -- <yedek.tar.gz> <yeni-klasör>` | Yedeği yeni bir klasöre açar; mevcut müşterilerin üzerine yazmaz |
+| `arke-panel` | Starts the panel |
+| `arke-update [zip]` | Updates Arke Web Studio |
+| `npm run approve -- <slug> <site\|content\|visual\|production>` | Approves from the terminal (`site` = content + visual) |
+| `npm run report -- <folder>` | Writes a status report; contains no secrets |
+| `npm run restore-backup -- <backup.tar.gz> <new-folder>` | Restores a backup into a new folder; never overwrites existing clients |
 
-Agent doğrudan Claude Code'da da kullanılabilir: bu klasörde açıldığında `.mcp.json` ile `arke-web` araçlarını bulur ve
-[`AGENTS.md`](AGENTS.md)'deki akışı izler.
+The agent can also be used directly in Claude Code: opened in this folder, it finds the `arke-web` tools through
+`.mcp.json` and follows the flow in [`AGENTS.md`](AGENTS.md).
 
 ---
 
-## Kalite kontrolleri
+## Quality checks
 
-`build_site` her derlemede aşağıdakileri çalıştırır ve sonucu müşterinin `quality-report.md` dosyasına yazar. Bir
-**hata** varsa site onaylanamaz; **uyarılar** raporda ve panelde görünür.
+`build_site` runs the checks below on every build and writes the result to the client's `quality-report.md`. If there
+is an **error**, the site cannot be approved; **warnings** appear in the report and in the panel.
 
-| Grup | Kontroller |
+| Group | Checks |
 | --- | --- |
-| **Girdiler** | Ayar ve içerik şeması, dillerin içerikleri eşleşiyor mu, derleme sırasında girdiler değişmedi mi |
-| **Plan ve marka** | Tasarım planı operatör tarafından onaylı mı, marka kimliği önce tasarlanıp her yerde kullanılıyor mu, marka kartı (slogan, imza hareketi, tipografi), kütüphaneden gelen tasarımda eski müşterinin bilgisi kalmış mı |
-| **Güvenlik** | Dış script, yönlendirme, takip kodu ve gömülü içerik yok; linkler çalışıyor; formun alıcısı var |
-| **Erişilebilirlik** | Metin, düğme ve vurgu renklerinin kontrastı; `lang`, başlık, `alt` metni, yer tutucu kalmamış |
-| **Arama ve paylaşım** | Yapılandırılmış veri (`LocalBusiness`), site haritası, önizleme kartları, görsel boyutu ve ağırlığı |
-| **Pazar** | Fiyatlar müşterinin para biriminde, pazarın yasal sayfaları (KVKK Aydınlatma Metni, Impressum…), şirket bilgileri |
-| **Diller** | Her sayfa çevrilmiş, dil linkleri aynı sayfanın karşılığına gidiyor |
-| **Yazı tipleri** | Google Fonts derlemede indirilip siteye konur; ziyaretçinin tarayıcısı Google'a bağlanmaz (indirilemezse uyarı) |
-| **Tasarım** | Impeccable tasarım denetimi, tema düğmesi ve telefon menüsü fabrika parçalarıyla, imza hareketi adım adım ve hareket azaltma ayarında da düzgün |
-| **Görsel kontrol** | Telefon ve masaüstü ekran görüntüleri, imza hareketinin kareleri: agent bunlara bakıp düzeltir |
+| **Inputs** | Config and content schema, content matches across languages, inputs unchanged during the build |
+| **Plan and brand** | Design plan approved by the operator; brand identity designed first and used throughout; brand board (tagline, signature motion, typography); no previous client's details left in a design taken from the library |
+| **Security** | No external scripts, redirects, trackers or embeds; links work; the form has a recipient |
+| **Accessibility** | Contrast of text, buttons and accents; `lang`, headings, `alt` text, no leftover placeholders |
+| **Search and sharing** | Structured data (`LocalBusiness`), sitemap, social preview cards, image size and weight |
+| **Market** | Prices in the client's currency, the market's legal pages (KVKK notice, Impressum…), company details |
+| **Languages** | Every page translated; language links point to the same page in the other language |
+| **Fonts** | Google Fonts are downloaded at build time and served from the site, so visitors' browsers never contact Google (a warning if the download fails) |
+| **Design** | Impeccable design audit; theme toggle and mobile menu use factory parts; signature motion correct step by step and with reduced motion |
+| **Visual check** | Phone and desktop screenshots and frames of the signature motion, which the agent reviews and fixes |
 
 ---
 
-## Site türleri ve hazır parçalar
+## Site kinds and ready-made parts
 
-| Tür | Durum | Yayın |
+| Kind | Status | Hosting |
 | --- | --- | --- |
-| **Tanıtım sitesi** | hazır | Statik site (Cloudflare Workers) |
-| **E-ticaret** | yakında | Uygulama: Worker + D1 + R2 |
-| **Randevu** | yakında | Uygulama |
-| **Restoran ve kafe** | yakında | Uygulama |
+| **Showcase site** | available | Static site (Cloudflare Workers) |
+| **E-commerce** | coming soon | App: Worker + D1 + R2 |
+| **Booking** | coming soon | App |
+| **Restaurant and café** | coming soon | App |
 
-Agent tasarlar ve parçaları sayfaya yerleştirir; çalışan parçaların kodunu **fabrika verir**. Bu kodlar
-[`parts/`](parts/) klasöründe, testlerden geçmiş hazır kodlardır; agent onları yazamaz ve değiştiremez
+The agent designs and places the parts on the page; the **factory supplies** the code of every working part. That code
+lives in [`parts/`](parts/) and is ready-made and tested; the agent can neither write nor change it
 ([`rules/parts.md`](rules/parts.md)).
 
-| Parça | Ne yapar |
+| Part | What it does |
 | --- | --- |
-| **Katalog** | Ürün, hizmet ya da menü kalemleri: kategori, fiyat, süre, görsel. Sitede agent'ın tasarladığı şablonla gösterilir. |
-| **Gelen kutusu** | Site formlarından gelen mesajlar; isteğe bağlı webhook bildirimi, gizli tuzak alanı, saatlik sınır. |
-| **Yönetim ekranı** | Müşterinin kendi ekranı (`site-adresi/admin`), Türkçe ve İngilizce: pazara göre açılır (Türkiye'de Türkçe, diğer ülkelerde İngilizce), müşteri ekrandaki düğmeyle değiştirir, seçim hatırlanır; tarih ve para müşterinin ülkesinin biçiminde. 12 saatlik oturum, 15 dakikada 5 hatalı denemede kilit, sıkı CSP, arama motorlarına kapalı. Parolayı operatör belirler; panelde yalnızca özeti tutulur. |
+| **Catalogue** | Products, services or menu items with category, price, duration and image, rendered on the site with a template the agent designs. |
+| **Inbox** | Messages from the site's forms; optional webhook notification, hidden honeypot field, hourly limit. |
+| **Admin screen** | The client's own screen (`site-address/admin`) in Turkish and English: it opens in the market's language (Turkish in Türkiye, English elsewhere), the client can switch with a button, and the choice is remembered; dates and money use the client's country format. 12-hour sessions, lock after 5 failed attempts in 15 minutes, strict CSP, hidden from search engines. The operator sets the password; the panel keeps only its hash. |
 
-Sırada sepet ve ödeme (iyzico, PayTR ya da Stripe), yasal sayfalar, randevu takvimi ve QR menü var
-([yol haritası](ROADMAP.md)). Panel parçaları her uygulama sitesine kendisi kurar (`app/`, `site/js/arke-parts.js`);
-yeni bir sürüm parça kodunu yeniler, uygulanmış şema değişikliklerine dokunmaz.
+Next up are cart and payments (iyzico, PayTR or Stripe), legal pages, a booking calendar and a QR menu
+([roadmap](ROADMAP.md)). The panel installs the parts on every app site itself (`app/`, `site/js/arke-parts.js`); a new
+version refreshes the part code without touching schema migrations already applied.
 
 ---
 
-## Kişisel veri (KVKK / GDPR)
+## Personal data (KVKK / GDPR)
 
-Kurallar sayfanın diline göre değil, müşterinin **pazarına** göre seçilir ([`src/lib/client/privacy.ts`](src/lib/client/privacy.ts);
-kaynaklar ve kararlar [`docs/privacy.md`](docs/privacy.md)).
+Rules are chosen by the client's **market**, not by the page language ([`src/lib/client/privacy.ts`](src/lib/client/privacy.ts);
+sources and decisions in [`docs/privacy.md`](docs/privacy.md)).
 
-| Pazar | Kural | Veri bölgesi | Talebe yanıt |
+| Market | Law | Data location | Response time |
 | --- | --- | --- | --- |
-| Türkiye | KVKK | Cloudflare varsayılanı | 30 gün |
-| İngiltere | UK GDPR | Avrupa Birliği | 1 ay |
-| İrlanda, Almanya, Hollanda | GDPR | Avrupa Birliği | 1 ay |
-| ABD | Federal kural yok | Cloudflare varsayılanı | 30 gün |
+| Türkiye | KVKK | Cloudflare default | 30 days |
+| United Kingdom | UK GDPR | European Union | 1 month |
+| Ireland, Germany, Netherlands | GDPR | European Union | 1 month |
+| United States | No federal rule | Cloudflare default | 30 days |
 
-- **Otomatik silme:** form mesajları 12 ay sonra her gece silinir; sipariş kayıtları pazarın yasal süresi kadar tutulur.
-- **Kişinin talebi:** yönetim ekranının **Kişisel veri** bölümünde kişi e-posta, telefon ya da adla bulunur; kayıtları indirilir (JSON) ya da silinir.
-- **Kayıt:** silme ve dışa aktarma işlemleri kişinin kimliği olmadan kaydedilir (işlem, tarih, sayı).
-- **Üçüncü taraf isteği yok:** yazı tipleri sitenin kendisinden sunulur; sitede takip kodu, gömülü harita ya da video yok.
-- **IP adresi tutulmaz:** hız sınırları IP'nin siteye özel anahtarlı özetini kullanır ve bir günde siler.
-- **AB bölgesi:** veritabanı ve görsel deposu ilk kurulurken bölgeye konur; bölge sonradan değiştirilemez.
-- **Gizlilik metni:** agent [`rules/privacy.md`](rules/privacy.md)'deki şablonları müşterinin bilgileriyle doldurur. Şablonlar satıştan önce bir kez hukuken kontrol edilmelidir.
-
----
-
-## Yayın ve Cloudflare
-
-Her operatör **kendi Cloudflare hesabıyla** yayın yapar; ücretsiz plan yeterlidir.
-
-1. Cloudflare → Profil → API Tokens → **Create Token** → *Edit Cloudflare Workers* şablonu.
-2. Workers & Pages sayfasından **Account ID** değerini alın; ilk seferde workers.dev alt alan adını seçin.
-3. Panelde Ayarlar → Hesabım → **Kaydet ve Test Et** (ya da ilk yayında açılan pencere).
-
-Token Cloudflare ile denenir ve `~/.config/arke-web-studio/accounts.json` dosyasında **AES-256-GCM** ile şifreli
-saklanır. Bir daha gösterilmez, yedeklere ve raporlara girmez; agent süreçleri bu dosyayı hiç okumaz
-(`ARKE_NO_ACCOUNTS=1`). Ortam değişkeniyle verilen hesap (`ARKE_CF_MANAGED_API_TOKEN`, `ARKE_CF_MANAGED_ACCOUNT_ID`)
-da çalışır; panelde kayıtlı hesap varsa öncelik onundur.
-
-Cloudflare'e `dist/`'in bir kopyası gider; `dist/` onaylandığı gibi kalır. Kopyada:
-
-- Marka dosyaları (`brand/brand.json`, imza hareketi demosu, tasarım önerileri) yoktur; logo vardır.
-- Önizleme arama motorlarına kapalıdır (`X-Robots-Tag: noindex`, her şeyi kapatan `robots.txt`).
-- Güvenlik başlıkları eklenir: canlı sitede HSTS, her yerde `nosniff` ve `Referrer-Policy`; vitrin sitelerinde
-  derleme kontrolleriyle uyumlu bir Content-Security-Policy.
-- Yükleme geçici bir ağ ya da Cloudflare hatasıyla kesilirse bir kez daha denenir.
-
-Uygulama sitelerinde yayın sırası:
-
-1. Gizli anahtarlar kontrol edilir; eksikse hiçbir şeye dokunulmaz.
-2. Veritabanı ve görsel deposu hazırlanır (önizleme ve canlı ayrı; AB müşterilerinde AB bölgesinde).
-3. Veritabanı yedeği alınır.
-4. Şema değişiklikleri uygulanır. Veri kaybettiren bir değişiklik ancak müşterinin kısa adı yazılarak onaylanırsa çalışır.
-5. Gizli anahtarlar stdin üzerinden yüklenir (komut satırına yazılmaz).
-6. Worker yayınlanır; günlük temizlik tetikleyicisi kurulur.
+- **Automatic deletion:** form messages are deleted nightly after 12 months; order records are kept for the market's legal retention period.
+- **Data-subject requests:** in the admin screen's **Personal data** section, a person is found by email, phone or name, and their records can be downloaded (JSON) or deleted.
+- **Logging:** deletions and exports are logged without the person's identity (action, date, count).
+- **No third-party requests:** fonts are served from the site itself; no trackers, embedded maps or videos.
+- **No IP addresses stored:** rate limits use a site-specific keyed hash of the IP, deleted within a day.
+- **EU region:** the database and image storage are placed in the region when first created; the region cannot be changed later.
+- **Privacy notice:** the agent fills in the templates in [`rules/privacy.md`](rules/privacy.md) with the client's details. Have the templates reviewed by a lawyer once before selling.
 
 ---
 
-## Ekip çalışması
+## Publishing and Cloudflare
 
-Ayarlar → **Ekip**'te ekibin özel Git deposu bağlanır ve **Şimdi Eşitle** denir.
+Every operator publishes with **their own Cloudflare account**; the free plan is enough.
 
-- Değişiklikler profildeki adınızla kaydedilir; depoya erişim sizin git girişinizle yapılır (`gh auth login`). Panel parola saklamaz.
-- Her müşteri depoda `clients/<kısa-ad>` dalında durur. Eşitleme sizin değişikliklerinizi gönderir, ekibinkileri alır ve yeni müşterileri indirir.
-- Aynı müşteride iki kişi değişiklik yaptıysa o müşteri eşitlenmez ve uyarı çıkar; değişiklikler tahminle birleştirilmez, hiçbiri kaybolmaz. Agent işi süren müşteri o eşitlemede atlanır.
+1. Cloudflare → Profile → API Tokens → **Create Token** → the *Edit Cloudflare Workers* template.
+2. Copy the **Account ID** from the Workers & Pages page; the first time, pick your workers.dev subdomain.
+3. In the panel: Settings → My Account → **Save and Test** (or the dialog that opens on first publish).
 
-| Paylaşılır | Paylaşılmaz |
+The token is verified against Cloudflare and stored in `~/.config/arke-web-studio/accounts.json`, encrypted with
+**AES-256-GCM**. It is never shown again and never enters backups or reports; agent processes never read the file
+(`ARKE_NO_ACCOUNTS=1`). An account supplied through environment variables (`ARKE_CF_MANAGED_API_TOKEN`,
+`ARKE_CF_MANAGED_ACCOUNT_ID`) also works; an account saved in the panel takes precedence.
+
+Cloudflare receives a copy of `dist/`; `dist/` itself stays exactly as approved. In the copy:
+
+- Brand files (`brand/brand.json`, the signature-motion demo, design proposals) are removed; the logo stays.
+- The preview is hidden from search engines (`X-Robots-Tag: noindex` and a `robots.txt` that blocks everything).
+- Security headers are added: HSTS on the live site, `nosniff` and `Referrer-Policy` everywhere, and on showcase sites a
+  Content-Security-Policy consistent with the build checks.
+- An upload interrupted by a transient network or Cloudflare error is retried once.
+
+Publishing order for app sites:
+
+1. Secrets are checked; if any are missing, nothing is touched.
+2. The database and image storage are prepared (separate for preview and live; in the EU region for EU clients).
+3. The database is backed up.
+4. Schema migrations are applied. A destructive migration runs only after it is confirmed by typing the client's slug.
+5. Secrets are uploaded over stdin (never on the command line).
+6. The Worker is published and the daily clean-up trigger is set.
+
+---
+
+## Working as a team
+
+Connect the team's private Git repository under Settings → **Team** and press **Sync Now**.
+
+- Changes are recorded under your profile name; the repository is accessed with your own git login (`gh auth login`). The panel stores no passwords.
+- Each client lives on its own `clients/<slug>` branch. Syncing pushes your changes, pulls the team's and downloads new clients.
+- If two people changed the same client, that client is not synced and a warning appears; changes are never merged by guesswork and none are lost. A client with a running agent job is skipped in that sync.
+
+| Shared | Not shared |
 | --- | --- |
-| Site bilgileri, metinler, görseller, site kodu | Onaylar ve derleme kayıtları (herkes kendi panelinde onaylar) |
-| Tasarım planı, geçmişi, araştırma notları | Cloudflare kaynakları ve yayın kayıtları |
-| Site türü, satış takibi | Gizli anahtarlar, Cloudflare token'ı |
-| | Uygulama kodu `app/` (her panel parçaları kendisi kurar) |
+| Site details, copy, images, site code | Approvals and build records (everyone approves in their own panel) |
+| Design plan, its history, research notes | Cloudflare resources and publish records |
+| Site kind, sales tracking | Secrets, the Cloudflare token |
+| | App code in `app/` (each panel installs the parts itself) |
 
 ---
 
-## Güncelleme ve taşıma
+## Updating and moving
 
-**Güncelleme:** Ayarlar → **Güncelleme** → *Güncellemeleri Denetle* → *Güncelle*, ya da terminalde `arke-update`.
-Güncelleme `git pull --ff-only`, `npm ci` ve derlemeyi çalıştırır. Kurulum klasöründe kaydedilmemiş değişiklik varsa ya
-da bir agent işi sürüyorsa başlamaz. Bittiğinde paneli yeniden başlatın. Geri almak için ekranda yazan
-`git reset --hard <önceki-commit>` komutu kullanılır. Müşteriler, ayarlar, hesaplar, `.claude/settings.local.json`,
-`vendor/` ve `node_modules/` korunur.
+**Updating:** Settings → **Update** → *Check for Updates* → *Update*, or `arke-update` in the terminal. The update runs
+`git pull --ff-only`, `npm ci` and a build. It does not start if the install folder has uncommitted changes or an agent
+job is running. Restart the panel when it finishes. To roll back, use the `git reset --hard <previous-commit>` command
+shown on screen. Clients, settings, accounts, `.claude/settings.local.json`, `vendor/` and `node_modules/` are preserved.
 
-**Başka bilgisayara kurma:** panel Claude'a kendisi bağlanmaz; her iş için o bilgisayardaki `claude` komutunu çalıştırır.
-Claude Code'a hangi hesapla giriş yapıldıysa o hesap kullanılır; panel bu anahtarı görmez.
+**Installing on another computer:** the panel does not connect to Claude itself; it runs the `claude` command on that
+computer for each job. Whatever account Claude Code is signed in with is the one used; the panel never sees that key.
 
 1. WSL2 (Ubuntu), `git`, Node 22 (`nvm install 22`).
-2. Claude Code'u WSL'in içine kurun ([kurulum](https://docs.claude.com/en/docs/claude-code/setup)) ve bir kez `claude` yazıp giriş yapın.
-3. [Kurulum](#kurulum) adımlarını izleyin.
-4. Panelde adınızı girin ve Cloudflare token'ını yeniden ekleyin. Token her bilgisayarda o bilgisayarın anahtarıyla şifrelenir, taşınmaz.
+2. Install Claude Code inside WSL ([setup](https://docs.claude.com/en/docs/claude-code/setup)) and run `claude` once to sign in.
+3. Follow the [installation](#installation) steps.
+4. Enter your name in the panel and add the Cloudflare token again. The token is encrypted with each computer's own key and cannot be moved.
 
-Müşteriler kendiliğinden gelmez: iki bilgisayar Ayarlar → **Ekip**'te aynı özel depoyu bağlar, ya da eski bilgisayarda
-Ayarlar → **Yedek** → *Şimdi yedekle* ile alınan dosya yenisinde `npm run restore-backup` ile açılır.
+Clients do not come along automatically: either connect both computers to the same private repository under Settings →
+**Team**, or take a backup on the old computer with Settings → **Backup** → *Back up now* and restore it on the new one
+with `npm run restore-backup`.
 
 ---
 
-## Güvenlik modeli
+## Security model
 
-**Onaylar insandadır.** Agent `approvals.json`, `.factory/` ve `quality-report.md` dosyalarına yazamaz, panele
-erişemez. Panelde onay terminaldeki tek kullanımlık kodla verilir. Onaylar içeriğin ve derlenmiş çıktının parmak izine
-bağlıdır; onaylanandan farklı bir `dist/` yayınlanamaz.
+**Approvals are human-only.** The agent cannot write `approvals.json`, `.factory/` or `quality-report.md`, and cannot
+reach the panel. In the panel, approval requires the one-time code from the terminal. Approvals are bound to the
+fingerprint of the content and of the built output; a `dist/` different from the approved one cannot be published.
 
-| Agent **yapabilir** | Agent **yapamaz** |
+| The agent **can** | The agent **cannot** |
 | --- | --- |
-| Müşterinin bilgilerini, metinlerini ve görsellerini `arke-web` araçlarıyla kaydetmek | Kabuk komutu çalıştırmak, dosyaları doğrudan düzenlemek |
-| Web'de araştırma yapıp kaynaklarıyla not almak | Onay vermek, `approvals.json`, `.factory/`, `quality-report.md` dosyalarına yazmak |
-| Tasarım planını kaydetmek, plan onaylandıktan sonra siteyi yazmak | Plan onaylanmadan sayfa yazmak |
-| Siteyi derleyip kontrol raporunu ve ekran görüntülerini okumak | Yayın yapmak, müşteri oluşturmak |
-| Operatöre soru sormak, açık kalanları özette yazmak | Cloudflare hesabına, token'a ve gizli anahtarlara erişmek |
+| Save the client's details, copy and images with the `arke-web` tools | Run shell commands or edit files directly |
+| Research the web and take notes with sources | Approve, or write `approvals.json`, `.factory/` or `quality-report.md` |
+| Save the design plan and write the site once the plan is approved | Write pages before the plan is approved |
+| Build the site and read the check report and screenshots | Publish or create clients |
+| Ask the operator questions and list open items in its summary | Access the Cloudflare account, the token or any secrets |
 
 ```mermaid
 sequenceDiagram
   autonumber
-  actor O as Operatör
+  actor O as Operator
   participant P as Panel
   participant A as Agent (sandbox)
-  participant F as Fabrika (MCP)
+  participant F as Factory (MCP)
   participant C as Cloudflare
-  O->>P: Siteyi hazırla
-  P->>A: İş (yalnızca arke-web araçları)
-  A->>F: Plan, marka, sayfalar
-  F-->>A: Derleme ve kontrol raporu
-  A-->>P: Özet ve açık sorular
-  Note over A,F: Agent onay veremez, yayın yapamaz,<br/>hesaplara erişemez
-  O->>P: Onayla + terminaldeki kod
-  P->>P: Onay içeriğin parmak izine bağlanır
-  O->>P: Önizlemeyi yayınla
-  P->>C: Önizleme Worker
-  O->>P: Müşteri onayından sonra canlı yayın + kod
-  P->>C: Canlı Worker
-  Note over P,C: İçerik değişirse onay düşer.<br/>Onaylanandan farklı dist/ yayınlanamaz
+  O->>P: Build the site
+  P->>A: Job (arke-web tools only)
+  A->>F: Plan, brand, pages
+  F-->>A: Build and check report
+  A-->>P: Summary and open questions
+  Note over A,F: The agent cannot approve, publish<br/>or access accounts
+  O->>P: Approve + terminal code
+  P->>P: Approval bound to the content fingerprint
+  O->>P: Publish preview
+  P->>C: Preview Worker
+  O->>P: After the client's OK, go live + code
+  P->>C: Live Worker
+  Note over P,C: Changing the content voids the approval.<br/>A dist/ other than the approved one cannot be published
 ```
 
-**Agent'ın kısıtları**
+**Agent restrictions**
 
-- Yalnızca `arke-web` araçları açıktır; `Bash`, `Edit`, `Write`, yayın ve müşteri oluşturma kapalıdır.
-- `--setting-sources project,local` ile çalışır; Cloudflare değişkenleri ortamından silinir.
-- Kimlik bilgisi dosyalarını okuyamaz (`~/.ssh`, `~/.config`, `.env`, git kimlik bilgileri).
-- Tasarım planı onaylanmadan sayfa yazamaz.
+- Only the `arke-web` tools are enabled; `Bash`, `Edit`, `Write`, publishing and client creation are disabled.
+- It runs with `--setting-sources project,local`; Cloudflare variables are removed from its environment.
+- It cannot read credential files (`~/.ssh`, `~/.config`, `.env`, git credentials).
+- It cannot write pages before the design plan is approved.
 
-**Asıl sınır: Claude Code sandbox'ı** ([`.claude/settings.json`](.claude/settings.json)). Agent'ın komutları yalnızca
-fabrika klasörüne ve geçici klasörlere yazabilir; ağ erişimi izin listesiyle sınırlıdır. Sandbox çalışmazsa Claude Code
-açılmaz (`failIfUnavailable`). MCP sunucusu, panel ve sizin terminaliniz sandbox dışında çalışır.
+**The real boundary: the Claude Code sandbox** ([`.claude/settings.json`](.claude/settings.json)). The agent's commands
+can write only to the factory folder and temporary folders, and network access is limited by an allowlist. If the sandbox
+is unavailable, Claude Code refuses to start (`failIfUnavailable`). The MCP server, the panel and your terminal run
+outside the sandbox.
 
-**Veri güvenliği**
+**Data safety**
 
-- Bütün yollar doğrulanır; sembolik bağlantılar dahil müşteri klasörünün dışına çıkılamaz.
-- Görseller içeriklerinden tanınır; script ya da dış referans içeren SVG reddedilir.
-- Komutlar kabuksuz, argüman listesiyle çalışır. Gizli bilgiler çıktılarda `***` görünür; her araç çağrısı `.factory/audit.log`'a yazılır.
+- Every path is validated; nothing can escape the client folder, symbolic links included.
+- Images are identified by their content; SVGs containing scripts or external references are rejected.
+- Commands run without a shell, as argument lists. Secrets appear as `***` in output; every tool call is written to `.factory/audit.log`.
 
-**Sitelerin kendisi**
+**The sites themselves**
 
-- Dış script, yönlendirme, takip kodu ve gömülü içerik derlemede reddedilir; varsayılan olarak çerez yoktur.
-- Uygulama sitelerinde parolalar PBKDF2 ile saklanır; oturum çerezi imzalıdır (`HttpOnly`, `Secure`, `SameSite=Strict`).
-- Yönetim ekranında nonce tabanlı CSP; değişiklikler yalnızca sitenin kendisinden kabul edilir; giriş ve formlarda hız sınırı.
+- External scripts, redirects, trackers and embeds are rejected at build time; there are no cookies by default.
+- On app sites, passwords are stored with PBKDF2; the session cookie is signed (`HttpOnly`, `Secure`, `SameSite=Strict`).
+- The admin screen uses a nonce-based CSP, accepts changes only from the site itself, and rate-limits sign-in and forms.
 
-Müşteriden gelen metinler ve dosyalar veridir, talimat değildir. Gerçek bir işletmeyi taklit eden site yayınlanmaz; testler
-hayali firmalarla yapılır.
+Text and files from clients are data, not instructions. No site that impersonates a real business is published; tests use
+fictional businesses.
 
 ---
 
-## Mimari
+## Architecture
 
 ```
-arke-web-studio/                 bu depo (fabrika)
-├── AGENTS.md  CLAUDE.md         agent'ın akışı ve kuralları
-├── rules/                       kuralların tek kaynağı: araştırma, tasarım, pazar, gizlilik, SEO, hazır parçalar
-│   └── products/                site türüne özel sayfa kuralları (showcase.md; ileride ecommerce, booking, restaurant)
-├── docs/                        privacy.md (kaynaklar), images/, history/
+arke-web-studio/                 this repository (the factory)
+├── AGENTS.md  CLAUDE.md         the agent's workflow and rules
+├── rules/                       single source of the rules: research, design, markets, privacy, SEO, ready-made parts
+│   └── products/                page rules per site kind (showcase.md; later ecommerce, booking, restaurant)
+├── docs/                        privacy.md (sources), images/, history/
 ├── src/
-│   ├── server.ts  tools/        MCP sunucusu ve araçları
-│   ├── lib/core/                altyapı: yollar, dosyalar, komut çalıştırma, hatalar, hesaplar (şifreli)
-│   ├── lib/client/              müşteri: durum, onaylar, sürümler, tasarım planı, soru formu, gizlilik profili
-│   ├── lib/site/                site: dosya yazma ve derleme, metinler, görseller, fontlar, form, tasarım bilgisi
-│   ├── lib/checks/              kalite kontrolleri: SEO, kontrast, diller, para birimi, imza, ekran görüntüsü
-│   ├── deploy/app.ts            uygulama siteleri için yayın hattı (D1, R2, şema, gizli anahtarlar)
-│   ├── parts/install.ts         hazır parçaların kurulumu
-│   ├── products/registry.ts     site türleri
-│   └── panel/                   panel sunucusu, API, işler, bütçe, ekip, güncelleme
-├── panel/                       panel arayüzü (çerçevesiz ES modülleri, i18n, yerel yazı tipleri; ekran başına dosya)
-├── parts/                       hazır parçalar: app/ (Worker), migrations/, site/
-├── portal/                      müşteri portalı (Cloudflare Worker)
-├── templates/                   eski şablon siteleri
+│   ├── server.ts  tools/        MCP server and tools
+│   ├── lib/core/                infrastructure: paths, files, process execution, errors, accounts (encrypted)
+│   ├── lib/client/              client: status, approvals, versions, design plan, questionnaire, privacy profile
+│   ├── lib/site/                site: file writes and builds, copy, images, fonts, forms, design knowledge
+│   ├── lib/checks/              quality checks: SEO, contrast, languages, currency, signature, screenshots
+│   ├── deploy/app.ts            publishing pipeline for app sites (D1, R2, schema, secrets)
+│   ├── parts/install.ts         ready-made part installation
+│   ├── products/registry.ts     site kinds
+│   └── panel/                   panel server, API, jobs, budget, team, updates
+├── panel/                       panel UI (framework-free ES modules, i18n, local fonts; one file per screen)
+├── parts/                       ready-made parts: app/ (Worker), migrations/, site/
+├── portal/                      client portal (Cloudflare Worker)
+├── templates/                   legacy template sites
 ├── scripts/                     install.sh, setup-wsl.sh, update.sh
-├── schema/                      Zod'dan üretilen JSON şemaları
-└── tests/                       vitest: birim, güvenlik, uçtan uca, ekran denetimi; panel/ (API), products/ (türler)
+├── schema/                      JSON schemas generated from Zod
+└── tests/                       vitest: unit, security, end-to-end, UI audit; panel/ (API), products/ (kinds)
 
-../arke-clients/<kısa-ad>/       her müşteri ayrı klasör ve ayrı git geçmişi
-├── site.config.json  content/  assets/  site/     sitenin girdileri
-├── design-plan.json  research.md                  plan ve araştırma
-├── app/                                           uygulama sitelerinde hazır parçalar
-├── dist/  quality-report.md                       derlenmiş site ve kontrol raporu
-└── .factory/                                      onaylar ve kayıtlar (yalnızca panel)
+../arke-clients/<slug>/          one folder and one git history per client
+├── site.config.json  content/  assets/  site/     site inputs
+├── design-plan.json  research.md                  plan and research
+├── app/                                           ready-made parts on app sites
+├── dist/  quality-report.md                       built site and check report
+└── .factory/                                      approvals and records (panel only)
 
-../arke-inbox/<kısa-ad>/         müşteriden gelen dosyalar
-~/.config/arke-web-studio/       hesaplar ve gizli anahtarlar (şifreli)
+../arke-inbox/<slug>/            files received from the client
+~/.config/arke-web-studio/       accounts and secrets (encrypted)
 ```
 
 ---
 
-## Geliştirme
+## Development
 
 ```bash
 npm run build        # TypeScript → dist/
-npm test             # bütün testler (ARKE_E2E=off ile tarayıcısız, hızlı)
-npm run test:e2e     # tarayıcılı uçtan uca testler
-npm run test:click   # her ekrandaki her düğmeye tıklar, hataları raporlar (ARKE_CLICK_OUT=<klasör>)
+npm test             # all tests (ARKE_E2E=off for a fast, browserless run)
+npm run test:e2e     # end-to-end tests in a browser
+npm run test:click   # clicks every button on every screen and reports errors (ARKE_CLICK_OUT=<folder>)
 npm run lint         # Biome
 npm run typecheck
 npm run schema       # Zod → schema/*.schema.json
 ```
 
-- TypeScript strict, ESM, zod v4, vitest; panel çerçevesizdir.
-- Değişiklikler küçük, geri alınabilir ve testli olmalı; mevcut API ve veriler korunur.
-- Arayüz metinleri Türkçe yazılır, İngilizceleri [`panel/js/i18n-en.js`](panel/js/i18n-en.js)'de tutulur; İngilizce panel testi her ekranı ve düzenleyiciyi denetler.
-- Ekran denetimi ([`tests/ui-audit.test.ts`](tests/ui-audit.test.ts)) her ekranı iki temada ve üç genişlikte kontrol eder: kontrast, taşma, animasyon, script hatası.
-- CI her gönderimde lint, tip kontrolü, derleme ve testleri çalıştırır ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
-- **Dil kuralı:** kod, yorumlar, kurallar (`AGENTS.md`, `rules/`) ve **commit mesajları İngilizce**; arayüz metinleri,
-  README, `CHANGELOG.md`, `ROADMAP.md` ve `docs/` Türkçe. Sürüm commit'i `2.5.0: short summary in English`; ara işler
-  `feat(<görev>): …`, `fix: …`, `docs: …`, `test: …`.
-- **Dallar ve planlar:** iş ArkeLab'de beş çalışma planına bölünür; her görev kısa ömürlü bir dalda yapılır ve PR ile
-  `main`'e alınır (`ROADMAP.md` → "Çalışma kuralları"). Türe özel kod ve kurallar kendi klasöründe durur
-  (`rules/products/`, `src/products/`, `tests/products/`).
+- TypeScript strict, ESM, zod v4, vitest; the panel is framework-free.
+- Changes should be small, reversible and tested; existing APIs and data are preserved.
+- UI strings are written in Turkish, with English translations in [`panel/js/i18n-en.js`](panel/js/i18n-en.js); the English panel test checks every screen and editor.
+- The UI audit ([`tests/ui-audit.test.ts`](tests/ui-audit.test.ts)) checks every screen in both themes at three widths: contrast, overflow, animation, script errors.
+- CI runs lint, type checking, the build and the tests on every push ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+- **Language rule:** code, comments, rules (`AGENTS.md`, `rules/`), this README and **commit messages are in English**;
+  UI strings, `CHANGELOG.md`, `ROADMAP.md` and `docs/` are in Turkish. Release commits look like
+  `2.5.0: short summary in English`; other work uses `feat(<task>): …`, `fix: …`, `docs: …`, `test: …`.
+- **Branches and plans:** work is split into five work plans in ArkeLab; each task is done on a short-lived branch and
+  merged into `main` through a PR (`ROADMAP.md` → "Çalışma kuralları"). Kind-specific code and rules live in their own
+  folders (`rules/products/`, `src/products/`, `tests/products/`).
 
-**Sürüm çıkarmak:** `package.json` ve `package-lock.json`'da sürümü yükseltin, [`CHANGELOG.md`](CHANGELOG.md)'ye not
-ekleyin, biten adımı [`ROADMAP.md`](ROADMAP.md)'de işaretleyin, commit atıp gönderin. Git ile kuranlar panelden günceller.
+**Cutting a release:** bump the version in `package.json` and `package-lock.json`, add a note to
+[`CHANGELOG.md`](CHANGELOG.md), tick the finished step in [`ROADMAP.md`](ROADMAP.md), then commit and push. Git-based
+installs update from the panel.
 
 ---
 
-## Sorun giderme
+## Troubleshooting
 
-| Belirti | Çözüm |
+| Symptom | Fix |
 | --- | --- |
-| `npm run panel` → ENOENT | Fabrika klasöründe değilsiniz: `arke-panel` kullanın ya da `cd ~/projects/arke-web-studio` |
-| `node: command not found` | WSL içinde Node kurun: nvm, sonra `nvm install 22` |
-| Agent başlamıyor, sandbox hatası | `sudo apt install -y bubblewrap socat`; Claude Code'un WSL içine kurulu olduğundan emin olun |
-| Yayında "Cloudflare hesabı yok" | Ayarlar → Hesabım → Kaydet ve Test Et |
-| Güncelleme "kaydedilmemiş değişiklikler" diyor | Kurulum klasöründe `git status`; değişiklikleri kaydedin ya da geri alın. ArkeLab'e bağlı bir klasörse ArkeLab'in eklediği dosyalar da buna yol açar: geliştirme için ayrı bir kopya kullanın (`ROADMAP.md` → "Geliştirme düzeni") |
-| "Fonts served from the site" uyarısı | Derleme sırasında Google'a ulaşılamadı; site yazı tiplerini yine Google'dan yükler. İnternet varken yeniden derleyin |
-| Ekip eşitlemede çakışma | O müşteride iki kişi değişiklik yaptı: biriniz önce alsın, sonra tekrar eşitleyin |
-| Ekip deposuna ulaşılamıyor | `gh auth login`, sonra `git ls-remote <adres>` |
-| Ekran görüntüsü alınmıyor | Chrome / Chromium yolunu verin: `export ARKE_BROWSER=/yol/chrome` |
+| `npm run panel` → ENOENT | You are not in the factory folder: use `arke-panel` or `cd ~/projects/arke-web-studio` |
+| `node: command not found` | Install Node inside WSL: nvm, then `nvm install 22` |
+| The agent does not start, sandbox error | `sudo apt install -y bubblewrap socat`; make sure Claude Code is installed inside WSL |
+| "No Cloudflare account" on publish | Settings → My Account → Save and Test |
+| The update reports "uncommitted changes" | Run `git status` in the install folder and commit or discard the changes. In a folder connected to ArkeLab, files ArkeLab adds also cause this: use a separate copy for development (`ROADMAP.md` → "Geliştirme düzeni") |
+| "Fonts served from the site" warning | Google could not be reached during the build, so the site still loads its fonts from Google. Rebuild while online |
+| Conflict during team sync | Two people changed that client: one of you pulls first, then sync again |
+| The team repository is unreachable | `gh auth login`, then `git ls-remote <url>` |
+| Screenshots are not taken | Point to Chrome / Chromium: `export ARKE_BROWSER=/path/to/chrome` |
 
-Destek isterken `npm run report -- ~/` ile durum raporu alın; rapor gizli bilgi içermez.
+When asking for support, generate a status report with `npm run report -- ~/`; it contains no secrets.
 
 ---
 
-## Lisans
+## License
 
-© 2026 Eren Yılmaz. Tüm hakları saklıdır.
+© 2026 Eren Yılmaz. All rights reserved.
 
-Arke Web Studio açık kaynak değildir. Kodu, kuralları, istemleri, şablonları ve hazır parçaları sahibinin yazılı izni
-olmadan kullanmak, kopyalamak, değiştirmek, dağıtmak ya da müşterilere hizmet vermek için çalıştırmak yasaktır. Yazılı
-izinle çalışan ekip üyeleri yalnızca izinde yazan amaç için kullanabilir. Tam metin: [`LICENSE`](LICENSE). Üçüncü taraf
-bileşenler kendi lisanslarıyla gelir: [`THIRD_PARTY.md`](THIRD_PARTY.md).
+Arke Web Studio is not open source. Using, copying, modifying or distributing its code, rules, prompts, templates and
+ready-made parts, or running it to serve clients, is prohibited without the owner's written permission. Team members
+working under written permission may use it only for the purpose stated in that permission. Full text:
+[`LICENSE`](LICENSE). Third-party components come with their own licences: [`THIRD_PARTY.md`](THIRD_PARTY.md).
